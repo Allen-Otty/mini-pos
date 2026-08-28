@@ -333,8 +333,22 @@
       </div>
     </div>
 
-    <button class="btn-green" id="checkoutBtn" onclick="checkout()" style="display:none;">Checkout &amp; Print Receipt</button>
+    <button class="btn-green" id="checkoutBtn" onclick="checkout()" style="display:none;">Checkout &amp; Print Receipt (Cash)</button>
+    <button class="btn-blue" id="mpesaBtn" onclick="openMpesaPrompt()" style="display:none;">📱 Charge with M-Pesa</button>
     <button class="btn-red" id="clearBtn" onclick="clearCart()" style="display:none;">Clear Cart</button>
+
+    <div class="cart-box" id="mpesaPromptBox" style="display:none; margin-top:10px;">
+      <div style="font-weight:bold; margin-bottom:6px;">📱 M-Pesa Payment</div>
+      <input type="text" id="mpesaPhone" placeholder="Customer phone e.g. 0712345678">
+      <button class="btn-green" onclick="sendMpesaPrompt()">Send Payment Prompt</button>
+      <button class="btn-red" onclick="cancelMpesaPrompt()">Cancel</button>
+    </div>
+
+    <div class="cart-box" id="mpesaWaitingBox" style="display:none; margin-top:10px; text-align:center;">
+      <div style="font-size:15px; font-weight:bold;">⏳ Waiting for customer to complete payment...</div>
+      <div style="font-size:12px; color:#666; margin-top:6px;" id="mpesaWaitingHint">Prompt sent to their phone</div>
+      <button class="btn-red" onclick="cancelMpesaWait()" style="margin-top:10px;">Cancel Wait</button>
+    </div>
   </div>
 
   <!-- panels continue in part 2 -->
@@ -513,6 +527,30 @@
       <button class="btn-red" onclick="removeLogo()" style="margin-bottom:10px;">Remove Logo</button>
 
       <button class="btn-green" onclick="saveSettings()">Save Settings</button>
+    </div>
+
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="font-weight:bold; margin-bottom:8px;">📱 M-Pesa Payments</div>
+      <p class="catalog-note" style="color:#666; text-align:left; padding:0;" id="mpesaStatusText">Checking status...</p>
+
+      <select id="mpesaPaymentType">
+        <option value="till">Till Number / Pochi la Biashara</option>
+        <option value="paybill">Paybill</option>
+      </select>
+      <input type="text" id="mpesaShortcode" placeholder="Till Number / Pochi Number / Paybill Number">
+      <input type="text" id="mpesaConsumerKey" placeholder="Consumer Key (from Daraja)">
+      <input type="password" id="mpesaConsumerSecret" placeholder="Consumer Secret (from Daraja)">
+      <input type="password" id="mpesaPasskey" placeholder="Passkey (from Daraja)">
+      <select id="mpesaEnv">
+        <option value="true">Production (real money)</option>
+        <option value="false">Sandbox (testing only)</option>
+      </select>
+      <button class="btn-green" onclick="saveMpesaSettings()">Save M-Pesa Settings</button>
+      <button class="btn-red" onclick="removeMpesaSettings()" style="margin-top:6px;">Remove M-Pesa Setup</button>
+      <p class="catalog-note" style="color:#888; text-align:left; padding:0; font-size:11px;">
+        Credentials are stored securely and never shown again after saving — only whether M-Pesa is configured.
+        Callback URL for Safaricom (auto-used): <code>https://uzwomzkzqrpiumtnniik.supabase.co/functions/v1/mpesa-callback</code>
+      </p>
     </div>
   </div>
 
@@ -857,7 +895,7 @@ function switchTab(name) {
   if (name === 'reports') renderReports();
   if (name === 'catalog') renderCatalog();
   if (name === 'team') renderTeam();
-  if (name === 'settings') renderSettingsForm();
+  if (name === 'settings') { renderSettingsForm(); loadMpesaStatus(); }
 }
 
 /* =====================================================================
@@ -962,12 +1000,14 @@ function renderCart() {
     totals.style.display = 'none';
     checkoutBtn.style.display = 'none';
     clearBtn.style.display = 'none';
+    document.getElementById('mpesaBtn').style.display = 'none';
     return;
   }
   empty.style.display = 'none';
   totals.style.display = 'block';
   checkoutBtn.style.display = 'block';
   clearBtn.style.display = 'block';
+  document.getElementById('mpesaBtn').style.display = 'block';
 
   box.innerHTML = cart.map((item, idx) => {
     const lineTotal = item.price * item.qty; // VAT-inclusive
@@ -1199,7 +1239,7 @@ window.addEventListener('offline', () => { isOnline = false; document.getElement
 /* =====================================================================
    RECEIPT
 ===================================================================== */
-function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now) {
+function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaReceipt) {
   let linesHtml = '';
   items.forEach(item => {
     const lineTotal = item.price * item.qty;
@@ -1217,6 +1257,7 @@ function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now) {
     <div class="receipt-line"><span>Subtotal (excl. VAT)</span><span>KES ${subtotal.toFixed(2)}</span></div>
     <div class="receipt-line"><span>VAT (included above)</span><span>KES ${vatTotal.toFixed(2)}</span></div>
     <div class="receipt-total"><span>TOTAL PAID</span><span>KES ${grand.toFixed(2)}</span></div>
+    ${mpesaReceipt ? `<div class="receipt-line"><span>M-Pesa Receipt</span><span>${mpesaReceipt}</span></div>` : ''}
     <hr>
     <div class="sub">Thank you for your business!</div>
   `;
@@ -1570,6 +1611,173 @@ async function saveSettings() {
   applyBusinessTheme();
   logAudit('business.settings_update', { fields: Object.keys(updates) });
   showToast('Settings saved');
+}
+
+/* =====================================================================
+   M-PESA SETTINGS (admin)
+===================================================================== */
+async function loadMpesaStatus() {
+  const resp = await callEdgeFunction('mpesa-settings', { action: 'status' });
+  const statusEl = document.getElementById('mpesaStatusText');
+  if (resp.error) { statusEl.textContent = 'Could not load status.'; return; }
+  if (resp.data) {
+    const type = resp.data.payment_type === 'paybill' ? 'Paybill' : 'Till/Pochi';
+    statusEl.textContent = `✅ Configured — ${type} ${resp.data.shortcode} (${resp.data.is_production ? 'Production' : 'Sandbox'})`;
+    document.getElementById('mpesaPaymentType').value = resp.data.payment_type;
+    document.getElementById('mpesaShortcode').value = resp.data.shortcode;
+    document.getElementById('mpesaEnv').value = String(resp.data.is_production);
+  } else {
+    statusEl.textContent = '⚠️ Not set up yet — fill in the fields below to enable M-Pesa checkout.';
+  }
+}
+
+async function saveMpesaSettings() {
+  const payment_type = document.getElementById('mpesaPaymentType').value;
+  const shortcode = document.getElementById('mpesaShortcode').value.trim();
+  const consumer_key = document.getElementById('mpesaConsumerKey').value.trim();
+  const consumer_secret = document.getElementById('mpesaConsumerSecret').value.trim();
+  const passkey = document.getElementById('mpesaPasskey').value.trim();
+  const is_production = document.getElementById('mpesaEnv').value === 'true';
+
+  if (!shortcode || !consumer_key || !consumer_secret || !passkey) {
+    showToast('Fill in all M-Pesa fields'); return;
+  }
+  const resp = await callEdgeFunction('mpesa-settings', { action: 'save', payment_type, shortcode, consumer_key, consumer_secret, passkey, is_production });
+  if (resp.error) { showToast('Could not save: ' + resp.error); return; }
+  ['mpesaConsumerKey','mpesaConsumerSecret','mpesaPasskey'].forEach(id => document.getElementById(id).value = '');
+  showToast('M-Pesa settings saved');
+  loadMpesaStatus();
+}
+
+async function removeMpesaSettings() {
+  if (!confirm('Remove M-Pesa setup for this business? Tellers will no longer be able to charge via M-Pesa.')) return;
+  const resp = await callEdgeFunction('mpesa-settings', { action: 'remove' });
+  if (resp.error) { showToast('Could not remove: ' + resp.error); return; }
+  showToast('M-Pesa setup removed');
+  loadMpesaStatus();
+}
+
+/* =====================================================================
+   M-PESA CHECKOUT FLOW (STK Push + polling for confirmation)
+===================================================================== */
+let mpesaPollInterval = null;
+let mpesaCurrentRequestId = null;
+
+function openMpesaPrompt() {
+  if (cart.length === 0) return;
+  document.getElementById('mpesaPromptBox').style.display = 'block';
+  document.getElementById('mpesaPhone').focus();
+}
+function cancelMpesaPrompt() {
+  document.getElementById('mpesaPromptBox').style.display = 'none';
+  document.getElementById('mpesaPhone').value = '';
+}
+
+async function sendMpesaPrompt() {
+  const phone = document.getElementById('mpesaPhone').value.trim();
+  if (!phone || phone.replace(/[^0-9]/g,'').length < 9) {
+    showToast('Enter a valid phone number'); return;
+  }
+  if (!isOnline) { showToast('M-Pesa requires an internet connection'); return; }
+
+  let grand = 0;
+  cart.forEach(item => { grand += item.price * item.qty; });
+
+  const custId = document.getElementById('cartCustomerPick').value || null;
+
+  document.getElementById('mpesaPromptBox').style.display = 'none';
+  document.getElementById('mpesaWaitingBox').style.display = 'block';
+  document.getElementById('mpesaWaitingHint').textContent = `Ksh ${grand.toFixed(2)} prompt sent to ${phone}`;
+
+  const resp = await callEdgeFunction('mpesa-stk-push', {
+    phone, amount: grand, cart: cart, customer_id: custId
+  });
+
+  if (resp.error) {
+    showToast('M-Pesa error: ' + resp.error);
+    document.getElementById('mpesaWaitingBox').style.display = 'none';
+    return;
+  }
+
+  mpesaCurrentRequestId = resp.payment_request_id;
+  pollMpesaStatus(resp.payment_request_id, grand, custId);
+}
+
+function pollMpesaStatus(paymentRequestId, grand, custId) {
+  let elapsed = 0;
+  mpesaPollInterval = setInterval(async () => {
+    elapsed += 3;
+    const { data, error } = await sb.from('payment_requests').select('*').eq('id', paymentRequestId).single();
+    if (error) return;
+
+    if (data.status === 'success') {
+      clearInterval(mpesaPollInterval);
+      document.getElementById('mpesaWaitingBox').style.display = 'none';
+      await completeMpesaSale(data);
+    } else if (data.status === 'failed' || data.status === 'cancelled') {
+      clearInterval(mpesaPollInterval);
+      document.getElementById('mpesaWaitingBox').style.display = 'none';
+      showToast('Payment ' + data.status + ': ' + (data.result_desc || 'Customer did not complete payment'));
+    } else if (elapsed >= 90) {
+      clearInterval(mpesaPollInterval);
+      document.getElementById('mpesaWaitingBox').style.display = 'none';
+      showToast('Payment timed out waiting for customer — ask them to check their phone and try again');
+    }
+  }, 3000);
+}
+
+function cancelMpesaWait() {
+  clearInterval(mpesaPollInterval);
+  document.getElementById('mpesaWaitingBox').style.display = 'none';
+  showToast('Stopped waiting — the customer may still complete payment separately');
+}
+
+async function completeMpesaSale(paymentRequest) {
+  // Reuse the normal checkout flow, but mark payment as M-Pesa and skip the cash button
+  const now = new Date();
+  const custId = paymentRequest.customer_id;
+  const offlineUuid = crypto.randomUUID ? crypto.randomUUID() : ('m-' + now.getTime());
+
+  let subtotalExclVat = 0, vatTotal = 0, grand = 0;
+  const lineItems = cart.map(item => {
+    const lineTotal = item.price * item.qty;
+    const lineVat = lineTotal - (lineTotal / (1 + item.vat));
+    subtotalExclVat += (lineTotal - lineVat);
+    vatTotal += lineVat;
+    grand += lineTotal;
+    return { code: item.code, name: item.name, qty: item.qty, price: item.price, vat_rate: item.vat, line_total: +lineTotal.toFixed(2) };
+  });
+
+  receiptCounter++;
+  const receiptNo = 'RC-' + String(receiptCounter).padStart(4, '0');
+
+  const saleRecord = {
+    business_id: profile.business_id, receipt_no: receiptNo, cashier_id: profile.id,
+    customer_id: custId, subtotal_excl_vat: +subtotalExclVat.toFixed(2),
+    vat_total: +vatTotal.toFixed(2), total: +grand.toFixed(2), offline_uuid: offlineUuid,
+    created_at: now.toISOString()
+  };
+
+  cart.forEach(item => {
+    const p = findProduct(item.code);
+    if (p) p.stock = Math.max(0, p.stock - item.qty);
+  });
+  renderCatalog();
+  updateLowStockBanner();
+
+  lineItems.forEach(li => {
+    salesLog.unshift({ date: now.toISOString().slice(0,10), receipt: receiptNo, code: li.code, name: li.name, qty: li.qty, price: li.price, vat: li.vat_rate, total: li.line_total, customerId: custId });
+  });
+
+  await pushSaleToServer(saleRecord, lineItems);
+  logAudit('sale.create', { receipt: receiptNo, total: +grand.toFixed(2), item_count: cart.length, payment_method: 'mpesa', mpesa_receipt: paymentRequest.mpesa_receipt });
+
+  showReceipt(receiptNo, cart, subtotalExclVat, vatTotal, grand, now, paymentRequest.mpesa_receipt);
+  showToast('M-Pesa payment confirmed! Receipt: ' + (paymentRequest.mpesa_receipt || ''));
+  cart = [];
+  renderCart();
+  document.getElementById('cartCustomerPick').value = '';
+  document.getElementById('mpesaPhone').value = '';
 }
 
 /* =====================================================================
