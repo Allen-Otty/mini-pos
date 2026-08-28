@@ -611,6 +611,27 @@ let pendingSignup = null; // holds { email, password, business_name, business_ty
 /* =====================================================================
    AUTH ACTIONS
 ===================================================================== */
+/* =====================================================================
+   AUDIT LOGGING (best-effort, scoped to own business)
+===================================================================== */
+async function logAudit(action, details) {
+  try {
+    await sb.from('audit_log').insert({
+      business_id: profile.business_id, actor_id: profile.id, actor_role: profile.role,
+      action, details: details || {}
+    });
+  } catch (e) { /* never block the user's action on audit logging failing */ }
+}
+
+/* =====================================================================
+   PASSWORD STRENGTH
+===================================================================== */
+function isStrongPassword(pw) {
+  // At least 8 chars, one uppercase, one lowercase, one digit
+  return pw.length >= 8 && /[A-Z]/.test(pw) && /[a-z]/.test(pw) && /[0-9]/.test(pw);
+}
+const PASSWORD_HINT = 'Password must be 8+ characters with at least one uppercase letter, one lowercase letter, and one number.';
+
 async function handleSignup() {
   clearAuthMessages();
   const business_name = document.getElementById('suBizName').value.trim();
@@ -630,6 +651,10 @@ async function handleSignup() {
   }
   if (password.length < 6) {
     showAuthMsg('signupError', 'Password must be at least 6 characters.');
+    return;
+  }
+  if (!isStrongPassword(password)) {
+    showAuthMsg('signupError', PASSWORD_HINT);
     return;
   }
 
@@ -699,22 +724,36 @@ async function handleLogin() {
     showAuthMsg('loginError', 'Enter your email/phone and password.');
     return;
   }
-  const isEmail = identifier.includes('@');
-  const creds = isEmail ? { email: identifier, password } : { phone: identifier, password };
-  const { data, error } = await sb.auth.signInWithPassword(creds);
-  if (error) {
-    if (error.message.toLowerCase().includes('confirm')) {
-      pendingSignup = null;
-      session = null;
-      showOtpPanel(`Your email isn't verified yet. Enter the code sent to ${identifier}.`);
-      document.getElementById('otpSubtext').dataset.email = identifier;
+
+  // Uses the secure-login edge function instead of calling Supabase directly -
+  // this enforces lockout after repeated failures, and logs every attempt for audit purposes.
+  let resp;
+  try {
+    const r = await fetch(SUPABASE_URL + '/functions/v1/secure-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+      body: JSON.stringify({ email: identifier, password })
+    });
+    resp = await r.json();
+  } catch (e) {
+    showAuthMsg('loginError', 'Could not reach the server. Check your connection.');
+    return;
+  }
+
+  if (resp.error) {
+    if (resp.error === 'EMAIL_NOT_VERIFIED') {
       pendingSignup = { email: identifier };
+      showOtpPanel(`Your email isn't verified yet. Enter the code sent to ${identifier}.`);
     } else {
-      showAuthMsg('loginError', error.message);
+      showAuthMsg('loginError', resp.error);
     }
     return;
   }
-  session = data.session;
+
+  // Apply the returned session to the client SDK so subsequent calls are authenticated
+  await sb.auth.setSession({ access_token: resp.session.access_token, refresh_token: resp.session.refresh_token });
+  session = resp.session;
+  if (resp.isNewDevice) showToast('New device detected on this login — check Team activity if this wasn\'t you.');
   await afterLogin();
 }
 
@@ -773,6 +812,7 @@ async function afterLogin() {
   applyBusinessTheme();
   await loadAllData();
   switchTab('sell');
+  resetInactivityTimer();
 }
 
 function applyRoleVisibility() {
@@ -1093,6 +1133,7 @@ async function checkout() {
   }
 
   showReceipt(receiptNo, cart, subtotalExclVat, vatTotal, grand, now);
+  logAudit('sale.create', { receipt: receiptNo, total: +grand.toFixed(2), item_count: cart.length });
   cart = [];
   renderCart();
   document.getElementById('cartCustomerPick').value = '';
@@ -1406,6 +1447,7 @@ async function addProductManually() {
   CATALOG.push({ id: data.id, code, name, category, price, vat, stock, reorder });
   renderCatalog();
   updateLowStockBanner();
+  logAudit('product.create', { code, name, price });
   ['capCode','capName','capCategory','capPrice','capStock','capReorder'].forEach(id => document.getElementById(id).value = '');
   showToast('Added "' + name + '" to catalog');
 }
@@ -1423,6 +1465,7 @@ async function restockItem() {
 
   p.stock = newStock;
   renderCatalog();
+  logAudit('product.restock', { code, qty_added: qty, new_stock: newStock });
   updateLowStockBanner();
   document.getElementById('restockQty').value = '';
   showToast(`Restocked ${p.name}: +${qty} (now ${p.stock})`);
@@ -1436,7 +1479,7 @@ async function addTeller() {
   const email = document.getElementById('tellerEmail').value.trim();
   const password = document.getElementById('tellerPassword').value;
   if (!full_name || !email || !password) { showToast('Fill in all fields'); return; }
-  if (password.length < 6) { showToast('Password must be at least 6 characters'); return; }
+  if (!isStrongPassword(password)) { showToast(PASSWORD_HINT); return; }
 
   const resp = await callEdgeFunction('create-teller', { email, password, full_name });
   if (resp.error) { showToast('Could not create teller: ' + resp.error); return; }
@@ -1445,6 +1488,7 @@ async function addTeller() {
   document.getElementById('tellerEmail').value = '';
   document.getElementById('tellerPassword').value = '';
   showToast('Teller account created for ' + full_name);
+  logAudit('teller.create', { name: full_name, email });
   const { data } = await sb.from('profiles').select('*').eq('business_id', profile.business_id);
   team = data || [];
   renderTeam();
@@ -1524,6 +1568,7 @@ async function saveSettings() {
 
   Object.assign(business, updates);
   applyBusinessTheme();
+  logAudit('business.settings_update', { fields: Object.keys(updates) });
   showToast('Settings saved');
 }
 
@@ -1560,6 +1605,26 @@ if ('serviceWorker' in navigator) {
 }
 
 /* =====================================================================
+/* =====================================================================
+   INACTIVITY AUTO-LOGOUT (15 minutes of no interaction)
+===================================================================== */
+const INACTIVITY_LIMIT_MS = 15 * 60 * 1000;
+let inactivityTimer = null;
+function resetInactivityTimer() {
+  if (!session) return;
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(() => {
+    if (session) {
+      showToast('Logged out after 15 minutes of inactivity');
+      handleLogout();
+    }
+  }, INACTIVITY_LIMIT_MS);
+}
+['click','keydown','touchstart','mousemove'].forEach(evt =>
+  document.addEventListener(evt, resetInactivityTimer, { passive: true })
+);
+
+/* =====================================================================
    SESSION RESTORE ON LOAD
 ===================================================================== */
 (async function initSession() {
@@ -1573,6 +1638,7 @@ if ('serviceWorker' in navigator) {
 sb.auth.onAuthStateChange((event, s) => {
   if (event === 'SIGNED_OUT') {
     session = null; profile = null; business = null;
+    clearTimeout(inactivityTimer);
     document.getElementById('appShell').style.display = 'none';
     document.getElementById('authScreen').style.display = 'block';
   }

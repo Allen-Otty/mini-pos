@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Platform Console</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#0d1b2a; color:#eee; }
+  header { background:#111827; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #2E75B6;}
+  header h1 { margin:0; font-size:18px; }
+  header button { background:transparent; border:1px solid #888; color:#ccc; border-radius:8px; padding:6px 12px; cursor:pointer; }
+  main { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
+
+  #loginBox { max-width:360px; margin:80px auto; background:#fff; color:#111; border-radius:12px; padding:26px; }
+  #loginBox h2 { margin-top:0; text-align:center; }
+  #loginBox input { width:100%; padding:11px; margin:6px 0; border-radius:8px; border:1px solid #ccc; }
+  #loginBox button { width:100%; padding:12px; margin-top:10px; border:none; border-radius:8px; background:#111827; color:#fff; font-weight:bold; cursor:pointer; }
+  #loginError { color:#c0392b; font-size:13px; margin-top:8px; text-align:center; }
+
+  .stat-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
+  .stat-card { background:#111827; border-radius:10px; padding:16px; text-align:center; }
+  .stat-card .num { font-size:24px; font-weight:bold; color:#4fc3f7; }
+  .stat-card .label { font-size:12px; color:#999; margin-top:4px; }
+
+  table { width:100%; border-collapse: collapse; margin-top:10px; font-size:13px; background:#111827; border-radius:10px; overflow:hidden;}
+  th, td { padding:9px 10px; border-bottom:1px solid #1f2937; text-align:left; }
+  th { background:#1f2937; }
+  tr:hover { background:#16202e; }
+  .tag { padding:2px 8px; border-radius:10px; font-size:11px; font-weight:bold; }
+  .tag-active { background:#1b4332; color:#8fdc9c; }
+  .tag-suspended { background:#4d1f1f; color:#f5a3a3; }
+
+  .actions button { padding:4px 9px; margin-right:4px; font-size:12px; border:none; border-radius:6px; cursor:pointer; }
+  .btn-suspend { background:#c0392b; color:#fff; }
+  .btn-reactivate { background:#2e9e5b; color:#fff; }
+  .btn-view { background:#2E75B6; color:#fff; }
+  .btn-delete { background:#4d1f1f; color:#f5a3a3; border:1px solid #c0392b !important; }
+
+  .section-title { font-size:16px; font-weight:bold; margin:26px 0 8px; color:#4fc3f7; }
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#111827; border:1px solid #2E75B6; padding:10px 18px; border-radius:20px; font-size:13px; opacity:0; transition:opacity .3s; z-index:999;}
+  .toast.show { opacity:1; }
+
+  #detailModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:1000; align-items:center; justify-content:center; padding:16px; }
+  #detailModal.show { display:flex; }
+  .detail-box { background:#111827; border-radius:12px; padding:20px; max-width:600px; width:100%; max-height:80vh; overflow-y:auto; }
+  .detail-box h3 { margin-top:0; }
+  .close-btn { background:#333; color:#fff; border:none; border-radius:8px; padding:8px 16px; cursor:pointer; margin-top:12px; }
+
+  .add-admin-row { display:flex; gap:8px; margin-top:8px; }
+  .add-admin-row input { flex:1; padding:9px; border-radius:8px; border:1px solid #333; background:#0d1b2a; color:#fff; }
+  .add-admin-row button { padding:9px 14px; border:none; border-radius:8px; background:#2e9e5b; color:#fff; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div id="loginBox">
+  <h2>🔒 Platform Console</h2>
+  <p style="text-align:center; font-size:12px; color:#666;">Super Admin access only</p>
+  <input type="text" id="pcEmail" placeholder="Email">
+  <input type="password" id="pcPassword" placeholder="Password">
+  <button onclick="platformLogin()">Sign In</button>
+  <div id="loginError"></div>
+</div>
+
+<div id="dashboardWrap" style="display:none;">
+  <header>
+    <h1>🔒 Dogo POS — Platform Console</h1>
+    <button onclick="platformLogout()">Log out</button>
+  </header>
+  <main>
+    <div class="stat-grid" id="statGrid"></div>
+
+    <div class="section-title">Businesses</div>
+    <table>
+      <thead><tr><th>Name</th><th>Type</th><th>Status</th><th>Staff</th><th>Created</th><th>Actions</th></tr></thead>
+      <tbody id="bizBody"></tbody>
+    </table>
+
+    <div class="section-title">Super Admins</div>
+    <table>
+      <thead><tr><th>Email</th><th>Primary Owner</th><th>Actions</th></tr></thead>
+      <tbody id="adminBody"></tbody>
+    </table>
+    <div class="add-admin-row">
+      <input type="text" id="newAdminEmail" placeholder="Email of user to promote to Super Admin">
+      <button onclick="promoteAdmin()">Promote</button>
+    </div>
+
+    <div class="section-title">Recent Platform Activity</div>
+    <table>
+      <thead><tr><th>Time</th><th>Business</th><th>Action</th><th>Actor Role</th></tr></thead>
+      <tbody id="auditBody"></tbody>
+    </table>
+  </main>
+</div>
+
+<div id="detailModal">
+  <div class="detail-box">
+    <h3 id="detailTitle"></h3>
+    <div id="detailContent"></div>
+    <button class="close-btn" onclick="closeDetail()">Close</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = "https://uzwomzkzqrpiumtnniik.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentAdminId = null;
+let currentIsPrimary = false;
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+async function platformLogin() {
+  const email = document.getElementById('pcEmail').value.trim();
+  const password = document.getElementById('pcPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = 'Enter email and password.'; return; }
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) { errEl.textContent = error.message; return; }
+
+  const resp = await callPlatformFn('stats', {});
+  if (resp.error) {
+    errEl.textContent = 'Access denied — this account is not a Super Admin.';
+    await sb.auth.signOut();
+    return;
+  }
+
+  document.getElementById('loginBox').style.display = 'none';
+  document.getElementById('dashboardWrap').style.display = 'block';
+  await loadDashboard();
+}
+
+async function platformLogout() {
+  await sb.auth.signOut();
+  document.getElementById('dashboardWrap').style.display = 'none';
+  document.getElementById('loginBox').style.display = 'block';
+}
+
+async function callPlatformFn(action, payload) {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const { data, error } = await sb.functions.invoke('platform-admin', {
+      body: { action, payload },
+      headers: { Authorization: 'Bearer ' + session.access_token }
+    });
+    if (error) {
+      let msg = error.message;
+      try { const ctx = await error.context.json(); if (ctx?.error) msg = ctx.error; } catch(e) {}
+      return { error: msg };
+    }
+    return data.success ? data.data : { error: data.error || 'Unknown error' };
+  } catch (e) {
+    return { error: String(e) };
+  }
+}
+
+async function loadDashboard() {
+  const stats = await callPlatformFn('stats', {});
+  if (!stats.error) {
+    document.getElementById('statGrid').innerHTML = `
+      <div class="stat-card"><div class="num">${stats.total_businesses}</div><div class="label">Total Businesses</div></div>
+      <div class="stat-card"><div class="num">${stats.active_businesses}</div><div class="label">Active</div></div>
+      <div class="stat-card"><div class="num">${stats.suspended_businesses}</div><div class="label">Suspended</div></div>
+      <div class="stat-card"><div class="num">${stats.total_admins}</div><div class="label">Admins</div></div>
+      <div class="stat-card"><div class="num">${stats.total_tellers}</div><div class="label">Tellers</div></div>
+      <div class="stat-card"><div class="num">${stats.total_sales_count}</div><div class="label">Total Sales</div></div>
+      <div class="stat-card"><div class="num">KES ${Number(stats.total_sales_value).toLocaleString(undefined,{maximumFractionDigits:0})}</div><div class="label">Platform GMV</div></div>
+    `;
+  }
+
+  const businesses = await callPlatformFn('list_businesses', {});
+  if (!businesses.error) {
+    document.getElementById('bizBody').innerHTML = businesses.map(b => `
+      <tr>
+        <td>${b.name}</td>
+        <td>${b.business_type}</td>
+        <td><span class="tag ${b.active ? 'tag-active' : 'tag-suspended'}">${b.active ? 'Active' : 'Suspended'}</span></td>
+        <td>${b.profiles?.[0]?.count ?? '—'}</td>
+        <td>${new Date(b.created_at).toLocaleDateString()}</td>
+        <td class="actions">
+          <button class="btn-view" onclick="viewBusiness('${b.id}')">View</button>
+          ${b.active
+            ? `<button class="btn-suspend" onclick="suspendBiz('${b.id}')">Suspend</button>`
+            : `<button class="btn-reactivate" onclick="reactivateBiz('${b.id}')">Reactivate</button>`}
+          <button class="btn-delete" onclick="deleteBiz('${b.id}','${b.name.replace(/'/g,"")}')">Delete</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center; color:#888;">No businesses yet.</td></tr>';
+  }
+
+  const admins = await callPlatformFn('list_platform_admins', {});
+  if (!admins.error) {
+    const { data: { user } } = await sb.auth.getUser();
+    document.getElementById('adminBody').innerHTML = admins.map(a => {
+      if (a.user_id === user.id) { currentAdminId = user.id; currentIsPrimary = a.is_primary_owner; }
+      return `
+      <tr>
+        <td>${a.email}</td>
+        <td>${a.is_primary_owner ? '⭐ Yes' : 'No'}</td>
+        <td class="actions">
+          ${a.is_primary_owner
+            ? '<span style="color:#888; font-size:12px;">Protected — cannot be removed</span>'
+            : `<button class="btn-delete" onclick="demoteAdmin('${a.user_id}')">Remove</button>`}
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  const audit = await callPlatformFn('audit_log', {});
+  if (!audit.error) {
+    document.getElementById('auditBody').innerHTML = audit.map(a => `
+      <tr>
+        <td>${new Date(a.created_at).toLocaleString()}</td>
+        <td>${a.business_id || '—'}</td>
+        <td>${a.action}</td>
+        <td>${a.actor_role || '—'}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="4" style="text-align:center; color:#888;">No activity yet.</td></tr>';
+  }
+}
+
+async function suspendBiz(id) {
+  const reason = prompt('Reason for suspension (optional):') || '';
+  const resp = await callPlatformFn('suspend_business', { business_id: id, reason });
+  if (resp.error) { showToast('Error: ' + resp.error); return; }
+  showToast('Business suspended');
+  loadDashboard();
+}
+async function reactivateBiz(id) {
+  const resp = await callPlatformFn('reactivate_business', { business_id: id });
+  if (resp.error) { showToast('Error: ' + resp.error); return; }
+  showToast('Business reactivated');
+  loadDashboard();
+}
+async function deleteBiz(id, name) {
+  if (!confirm(`Permanently delete "${name}" and ALL its data (products, sales, staff)? This cannot be undone.`)) return;
+  const resp = await callPlatformFn('delete_business', { business_id: id });
+  if (resp.error) { showToast('Error: ' + resp.error); return; }
+  showToast('Business deleted');
+  loadDashboard();
+}
+async function viewBusiness(id) {
+  const resp = await callPlatformFn('business_detail', { business_id: id });
+  if (resp.error) { showToast('Error: ' + resp.error); return; }
+  document.getElementById('detailTitle').textContent = resp.business.name;
+  document.getElementById('detailContent').innerHTML = `
+    <p><b>Type:</b> ${resp.business.business_type} · <b>Status:</b> ${resp.business.active ? 'Active' : 'Suspended'}</p>
+    <p><b>Staff:</b> ${resp.profiles.length} (${resp.profiles.filter(p=>p.role==='admin').length} admin, ${resp.profiles.filter(p=>p.role==='teller').length} teller)</p>
+    <p><b>Products:</b> ${resp.products.length} · <b>Recent sales:</b> ${resp.sales.length} · <b>Expenses logged:</b> ${resp.expenses.length}</p>
+    <p><b>Total recent sales value:</b> KES ${resp.sales.reduce((s,x)=>s+Number(x.total),0).toFixed(2)}</p>
+  `;
+  document.getElementById('detailModal').classList.add('show');
+}
+function closeDetail() { document.getElementById('detailModal').classList.remove('show'); }
+
+async function promoteAdmin() {
+  const email = document.getElementById('newAdminEmail').value.trim();
+  if (!email) { showToast('Enter an email'); return; }
+  const resp = await callPlatformFn('promote_platform_admin', { target_email: email });
+  if (resp.error) { showToast('Error: ' + resp.error); return; }
+  showToast('Promoted ' + email + ' to Super Admin');
+  document.getElementById('newAdminEmail').value = '';
+  loadDashboard();
+}
+async function demoteAdmin(userId) {
+  if (!confirm('Remove Super Admin access for this user?')) return;
+  const resp = await callPlatformFn('demote_platform_admin', { target_user_id: userId });
+  if (resp.error) { showToast('Error: ' + resp.error); return; }
+  showToast('Super Admin access removed');
+  loadDashboard();
+}
+
+// restore session if already logged in as a platform admin
+(async function init() {
+  const { data } = await sb.auth.getSession();
+  if (data.session) {
+    const resp = await callPlatformFn('stats', {});
+    if (!resp.error) {
+      document.getElementById('loginBox').style.display = 'none';
+      document.getElementById('dashboardWrap').style.display = 'block';
+      loadDashboard();
+    }
+  }
+})();
+</script>
+</body>
+</html>
