@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dogo POS">
+<meta name="theme-color" content="#1F4E78">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Dogo POS</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root { --brand: #1F4E78; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: #12283b; color: #fff; min-height: 100vh;
+  }
+  header { background: var(--brand); padding: 14px 16px; text-align: center; }
+  header h1 { margin: 4px 0 2px; font-size: 20px; }
+  header p { margin: 0; font-size: 12px; color: #cfe0ee; }
+
+  /* ---------------- Auth screens ---------------- */
+  #authScreen {
+    max-width: 380px; margin: 30px auto; padding: 0 16px;
+  }
+  .auth-card {
+    background: #fff; color: #1F4E78; border-radius: 16px; padding: 28px 22px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.4);
+  }
+  .auth-card h2 { margin: 0 0 4px; text-align: center; }
+  .auth-card .sub { text-align: center; color: #667; font-size: 13px; margin-bottom: 20px; }
+  .auth-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+  .auth-tab {
+    flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold;
+    background: #eef3f8; color: #1F4E78; cursor: pointer; font-size: 13px;
+  }
+  .auth-tab.active { background: var(--brand); color: #fff; }
+  .auth-panel { display: none; }
+  .auth-panel.active { display: block; }
+  .auth-card input, .auth-card select {
+    width: 100%; padding: 12px; margin: 6px 0; border-radius: 8px;
+    background: #f2f6fa; color: #1F4E78; outline: none; border: 1px solid #dbe5ee; font-size: 14px;
+  }
+  .auth-card label { font-size: 12px; font-weight: bold; color: #445; margin-top: 8px; display: block; }
+  .method-toggle { display: flex; gap: 8px; margin: 6px 0 10px; }
+  .method-toggle button {
+    flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #dbe5ee; background: #fff;
+    color: #1F4E78; font-size: 12px; cursor: pointer;
+  }
+  .method-toggle button.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .auth-btn {
+    width: 100%; padding: 13px; margin-top: 12px; border: none; border-radius: 8px;
+    background: linear-gradient(45deg, var(--brand), #2E75B6); color: #fff; font-weight: bold;
+    font-size: 15px; cursor: pointer;
+  }
+  .auth-link { text-align: center; font-size: 12px; margin-top: 14px; color: #667; }
+  .auth-error { background: #fde8e8; color: #a33; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
+  .auth-info { background: #e8f4fd; color: #1F4E78; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
+  .otp-input { text-align: center; letter-spacing: 8px; font-size: 20px !important; font-weight: bold; }
+
+  /* ---------------- App shell (shown after login) ---------------- */
+  #appShell { display: none; }
+  .tabs { display: flex; flex-wrap: wrap; max-width: 480px; margin: 12px auto 0; padding: 0 16px; gap: 6px; }
+  .tab-btn {
+    flex: 1 1 30%; padding: 8px 4px; border-radius: 8px; border: none; font-weight: bold;
+    font-size: 12px; background: #2E75B6; color: #fff; cursor: pointer;
+  }
+  .tab-btn.active { background: #FFC107; color: #1F4E78; }
+  .panel { max-width: 480px; margin: 16px auto; padding: 0 16px; display: none; }
+  .panel.active { display: block; }
+
+  .scan-status { background: #fff; color: #1F4E78; border-radius: 10px; padding: 12px; text-align: center; margin-bottom: 12px; }
+  .scan-status .code { font-size: 20px; font-weight: bold; }
+  .scan-status .hint { font-size: 13px; color: #666; margin-top: 4px; }
+  #reader { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+
+  input, select, button { font-family: inherit; }
+  .panel input[type=text], .panel input[type=number], .panel input[type=file], .panel select {
+    width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: none;
+    background: #16344d; color: #fff; outline: 1px solid #2E75B6;
+  }
+  .panel button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
+  .btn-yellow { background: #FFC107; color: #1F4E78; }
+  .btn-blue { background: #2E75B6; color: #fff; }
+  .btn-green { background: #2e9e5b; color: #fff; }
+  .btn-red { background: #c0392b; color: #fff; }
+  .btn-small { padding: 6px 10px; font-size: 13px; width: auto; margin: 0; }
+
+  .cart-box { background: #fff; color: #1F4E78; border-radius: 10px; padding: 14px; }
+  .cart-item {
+    display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #eee;
+  }
+  .cart-item:last-child { border-bottom: none; }
+  .cart-item .name { flex: 1; font-weight: bold; }
+  .cart-item .meta { font-size: 12px; color: #666; }
+  .qty-ctrl { display: flex; align-items: center; gap: 6px; }
+  .qty-ctrl button { width: 26px; height: 26px; padding: 0; margin: 0; border-radius: 6px; font-size: 16px; line-height: 1; }
+  .qty-ctrl span { min-width: 18px; text-align: center; }
+  .line-total { font-weight: bold; min-width: 70px; text-align: right; }
+  .remove-btn { background: #c0392b; color: #fff; width: 22px; height: 22px; border-radius: 50%; margin-left: 8px; padding: 0; font-size: 12px; }
+
+  .totals { margin-top: 12px; padding-top: 10px; border-top: 2px solid #1F4E78; font-size: 14px; }
+  .totals .row { display: flex; justify-content: space-between; margin: 4px 0; }
+  .totals .grand { font-size: 20px; font-weight: bold; color: #1F4E78; }
+  .totals .vat-note { font-size: 11px; color: #888; margin-top: -2px; }
+
+  .empty-note { color: #888; text-align: center; padding: 20px 0; font-size: 14px; }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #1F4E78; color: #fff; padding: 10px 18px; border-radius: 20px;
+    font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999; max-width: 90%; text-align: center;
+  }
+  .toast.show { opacity: 1; }
+
+  .banner {
+    max-width: 480px; margin: 10px auto 0; padding: 10px 16px; border-radius: 8px; font-size: 13px;
+    display: none; align-items: center; gap: 8px;
+  }
+  .banner.show { display: flex; }
+  .banner-offline { background: #7a4a00; color: #ffe6ac; }
+  .banner-lowstock { background: #7a1f1f; color: #ffd4d4; }
+
+  #receiptModal {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1000;
+    align-items: center; justify-content: center; padding: 16px;
+  }
+  #receiptModal.show { display: flex; }
+  .receipt-paper {
+    background: #fff; color: #222; width: 100%; max-width: 320px; padding: 20px;
+    border-radius: 8px; font-family: 'Courier New', monospace;
+  }
+  .receipt-paper h2 { text-align: center; font-size: 16px; margin: 0 0 2px; }
+  .receipt-paper .sub { text-align: center; font-size: 11px; color: #555; margin-bottom: 10px; }
+  .receipt-paper hr { border: none; border-top: 1px dashed #999; margin: 8px 0; }
+  .receipt-line { display: flex; justify-content: space-between; font-size: 12px; margin: 3px 0; }
+  .receipt-line.item-name { font-weight: bold; margin-top: 6px; }
+  .receipt-total { font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; }
+  .receipt-actions { max-width: 320px; margin: 10px auto 0; }
+  .receipt-actions button { margin-top: 8px; }
+
+  .log-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+  .log-table th, .log-table td { padding: 6px 4px; border-bottom: 1px solid #eee; text-align: left; }
+  .log-table th { color: #1F4E78; }
+
+  .catalog-note { font-size: 12px; color: #cfe0ee; padding: 0 16px; max-width: 480px; margin: 4px auto 0; text-align: center; }
+
+  @media print {
+    body * { visibility: hidden; }
+    #receiptModal, #receiptModal * { visibility: visible; }
+    #receiptModal { position: absolute; inset: 0; background: #fff !important; padding: 0; }
+    .receipt-actions { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     AUTH SCREEN (shown when not logged in)
+================================================================= -->
+<div id="authScreen">
+  <div style="text-align:center; margin-bottom: 18px;">
+    <div style="font-size:34px;">🧾</div>
+    <div style="font-weight:bold; font-size:22px;">Dogo POS</div>
+    <div style="font-size:12px; color:#9fc1de;">Sell, track, and grow — from your phone.</div>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLoginBtn" onclick="showAuthTab('login')">Sign In</button>
+      <button class="auth-tab" id="tabSignupBtn" onclick="showAuthTab('signup')">Create Business</button>
+    </div>
+
+    <!-- ---------- LOGIN PANEL ---------- -->
+    <div class="auth-panel active" id="authPanelLogin">
+      <h2>Welcome Back</h2>
+      <div class="sub">Sign in to your account</div>
+
+      <label>Email or Phone</label>
+      <input type="text" id="loginIdentifier" placeholder="you@business.com">
+
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="Your password">
+
+      <button class="auth-btn" onclick="handleLogin()">Sign In</button>
+      <div class="auth-error" id="loginError"></div>
+      <div class="auth-info" id="loginInfo"></div>
+      <div class="auth-link">Don't have a business account? <a href="#" onclick="showAuthTab('signup'); return false;" style="color:#2E75B6;">Create one</a></div>
+    </div>
+
+    <!-- ---------- SIGNUP PANEL (Admin registers their business) ---------- -->
+    <div class="auth-panel" id="authPanelSignup">
+      <h2>Create Your Business</h2>
+      <div class="sub">You'll be the Admin of this account</div>
+
+      <label>Business Name</label>
+      <input type="text" id="suBizName" placeholder="e.g. Kasonge Supermarket">
+
+      <label>Business Type</label>
+      <select id="suBizType">
+        <option value="Retail">Retail Shop</option>
+        <option value="Wholesale">Wholesale</option>
+        <option value="Supermarket">Supermarket</option>
+        <option value="SME">SME / General Business</option>
+        <option value="Hotel">Hotel / Restaurant</option>
+        <option value="Hardware">Hardware Store</option>
+      </select>
+
+      <label>Your Full Name</label>
+      <input type="text" id="suFullName" placeholder="e.g. Allen Otiende">
+
+      <label>Sign up with</label>
+      <div class="method-toggle">
+        <button type="button" class="active" id="suMethodEmailBtn" onclick="setSignupMethod('email')">Email</button>
+        <button type="button" id="suMethodPhoneBtn" onclick="setSignupMethod('phone')">Phone</button>
+      </div>
+
+      <div id="suEmailField">
+        <label>Email</label>
+        <input type="text" id="suEmail" placeholder="you@business.com">
+      </div>
+      <div id="suPhoneField" style="display:none;">
+        <label>Phone (with country code)</label>
+        <input type="text" id="suPhone" placeholder="+2547XXXXXXXX">
+        <div style="font-size:11px; color:#a33; margin:-2px 0 4px;">
+          Phone sign-up isn't wired to an SMS provider yet — use Email for now.
+        </div>
+      </div>
+
+      <label>Password</label>
+      <input type="password" id="suPassword" placeholder="Create a password (min 6 characters)">
+
+      <button class="auth-btn" onclick="handleSignup()">Create Business Account</button>
+      <div class="auth-error" id="signupError"></div>
+      <div class="auth-info" id="signupInfo"></div>
+    </div>
+
+    <!-- ---------- OTP VERIFY PANEL ---------- -->
+    <div class="auth-panel" id="authPanelOtp">
+      <h2>Verify Your Email</h2>
+      <div class="sub" id="otpSubtext">We sent a 6-digit code to your email</div>
+
+      <label>Enter Code</label>
+      <input type="text" id="otpCode" class="otp-input" placeholder="000000" maxlength="6" inputmode="numeric">
+
+      <button class="auth-btn" onclick="handleVerifyOtp()">Verify & Continue</button>
+      <button class="auth-btn" style="background:#eef3f8; color:#1F4E78; margin-top:6px;" onclick="handleResendOtp()">Resend Code</button>
+      <div class="auth-error" id="otpError"></div>
+      <div class="auth-info" id="otpInfo"></div>
+    </div>
+  </div>
+
+  <div style="text-align:center; font-size:11px; color:#6a89a3; margin-top:16px;">
+    Dogo POS · Multi-business point of sale
+  </div>
+</div>
+
+<!-- ================================================================
+     APP SHELL (shown after successful login)
+================================================================= -->
+<div id="appShell">
+  <header id="appHeader">
+    <div id="headerLogoWrap"></div>
+    <h1 id="appTitle">🧾 Dogo POS</h1>
+    <p id="appTagline">Signed in</p>
+    <div style="margin-top:6px; font-size:11px; display:flex; justify-content:center; gap:10px; align-items:center;">
+      <span id="userBadge"></span>
+      <button onclick="handleLogout()" style="background:transparent; border:1px solid #fff; color:#fff; border-radius:12px; padding:2px 10px; font-size:11px; cursor:pointer;">Log out</button>
+    </div>
+  </header>
+
+  <div class="banner banner-offline" id="offlineBanner">
+    📴 <span>You're offline — sales will save locally and sync when back online.</span>
+  </div>
+  <div class="banner banner-lowstock" id="lowStockBanner" onclick="switchTab('dash')" style="cursor:pointer;">
+    ⚠️ <span id="lowStockBannerText"></span>
+  </div>
+  <div class="banner" id="pendingSyncBanner" style="background:#1F4E78; color:#cfe0ee;" onclick="syncOfflineSales()">
+    🔄 <span id="pendingSyncText"></span> — tap to sync now
+  </div>
+
+  <div class="tabs" id="mainTabs">
+    <button class="tab-btn active" data-tab="sell" onclick="switchTab('sell')">Sell</button>
+    <button class="tab-btn" data-tab="dash" data-admin-only="1" onclick="switchTab('dash')">Dashboard</button>
+    <button class="tab-btn" data-tab="log" onclick="switchTab('log')">Sales Log</button>
+    <button class="tab-btn" data-tab="customers" onclick="switchTab('customers')">Customers</button>
+    <button class="tab-btn" data-tab="reports" data-admin-only="1" onclick="switchTab('reports')">Reports</button>
+    <button class="tab-btn" data-tab="expenses" onclick="switchTab('expenses')">Expenses</button>
+    <button class="tab-btn" data-tab="catalog" data-admin-only="1" onclick="switchTab('catalog')">Catalog</button>
+    <button class="tab-btn" data-tab="team" data-admin-only="1" onclick="switchTab('team')">Team</button>
+    <button class="tab-btn" data-tab="settings" data-admin-only="1" onclick="switchTab('settings')">Settings</button>
+  </div>
+
+  <!-- ================= SELL TAB ================= -->
+  <div class="panel active" id="tab-sell">
+    <div id="reader"></div>
+    <div class="scan-status">
+      <div class="code" id="scanFeedback">Point camera at a barcode</div>
+      <div class="hint" id="scanHint">Recognized items are added to the cart automatically.</div>
+    </div>
+
+    <input type="text" id="manualCode" placeholder="No scanner? Type code + Enter">
+    <select id="manualCatalogPick"><option value="">-- or pick an item manually --</option></select>
+
+    <div class="cart-box" id="newProductForm" style="display:none; margin-top:10px;">
+      <div style="font-weight:bold; margin-bottom:6px;">🆕 New item: <span id="npCode"></span></div>
+      <input type="text" id="npName" placeholder="Item name">
+      <input type="number" id="npPrice" placeholder="Selling price (VAT included), KES" step="0.01">
+      <select id="npVat">
+        <option value="0.16">VAT 16% (standard)</option>
+        <option value="0">No VAT (exempt/zero-rated)</option>
+      </select>
+      <input type="number" id="npStock" placeholder="Opening stock quantity" step="1">
+      <input type="number" id="npReorder" placeholder="Reorder alert level" step="1">
+      <button class="btn-green" onclick="saveNewProduct()">Add to Catalog & Cart</button>
+      <button class="btn-red" onclick="cancelNewProduct()">Cancel</button>
+    </div>
+
+    <div class="cart-box" id="cartBox" style="margin-top:14px;">
+      <div class="empty-note" id="cartEmpty">Cart is empty. Scan an item to begin.</div>
+      <div id="cartItems"></div>
+      <select id="cartCustomerPick" style="margin-top:8px;">
+        <option value="">-- Walk-in customer (no account) --</option>
+      </select>
+      <div class="totals" id="cartTotals" style="display:none;">
+        <div class="row"><span>Total (VAT-inclusive)</span><span id="totGrand">0.00</span></div>
+        <div class="row"><span>— of which VAT</span><span id="totVat">0.00</span></div>
+        <div class="vat-note">Prices already include VAT — nothing is added at checkout.</div>
+      </div>
+    </div>
+
+    <button class="btn-green" id="checkoutBtn" onclick="checkout()" style="display:none;">Checkout &amp; Print Receipt</button>
+    <button class="btn-red" id="clearBtn" onclick="clearCart()" style="display:none;">Clear Cart</button>
+  </div>
+
+  <!-- panels continue in part 2 -->
+
+  <!-- ================= DASHBOARD TAB (admin only) ================= -->
+  <div class="panel" id="tab-dash">
+    <div class="cart-box">
+      <div style="font-weight:bold; margin-bottom:8px;">📊 Today &amp; This Month</div>
+      <div class="totals" style="border-top:none; padding-top:0;">
+        <div class="row"><span>Today's Sales</span><span id="dashTodaySales">KES 0.00</span></div>
+        <div class="row"><span>This Month's Sales</span><span id="dashMonthSales">KES 0.00</span></div>
+        <div class="row"><span>This Month's Expenses</span><span id="dashMonthExpenses">KES 0.00</span></div>
+        <div class="row grand"><span>Net Profit (month)</span><span id="dashProfit">KES 0.00</span></div>
+      </div>
+    </div>
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="font-weight:bold; margin-bottom:8px;">🧾 KRA VAT (this month)</div>
+      <div class="totals" style="border-top:none; padding-top:0;">
+        <div class="row"><span>VAT collected (extracted from sales)</span><span id="dashOutVat">KES 0.00</span></div>
+        <div class="row"><span>VAT on expenses (input VAT)</span><span id="dashInVat">KES 0.00</span></div>
+        <div class="row grand"><span>Net VAT Payable</span><span id="dashNetVat">KES 0.00</span></div>
+      </div>
+      <p class="catalog-note" style="color:#666;">Estimate only — confirm in KRA iTax before filing.</p>
+    </div>
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="font-weight:bold; margin-bottom:8px;">⚠️ Low Stock Items</div>
+      <table class="log-table" id="lowStockTable">
+        <thead><tr><th>Code</th><th>Name</th><th>Stock Left</th><th>Reorder At</th></tr></thead>
+        <tbody id="lowStockBody"></tbody>
+      </table>
+      <div class="empty-note" id="lowStockEmpty">Nothing low on stock right now.</div>
+    </div>
+  </div>
+
+  <!-- ================= SALES LOG TAB ================= -->
+  <div class="panel" id="tab-log">
+    <div class="cart-box">
+      <div class="empty-note" id="logEmpty">No sales recorded yet.</div>
+      <table class="log-table" id="logTable" style="display:none;">
+        <thead><tr><th>Date</th><th>Receipt</th><th>Item</th><th>Qty</th><th>Total</th></tr></thead>
+        <tbody id="logBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ================= CUSTOMERS TAB ================= -->
+  <div class="panel" id="tab-customers">
+    <div class="cart-box">
+      <div style="font-weight:bold; margin-bottom:8px;">➕ Add a customer</div>
+      <input type="text" id="custName" placeholder="Customer name">
+      <input type="text" id="custPhone" placeholder="Phone number">
+      <button class="btn-green" onclick="addCustomer()">Add Customer</button>
+    </div>
+    <div class="cart-box" style="margin-top:14px;">
+      <div class="empty-note" id="custEmpty">No customers added yet.</div>
+      <table class="log-table" id="custTable" style="display:none;">
+        <thead><tr><th>Name</th><th>Phone</th><th>Total Spent</th><th>Last Purchase</th></tr></thead>
+        <tbody id="custBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ================= REPORTS TAB (admin only) ================= -->
+  <div class="panel" id="tab-reports">
+    <div class="cart-box">
+      <div style="font-weight:bold; margin-bottom:8px;">🏆 Top-selling items (all-time)</div>
+      <table class="log-table" id="topSellersTable">
+        <thead><tr><th>Item</th><th>Qty Sold</th><th>Revenue</th></tr></thead>
+        <tbody id="topSellersBody"></tbody>
+      </table>
+      <div class="empty-note" id="topSellersEmpty">No sales recorded yet.</div>
+    </div>
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="font-weight:bold; margin-bottom:8px;">📂 Revenue by category</div>
+      <table class="log-table" id="catRevTable">
+        <thead><tr><th>Category</th><th>Revenue</th></tr></thead>
+        <tbody id="catRevBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ================= EXPENSES TAB ================= -->
+  <div class="panel" id="tab-expenses">
+    <div class="cart-box">
+      <div style="font-weight:bold; margin-bottom:8px;">➕ Log an expense</div>
+      <input type="text" id="expDesc" placeholder="Description (e.g. Rent - August)">
+      <select id="expCategory">
+        <option>Rent</option><option>Utilities</option><option>Stock Purchases</option>
+        <option>Salaries</option><option>Transport</option><option>Licenses</option>
+        <option>Equipment</option><option>Marketing</option><option>Petty Cash</option><option>Other</option>
+      </select>
+      <input type="number" id="expAmount" placeholder="Amount (KES)" step="0.01">
+      <button class="btn-green" onclick="addExpense()">Add Expense</button>
+      <p class="catalog-note" id="expTellerNote" style="display:none;">As a Teller, you can log expenses (e.g. petty cash) but can't view expense totals or history — that's Admin-only.</p>
+    </div>
+    <div class="cart-box" style="margin-top:14px;" id="expHistoryBox">
+      <div class="empty-note" id="expEmpty">No expenses logged yet.</div>
+      <table class="log-table" id="expTable" style="display:none;">
+        <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr></thead>
+        <tbody id="expBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ================= CATALOG TAB (admin only) ================= -->
+  <div class="panel" id="tab-catalog">
+    <div class="cart-box">
+      <div style="font-weight:bold; margin-bottom:8px;">➕ Add a product</div>
+      <input type="text" id="capCode" placeholder="Code / barcode">
+      <input type="text" id="capName" placeholder="Item name">
+      <input type="text" id="capCategory" placeholder="Category (e.g. Retail, Restaurant)">
+      <input type="number" id="capPrice" placeholder="Selling price (VAT included), KES" step="0.01">
+      <select id="capVat">
+        <option value="0.16">VAT 16% (standard)</option>
+        <option value="0">No VAT (exempt/zero-rated)</option>
+      </select>
+      <input type="number" id="capStock" placeholder="Opening stock" step="1">
+      <input type="number" id="capReorder" placeholder="Reorder alert level" step="1">
+      <button class="btn-green" onclick="addProductManually()">Add Product</button>
+    </div>
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="font-weight:bold; margin-bottom:8px;">📦 Restock an item</div>
+      <select id="restockPick"><option value="">-- pick item --</option></select>
+      <input type="number" id="restockQty" placeholder="Quantity to add" step="1">
+      <button class="btn-blue" onclick="restockItem()">Add Stock</button>
+    </div>
+    <div class="cart-box" style="margin-top:14px;">
+      <table class="log-table" id="catalogTable">
+        <thead><tr><th>Code</th><th>Name</th><th>Price</th><th>VAT</th><th>Stock</th><th>Reorder</th></tr></thead>
+        <tbody id="catalogBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ================= TEAM TAB (admin only) ================= -->
+  <div class="panel" id="tab-team">
+    <div class="cart-box">
+      <div style="font-weight:bold; margin-bottom:8px;">➕ Add a teller</div>
+      <p class="catalog-note" style="color:#666;">Creates a login for a till/attendant account. They'll sign in with the email + password you set here — they cannot self-signup.</p>
+      <input type="text" id="tellerName" placeholder="Teller full name">
+      <input type="text" id="tellerEmail" placeholder="Teller email">
+      <input type="password" id="tellerPassword" placeholder="Set a password for them">
+      <button class="btn-green" onclick="addTeller()">Create Teller Account</button>
+    </div>
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="font-weight:bold; margin-bottom:8px;">👥 Team members</div>
+      <table class="log-table" id="teamTable">
+        <thead><tr><th>Name</th><th>Role</th><th>Status</th></tr></thead>
+        <tbody id="teamBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ================= SETTINGS TAB (admin only) ================= -->
+  <div class="panel" id="tab-settings">
+    <div class="cart-box">
+      <div style="font-weight:bold; margin-bottom:8px;">🏪 Business Profile</div>
+      <input type="text" id="setBizName" placeholder="Business name">
+      <input type="text" id="setBizSub" placeholder="Location / phone / PIN (shown on receipt)">
+      <input type="text" id="setKraPin" placeholder="KRA PIN">
+      <select id="setBizType">
+        <option value="Retail">Retail Shop</option>
+        <option value="Wholesale">Wholesale</option>
+        <option value="Supermarket">Supermarket</option>
+        <option value="SME">SME / General Business</option>
+        <option value="Hotel">Hotel / Restaurant</option>
+        <option value="Hardware">Hardware Store</option>
+      </select>
+
+      <div style="font-weight:bold; margin:14px 0 8px;">🎨 Theme Color</div>
+      <div id="colorSwatches" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;"></div>
+
+      <div style="font-weight:bold; margin:14px 0 8px;">🖼️ Business Logo</div>
+      <input type="file" id="setLogoFile" accept="image/*">
+      <div id="logoPreviewWrap" style="margin:8px 0;"></div>
+      <button class="btn-red" onclick="removeLogo()" style="margin-bottom:10px;">Remove Logo</button>
+
+      <button class="btn-green" onclick="saveSettings()">Save Settings</button>
+    </div>
+  </div>
+
+</div><!-- /appShell -->
+
+<div id="receiptModal">
+  <div>
+    <div class="receipt-paper" id="receiptContent"></div>
+    <div class="receipt-actions">
+      <button class="btn-blue" onclick="window.print()">🖨️ Print / Save PDF</button>
+      <button class="btn-red" onclick="closeReceipt()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   CONFIG
+===================================================================== */
+const SUPABASE_URL = "https://uzwomzkzqrpiumtnniik.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const THEME_COLORS = ["#1F4E78", "#2e9e5b", "#c0392b", "#8e44ad", "#d35400", "#16697a"];
+const LOCAL_QUEUE_KEY = "dogopos_offline_queue_v1";
+const LOCAL_CACHE_KEY = "dogopos_cache_v1"; // last-known catalog/customers for offline selling
+
+let session = null;
+let profile = null;   // { id, business_id, role, full_name, active }
+let business = null;  // { id, name, business_type, theme_color, logo_url, kra_pin, location }
+
+let CATALOG = [];
+let customers = [];
+let salesLog = [];     // flattened line items, loaded from Supabase (+ any still-offline queued ones)
+let expenses = [];
+let team = [];
+let cart = [];
+let receiptCounter = 0;
+let isOnline = navigator.onLine;
+
+/* =====================================================================
+   TOAST
+===================================================================== */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* =====================================================================
+   AUTH SCREEN UI HELPERS
+===================================================================== */
+function showAuthTab(name) {
+  document.getElementById('tabLoginBtn').classList.toggle('active', name === 'login');
+  document.getElementById('tabSignupBtn').classList.toggle('active', name === 'signup');
+  document.getElementById('authPanelLogin').classList.toggle('active', name === 'login');
+  document.getElementById('authPanelSignup').classList.toggle('active', name === 'signup');
+  document.getElementById('authPanelOtp').classList.remove('active');
+  clearAuthMessages();
+}
+
+function showOtpPanel(subtext) {
+  document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('authPanelOtp').classList.add('active');
+  document.getElementById('otpSubtext').textContent = subtext;
+  clearAuthMessages();
+}
+
+function clearAuthMessages() {
+  ['loginError','loginInfo','signupError','signupInfo','otpError','otpInfo'].forEach(id => {
+    const el = document.getElementById(id);
+    el.style.display = 'none';
+    el.textContent = '';
+  });
+}
+function showAuthMsg(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+let signupMethod = 'email';
+function setSignupMethod(method) {
+  signupMethod = method;
+  document.getElementById('suMethodEmailBtn').classList.toggle('active', method === 'email');
+  document.getElementById('suMethodPhoneBtn').classList.toggle('active', method === 'phone');
+  document.getElementById('suEmailField').style.display = method === 'email' ? 'block' : 'none';
+  document.getElementById('suPhoneField').style.display = method === 'phone' ? 'block' : 'none';
+}
+
+let pendingSignup = null; // holds { email, password, business_name, business_type, full_name } while awaiting OTP
+
+/* =====================================================================
+   AUTH ACTIONS
+===================================================================== */
+async function handleSignup() {
+  clearAuthMessages();
+  const business_name = document.getElementById('suBizName').value.trim();
+  const business_type = document.getElementById('suBizType').value;
+  const full_name = document.getElementById('suFullName').value.trim();
+  const password = document.getElementById('suPassword').value;
+
+  if (signupMethod === 'phone') {
+    showAuthMsg('signupError', 'Phone sign-up needs an SMS provider connected first — please use Email for now.');
+    return;
+  }
+  const email = document.getElementById('suEmail').value.trim();
+
+  if (!business_name || !full_name || !email || !password) {
+    showAuthMsg('signupError', 'Please fill in all fields.');
+    return;
+  }
+  if (password.length < 6) {
+    showAuthMsg('signupError', 'Password must be at least 6 characters.');
+    return;
+  }
+
+  const { data, error } = await sb.auth.signUp({ email, password });
+  if (error) {
+    showAuthMsg('signupError', error.message);
+    return;
+  }
+
+  pendingSignup = { business_name, business_type, full_name, email };
+  showOtpPanel(`We sent a 6-digit code to ${email}. Enter it below to verify and activate your business.`);
+}
+
+async function handleVerifyOtp() {
+  clearAuthMessages();
+  const token = document.getElementById('otpCode').value.trim();
+  if (!token || token.length < 6) {
+    showAuthMsg('otpError', 'Enter the 6-digit code from your email.');
+    return;
+  }
+  const email = pendingSignup ? pendingSignup.email : (session && session.user ? session.user.email : null);
+  if (!email) {
+    showAuthMsg('otpError', 'Something went wrong — please sign up again.');
+    return;
+  }
+
+  const { data, error } = await sb.auth.verifyOtp({ email, token, type: 'signup' });
+  if (error) {
+    showAuthMsg('otpError', error.message);
+    return;
+  }
+  session = data.session;
+
+  if (pendingSignup) {
+    // Now create the business + admin profile via secure edge function
+    const resp = await callEdgeFunction('create-business', {
+      business_name: pendingSignup.business_name,
+      business_type: pendingSignup.business_type,
+      full_name: pendingSignup.full_name
+    });
+    pendingSignup = null;
+    if (resp.error) {
+      showAuthMsg('otpError', 'Verified, but business setup failed: ' + resp.error);
+      return;
+    }
+    showToast('Business created! Welcome to Dogo POS.');
+  } else {
+    showToast('Verified!');
+  }
+  await afterLogin();
+}
+
+async function handleResendOtp() {
+  clearAuthMessages();
+  const email = pendingSignup ? pendingSignup.email : (session && session.user ? session.user.email : null);
+  if (!email) { showAuthMsg('otpError', 'No email on file — please sign up again.'); return; }
+  const { error } = await sb.auth.resend({ type: 'signup', email });
+  if (error) showAuthMsg('otpError', error.message);
+  else showAuthMsg('otpInfo', 'Code resent — check your email.');
+}
+
+async function handleLogin() {
+  clearAuthMessages();
+  const identifier = document.getElementById('loginIdentifier').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!identifier || !password) {
+    showAuthMsg('loginError', 'Enter your email/phone and password.');
+    return;
+  }
+  const isEmail = identifier.includes('@');
+  const creds = isEmail ? { email: identifier, password } : { phone: identifier, password };
+  const { data, error } = await sb.auth.signInWithPassword(creds);
+  if (error) {
+    if (error.message.toLowerCase().includes('confirm')) {
+      pendingSignup = null;
+      session = null;
+      showOtpPanel(`Your email isn't verified yet. Enter the code sent to ${identifier}.`);
+      document.getElementById('otpSubtext').dataset.email = identifier;
+      pendingSignup = { email: identifier };
+    } else {
+      showAuthMsg('loginError', error.message);
+    }
+    return;
+  }
+  session = data.session;
+  await afterLogin();
+}
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  session = null; profile = null; business = null;
+  document.getElementById('appShell').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'block';
+  showAuthTab('login');
+}
+
+/* =====================================================================
+   POST-LOGIN BOOTSTRAP
+===================================================================== */
+async function callEdgeFunction(name, body) {
+  try {
+    const { data, error } = await sb.functions.invoke(name, { body });
+    if (error) {
+      let msg = error.message;
+      try {
+        const ctx = await error.context.json();
+        if (ctx && ctx.error) msg = ctx.error;
+      } catch(e) {}
+      return { error: msg };
+    }
+    return data;
+  } catch (e) {
+    return { error: String(e) };
+  }
+}
+
+async function afterLogin() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { handleLogout(); return; }
+
+  const { data: prof, error: profErr } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  if (profErr || !prof) {
+    showAuthMsg('loginError', "No business account found for this login. If you just signed up, verify your email first.");
+    await sb.auth.signOut();
+    return;
+  }
+  if (!prof.active) {
+    showAuthMsg('loginError', "This account has been deactivated. Contact your business admin.");
+    await sb.auth.signOut();
+    return;
+  }
+  profile = prof;
+
+  const { data: biz } = await sb.from('businesses').select('*').eq('id', profile.business_id).single();
+  business = biz;
+
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appShell').style.display = 'block';
+
+  applyRoleVisibility();
+  applyBusinessTheme();
+  await loadAllData();
+  switchTab('sell');
+}
+
+function applyRoleVisibility() {
+  const isAdmin = profile.role === 'admin';
+  document.querySelectorAll('[data-admin-only]').forEach(el => {
+    el.style.display = isAdmin ? '' : 'none';
+  });
+  document.getElementById('userBadge').textContent =
+    `${profile.full_name || 'User'} · ${isAdmin ? 'Admin' : 'Teller'}`;
+  document.getElementById('expTellerNote').style.display = isAdmin ? 'none' : 'block';
+  document.getElementById('expHistoryBox').style.display = isAdmin ? 'block' : 'none';
+}
+
+function applyBusinessTheme() {
+  if (!business) return;
+  document.getElementById('appTitle').textContent = '🧾 ' + business.name;
+  document.getElementById('appTagline').textContent = business.business_type + ' · Dogo POS';
+  document.getElementById('appHeader').style.background = business.theme_color || '#1F4E78';
+  const logoWrap = document.getElementById('headerLogoWrap');
+  logoWrap.innerHTML = business.logo_url
+    ? `<img src="${business.logo_url}" style="max-height:44px; max-width:130px; display:block; margin:0 auto 4px;">`
+    : '';
+}
+
+/* =====================================================================
+   TAB SWITCHING
+===================================================================== */
+function switchTab(name) {
+  if (name !== 'sell' && document.querySelector(`.tab-btn[data-tab="${name}"]`).hasAttribute('data-admin-only') && profile.role !== 'admin') {
+    return; // silently refuse - button is hidden anyway
+  }
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  const btn = document.querySelector(`.tab-btn[data-tab="${name}"]`);
+  if (btn) btn.classList.add('active');
+
+  if (name === 'log') renderLog();
+  if (name === 'expenses') renderExpenses();
+  if (name === 'dash') renderDashboard();
+  if (name === 'customers') renderCustomers();
+  if (name === 'reports') renderReports();
+  if (name === 'catalog') renderCatalog();
+  if (name === 'team') renderTeam();
+  if (name === 'settings') renderSettingsForm();
+}
+
+/* =====================================================================
+   DATA LOADING FROM SUPABASE (+ offline cache fallback)
+===================================================================== */
+async function loadAllData() {
+  if (isOnline) {
+    try {
+      const [prodRes, custRes, salesRes, itemsRes, expRes, teamRes] = await Promise.all([
+        sb.from('products').select('*').order('name'),
+        sb.from('customers').select('*').order('name'),
+        sb.from('sales').select('*').order('created_at', { ascending: false }),
+        sb.from('sale_items').select('*'),
+        profile.role === 'admin' ? sb.from('expenses').select('*').order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
+        profile.role === 'admin' ? sb.from('profiles').select('*') : Promise.resolve({ data: [] }),
+      ]);
+      CATALOG = (prodRes.data || []).map(p => ({
+        id: p.id, code: p.code, name: p.name, category: p.category, price: Number(p.price),
+        vat: Number(p.vat_rate), stock: p.stock, reorder: p.reorder_level
+      }));
+      customers = (custRes.data || []).map(c => ({ id: c.id, name: c.name, phone: c.phone }));
+      expenses = (expRes.data || []).map(e => ({
+        id: e.id, date: e.created_at.slice(0,10), category: e.category, desc: e.description, amount: Number(e.amount)
+      }));
+      team = teamRes.data || [];
+
+      const salesById = {};
+      (salesRes.data || []).forEach(s => salesById[s.id] = s);
+      salesLog = (itemsRes.data || []).map(li => {
+        const s = salesById[li.sale_id] || {};
+        return {
+          date: (s.created_at || '').slice(0,10), receipt: s.receipt_no, code: li.code, name: li.name,
+          qty: li.qty, price: Number(li.price), vat: Number(li.vat_rate), total: Number(li.line_total),
+          customerId: s.customer_id
+        };
+      });
+      receiptCounter = (salesRes.data || []).length;
+
+      localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({ CATALOG, customers, business }));
+    } catch (e) {
+      showToast('Could not reach the server — using last saved data.');
+      loadFromLocalCache();
+    }
+  } else {
+    loadFromLocalCache();
+  }
+  refreshCartCustomerPicker();
+  renderCatalog();
+  updateLowStockBanner();
+  updatePendingSyncBanner();
+}
+
+function loadFromLocalCache() {
+  try {
+    const raw = localStorage.getItem(LOCAL_CACHE_KEY);
+    if (raw) {
+      const cached = JSON.parse(raw);
+      CATALOG = cached.CATALOG || [];
+      customers = cached.customers || [];
+    }
+  } catch (e) {}
+}
+
+/* =====================================================================
+   PRODUCT LOOKUP / CART
+===================================================================== */
+function findProduct(code) {
+  return CATALOG.find(p => p.code.toLowerCase() === String(code).trim().toLowerCase());
+}
+
+function refreshCartCustomerPicker() {
+  const picker = document.getElementById('cartCustomerPick');
+  const currentVal = picker.value;
+  picker.innerHTML = '<option value="">-- Walk-in customer (no account) --</option>';
+  customers.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name + (c.phone ? ' (' + c.phone + ')' : '');
+    picker.appendChild(opt);
+  });
+  picker.value = currentVal;
+}
+
+function addToCart(product, qty) {
+  qty = qty || 1;
+  const existing = cart.find(i => i.code === product.code);
+  if (existing) existing.qty += qty;
+  else cart.push({ code: product.code, name: product.name, price: product.price, vat: product.vat, qty });
+  renderCart();
+}
+
+function renderCart() {
+  const box = document.getElementById('cartItems');
+  const empty = document.getElementById('cartEmpty');
+  const totals = document.getElementById('cartTotals');
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  const clearBtn = document.getElementById('clearBtn');
+
+  if (cart.length === 0) {
+    empty.style.display = 'block';
+    box.innerHTML = '';
+    totals.style.display = 'none';
+    checkoutBtn.style.display = 'none';
+    clearBtn.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  totals.style.display = 'block';
+  checkoutBtn.style.display = 'block';
+  clearBtn.style.display = 'block';
+
+  box.innerHTML = cart.map((item, idx) => {
+    const lineTotal = item.price * item.qty; // VAT-inclusive
+    return `
+      <div class="cart-item">
+        <div style="flex:1;">
+          <div class="name">${item.name}</div>
+          <div class="meta">KES ${item.price.toFixed(2)} each · VAT ${(item.vat*100).toFixed(0)}%</div>
+        </div>
+        <div class="qty-ctrl">
+          <button onclick="changeQty(${idx},-1)">-</button>
+          <span>${item.qty}</span>
+          <button onclick="changeQty(${idx},1)">+</button>
+        </div>
+        <div class="line-total">${lineTotal.toFixed(2)}</div>
+        <button class="remove-btn" onclick="removeItem(${idx})">✕</button>
+      </div>`;
+  }).join('');
+
+  // VAT is EXTRACTED from the price, not added on top
+  let grand = 0, vatTotal = 0;
+  cart.forEach(item => {
+    const lineTotal = item.price * item.qty;
+    const lineVat = lineTotal - (lineTotal / (1 + item.vat));
+    grand += lineTotal;
+    vatTotal += lineVat;
+  });
+  document.getElementById('totGrand').textContent = 'KES ' + grand.toFixed(2);
+  document.getElementById('totVat').textContent = 'KES ' + vatTotal.toFixed(2);
+}
+
+function changeQty(idx, delta) {
+  cart[idx].qty += delta;
+  if (cart[idx].qty <= 0) cart.splice(idx, 1);
+  renderCart();
+}
+function removeItem(idx) { cart.splice(idx, 1); renderCart(); }
+function clearCart() { cart = []; renderCart(); }
+
+/* =====================================================================
+   SCANNING
+===================================================================== */
+let lastCode = "";
+let lastScanTime = 0;
+function onScanSuccess(decodedText) {
+  const now = Date.now();
+  if (decodedText === lastCode && (now - lastScanTime) < 1500) return;
+  lastCode = decodedText; lastScanTime = now;
+  handleScannedCode(decodedText);
+}
+function onScanFailure() { /* silent - fires continuously while no code is in view */ }
+
+function handleScannedCode(code) {
+  const product = findProduct(code);
+  if (product) {
+    addToCart(product, 1);
+    document.getElementById('scanFeedback').textContent = `Added: ${product.name}`;
+    document.getElementById('scanHint').textContent = `KES ${product.price.toFixed(2)} (VAT incl.) x ${cart.find(i=>i.code===product.code).qty}`;
+    if (navigator.vibrate) navigator.vibrate(80);
+  } else {
+    if (profile.role !== 'admin') {
+      document.getElementById('scanFeedback').textContent = `Unknown code: ${code}`;
+      document.getElementById('scanHint').textContent = `Ask an Admin to add this item to the Catalog first.`;
+      return;
+    }
+    document.getElementById('npCode').textContent = code;
+    document.getElementById('newProductForm').style.display = 'block';
+    document.getElementById('scanFeedback').textContent = `New item scanned: ${code}`;
+    document.getElementById('scanHint').textContent = `Fill in the details below to add it.`;
+  }
+}
+
+document.getElementById('manualCode').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const code = this.value.trim();
+    if (code) { handleScannedCode(code); this.value = ''; }
+  }
+});
+document.getElementById('manualCatalogPick').addEventListener('change', function() {
+  if (this.value) { const p = findProduct(this.value); if (p) addToCart(p, 1); this.value = ''; }
+});
+
+function cancelNewProduct() {
+  document.getElementById('newProductForm').style.display = 'none';
+  document.getElementById('npName').value = '';
+  document.getElementById('npPrice').value = '';
+  document.getElementById('npStock').value = '';
+  document.getElementById('npReorder').value = '';
+}
+
+async function saveNewProduct() {
+  const code = document.getElementById('npCode').textContent.trim();
+  const name = document.getElementById('npName').value.trim();
+  const price = parseFloat(document.getElementById('npPrice').value);
+  const vat = parseFloat(document.getElementById('npVat').value);
+  const stock = parseInt(document.getElementById('npStock').value) || 0;
+  const reorder = parseInt(document.getElementById('npReorder').value) || 0;
+
+  if (!name || isNaN(price) || price < 0) { showToast('Enter a valid name and price'); return; }
+
+  const { data, error } = await sb.from('products').insert({
+    business_id: profile.business_id, code, name, price, vat_rate: vat,
+    stock, reorder_level: reorder, created_by: profile.id
+  }).select().single();
+
+  if (error) { showToast('Could not add product: ' + error.message); return; }
+
+  const product = { id: data.id, code, name, price, vat, stock, reorder, category: 'Other' };
+  CATALOG.push(product);
+  renderCatalog();
+  cancelNewProduct();
+  addToCart(product, 1);
+  showToast('Added "' + name + '" to catalog');
+}
+
+/* =====================================================================
+   CHECKOUT (with offline queue support)
+===================================================================== */
+async function checkout() {
+  if (cart.length === 0) return;
+  const now = new Date();
+  const custId = document.getElementById('cartCustomerPick').value || null;
+  const offlineUuid = crypto.randomUUID ? crypto.randomUUID() : ('o-' + now.getTime() + '-' + Math.random());
+
+  let subtotalExclVat = 0, vatTotal = 0, grand = 0;
+  const lineItems = cart.map(item => {
+    const lineTotal = item.price * item.qty;
+    const lineVat = lineTotal - (lineTotal / (1 + item.vat));
+    subtotalExclVat += (lineTotal - lineVat);
+    vatTotal += lineVat;
+    grand += lineTotal;
+    return { code: item.code, name: item.name, qty: item.qty, price: item.price, vat_rate: item.vat, line_total: +lineTotal.toFixed(2) };
+  });
+
+  receiptCounter++;
+  const receiptNo = 'RC-' + String(receiptCounter).padStart(4, '0');
+
+  const saleRecord = {
+    business_id: profile.business_id, receipt_no: receiptNo, cashier_id: profile.id,
+    customer_id: custId, subtotal_excl_vat: +subtotalExclVat.toFixed(2),
+    vat_total: +vatTotal.toFixed(2), total: +grand.toFixed(2), offline_uuid: offlineUuid,
+    created_at: now.toISOString()
+  };
+
+  // deduct stock locally immediately (optimistic)
+  cart.forEach(item => {
+    const p = findProduct(item.code);
+    if (p) p.stock = Math.max(0, p.stock - item.qty);
+  });
+  renderCatalog();
+  updateLowStockBanner();
+
+  // add to local salesLog display immediately
+  lineItems.forEach(li => {
+    salesLog.unshift({ date: now.toISOString().slice(0,10), receipt: receiptNo, code: li.code, name: li.name, qty: li.qty, price: li.price, vat: li.vat_rate, total: li.line_total, customerId: custId });
+  });
+
+  if (isOnline) {
+    const ok = await pushSaleToServer(saleRecord, lineItems);
+    if (!ok) queueOfflineSale(saleRecord, lineItems);
+  } else {
+    queueOfflineSale(saleRecord, lineItems);
+  }
+
+  showReceipt(receiptNo, cart, subtotalExclVat, vatTotal, grand, now);
+  cart = [];
+  renderCart();
+  document.getElementById('cartCustomerPick').value = '';
+  updatePendingSyncBanner();
+}
+
+async function pushSaleToServer(saleRecord, lineItems) {
+  try {
+    const { data: sale, error: saleErr } = await sb.from('sales').insert(saleRecord).select().single();
+    if (saleErr) throw saleErr;
+    const itemsWithSaleId = lineItems.map(li => ({ ...li, sale_id: sale.id }));
+    const { error: itemsErr } = await sb.from('sale_items').insert(itemsWithSaleId);
+    if (itemsErr) throw itemsErr;
+
+    // persist stock deduction for real
+    for (const item of lineItems) {
+      const p = findProduct(item.code);
+      if (p && p.id) await sb.from('products').update({ stock: p.stock }).eq('id', p.id);
+    }
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function queueOfflineSale(saleRecord, lineItems) {
+  const queue = getOfflineQueue();
+  queue.push({ saleRecord, lineItems });
+  localStorage.setItem(LOCAL_QUEUE_KEY, JSON.stringify(queue));
+}
+function getOfflineQueue() {
+  try { return JSON.parse(localStorage.getItem(LOCAL_QUEUE_KEY) || '[]'); } catch (e) { return []; }
+}
+function updatePendingSyncBanner() {
+  const queue = getOfflineQueue();
+  const banner = document.getElementById('pendingSyncBanner');
+  if (queue.length > 0 && isOnline) {
+    document.getElementById('pendingSyncText').textContent = `${queue.length} sale(s) waiting to sync`;
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+async function syncOfflineSales() {
+  if (!isOnline) { showToast('Still offline — will sync automatically once connected.'); return; }
+  const queue = getOfflineQueue();
+  if (queue.length === 0) return;
+  showToast('Syncing ' + queue.length + ' sale(s)...');
+  const remaining = [];
+  for (const entry of queue) {
+    const ok = await pushSaleToServer(entry.saleRecord, entry.lineItems);
+    if (!ok) remaining.push(entry);
+  }
+  localStorage.setItem(LOCAL_QUEUE_KEY, JSON.stringify(remaining));
+  updatePendingSyncBanner();
+  if (remaining.length === 0) showToast('All sales synced!');
+  else showToast(remaining.length + ' sale(s) still pending.');
+}
+
+window.addEventListener('online', () => { isOnline = true; document.getElementById('offlineBanner').classList.remove('show'); syncOfflineSales(); loadAllData(); });
+window.addEventListener('offline', () => { isOnline = false; document.getElementById('offlineBanner').classList.add('show'); });
+
+/* =====================================================================
+   RECEIPT
+===================================================================== */
+function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now) {
+  let linesHtml = '';
+  items.forEach(item => {
+    const lineTotal = item.price * item.qty;
+    linesHtml += `
+      <div class="receipt-line item-name"><span>${item.name}</span><span></span></div>
+      <div class="receipt-line"><span>${item.qty} x ${item.price.toFixed(2)}</span><span>${lineTotal.toFixed(2)}</span></div>`;
+  });
+  document.getElementById('receiptContent').innerHTML = `
+    <h2>${business.name}</h2>
+    <div class="sub">${business.location || ''} ${business.kra_pin ? '| PIN: ' + business.kra_pin : ''}</div>
+    <div class="sub">Receipt ${receiptNo} · ${now.toLocaleDateString()} ${now.toLocaleTimeString()}</div>
+    <hr>
+    ${linesHtml}
+    <hr>
+    <div class="receipt-line"><span>Subtotal (excl. VAT)</span><span>KES ${subtotal.toFixed(2)}</span></div>
+    <div class="receipt-line"><span>VAT (included above)</span><span>KES ${vatTotal.toFixed(2)}</span></div>
+    <div class="receipt-total"><span>TOTAL PAID</span><span>KES ${grand.toFixed(2)}</span></div>
+    <hr>
+    <div class="sub">Thank you for your business!</div>
+  `;
+  document.getElementById('receiptModal').classList.add('show');
+}
+function closeReceipt() { document.getElementById('receiptModal').classList.remove('show'); }
+
+/* =====================================================================
+   SALES LOG
+===================================================================== */
+function renderLog() {
+  const body = document.getElementById('logBody');
+  const empty = document.getElementById('logEmpty');
+  const table = document.getElementById('logTable');
+  if (salesLog.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; return; }
+  empty.style.display = 'none'; table.style.display = 'table';
+  body.innerHTML = salesLog.slice(0, 200).map(r =>
+    `<tr><td>${r.date}</td><td>${r.receipt}</td><td>${r.name}</td><td>${r.qty}</td><td>${r.total.toFixed(2)}</td></tr>`
+  ).join('');
+}
+
+/* =====================================================================
+   CUSTOMERS
+===================================================================== */
+async function addCustomer() {
+  const name = document.getElementById('custName').value.trim();
+  const phone = document.getElementById('custPhone').value.trim();
+  if (!name) { showToast('Enter a customer name'); return; }
+
+  if (isOnline) {
+    const { data, error } = await sb.from('customers').insert({ business_id: profile.business_id, name, phone }).select().single();
+    if (error) { showToast('Could not add customer: ' + error.message); return; }
+    customers.push({ id: data.id, name, phone });
+  } else {
+    customers.push({ id: 'local-' + Date.now(), name, phone });
+    showToast('Saved locally — will not sync automatically (add again once online if needed)');
+  }
+  document.getElementById('custName').value = '';
+  document.getElementById('custPhone').value = '';
+  renderCustomers();
+  refreshCartCustomerPicker();
+}
+
+function renderCustomers() {
+  const body = document.getElementById('custBody');
+  const empty = document.getElementById('custEmpty');
+  const table = document.getElementById('custTable');
+  if (customers.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; return; }
+  empty.style.display = 'none'; table.style.display = 'table';
+  body.innerHTML = customers.map(c => {
+    const rows = salesLog.filter(r => r.customerId === c.id);
+    const spent = rows.reduce((s, r) => s + r.total, 0);
+    const last = rows.length ? rows[0].date : '—';
+    return `<tr><td>${c.name}</td><td>${c.phone||'—'}</td><td>KES ${spent.toFixed(2)}</td><td>${last}</td></tr>`;
+  }).join('');
+}
+
+/* =====================================================================
+   EXPENSES (teller can insert only; admin can view all)
+===================================================================== */
+async function addExpense() {
+  const desc = document.getElementById('expDesc').value.trim();
+  const category = document.getElementById('expCategory').value;
+  const amount = parseFloat(document.getElementById('expAmount').value);
+  if (!desc || isNaN(amount) || amount <= 0) { showToast('Enter a description and valid amount'); return; }
+
+  const record = { business_id: profile.business_id, category, description: desc, amount, vat_rate: 0, created_by: profile.id };
+  if (isOnline) {
+    const { error } = await sb.from('expenses').insert(record);
+    if (error) { showToast('Could not log expense: ' + error.message); return; }
+    if (profile.role === 'admin') {
+      expenses.unshift({ date: new Date().toISOString().slice(0,10), category, desc, amount });
+    }
+  } else {
+    showToast('Offline — expense not saved. Please log it again once online.');
+    return;
+  }
+  document.getElementById('expDesc').value = '';
+  document.getElementById('expAmount').value = '';
+  renderExpenses();
+  showToast('Expense logged');
+}
+
+function renderExpenses() {
+  if (profile.role !== 'admin') return;
+  const body = document.getElementById('expBody');
+  const empty = document.getElementById('expEmpty');
+  const table = document.getElementById('expTable');
+  if (expenses.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; return; }
+  empty.style.display = 'none'; table.style.display = 'table';
+  body.innerHTML = expenses.map(e =>
+    `<tr><td>${e.date}</td><td>${e.category}</td><td>${e.desc}</td><td>${e.amount.toFixed(2)}</td></tr>`
+  ).join('');
+}
+
+/* =====================================================================
+   DASHBOARD (admin only)
+===================================================================== */
+function renderDashboard() {
+  const today = new Date().toISOString().slice(0,10);
+  const thisMonth = new Date().toISOString().slice(0,7);
+
+  const todaySales = salesLog.filter(r => r.date === today).reduce((s,r) => s + r.total, 0);
+  const monthSalesRows = salesLog.filter(r => r.date.slice(0,7) === thisMonth);
+  const monthSales = monthSalesRows.reduce((s,r) => s + r.total, 0);
+  const outputVat = monthSalesRows.reduce((s,r) => s + (r.total - r.total/(1+r.vat)), 0);
+
+  const monthExpRows = expenses.filter(e => e.date.slice(0,7) === thisMonth);
+  const monthExpenses = monthExpRows.reduce((s,e) => s + e.amount, 0);
+  const inputVat = 0; // expenses here are simple KES amounts without a separate VAT line by default
+
+  document.getElementById('dashTodaySales').textContent = 'KES ' + todaySales.toFixed(2);
+  document.getElementById('dashMonthSales').textContent = 'KES ' + monthSales.toFixed(2);
+  document.getElementById('dashMonthExpenses').textContent = 'KES ' + monthExpenses.toFixed(2);
+  document.getElementById('dashProfit').textContent = 'KES ' + (monthSales - monthExpenses).toFixed(2);
+  document.getElementById('dashOutVat').textContent = 'KES ' + outputVat.toFixed(2);
+  document.getElementById('dashInVat').textContent = 'KES ' + inputVat.toFixed(2);
+  document.getElementById('dashNetVat').textContent = 'KES ' + (outputVat - inputVat).toFixed(2);
+
+  renderLowStockTable();
+}
+
+function getLowStockItems() {
+  return CATALOG.filter(p => (p.reorder||0) > 0 && (p.stock||0) <= p.reorder);
+}
+function renderLowStockTable() {
+  const lowStock = getLowStockItems();
+  const lowBody = document.getElementById('lowStockBody');
+  const lowEmpty = document.getElementById('lowStockEmpty');
+  const lowTable = document.getElementById('lowStockTable');
+  if (lowStock.length === 0) { lowEmpty.style.display = 'block'; lowTable.style.display = 'none'; }
+  else {
+    lowEmpty.style.display = 'none'; lowTable.style.display = 'table';
+    lowBody.innerHTML = lowStock.map(p => `<tr><td>${p.code}</td><td>${p.name}</td><td>${p.stock}</td><td>${p.reorder}</td></tr>`).join('');
+  }
+}
+function updateLowStockBanner() {
+  if (profile.role !== 'admin') return;
+  const lowStock = getLowStockItems();
+  const banner = document.getElementById('lowStockBanner');
+  if (lowStock.length > 0) {
+    document.getElementById('lowStockBannerText').textContent = `${lowStock.length} item(s) low on stock — tap to view`;
+    banner.classList.add('show');
+  } else banner.classList.remove('show');
+}
+
+/* =====================================================================
+   REPORTS (admin only)
+===================================================================== */
+function renderReports() {
+  const byProduct = {};
+  salesLog.forEach(r => {
+    if (!byProduct[r.code]) byProduct[r.code] = { name: r.name, qty: 0, revenue: 0 };
+    byProduct[r.code].qty += r.qty;
+    byProduct[r.code].revenue += r.total;
+  });
+  const top = Object.values(byProduct).sort((a,b) => b.revenue - a.revenue).slice(0, 10);
+  const body = document.getElementById('topSellersBody');
+  const empty = document.getElementById('topSellersEmpty');
+  const table = document.getElementById('topSellersTable');
+  if (top.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; }
+  else {
+    empty.style.display = 'none'; table.style.display = 'table';
+    body.innerHTML = top.map(p => `<tr><td>${p.name}</td><td>${p.qty}</td><td>KES ${p.revenue.toFixed(2)}</td></tr>`).join('');
+  }
+
+  const catRev = {};
+  salesLog.forEach(r => {
+    const p = findProduct(r.code);
+    const cat = (p && p.category) || 'Uncategorized';
+    catRev[cat] = (catRev[cat] || 0) + r.total;
+  });
+  const catBody = document.getElementById('catRevBody');
+  const catEntries = Object.entries(catRev).sort((a,b) => b[1]-a[1]);
+  catBody.innerHTML = catEntries.length
+    ? catEntries.map(([cat, rev]) => `<tr><td>${cat}</td><td>KES ${rev.toFixed(2)}</td></tr>`).join('')
+    : '<tr><td colspan="2" style="text-align:center; color:#888;">No sales recorded yet.</td></tr>';
+}
+
+/* =====================================================================
+   CATALOG (admin only for writes)
+===================================================================== */
+function renderCatalog() {
+  const body = document.getElementById('catalogBody');
+  if (!body) return;
+  body.innerHTML = CATALOG.map(p =>
+    `<tr><td>${p.code}</td><td>${p.name}</td><td>${p.price.toFixed(2)}</td><td>${(p.vat*100).toFixed(0)}%</td><td>${p.stock||0}</td><td>${p.reorder||0}</td></tr>`
+  ).join('');
+
+  const picker = document.getElementById('manualCatalogPick');
+  const restockPicker = document.getElementById('restockPick');
+  if (picker) {
+    picker.innerHTML = '<option value="">-- or pick an item manually --</option>';
+    CATALOG.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.code; opt.textContent = `${p.name} — KES ${p.price.toFixed(2)}`;
+      picker.appendChild(opt);
+    });
+  }
+  if (restockPicker) {
+    restockPicker.innerHTML = '<option value="">-- pick item --</option>';
+    CATALOG.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.code; opt.textContent = `${p.name} (current stock: ${p.stock||0})`;
+      restockPicker.appendChild(opt);
+    });
+  }
+}
+
+async function addProductManually() {
+  const code = document.getElementById('capCode').value.trim();
+  const name = document.getElementById('capName').value.trim();
+  const category = document.getElementById('capCategory').value.trim() || 'Other';
+  const price = parseFloat(document.getElementById('capPrice').value);
+  const vat = parseFloat(document.getElementById('capVat').value);
+  const stock = parseInt(document.getElementById('capStock').value) || 0;
+  const reorder = parseInt(document.getElementById('capReorder').value) || 0;
+
+  if (!code || !name || isNaN(price) || price < 0) { showToast('Fill in code, name, and a valid price'); return; }
+  if (findProduct(code)) { showToast('That code already exists in the catalog'); return; }
+
+  const { data, error } = await sb.from('products').insert({
+    business_id: profile.business_id, code, name, category, price, vat_rate: vat,
+    stock, reorder_level: reorder, created_by: profile.id
+  }).select().single();
+  if (error) { showToast('Could not add product: ' + error.message); return; }
+
+  CATALOG.push({ id: data.id, code, name, category, price, vat, stock, reorder });
+  renderCatalog();
+  updateLowStockBanner();
+  ['capCode','capName','capCategory','capPrice','capStock','capReorder'].forEach(id => document.getElementById(id).value = '');
+  showToast('Added "' + name + '" to catalog');
+}
+
+async function restockItem() {
+  const code = document.getElementById('restockPick').value;
+  const qty = parseInt(document.getElementById('restockQty').value);
+  if (!code) { showToast('Pick an item first'); return; }
+  if (isNaN(qty) || qty <= 0) { showToast('Enter a valid quantity'); return; }
+  const p = findProduct(code);
+  const newStock = (p.stock || 0) + qty;
+
+  const { error } = await sb.from('products').update({ stock: newStock }).eq('id', p.id);
+  if (error) { showToast('Could not restock: ' + error.message); return; }
+
+  p.stock = newStock;
+  renderCatalog();
+  updateLowStockBanner();
+  document.getElementById('restockQty').value = '';
+  showToast(`Restocked ${p.name}: +${qty} (now ${p.stock})`);
+}
+
+/* =====================================================================
+   TEAM (admin only) - creates tellers via secure edge function
+===================================================================== */
+async function addTeller() {
+  const full_name = document.getElementById('tellerName').value.trim();
+  const email = document.getElementById('tellerEmail').value.trim();
+  const password = document.getElementById('tellerPassword').value;
+  if (!full_name || !email || !password) { showToast('Fill in all fields'); return; }
+  if (password.length < 6) { showToast('Password must be at least 6 characters'); return; }
+
+  const resp = await callEdgeFunction('create-teller', { email, password, full_name });
+  if (resp.error) { showToast('Could not create teller: ' + resp.error); return; }
+
+  document.getElementById('tellerName').value = '';
+  document.getElementById('tellerEmail').value = '';
+  document.getElementById('tellerPassword').value = '';
+  showToast('Teller account created for ' + full_name);
+  const { data } = await sb.from('profiles').select('*').eq('business_id', profile.business_id);
+  team = data || [];
+  renderTeam();
+}
+
+function renderTeam() {
+  const body = document.getElementById('teamBody');
+  body.innerHTML = team.map(t =>
+    `<tr><td>${t.full_name || '(unnamed)'}</td><td>${t.role}</td><td>${t.active ? 'Active' : 'Inactive'}</td></tr>`
+  ).join('');
+}
+
+/* =====================================================================
+   SETTINGS (admin only)
+===================================================================== */
+function renderSettingsForm() {
+  document.getElementById('setBizName').value = business.name || '';
+  document.getElementById('setBizSub').value = business.location || '';
+  document.getElementById('setKraPin').value = business.kra_pin || '';
+  document.getElementById('setBizType').value = business.business_type || 'Retail';
+
+  const swatchWrap = document.getElementById('colorSwatches');
+  swatchWrap.innerHTML = THEME_COLORS.map(c => `
+    <div onclick="pickColor('${c}')" style="width:34px; height:34px; border-radius:50%; background:${c};
+      cursor:pointer; border:3px solid ${(business.theme_color||'#1F4E78') === c ? '#333' : 'transparent'};"></div>
+  `).join('');
+
+  const logoWrap = document.getElementById('logoPreviewWrap');
+  logoWrap.innerHTML = business.logo_url
+    ? `<img src="${business.logo_url}" style="max-height:60px; max-width:160px;">`
+    : '<span style="color:#888; font-size:13px;">No logo uploaded</span>';
+}
+
+let pendingThemeColor = null;
+function pickColor(c) {
+  pendingThemeColor = c;
+  const swatchWrap = document.getElementById('colorSwatches');
+  [...swatchWrap.children].forEach((div, i) => {
+    div.style.border = (THEME_COLORS[i] === c) ? '3px solid #333' : '3px solid transparent';
+  });
+}
+
+document.getElementById('setLogoFile').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 300 * 1024) { showToast('Please use a logo under 300KB'); return; }
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    business._pendingLogo = ev.target.result;
+    document.getElementById('logoPreviewWrap').innerHTML = `<img src="${business._pendingLogo}" style="max-height:60px; max-width:160px;">`;
+  };
+  reader.readAsDataURL(file);
+});
+function removeLogo() {
+  business._pendingLogo = null;
+  business.logo_url = null;
+  document.getElementById('setLogoFile').value = '';
+  document.getElementById('logoPreviewWrap').innerHTML = '<span style="color:#888; font-size:13px;">No logo uploaded</span>';
+}
+
+async function saveSettings() {
+  const updates = {
+    name: document.getElementById('setBizName').value.trim() || business.name,
+    location: document.getElementById('setBizSub').value.trim(),
+    kra_pin: document.getElementById('setKraPin').value.trim(),
+    business_type: document.getElementById('setBizType').value,
+    theme_color: pendingThemeColor || business.theme_color || '#1F4E78'
+  };
+  if (business._pendingLogo !== undefined && business._pendingLogo !== null) {
+    updates.logo_url = business._pendingLogo;
+  } else if (business.logo_url === null) {
+    updates.logo_url = null;
+  }
+
+  const { error } = await sb.from('businesses').update(updates).eq('id', business.id);
+  if (error) { showToast('Could not save settings: ' + error.message); return; }
+
+  Object.assign(business, updates);
+  applyBusinessTheme();
+  showToast('Settings saved');
+}
+
+/* =====================================================================
+   CAMERA INIT
+===================================================================== */
+const html5QrcodeScanner = new Html5Qrcode("reader");
+const scanConfig = { fps: 10, qrbox: { width: 220, height: 140 } };
+Html5Qrcode.getCameras().then(cameras => {
+  if (cameras && cameras.length) {
+    let camId = cameras[0].id;
+    const back = cameras.find(c => /back|rear|environment/i.test(c.label));
+    if (back) camId = back.id;
+    html5QrcodeScanner.start(camId, scanConfig, onScanSuccess, onScanFailure).catch(() => {
+      document.getElementById('scanFeedback').textContent = "Could not start camera";
+      document.getElementById('scanHint').textContent = "Use manual entry below instead.";
+    });
+  } else {
+    document.getElementById('scanFeedback').textContent = "No camera found";
+    document.getElementById('scanHint').textContent = "Use manual entry or the dropdown below instead.";
+  }
+}).catch(() => {
+  document.getElementById('scanFeedback').textContent = "Camera permission needed";
+  document.getElementById('scanHint').textContent = "Tap Allow when prompted, or use manual entry below.";
+});
+
+/* =====================================================================
+   PWA install support
+===================================================================== */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+
+/* =====================================================================
+   SESSION RESTORE ON LOAD
+===================================================================== */
+(async function initSession() {
+  const { data } = await sb.auth.getSession();
+  if (data.session) {
+    session = data.session;
+    await afterLogin();
+  }
+})();
+
+sb.auth.onAuthStateChange((event, s) => {
+  if (event === 'SIGNED_OUT') {
+    session = null; profile = null; business = null;
+    document.getElementById('appShell').style.display = 'none';
+    document.getElementById('authScreen').style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>
+
