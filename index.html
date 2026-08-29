@@ -596,6 +596,25 @@
         Callback URL for Safaricom (auto-used): <code>https://uzwomzkzqrpiumtnniik.supabase.co/functions/v1/mpesa-callback</code>
       </p>
     </div>
+
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="font-weight:bold; margin-bottom:8px;">🧾 KRA eTIMS (Tax Fiscalization)</div>
+      <p class="catalog-note" style="color:#666; text-align:left; padding:0;" id="etimsStatusText">Checking status...</p>
+
+      <input type="text" id="etimsKraPin" placeholder="KRA PIN / TIN e.g. A001234567Z">
+      <input type="text" id="etimsBhfId" placeholder="Branch ID (default 00)">
+      <select id="etimsEnv">
+        <option value="false">Sandbox (testing only)</option>
+        <option value="true">Production</option>
+      </select>
+      <button class="btn-green" onclick="saveEtimsSettings()">Save eTIMS Settings</button>
+      <button class="btn-red" onclick="removeEtimsSettings()" style="margin-top:6px;">Remove eTIMS Setup</button>
+      <p class="catalog-note" style="color:#888; text-align:left; padding:0; font-size:11px;">
+        Every sale automatically builds a KRA-compliant fiscalization payload and stores it, ready to submit
+        once your OSCU/VSCU device key is connected. Actual submission to KRA is not yet live — this is the
+        structural groundwork so it's a quick switch-on once you have device credentials.
+      </p>
+    </div>
   </div>
 
 </div><!-- /appShell -->
@@ -950,7 +969,7 @@ function switchTab(name) {
   if (name === 'catalog') renderCatalog();
   if (name === 'team') renderTeam();
   if (name === 'menu') renderMenuTab();
-  if (name === 'settings') { renderSettingsForm(); loadMpesaStatus(); }
+  if (name === 'settings') { renderSettingsForm(); loadMpesaStatus(); loadEtimsStatus(); }
 }
 
 /* =====================================================================
@@ -1286,8 +1305,9 @@ async function checkout() {
   });
 
   if (isOnline) {
-    const ok = await pushSaleToServer(saleRecord, lineItems);
-    if (!ok) queueOfflineSale(saleRecord, lineItems);
+    const sale = await pushSaleToServer(saleRecord, lineItems);
+    if (!sale) queueOfflineSale(saleRecord, lineItems);
+    else callEdgeFunction('etims-submit', { sale_id: sale.id }).catch(() => {}); // fire-and-forget, non-blocking
   } else {
     queueOfflineSale(saleRecord, lineItems);
   }
@@ -1313,9 +1333,9 @@ async function pushSaleToServer(saleRecord, lineItems) {
       const p = findProduct(item.code);
       if (p && p.id) await sb.from('products').update({ stock: p.stock }).eq('id', p.id);
     }
-    return true;
+    return sale;
   } catch (e) {
-    return false;
+    return null;
   }
 }
 
@@ -1885,6 +1905,41 @@ async function removeMpesaSettings() {
   loadMpesaStatus();
 }
 
+async function loadEtimsStatus() {
+  const resp = await callEdgeFunction('etims-settings', { action: 'status' });
+  const statusEl = document.getElementById('etimsStatusText');
+  if (!statusEl) return;
+  if (resp.error) { statusEl.textContent = 'Could not load status.'; return; }
+  if (resp.data) {
+    statusEl.textContent = `✅ Configured — TIN ${resp.data.kra_pin}, Branch ${resp.data.bhf_id} (${resp.data.is_production ? 'Production' : 'Sandbox'}). Live KRA submission is pending device credentials.`;
+    document.getElementById('etimsKraPin').value = resp.data.kra_pin;
+    document.getElementById('etimsBhfId').value = resp.data.bhf_id;
+    document.getElementById('etimsEnv').value = String(resp.data.is_production);
+  } else {
+    statusEl.textContent = '⚠️ Not set up yet — add your KRA PIN below so every sale builds its fiscalization payload.';
+  }
+}
+
+async function saveEtimsSettings() {
+  const kra_pin = document.getElementById('etimsKraPin').value.trim();
+  const bhf_id = document.getElementById('etimsBhfId').value.trim() || '00';
+  const is_production = document.getElementById('etimsEnv').value === 'true';
+
+  if (!kra_pin) { showToast('Enter the business KRA PIN (TIN)'); return; }
+  const resp = await callEdgeFunction('etims-settings', { action: 'save', kra_pin, bhf_id, is_production });
+  if (resp.error) { showToast('Could not save: ' + resp.error); return; }
+  showToast('eTIMS settings saved');
+  loadEtimsStatus();
+}
+
+async function removeEtimsSettings() {
+  if (!confirm('Remove eTIMS setup for this business?')) return;
+  const resp = await callEdgeFunction('etims-settings', { action: 'remove' });
+  if (resp.error) { showToast('Could not remove: ' + resp.error); return; }
+  showToast('eTIMS setup removed');
+  loadEtimsStatus();
+}
+
 /* =====================================================================
    M-PESA CHECKOUT FLOW (STK Push + polling for confirmation)
 ===================================================================== */
@@ -1997,7 +2052,8 @@ async function completeMpesaSale(paymentRequest) {
     salesLog.unshift({ date: now.toISOString().slice(0,10), receipt: receiptNo, code: li.code, name: li.name, qty: li.qty, price: li.price, vat: li.vat_rate, total: li.line_total, customerId: custId });
   });
 
-  await pushSaleToServer(saleRecord, lineItems);
+  const sale = await pushSaleToServer(saleRecord, lineItems);
+  if (sale) callEdgeFunction('etims-submit', { sale_id: sale.id }).catch(() => {}); // fire-and-forget, non-blocking
   logAudit('sale.create', { receipt: receiptNo, total: +grand.toFixed(2), item_count: cart.length, payment_method: 'mpesa', mpesa_receipt: paymentRequest.mpesa_receipt });
 
   showReceipt(receiptNo, cart, subtotalExclVat, vatTotal, grand, now, paymentRequest.mpesa_receipt);
