@@ -300,6 +300,19 @@
 
   <!-- ================= SELL TAB ================= -->
   <div class="panel active" id="tab-sell">
+    <div class="cart-box" id="shiftBanner" style="margin-bottom:10px;">
+      <div id="shiftClosedView">
+        <div style="font-weight:bold; margin-bottom:6px;">🕐 No open shift</div>
+        <input type="number" id="openingFloat" placeholder="Opening cash float, KES" step="0.01">
+        <button class="btn-green" onclick="openShift()">Open Shift</button>
+      </div>
+      <div id="shiftOpenView" style="display:none;">
+        <div style="font-weight:bold; margin-bottom:4px;">🕐 Shift open — <span id="shiftOpenedAt"></span></div>
+        <div style="font-size:13px; color:#555; margin-bottom:8px;">Opening float: KES <span id="shiftFloatDisplay"></span></div>
+        <button class="btn-red" onclick="closeShift()">Close Shift</button>
+      </div>
+    </div>
+
     <div id="reader"></div>
     <div class="scan-status">
       <div class="code" id="scanFeedback">Point camera at a barcode</div>
@@ -401,6 +414,14 @@
         <tbody id="tellerPerfBody"></tbody>
       </table>
       <div class="empty-note" id="tellerPerfEmpty">No sales recorded yet this month.</div>
+    </div>
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="font-weight:bold; margin-bottom:8px;">🕐 Recent Shifts (cash reconciliation)</div>
+      <table class="log-table" id="shiftsTable">
+        <thead><tr><th>Teller</th><th>Opened</th><th>Closed</th><th>Expected</th><th>Actual</th><th>Variance</th></tr></thead>
+        <tbody id="shiftsBody"></tbody>
+      </table>
+      <div class="empty-note" id="shiftsEmpty">No shifts closed yet.</div>
     </div>
   </div>
 
@@ -653,6 +674,8 @@ let salesLog = [];     // flattened line items, loaded from Supabase (+ any stil
 let expenses = [];
 let team = [];
 let hotelTables = [];
+let allShifts = [];
+let currentShift = null;
 let cart = [];
 let receiptCounter = 0;
 let isOnline = navigator.onLine;
@@ -961,6 +984,7 @@ function switchTab(name) {
   const btn = document.querySelector(`.tab-btn[data-tab="${name}"]`);
   if (btn) btn.classList.add('active');
 
+  if (name === 'sell') renderShiftBanner();
   if (name === 'log') renderLog();
   if (name === 'expenses') renderExpenses();
   if (name === 'dash') renderDashboard();
@@ -978,7 +1002,7 @@ function switchTab(name) {
 async function loadAllData() {
   if (isOnline) {
     try {
-      const [prodRes, custRes, salesRes, itemsRes, expRes, teamRes, tablesRes] = await Promise.all([
+      const [prodRes, custRes, salesRes, itemsRes, expRes, teamRes, tablesRes, shiftsRes] = await Promise.all([
         sb.from('products').select('*').order('name'),
         sb.from('customers').select('*').order('name'),
         sb.from('sales').select('*').order('created_at', { ascending: false }),
@@ -986,6 +1010,7 @@ async function loadAllData() {
         profile.role === 'admin' ? sb.from('expenses').select('*').order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
         profile.role === 'admin' ? sb.from('profiles').select('*') : Promise.resolve({ data: [] }),
         (profile.role === 'admin' && business && business.business_type === 'Hotel') ? sb.from('tables').select('*').order('created_at') : Promise.resolve({ data: [] }),
+        sb.from('shift_sessions').select('*').order('created_at', { ascending: false }).limit(50),
       ]);
       CATALOG = (prodRes.data || []).map(p => ({
         id: p.id, code: p.code, name: p.name, category: p.category, price: Number(p.price),
@@ -997,6 +1022,8 @@ async function loadAllData() {
       }));
       team = teamRes.data || [];
       hotelTables = tablesRes.data || [];
+      allShifts = shiftsRes.data || [];
+      currentShift = allShifts.find(s => s.user_id === profile.id && s.status === 'OPEN') || null;
 
       const salesById = {};
       (salesRes.data || []).forEach(s => salesById[s.id] = s);
@@ -1005,7 +1032,7 @@ async function loadAllData() {
         return {
           date: (s.created_at || '').slice(0,10), receipt: s.receipt_no, code: li.code, name: li.name,
           qty: li.qty, price: Number(li.price), vat: Number(li.vat_rate), total: Number(li.line_total),
-          customerId: s.customer_id, cashierId: s.cashier_id
+          customerId: s.customer_id, cashierId: s.cashier_id, paymentMethod: s.payment_method || 'cash'
         };
       });
       receiptCounter = (salesRes.data || []).length;
@@ -1288,7 +1315,7 @@ async function checkout() {
     business_id: profile.business_id, receipt_no: receiptNo, cashier_id: profile.id,
     customer_id: custId, subtotal_excl_vat: +subtotalExclVat.toFixed(2),
     vat_total: +vatTotal.toFixed(2), total: +grand.toFixed(2), offline_uuid: offlineUuid,
-    created_at: now.toISOString()
+    created_at: now.toISOString(), payment_method: 'cash', shift_id: currentShift ? currentShift.id : null
   };
 
   // deduct stock locally immediately (optimistic)
@@ -1301,7 +1328,7 @@ async function checkout() {
 
   // add to local salesLog display immediately
   lineItems.forEach(li => {
-    salesLog.unshift({ date: now.toISOString().slice(0,10), receipt: receiptNo, code: li.code, name: li.name, qty: li.qty, price: li.price, vat: li.vat_rate, total: li.line_total, customerId: custId });
+    salesLog.unshift({ date: now.toISOString().slice(0,10), receipt: receiptNo, code: li.code, name: li.name, qty: li.qty, price: li.price, vat: li.vat_rate, total: li.line_total, customerId: custId, cashierId: profile.id, paymentMethod: 'cash' });
   });
 
   if (isOnline) {
@@ -1519,6 +1546,7 @@ function renderDashboard() {
 
   renderLowStockTable();
   renderTellerPerformance(monthSalesRows);
+  renderShiftsTable();
 }
 
 function renderTellerPerformance(monthSalesRows) {
@@ -1546,6 +1574,80 @@ function renderTellerPerformance(monthSalesRows) {
     empty.style.display = 'none'; table.style.display = 'table';
     body.innerHTML = rows.map(r => `<tr><td>${r.name}</td><td>${r.salesCount}</td><td>${r.total.toFixed(2)}</td></tr>`).join('');
   }
+}
+
+/* =====================================================================
+   SHIFT SESSIONS (open/close till, cash reconciliation)
+===================================================================== */
+function renderShiftBanner() {
+  const closedView = document.getElementById('shiftClosedView');
+  const openView = document.getElementById('shiftOpenView');
+  if (!closedView) return;
+  if (currentShift) {
+    closedView.style.display = 'none';
+    openView.style.display = 'block';
+    document.getElementById('shiftOpenedAt').textContent = new Date(currentShift.created_at).toLocaleString();
+    document.getElementById('shiftFloatDisplay').textContent = Number(currentShift.opening_float).toFixed(2);
+  } else {
+    closedView.style.display = 'block';
+    openView.style.display = 'none';
+  }
+}
+
+async function openShift() {
+  const floatVal = parseFloat(document.getElementById('openingFloat').value) || 0;
+  const { data, error } = await sb.from('shift_sessions').insert({
+    business_id: profile.business_id, user_id: profile.id, opening_float: floatVal, status: 'OPEN'
+  }).select().single();
+  if (error) { showToast('Could not open shift: ' + error.message); return; }
+  currentShift = data;
+  allShifts.unshift(data);
+  document.getElementById('openingFloat').value = '';
+  renderShiftBanner();
+  showToast('Shift opened with float KES ' + floatVal.toFixed(2));
+}
+
+async function closeShift() {
+  if (!currentShift) return;
+  // expected cash = opening float + cash-only sales made by this user since the shift opened
+  const cashSalesTotal = salesLog
+    .filter(r => r.cashierId === profile.id && new Date(r.date + 'T00:00:00') >= new Date(currentShift.created_at.slice(0,10) + 'T00:00:00') && (r.paymentMethod || 'cash') === 'cash')
+    .reduce((sum, r) => sum + r.total, 0);
+  const expected = Number(currentShift.opening_float) + cashSalesTotal;
+
+  const actualStr = prompt(`Expected cash in drawer: KES ${expected.toFixed(2)}\n\nCount the drawer and enter the actual cash amount:`);
+  if (actualStr === null) return;
+  const actual = parseFloat(actualStr);
+  if (isNaN(actual)) { showToast('Enter a valid number'); return; }
+
+  const variance = +(actual - expected).toFixed(2);
+  const { error } = await sb.from('shift_sessions').update({
+    expected_cash: +expected.toFixed(2), actual_cash: actual, cash_variance: variance,
+    status: 'CLOSED', closed_at: new Date().toISOString()
+  }).eq('id', currentShift.id);
+  if (error) { showToast('Could not close shift: ' + error.message); return; }
+
+  showToast(variance === 0 ? 'Shift closed — drawer balanced ✅' : `Shift closed — variance KES ${variance.toFixed(2)}`);
+  currentShift = null;
+  await loadAllData();
+  renderShiftBanner();
+}
+
+function renderShiftsTable() {
+  const body = document.getElementById('shiftsBody');
+  const empty = document.getElementById('shiftsEmpty');
+  const table = document.getElementById('shiftsTable');
+  if (!body) return;
+  const closed = allShifts.filter(s => s.status === 'CLOSED').slice(0, 20);
+  if (closed.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; return; }
+  empty.style.display = 'none'; table.style.display = 'table';
+  body.innerHTML = closed.map(s => {
+    const member = team.find(t => t.id === s.user_id);
+    const name = member ? (member.full_name || 'Unnamed') : 'Unknown';
+    const variance = Number(s.cash_variance || 0);
+    const varColor = variance === 0 ? '#2e9e5b' : '#c0392b';
+    return `<tr><td>${name}</td><td>${new Date(s.created_at).toLocaleString()}</td><td>${s.closed_at ? new Date(s.closed_at).toLocaleString() : ''}</td><td>${Number(s.expected_cash||0).toFixed(2)}</td><td>${Number(s.actual_cash||0).toFixed(2)}</td><td style="color:${varColor}; font-weight:bold;">${variance.toFixed(2)}</td></tr>`;
+  }).join('');
 }
 
 function getLowStockItems() {
@@ -2038,7 +2140,8 @@ async function completeMpesaSale(paymentRequest) {
     business_id: profile.business_id, receipt_no: receiptNo, cashier_id: profile.id,
     customer_id: custId, subtotal_excl_vat: +subtotalExclVat.toFixed(2),
     vat_total: +vatTotal.toFixed(2), total: +grand.toFixed(2), offline_uuid: offlineUuid,
-    created_at: now.toISOString()
+    created_at: now.toISOString(), payment_method: 'mpesa', mpesa_receipt_no: paymentRequest.mpesa_receipt || null,
+    shift_id: currentShift ? currentShift.id : null
   };
 
   cart.forEach(item => {
@@ -2049,7 +2152,7 @@ async function completeMpesaSale(paymentRequest) {
   updateLowStockBanner();
 
   lineItems.forEach(li => {
-    salesLog.unshift({ date: now.toISOString().slice(0,10), receipt: receiptNo, code: li.code, name: li.name, qty: li.qty, price: li.price, vat: li.vat_rate, total: li.line_total, customerId: custId });
+    salesLog.unshift({ date: now.toISOString().slice(0,10), receipt: receiptNo, code: li.code, name: li.name, qty: li.qty, price: li.price, vat: li.vat_rate, total: li.line_total, customerId: custId, cashierId: profile.id, paymentMethod: 'mpesa' });
   });
 
   const sale = await pushSaleToServer(saleRecord, lineItems);
