@@ -12,6 +12,7 @@
 <title>Dogo POS</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <style>
   :root { --brand: #1F4E78; }
   * { box-sizing: border-box; }
@@ -208,6 +209,7 @@
         <option value="SME">SME / General Business</option>
         <option value="Hotel">Hotel / Restaurant</option>
         <option value="Hardware">Hardware Store</option>
+        <option value="Kiosk">Kiosk / Kibanda</option>
       </select>
 
       <label>Your Full Name</label>
@@ -286,6 +288,7 @@
   <div class="tabs" id="mainTabs">
     <button class="tab-btn active" data-tab="sell" onclick="switchTab('sell')">Sell</button>
     <button class="tab-btn" data-tab="dash" data-admin-only="1" onclick="switchTab('dash')">Dashboard</button>
+    <button class="tab-btn" data-tab="menu" data-admin-only="1" data-hotel-only="1" style="display:none;" onclick="switchTab('menu')">Menu &amp; Tables</button>
     <button class="tab-btn" data-tab="log" onclick="switchTab('log')">Sales Log</button>
     <button class="tab-btn" data-tab="customers" onclick="switchTab('customers')">Customers</button>
     <button class="tab-btn" data-tab="reports" data-admin-only="1" onclick="switchTab('reports')">Reports</button>
@@ -306,6 +309,10 @@
     <input type="text" id="manualCode" placeholder="No scanner? Type code + Enter">
     <select id="manualCatalogPick"><option value="">-- or pick an item manually --</option></select>
 
+    <input type="file" id="photoScanInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoScan(this.files[0])">
+    <button class="btn-blue" onclick="document.getElementById('photoScanInput').click()">📷 Scan Item Photo (barcode or label)</button>
+    <div id="fileScanReader" style="display:none;"></div>
+
     <div class="cart-box" id="newProductForm" style="display:none; margin-top:10px;">
       <div style="font-weight:bold; margin-bottom:6px;">🆕 New item: <span id="npCode"></span></div>
       <input type="text" id="npName" placeholder="Item name">
@@ -313,6 +320,12 @@
       <select id="npVat">
         <option value="0.16">VAT 16% (standard)</option>
         <option value="0">No VAT (exempt/zero-rated)</option>
+      </select>
+      <select id="npUnit">
+        <option value="piece">Piece</option>
+        <option value="kg">Kilogram (kg)</option>
+        <option value="g">Gram (g)</option>
+        <option value="litre">Litre</option>
       </select>
       <input type="number" id="npStock" placeholder="Opening stock quantity" step="1">
       <input type="number" id="npReorder" placeholder="Reorder alert level" step="1">
@@ -380,6 +393,30 @@
         <tbody id="lowStockBody"></tbody>
       </table>
       <div class="empty-note" id="lowStockEmpty">Nothing low on stock right now.</div>
+    </div>
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="font-weight:bold; margin-bottom:8px;">👥 Team Performance (this month)</div>
+      <table class="log-table" id="tellerPerfTable">
+        <thead><tr><th>Teller</th><th>Sales</th><th>Total (KES)</th></tr></thead>
+        <tbody id="tellerPerfBody"></tbody>
+      </table>
+      <div class="empty-note" id="tellerPerfEmpty">No sales recorded yet this month.</div>
+    </div>
+  </div>
+
+  <!-- ================= MENU & TABLES TAB (Hotel/Restaurant only) ================= -->
+  <div class="panel" id="tab-menu">
+    <div class="cart-box">
+      <div style="font-weight:bold; margin-bottom:8px;">🍽️ Menu (grouped by category)</div>
+      <div id="menuGroupedView"></div>
+      <div class="empty-note" id="menuGroupedEmpty">No menu items yet — add them from the Catalog tab (each item's Category becomes its menu section).</div>
+    </div>
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="font-weight:bold; margin-bottom:8px;">🪑 Tables</div>
+      <input type="text" id="tableName" placeholder="Table number/name e.g. T1, Patio 2">
+      <button class="btn-green" onclick="addTable()">Add Table</button>
+      <div id="tablesGrid" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
+      <div class="empty-note" id="tablesEmpty">No tables added yet.</div>
     </div>
   </div>
 
@@ -465,6 +502,12 @@
         <option value="0.16">VAT 16% (standard)</option>
         <option value="0">No VAT (exempt/zero-rated)</option>
       </select>
+      <select id="capUnit">
+        <option value="piece">Piece</option>
+        <option value="kg">Kilogram (kg)</option>
+        <option value="g">Gram (g)</option>
+        <option value="litre">Litre</option>
+      </select>
       <input type="number" id="capStock" placeholder="Opening stock" step="1">
       <input type="number" id="capReorder" placeholder="Reorder alert level" step="1">
       <button class="btn-green" onclick="addProductManually()">Add Product</button>
@@ -477,7 +520,7 @@
     </div>
     <div class="cart-box" style="margin-top:14px;">
       <table class="log-table" id="catalogTable">
-        <thead><tr><th>Code</th><th>Name</th><th>Price</th><th>VAT</th><th>Stock</th><th>Reorder</th></tr></thead>
+        <thead><tr><th>Code</th><th>Name</th><th>Price</th><th>Unit</th><th>VAT</th><th>Stock</th><th>Reorder</th></tr></thead>
         <tbody id="catalogBody"></tbody>
       </table>
     </div>
@@ -516,6 +559,7 @@
         <option value="SME">SME / General Business</option>
         <option value="Hotel">Hotel / Restaurant</option>
         <option value="Hardware">Hardware Store</option>
+        <option value="Kiosk">Kiosk / Kibanda</option>
       </select>
 
       <div style="font-weight:bold; margin:14px 0 8px;">🎨 Theme Color</div>
@@ -589,6 +633,7 @@ let customers = [];
 let salesLog = [];     // flattened line items, loaded from Supabase (+ any still-offline queued ones)
 let expenses = [];
 let team = [];
+let hotelTables = [];
 let cart = [];
 let receiptCounter = 0;
 let isOnline = navigator.onLine;
@@ -797,6 +842,7 @@ async function handleLogin() {
 
 async function handleLogout() {
   await sb.auth.signOut();
+  stopScanner();
   session = null; profile = null; business = null;
   document.getElementById('appShell').style.display = 'none';
   document.getElementById('authScreen').style.display = 'block';
@@ -851,6 +897,7 @@ async function afterLogin() {
   await loadAllData();
   switchTab('sell');
   resetInactivityTimer();
+  initScanner();
 }
 
 function applyRoleVisibility() {
@@ -873,6 +920,13 @@ function applyBusinessTheme() {
   logoWrap.innerHTML = business.logo_url
     ? `<img src="${business.logo_url}" style="max-height:44px; max-width:130px; display:block; margin:0 auto 4px;">`
     : '';
+
+  // Hotel/Restaurant-only tabs: applyRoleVisibility() already ran and may have
+  // reset [data-admin-only] elements to visible - re-apply the business-type gate on top.
+  const isAdmin = profile.role === 'admin';
+  document.querySelectorAll('[data-hotel-only]').forEach(el => {
+    el.style.display = (isAdmin && business.business_type === 'Hotel') ? '' : 'none';
+  });
 }
 
 /* =====================================================================
@@ -895,6 +949,7 @@ function switchTab(name) {
   if (name === 'reports') renderReports();
   if (name === 'catalog') renderCatalog();
   if (name === 'team') renderTeam();
+  if (name === 'menu') renderMenuTab();
   if (name === 'settings') { renderSettingsForm(); loadMpesaStatus(); }
 }
 
@@ -904,23 +959,25 @@ function switchTab(name) {
 async function loadAllData() {
   if (isOnline) {
     try {
-      const [prodRes, custRes, salesRes, itemsRes, expRes, teamRes] = await Promise.all([
+      const [prodRes, custRes, salesRes, itemsRes, expRes, teamRes, tablesRes] = await Promise.all([
         sb.from('products').select('*').order('name'),
         sb.from('customers').select('*').order('name'),
         sb.from('sales').select('*').order('created_at', { ascending: false }),
         sb.from('sale_items').select('*'),
         profile.role === 'admin' ? sb.from('expenses').select('*').order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
         profile.role === 'admin' ? sb.from('profiles').select('*') : Promise.resolve({ data: [] }),
+        (profile.role === 'admin' && business && business.business_type === 'Hotel') ? sb.from('tables').select('*').order('created_at') : Promise.resolve({ data: [] }),
       ]);
       CATALOG = (prodRes.data || []).map(p => ({
         id: p.id, code: p.code, name: p.name, category: p.category, price: Number(p.price),
-        vat: Number(p.vat_rate), stock: p.stock, reorder: p.reorder_level
+        vat: Number(p.vat_rate), stock: p.stock, reorder: p.reorder_level, unit: p.unit || 'piece'
       }));
       customers = (custRes.data || []).map(c => ({ id: c.id, name: c.name, phone: c.phone }));
       expenses = (expRes.data || []).map(e => ({
         id: e.id, date: e.created_at.slice(0,10), category: e.category, desc: e.description, amount: Number(e.amount)
       }));
       team = teamRes.data || [];
+      hotelTables = tablesRes.data || [];
 
       const salesById = {};
       (salesRes.data || []).forEach(s => salesById[s.id] = s);
@@ -929,7 +986,7 @@ async function loadAllData() {
         return {
           date: (s.created_at || '').slice(0,10), receipt: s.receipt_no, code: li.code, name: li.name,
           qty: li.qty, price: Number(li.price), vat: Number(li.vat_rate), total: Number(li.line_total),
-          customerId: s.customer_id
+          customerId: s.customer_id, cashierId: s.cashier_id
         };
       });
       receiptCounter = (salesRes.data || []).length;
@@ -983,7 +1040,7 @@ function addToCart(product, qty) {
   qty = qty || 1;
   const existing = cart.find(i => i.code === product.code);
   if (existing) existing.qty += qty;
-  else cart.push({ code: product.code, name: product.name, price: product.price, vat: product.vat, qty });
+  else cart.push({ code: product.code, name: product.name, price: product.price, vat: product.vat, unit: product.unit || 'piece', qty });
   renderCart();
 }
 
@@ -1019,7 +1076,7 @@ function renderCart() {
         </div>
         <div class="qty-ctrl">
           <button onclick="changeQty(${idx},-1)">-</button>
-          <span>${item.qty}</span>
+          <span>${item.qty} ${item.unit && item.unit !== 'piece' ? item.unit : ''}</span>
           <button onclick="changeQty(${idx},1)">+</button>
         </div>
         <div class="line-total">${lineTotal.toFixed(2)}</div>
@@ -1080,6 +1137,68 @@ function handleScannedCode(code) {
   }
 }
 
+/* =====================================================================
+   PHOTO SCAN (barcode-from-photo, with OCR label-matching fallback)
+===================================================================== */
+let fileScanner = null;
+
+async function handlePhotoScan(file) {
+  if (!file) return;
+  document.getElementById('scanFeedback').textContent = 'Reading photo...';
+  document.getElementById('scanHint').textContent = 'Checking for a barcode first...';
+
+  if (!fileScanner) fileScanner = new Html5Qrcode('fileScanReader');
+
+  try {
+    const decodedText = await fileScanner.scanFile(file, false);
+    document.getElementById('photoScanInput').value = '';
+    handleScannedCode(decodedText);
+    return;
+  } catch (e) {
+    // No barcode found in the photo - fall back to OCR label matching
+  }
+
+  document.getElementById('scanFeedback').textContent = 'No barcode found — reading label text...';
+  document.getElementById('scanHint').textContent = 'This can take a few seconds.';
+
+  try {
+    const { data: { text } } = await Tesseract.recognize(file, 'eng');
+    document.getElementById('photoScanInput').value = '';
+    matchOcrTextToCatalog(text);
+  } catch (e) {
+    document.getElementById('scanFeedback').textContent = 'Could not read the photo';
+    document.getElementById('scanHint').textContent = 'Try again with better lighting, or use manual entry below.';
+    document.getElementById('photoScanInput').value = '';
+  }
+}
+
+function matchOcrTextToCatalog(ocrText) {
+  const normalized = ocrText.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!normalized) {
+    document.getElementById('scanFeedback').textContent = 'No readable text found';
+    document.getElementById('scanHint').textContent = 'Try manual entry below.';
+    return;
+  }
+
+  const matches = CATALOG.filter(p => {
+    const pname = p.name.toLowerCase();
+    return normalized.includes(pname) || pname.split(' ').every(word => word.length > 2 && normalized.includes(word));
+  });
+
+  if (matches.length === 1) {
+    addToCart(matches[0], 1);
+    document.getElementById('scanFeedback').textContent = `Matched via label: ${matches[0].name}`;
+    document.getElementById('scanHint').textContent = `KES ${matches[0].price.toFixed(2)} (VAT incl.)`;
+    if (navigator.vibrate) navigator.vibrate(80);
+  } else if (matches.length > 1) {
+    document.getElementById('scanFeedback').textContent = `Found ${matches.length} possible matches`;
+    document.getElementById('scanHint').textContent = `Pick the right one: ${matches.map(m => m.name).join(', ')} — use the dropdown below.`;
+  } else {
+    document.getElementById('scanFeedback').textContent = "Couldn't match the label to a catalog item";
+    document.getElementById('scanHint').textContent = 'Try manual entry or the dropdown below instead.';
+  }
+}
+
 document.getElementById('manualCode').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {
     const code = this.value.trim();
@@ -1103,19 +1222,20 @@ async function saveNewProduct() {
   const name = document.getElementById('npName').value.trim();
   const price = parseFloat(document.getElementById('npPrice').value);
   const vat = parseFloat(document.getElementById('npVat').value);
+  const unit = document.getElementById('npUnit').value;
   const stock = parseInt(document.getElementById('npStock').value) || 0;
   const reorder = parseInt(document.getElementById('npReorder').value) || 0;
 
   if (!name || isNaN(price) || price < 0) { showToast('Enter a valid name and price'); return; }
 
   const { data, error } = await sb.from('products').insert({
-    business_id: profile.business_id, code, name, price, vat_rate: vat,
+    business_id: profile.business_id, code, name, price, vat_rate: vat, unit,
     stock, reorder_level: reorder, created_by: profile.id
   }).select().single();
 
   if (error) { showToast('Could not add product: ' + error.message); return; }
 
-  const product = { id: data.id, code, name, price, vat, stock, reorder, category: 'Other' };
+  const product = { id: data.id, code, name, price, vat, stock, reorder, unit, category: 'Other' };
   CATALOG.push(product);
   renderCatalog();
   cancelNewProduct();
@@ -1139,7 +1259,7 @@ async function checkout() {
     subtotalExclVat += (lineTotal - lineVat);
     vatTotal += lineVat;
     grand += lineTotal;
-    return { code: item.code, name: item.name, qty: item.qty, price: item.price, vat_rate: item.vat, line_total: +lineTotal.toFixed(2) };
+    return { code: item.code, name: item.name, qty: item.qty, price: item.price, vat_rate: item.vat, unit: item.unit || "piece", line_total: +lineTotal.toFixed(2) };
   });
 
   receiptCounter++;
@@ -1245,7 +1365,7 @@ function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaRece
     const lineTotal = item.price * item.qty;
     linesHtml += `
       <div class="receipt-line item-name"><span>${item.name}</span><span></span></div>
-      <div class="receipt-line"><span>${item.qty} x ${item.price.toFixed(2)}</span><span>${lineTotal.toFixed(2)}</span></div>`;
+      <div class="receipt-line"><span>${item.qty}${item.unit && item.unit !== 'piece' ? ' ' + item.unit : ''} x ${item.price.toFixed(2)}</span><span>${lineTotal.toFixed(2)}</span></div>`;
   });
   document.getElementById('receiptContent').innerHTML = `
     <h2>${business.name}</h2>
@@ -1378,6 +1498,34 @@ function renderDashboard() {
   document.getElementById('dashNetVat').textContent = 'KES ' + (outputVat - inputVat).toFixed(2);
 
   renderLowStockTable();
+  renderTellerPerformance(monthSalesRows);
+}
+
+function renderTellerPerformance(monthSalesRows) {
+  const body = document.getElementById('tellerPerfBody');
+  const empty = document.getElementById('tellerPerfEmpty');
+  const table = document.getElementById('tellerPerfTable');
+  if (!body) return;
+
+  const byTeller = {}; // cashierId -> { receipts: Set, total: number }
+  monthSalesRows.forEach(r => {
+    const id = r.cashierId || 'unknown';
+    if (!byTeller[id]) byTeller[id] = { receipts: new Set(), total: 0 };
+    byTeller[id].receipts.add(r.receipt);
+    byTeller[id].total += r.total;
+  });
+
+  const rows = Object.entries(byTeller).map(([id, d]) => {
+    const member = team.find(t => t.id === id);
+    const name = member ? (member.full_name || 'Unnamed') + (member.role === 'admin' ? ' (Admin)' : ' (Teller)') : 'Unknown user';
+    return { name, salesCount: d.receipts.size, total: d.total };
+  }).sort((a,b) => b.total - a.total);
+
+  if (rows.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; }
+  else {
+    empty.style.display = 'none'; table.style.display = 'table';
+    body.innerHTML = rows.map(r => `<tr><td>${r.name}</td><td>${r.salesCount}</td><td>${r.total.toFixed(2)}</td></tr>`).join('');
+  }
 }
 
 function getLowStockItems() {
@@ -1414,7 +1562,7 @@ function renderReports() {
     byProduct[r.code].qty += r.qty;
     byProduct[r.code].revenue += r.total;
   });
-  const top = Object.values(byProduct).sort((a,b) => b.revenue - a.revenue).slice(0, 10);
+  const top = Object.values(byProduct).sort((a,b) => b.qty - a.qty).slice(0, 10);
   const body = document.getElementById('topSellersBody');
   const empty = document.getElementById('topSellersEmpty');
   const table = document.getElementById('topSellersTable');
@@ -1444,7 +1592,7 @@ function renderCatalog() {
   const body = document.getElementById('catalogBody');
   if (!body) return;
   body.innerHTML = CATALOG.map(p =>
-    `<tr><td>${p.code}</td><td>${p.name}</td><td>${p.price.toFixed(2)}</td><td>${(p.vat*100).toFixed(0)}%</td><td>${p.stock||0}</td><td>${p.reorder||0}</td></tr>`
+    `<tr><td>${p.code}</td><td>${p.name}</td><td>${p.price.toFixed(2)}</td><td>${p.unit||'piece'}</td><td>${(p.vat*100).toFixed(0)}%</td><td>${p.stock||0}</td><td>${p.reorder||0}</td></tr>`
   ).join('');
 
   const picker = document.getElementById('manualCatalogPick');
@@ -1473,6 +1621,7 @@ async function addProductManually() {
   const category = document.getElementById('capCategory').value.trim() || 'Other';
   const price = parseFloat(document.getElementById('capPrice').value);
   const vat = parseFloat(document.getElementById('capVat').value);
+  const unit = document.getElementById('capUnit').value;
   const stock = parseInt(document.getElementById('capStock').value) || 0;
   const reorder = parseInt(document.getElementById('capReorder').value) || 0;
 
@@ -1480,15 +1629,15 @@ async function addProductManually() {
   if (findProduct(code)) { showToast('That code already exists in the catalog'); return; }
 
   const { data, error } = await sb.from('products').insert({
-    business_id: profile.business_id, code, name, category, price, vat_rate: vat,
+    business_id: profile.business_id, code, name, category, price, vat_rate: vat, unit,
     stock, reorder_level: reorder, created_by: profile.id
   }).select().single();
   if (error) { showToast('Could not add product: ' + error.message); return; }
 
-  CATALOG.push({ id: data.id, code, name, category, price, vat, stock, reorder });
+  CATALOG.push({ id: data.id, code, name, category, price, vat, stock, reorder, unit });
   renderCatalog();
   updateLowStockBanner();
-  logAudit('product.create', { code, name, price });
+  logAudit('product.create', { code, name, price, unit });
   ['capCode','capName','capCategory','capPrice','capStock','capReorder'].forEach(id => document.getElementById(id).value = '');
   showToast('Added "' + name + '" to catalog');
 }
@@ -1540,6 +1689,85 @@ function renderTeam() {
   body.innerHTML = team.map(t =>
     `<tr><td>${t.full_name || '(unnamed)'}</td><td>${t.role}</td><td>${t.active ? 'Active' : 'Inactive'}</td></tr>`
   ).join('');
+}
+
+/* =====================================================================
+   MENU & TABLES (Hotel/Restaurant only)
+===================================================================== */
+function renderMenuTab() {
+  renderGroupedMenu();
+  renderTables();
+}
+
+function renderGroupedMenu() {
+  const view = document.getElementById('menuGroupedView');
+  const empty = document.getElementById('menuGroupedEmpty');
+  if (!view) return;
+  if (CATALOG.length === 0) { view.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  const byCategory = {};
+  CATALOG.forEach(p => {
+    const cat = p.category || 'Uncategorized';
+    if (!byCategory[cat]) byCategory[cat] = [];
+    byCategory[cat].push(p);
+  });
+
+  view.innerHTML = Object.entries(byCategory).map(([cat, items]) => `
+    <div style="margin-bottom:14px;">
+      <div style="font-weight:bold; color:#1F4E78; border-bottom:1px solid #eee; padding-bottom:4px; margin-bottom:6px;">${cat}</div>
+      ${items.map(p => `
+        <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:14px;">
+          <span>${p.name} ${(p.stock !== undefined && p.stock <= 0) ? '<span style="color:#c0392b; font-size:11px;">(out of stock)</span>' : ''}</span>
+          <span style="font-weight:bold;">KES ${p.price.toFixed(2)}</span>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+async function addTable() {
+  const name = document.getElementById('tableName').value.trim();
+  if (!name) { showToast('Enter a table number or name'); return; }
+
+  const { data, error } = await sb.from('tables').insert({
+    business_id: profile.business_id, name, status: 'free'
+  }).select().single();
+  if (error) { showToast('Could not add table: ' + error.message); return; }
+
+  hotelTables.push(data);
+  renderTables();
+  document.getElementById('tableName').value = '';
+  showToast('Added table "' + name + '"');
+}
+
+async function toggleTableStatus(id) {
+  const t = hotelTables.find(x => x.id === id);
+  if (!t) return;
+  const newStatus = t.status === 'free' ? 'occupied' : 'free';
+  const { error } = await sb.from('tables').update({ status: newStatus }).eq('id', id);
+  if (error) { showToast('Could not update table: ' + error.message); return; }
+  t.status = newStatus;
+  renderTables();
+}
+
+async function removeTable(id) {
+  const { error } = await sb.from('tables').delete().eq('id', id);
+  if (error) { showToast('Could not remove table: ' + error.message); return; }
+  hotelTables = hotelTables.filter(t => t.id !== id);
+  renderTables();
+}
+
+function renderTables() {
+  const grid = document.getElementById('tablesGrid');
+  const empty = document.getElementById('tablesEmpty');
+  if (!grid) return;
+  if (hotelTables.length === 0) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  grid.innerHTML = hotelTables.map(t => `
+    <div style="background:${t.status === 'free' ? '#2e9e5b' : '#c0392b'}; color:#fff; border-radius:8px; padding:10px 12px; min-width:80px; text-align:center; position:relative;">
+      <div style="font-weight:bold; cursor:pointer;" onclick="toggleTableStatus('${t.id}')">${t.name}</div>
+      <div style="font-size:11px; margin-top:2px; cursor:pointer;" onclick="toggleTableStatus('${t.id}')">${t.status === 'free' ? 'Free' : 'Occupied'}</div>
+      <div style="position:absolute; top:2px; right:4px; font-size:11px; cursor:pointer;" onclick="removeTable('${t.id}')">✕</div>
+    </div>`).join('');
 }
 
 /* =====================================================================
@@ -1745,7 +1973,7 @@ async function completeMpesaSale(paymentRequest) {
     subtotalExclVat += (lineTotal - lineVat);
     vatTotal += lineVat;
     grand += lineTotal;
-    return { code: item.code, name: item.name, qty: item.qty, price: item.price, vat_rate: item.vat, line_total: +lineTotal.toFixed(2) };
+    return { code: item.code, name: item.name, qty: item.qty, price: item.price, vat_rate: item.vat, unit: item.unit || "piece", line_total: +lineTotal.toFixed(2) };
   });
 
   receiptCounter++;
@@ -1782,26 +2010,51 @@ async function completeMpesaSale(paymentRequest) {
 
 /* =====================================================================
    CAMERA INIT
+   (Started only after login, once #appShell/#reader are actually visible —
+   starting it at page load targets a hidden div and browsers commonly
+   block camera permission prompts that aren't triggered by a user-visible,
+   logged-in screen.)
 ===================================================================== */
-const html5QrcodeScanner = new Html5Qrcode("reader");
+let html5QrcodeScanner = null;
 const scanConfig = { fps: 10, qrbox: { width: 220, height: 140 } };
-Html5Qrcode.getCameras().then(cameras => {
-  if (cameras && cameras.length) {
-    let camId = cameras[0].id;
-    const back = cameras.find(c => /back|rear|environment/i.test(c.label));
-    if (back) camId = back.id;
-    html5QrcodeScanner.start(camId, scanConfig, onScanSuccess, onScanFailure).catch(() => {
-      document.getElementById('scanFeedback').textContent = "Could not start camera";
-      document.getElementById('scanHint').textContent = "Use manual entry below instead.";
-    });
-  } else {
-    document.getElementById('scanFeedback').textContent = "No camera found";
-    document.getElementById('scanHint').textContent = "Use manual entry or the dropdown below instead.";
+let scannerStarting = false;
+let scannerRunning = false;
+
+function initScanner() {
+  if (scannerRunning || scannerStarting) return; // already started / starting - don't double-init
+  scannerStarting = true;
+  if (!html5QrcodeScanner) html5QrcodeScanner = new Html5Qrcode("reader");
+  Html5Qrcode.getCameras().then(cameras => {
+    if (cameras && cameras.length) {
+      let camId = cameras[0].id;
+      const back = cameras.find(c => /back|rear|environment/i.test(c.label));
+      if (back) camId = back.id;
+      html5QrcodeScanner.start(camId, scanConfig, onScanSuccess, onScanFailure).then(() => {
+        scannerRunning = true;
+        scannerStarting = false;
+      }).catch(() => {
+        scannerStarting = false;
+        document.getElementById('scanFeedback').textContent = "Could not start camera";
+        document.getElementById('scanHint').textContent = "Use manual entry below instead.";
+      });
+    } else {
+      scannerStarting = false;
+      document.getElementById('scanFeedback').textContent = "No camera found";
+      document.getElementById('scanHint').textContent = "Use manual entry or the dropdown below instead.";
+    }
+  }).catch(() => {
+    scannerStarting = false;
+    document.getElementById('scanFeedback').textContent = "Camera permission needed";
+    document.getElementById('scanHint').textContent = "Tap Allow when prompted, or use manual entry below.";
+  });
+}
+
+function stopScanner() {
+  if (html5QrcodeScanner && scannerRunning) {
+    html5QrcodeScanner.stop().catch(() => {});
+    scannerRunning = false;
   }
-}).catch(() => {
-  document.getElementById('scanFeedback').textContent = "Camera permission needed";
-  document.getElementById('scanHint').textContent = "Tap Allow when prompted, or use manual entry below.";
-});
+}
 
 /* =====================================================================
    PWA install support
