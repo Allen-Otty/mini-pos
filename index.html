@@ -636,6 +636,18 @@
         structural groundwork so it's a quick switch-on once you have device credentials.
       </p>
     </div>
+
+    <div class="cart-box" style="margin-top:14px; border:2px solid #F59E0B; display:none;" id="platformSwitcherCard">
+      <div style="font-weight:bold; margin-bottom:8px;">🛠️ Platform Admin — Switch Business</div>
+      <p class="catalog-note" style="color:#666; text-align:left; padding:0;" id="platformSwitcherStatus"></p>
+      <select id="platformBusinessSelect"></select>
+      <button class="btn-green" onclick="switchToBusiness()">Switch to Selected Business</button>
+      <button class="btn-red" onclick="returnToMyBusiness()" style="margin-top:6px;">Return to My Own Business</button>
+      <p class="catalog-note" style="color:#888; text-align:left; padding:0; font-size:11px;">
+        While switched, every tab (Sell, Catalog, Dashboard, Settings, M-Pesa, eTIMS...) operates on that
+        business's real data for testing. Nothing you do here is visible to other businesses' users.
+      </p>
+    </div>
   </div>
 
 </div><!-- /appShell -->
@@ -667,6 +679,9 @@ const LOCAL_CACHE_KEY = "dogopos_cache_v1"; // last-known catalog/customers for 
 let session = null;
 let profile = null;   // { id, business_id, role, full_name, active }
 let business = null;  // { id, name, business_type, theme_color, logo_url, kra_pin, location }
+let activeBusinessId = null;  // profile.business_id normally; overridden while a platform admin is testing another business
+let isPlatformAdmin = false;
+let platformBusinessList = [];
 
 let CATALOG = [];
 let customers = [];
@@ -742,7 +757,7 @@ let pendingSignup = null; // holds { email, password, business_name, business_ty
 async function logAudit(action, details) {
   try {
     await sb.from('audit_log').insert({
-      business_id: profile.business_id, actor_id: profile.id, actor_role: profile.role,
+      business_id: activeBusinessId, actor_id: profile.id, actor_role: profile.role,
       action, details: details || {}
     });
   } catch (e) { /* never block the user's action on audit logging failing */ }
@@ -911,6 +926,62 @@ async function callEdgeFunction(name, body) {
   }
 }
 
+async function checkPlatformAdminStatus() {
+  const resp = await callEdgeFunction('platform-switch-business', { action: 'list' });
+  if (resp.error) { isPlatformAdmin = false; return; }
+  isPlatformAdmin = true;
+  platformBusinessList = resp.businesses || [];
+  if (resp.active_business_id) activeBusinessId = resp.active_business_id;
+}
+
+function renderPlatformSwitcher() {
+  const card = document.getElementById('platformSwitcherCard');
+  if (!card) return;
+  if (!isPlatformAdmin) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  const select = document.getElementById('platformBusinessSelect');
+  select.innerHTML = platformBusinessList.map(b =>
+    `<option value="${b.id}" ${b.id === activeBusinessId ? 'selected' : ''}>${b.name} (${b.business_type})</option>`
+  ).join('');
+
+  const statusEl = document.getElementById('platformSwitcherStatus');
+  if (activeBusinessId === profile.business_id) {
+    statusEl.textContent = '📍 Currently viewing your own business.';
+  } else {
+    const active = platformBusinessList.find(b => b.id === activeBusinessId);
+    statusEl.textContent = `⚠️ Currently testing as: ${active ? active.name : activeBusinessId}`;
+  }
+}
+
+async function switchToBusiness() {
+  const targetId = document.getElementById('platformBusinessSelect').value;
+  if (!targetId) return;
+  const resp = await callEdgeFunction('platform-switch-business', { action: 'switch', business_id: targetId });
+  if (resp.error) { showToast('Could not switch: ' + resp.error); return; }
+  activeBusinessId = targetId;
+  showToast('Switched to ' + resp.business.name);
+  const { data: biz } = await sb.from('businesses').select('*').eq('id', activeBusinessId).single();
+  business = biz;
+  applyBusinessTheme();
+  await loadAllData();
+  renderPlatformSwitcher();
+  switchTab('sell');
+}
+
+async function returnToMyBusiness() {
+  const resp = await callEdgeFunction('platform-switch-business', { action: 'clear' });
+  if (resp.error) { showToast('Could not switch back: ' + resp.error); return; }
+  activeBusinessId = profile.business_id;
+  showToast('Back to your own business');
+  const { data: biz } = await sb.from('businesses').select('*').eq('id', activeBusinessId).single();
+  business = biz;
+  applyBusinessTheme();
+  await loadAllData();
+  renderPlatformSwitcher();
+  switchTab('sell');
+}
+
 async function afterLogin() {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) { handleLogout(); return; }
@@ -927,8 +998,10 @@ async function afterLogin() {
     return;
   }
   profile = prof;
+  activeBusinessId = prof.business_id;
+  await checkPlatformAdminStatus();
 
-  const { data: biz } = await sb.from('businesses').select('*').eq('id', profile.business_id).single();
+  const { data: biz } = await sb.from('businesses').select('*').eq('id', activeBusinessId).single();
   business = biz;
 
   document.getElementById('authScreen').style.display = 'none';
@@ -993,7 +1066,7 @@ function switchTab(name) {
   if (name === 'catalog') renderCatalog();
   if (name === 'team') renderTeam();
   if (name === 'menu') renderMenuTab();
-  if (name === 'settings') { renderSettingsForm(); loadMpesaStatus(); loadEtimsStatus(); }
+  if (name === 'settings') { renderSettingsForm(); loadMpesaStatus(); loadEtimsStatus(); renderPlatformSwitcher(); }
 }
 
 /* =====================================================================
@@ -1275,7 +1348,7 @@ async function saveNewProduct() {
   if (!name || isNaN(price) || price < 0) { showToast('Enter a valid name and price'); return; }
 
   const { data, error } = await sb.from('products').insert({
-    business_id: profile.business_id, code, name, price, vat_rate: vat, unit,
+    business_id: activeBusinessId, code, name, price, vat_rate: vat, unit,
     stock, reorder_level: reorder, created_by: profile.id
   }).select().single();
 
@@ -1312,7 +1385,7 @@ async function checkout() {
   const receiptNo = 'RC-' + String(receiptCounter).padStart(4, '0');
 
   const saleRecord = {
-    business_id: profile.business_id, receipt_no: receiptNo, cashier_id: profile.id,
+    business_id: activeBusinessId, receipt_no: receiptNo, cashier_id: profile.id,
     customer_id: custId, subtotal_excl_vat: +subtotalExclVat.toFixed(2),
     vat_total: +vatTotal.toFixed(2), total: +grand.toFixed(2), offline_uuid: offlineUuid,
     created_at: now.toISOString(), payment_method: 'cash', shift_id: currentShift ? currentShift.id : null
@@ -1455,7 +1528,7 @@ async function addCustomer() {
   if (!name) { showToast('Enter a customer name'); return; }
 
   if (isOnline) {
-    const { data, error } = await sb.from('customers').insert({ business_id: profile.business_id, name, phone }).select().single();
+    const { data, error } = await sb.from('customers').insert({ business_id: activeBusinessId, name, phone }).select().single();
     if (error) { showToast('Could not add customer: ' + error.message); return; }
     customers.push({ id: data.id, name, phone });
   } else {
@@ -1491,7 +1564,7 @@ async function addExpense() {
   const amount = parseFloat(document.getElementById('expAmount').value);
   if (!desc || isNaN(amount) || amount <= 0) { showToast('Enter a description and valid amount'); return; }
 
-  const record = { business_id: profile.business_id, category, description: desc, amount, vat_rate: 0, created_by: profile.id };
+  const record = { business_id: activeBusinessId, category, description: desc, amount, vat_rate: 0, created_by: profile.id };
   if (isOnline) {
     const { error } = await sb.from('expenses').insert(record);
     if (error) { showToast('Could not log expense: ' + error.message); return; }
@@ -1597,7 +1670,7 @@ function renderShiftBanner() {
 async function openShift() {
   const floatVal = parseFloat(document.getElementById('openingFloat').value) || 0;
   const { data, error } = await sb.from('shift_sessions').insert({
-    business_id: profile.business_id, user_id: profile.id, opening_float: floatVal, status: 'OPEN'
+    business_id: activeBusinessId, user_id: profile.id, opening_float: floatVal, status: 'OPEN'
   }).select().single();
   if (error) { showToast('Could not open shift: ' + error.message); return; }
   currentShift = data;
@@ -1751,7 +1824,7 @@ async function addProductManually() {
   if (findProduct(code)) { showToast('That code already exists in the catalog'); return; }
 
   const { data, error } = await sb.from('products').insert({
-    business_id: profile.business_id, code, name, category, price, vat_rate: vat, unit,
+    business_id: activeBusinessId, code, name, category, price, vat_rate: vat, unit,
     stock, reorder_level: reorder, created_by: profile.id
   }).select().single();
   if (error) { showToast('Could not add product: ' + error.message); return; }
@@ -1801,7 +1874,7 @@ async function addTeller() {
   document.getElementById('tellerPassword').value = '';
   showToast('Teller account created for ' + full_name);
   logAudit('teller.create', { name: full_name, email });
-  const { data } = await sb.from('profiles').select('*').eq('business_id', profile.business_id);
+  const { data } = await sb.from('profiles').select('*').eq('business_id', activeBusinessId);
   team = data || [];
   renderTeam();
 }
@@ -1851,7 +1924,7 @@ async function addTable() {
   if (!name) { showToast('Enter a table number or name'); return; }
 
   const { data, error } = await sb.from('tables').insert({
-    business_id: profile.business_id, name, status: 'free'
+    business_id: activeBusinessId, name, status: 'free'
   }).select().single();
   if (error) { showToast('Could not add table: ' + error.message); return; }
 
@@ -2137,7 +2210,7 @@ async function completeMpesaSale(paymentRequest) {
   const receiptNo = 'RC-' + String(receiptCounter).padStart(4, '0');
 
   const saleRecord = {
-    business_id: profile.business_id, receipt_no: receiptNo, cashier_id: profile.id,
+    business_id: activeBusinessId, receipt_no: receiptNo, cashier_id: profile.id,
     customer_id: custId, subtotal_excl_vat: +subtotalExclVat.toFixed(2),
     vat_total: +vatTotal.toFixed(2), total: +grand.toFixed(2), offline_uuid: offlineUuid,
     created_at: now.toISOString(), payment_method: 'mpesa', mpesa_receipt_no: paymentRequest.mpesa_receipt || null,
