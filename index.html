@@ -357,7 +357,7 @@
       <input type="text" id="otpCode" class="otp-input" placeholder="000000" maxlength="6" inputmode="numeric">
 
       <button class="auth-btn" onclick="handleVerifyOtp()">Verify & Continue</button>
-      <button class="auth-btn" style="background:#eef3f8; color:#020024; margin-top:6px;" onclick="handleResendOtp()">Resend Code</button>
+      <button class="auth-btn" id="resendOtpBtn" style="background:#eef3f8; color:#020024; margin-top:6px;" onclick="handleResendOtp()">Resend Code</button>
       <div class="auth-error" id="otpError"></div>
       <div class="auth-info" id="otpInfo"></div>
     </div>
@@ -1070,13 +1070,31 @@ async function handleVerifyOtp() {
   await afterLogin();
 }
 
+let resendCooldownUntil = 0;
 async function handleResendOtp() {
   clearAuthMessages();
+  const btn = document.getElementById('resendOtpBtn');
+  const now = Date.now();
+  if (now < resendCooldownUntil) {
+    showAuthMsg('otpInfo', `Please wait ${Math.ceil((resendCooldownUntil - now) / 1000)}s before requesting another code.`);
+    return;
+  }
   const email = pendingSignup ? pendingSignup.email : (session && session.user ? session.user.email : null);
   if (!email) { showAuthMsg('otpError', 'No email on file — please sign up again.'); return; }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  resendCooldownUntil = now + 30000; // 30s cooldown - also prevents accidental double-taps firing two sends
+
   const { error } = await sb.auth.resend({ type: 'signup', email });
   if (error) showAuthMsg('otpError', error.message);
-  else showAuthMsg('otpInfo', 'Code resent — check your email.');
+  else showAuthMsg('otpInfo', 'A new code was sent — use the latest one, earlier codes no longer work.');
+
+  if (btn) {
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = 'Resend Code';
+    }, 30000);
+  }
 }
 
 async function handleLogin() {
