@@ -1,6 +1,6 @@
 # Dogo POS — Documentation
 
-A multi-business point-of-sale web app with camera + photo barcode scanning, OCR label matching, cloud sync, role-based Admin/Teller accounts, offline sales, shift/till reconciliation, M-Pesa payments, KRA eTIMS groundwork, and business-type-specific tools (e.g. Hotel/Restaurant menus & tables).
+A multi-business point-of-sale web app with camera + photo barcode scanning, OCR label matching, cloud sync, role-based Admin/Teller accounts, offline sales, shift/till reconciliation, atomic sale processing (no oversell races), M-Pesa payments, KRA eTIMS groundwork, business-type-specific tools (e.g. Hotel/Restaurant menus & tables), and a platform-admin business switcher for support/testing.
 
 **Live app:** https://allen-otty.github.io/mini-pos/
 **Backend:** Supabase project `mini-pos-backend` (id: `uzwomzkzqrpiumtnniik`)
@@ -21,6 +21,9 @@ Dogo POS is a Progressive Web App (PWA) — it runs entirely in a phone or compu
 
 ### Business types
 Retail, Wholesale, Supermarket, SME, Hotel/Restaurant, Hardware Store, **Kiosk/Kibanda**. Choosing **Hotel/Restaurant** unlocks a dedicated **Menu & Tables** tab (see Section 5).
+
+### Brand palette
+Default UI colors: `#223068` (brand navy), `#1e4ba3` (blue actions), `#306c5f` (green/confirm actions), `#a5333f` (red/destructive actions), `#6000d3` (active tab accent). Each business can still pick its own header theme color independently in Settings.
 
 ---
 
@@ -57,7 +60,7 @@ Admin → **Team** tab → enter name, email, password → **Create Teller Accou
 1. **Sell** tab → point the camera at a barcode, type a code manually, pick from the dropdown, or tap **📷 Scan Item Photo** to snap a photo instead — it first tries to decode a barcode from the photo, and if none is found, runs OCR (Tesseract.js) to read the label and match it against your catalog by name
 2. If the code isn't in the catalog, Admin is prompted to add it on the spot (with unit, price, VAT, stock)
 3. Adjust quantities with +/− in the cart
-4. Checkout by **Cash** or **📱 M-Pesa** (STK Push — customer gets a PIN prompt, sale completes automatically once paid)
+4. Checkout by **Cash** or **📱 M-Pesa** (STK Push — customer gets a PIN prompt, sale completes automatically once paid). Every sale — items, stock deduction, and the sale record — is written as one atomic database transaction (`process_sale` RPC), so two devices selling the last unit of the same item at once can't both succeed; the second is correctly rejected instead of silently overselling.
 5. Printable receipt shows unit, M-Pesa receipt number (if applicable), and totals
 
 ### Shifts (cash reconciliation)
@@ -116,6 +119,10 @@ All tables live in Supabase Postgres under Row Level Security — every query is
 | `platform_admins` / `platform_active_business` | Platform-owner list and their active business-switch state |
 | `low_stock_items` | View: products at/below reorder level |
 
+**Database Functions:**
+- `process_sale(...)` — SECURITY DEFINER RPC that writes a sale header, its line items, and decrements product stock as one atomic transaction, row-locking each product (`FOR UPDATE`) so two devices selling the last unit at once can't both succeed. Both cash and M-Pesa checkout call this instead of separate inserts.
+- `current_business_id()` — the single source of truth every RLS policy calls to scope a query to the caller's business; transparently honors the platform-admin business switch override when active
+
 **Edge Functions** (server-side only, service-role — never exposed to the browser):
 - `create-business` — after OTP verification, creates business + admin profile atomically
 - `create-teller` — Admin-gated teller account creation
@@ -162,3 +169,5 @@ git push origin main
 - Every table has RLS enabled — a Teller cannot query another business's data even by tampering with requests
 - M-Pesa and eTIMS credentials are stored in tables that block **all** direct reads (`using (false)`) — only their dedicated edge functions, running with service-role, can touch them; the browser never sees a saved secret again after entry
 - The Platform Admin business switcher is scoped to accounts explicitly listed in `platform_admins` only — it cannot be triggered by any regular business account
+- Every piece of user-typed free text (product/customer/teller/table names, categories, descriptions, business name, logo URL) is HTML-escaped (`escapeHtml()`) before being rendered anywhere in the app — prevents a malicious product/customer name from injecting a script that runs for other users viewing the Catalog, Cart, Receipt, or Dashboard
+- Sales are written as a single atomic, row-locked database transaction (see `process_sale` above) — no partial writes, no oversell race between simultaneous devices
