@@ -431,7 +431,10 @@
     <div id="fileScanReader" style="display:none;"></div>
 
     <div class="cart-box" id="newProductForm" style="display:none; margin-top:10px;">
-      <div style="font-weight:bold; margin-bottom:6px;">🆕 New item: <span id="npCode"></span></div>
+      <div style="font-weight:bold; margin-bottom:6px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+        🆕 New item:
+        <input type="text" id="npCode" placeholder="scan or type code" style="width:150px; display:inline-block; padding:4px 8px; margin:0; font-weight:bold;">
+      </div>
       <input type="text" id="npName" placeholder="Item name">
       <input type="number" id="npPrice" placeholder="Selling price (VAT included), KES" step="0.01">
       <select id="npVat">
@@ -1462,7 +1465,7 @@ function handleScannedCode(code) {
       document.getElementById('scanHint').textContent = `Ask an Admin to add this item to the Catalog first.`;
       return;
     }
-    document.getElementById('npCode').textContent = code;
+    document.getElementById('npCode').value = code;
     document.getElementById('newProductForm').style.display = 'block';
     document.getElementById('scanFeedback').textContent = `New item scanned: ${code}`;
     document.getElementById('scanHint').textContent = `Fill in the details below to add it.`;
@@ -1527,7 +1530,13 @@ function matchOcrTextToCatalog(ocrText) {
     document.getElementById('scanHint').textContent = `Pick the right one: ${matches.map(m => m.name).join(', ')} — use the dropdown below.`;
   } else {
     document.getElementById('scanFeedback').textContent = "Couldn't match the label to a catalog item";
-    document.getElementById('scanHint').textContent = 'Try manual entry or the dropdown below instead.';
+    if (profile.role !== 'admin') {
+      document.getElementById('scanHint').textContent = 'Ask an Admin to add this item to the Catalog first.';
+      return;
+    }
+    document.getElementById('npCode').value = '';
+    document.getElementById('newProductForm').style.display = 'block';
+    document.getElementById('scanHint').textContent = `Label read: "${ocrText.trim().slice(0, 80)}" — type or scan its code below and fill in the details.`;
   }
 }
 
@@ -1543,6 +1552,7 @@ document.getElementById('manualCatalogPick').addEventListener('change', function
 
 function cancelNewProduct() {
   document.getElementById('newProductForm').style.display = 'none';
+  document.getElementById('npCode').value = '';
   document.getElementById('npName').value = '';
   document.getElementById('npPrice').value = '';
   document.getElementById('npStock').value = '';
@@ -1550,7 +1560,7 @@ function cancelNewProduct() {
 }
 
 async function saveNewProduct() {
-  const code = document.getElementById('npCode').textContent.trim();
+  const code = document.getElementById('npCode').value.trim();
   const name = document.getElementById('npName').value.trim();
   const price = parseFloat(document.getElementById('npPrice').value);
   const vat = parseFloat(document.getElementById('npVat').value);
@@ -1558,6 +1568,7 @@ async function saveNewProduct() {
   const stock = parseInt(document.getElementById('npStock').value) || 0;
   const reorder = parseInt(document.getElementById('npReorder').value) || 0;
 
+  if (!code) { showToast('Enter or scan a code for this item'); return; }
   if (!name || isNaN(price) || price < 0) { showToast('Enter a valid name and price'); return; }
 
   const { data, error } = await sb.from('products').insert({
