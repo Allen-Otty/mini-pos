@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Dogo POS">
-<meta name="theme-color" content="#1F4E78">
+<meta name="theme-color" content="#223068">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>Dogo POS</title>
@@ -14,7 +14,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <style>
-  :root { --brand: #1F4E78; }
+  :root { --brand: #223068; --accent-purple: #6000d3; --accent-green: #306c5f; }
   * { box-sizing: border-box; }
   body {
     margin: 0; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -29,7 +29,7 @@
     max-width: 380px; margin: 30px auto; padding: 0 16px;
   }
   .auth-card {
-    background: #fff; color: #1F4E78; border-radius: 16px; padding: 28px 22px;
+    background: #fff; color: #223068; border-radius: 16px; padding: 28px 22px;
     box-shadow: 0 10px 40px rgba(0,0,0,.4);
   }
   .auth-card h2 { margin: 0 0 4px; text-align: center; }
@@ -37,20 +37,20 @@
   .auth-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
   .auth-tab {
     flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold;
-    background: #eef3f8; color: #1F4E78; cursor: pointer; font-size: 13px;
+    background: #eef3f8; color: #223068; cursor: pointer; font-size: 13px;
   }
   .auth-tab.active { background: var(--brand); color: #fff; }
   .auth-panel { display: none; }
   .auth-panel.active { display: block; }
   .auth-card input, .auth-card select {
     width: 100%; padding: 12px; margin: 6px 0; border-radius: 8px;
-    background: #f2f6fa; color: #1F4E78; outline: none; border: 1px solid #dbe5ee; font-size: 14px;
+    background: #f2f6fa; color: #223068; outline: none; border: 1px solid #dbe5ee; font-size: 14px;
   }
   .auth-card label { font-size: 12px; font-weight: bold; color: #445; margin-top: 8px; display: block; }
   .method-toggle { display: flex; gap: 8px; margin: 6px 0 10px; }
   .method-toggle button {
     flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #dbe5ee; background: #fff;
-    color: #1F4E78; font-size: 12px; cursor: pointer;
+    color: #223068; font-size: 12px; cursor: pointer;
   }
   .method-toggle button.active { background: var(--brand); color: #fff; border-color: var(--brand); }
   .auth-btn {
@@ -60,7 +60,7 @@
   }
   .auth-link { text-align: center; font-size: 12px; margin-top: 14px; color: #667; }
   .auth-error { background: #fde8e8; color: #a33; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
-  .auth-info { background: #e8f4fd; color: #1F4E78; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
+  .auth-info { background: #e8f4fd; color: #223068; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
   .otp-input { text-align: center; letter-spacing: 8px; font-size: 20px !important; font-weight: bold; }
 
   /* ---------------- App shell (shown after login) ---------------- */
@@ -70,11 +70,11 @@
     flex: 1 1 30%; padding: 8px 4px; border-radius: 8px; border: none; font-weight: bold;
     font-size: 12px; background: #2E75B6; color: #fff; cursor: pointer;
   }
-  .tab-btn.active { background: #FFC107; color: #1F4E78; }
+  .tab-btn.active { background: var(--accent-purple); color: #fff; }
   .panel { max-width: 480px; margin: 16px auto; padding: 0 16px; display: none; }
   .panel.active { display: block; }
 
-  .scan-status { background: #fff; color: #1F4E78; border-radius: 10px; padding: 12px; text-align: center; margin-bottom: 12px; }
+  .scan-status { background: #fff; color: #223068; border-radius: 10px; padding: 12px; text-align: center; margin-bottom: 12px; }
   .scan-status .code { font-size: 20px; font-weight: bold; }
   .scan-status .hint { font-size: 13px; color: #666; margin-top: 4px; }
   #reader { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
@@ -85,13 +85,13 @@
     background: #16344d; color: #fff; outline: 1px solid #2E75B6;
   }
   .panel button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
-  .btn-yellow { background: #FFC107; color: #1F4E78; }
-  .btn-blue { background: #2E75B6; color: #fff; }
-  .btn-green { background: #2e9e5b; color: #fff; }
-  .btn-red { background: #c0392b; color: #fff; }
+  .btn-yellow { background: #FFC107; color: #223068; }
+  .btn-blue { background: #1e4ba3; color: #fff; }
+  .btn-green { background: #306c5f; color: #fff; }
+  .btn-red { background: #a5333f; color: #fff; }
   .btn-small { padding: 6px 10px; font-size: 13px; width: auto; margin: 0; }
 
-  .cart-box { background: #fff; color: #1F4E78; border-radius: 10px; padding: 14px; }
+  .cart-box { background: #fff; color: #223068; border-radius: 10px; padding: 14px; }
   .cart-item {
     display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #eee;
   }
@@ -104,16 +104,16 @@
   .line-total { font-weight: bold; min-width: 70px; text-align: right; }
   .remove-btn { background: #c0392b; color: #fff; width: 22px; height: 22px; border-radius: 50%; margin-left: 8px; padding: 0; font-size: 12px; }
 
-  .totals { margin-top: 12px; padding-top: 10px; border-top: 2px solid #1F4E78; font-size: 14px; }
+  .totals { margin-top: 12px; padding-top: 10px; border-top: 2px solid #223068; font-size: 14px; }
   .totals .row { display: flex; justify-content: space-between; margin: 4px 0; }
-  .totals .grand { font-size: 20px; font-weight: bold; color: #1F4E78; }
+  .totals .grand { font-size: 20px; font-weight: bold; color: #223068; }
   .totals .vat-note { font-size: 11px; color: #888; margin-top: -2px; }
 
   .empty-note { color: #888; text-align: center; padding: 20px 0; font-size: 14px; }
 
   .toast {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: #1F4E78; color: #fff; padding: 10px 18px; border-radius: 20px;
+    background: #223068; color: #fff; padding: 10px 18px; border-radius: 20px;
     font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999; max-width: 90%; text-align: center;
   }
   .toast.show { opacity: 1; }
@@ -146,7 +146,7 @@
 
   .log-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
   .log-table th, .log-table td { padding: 6px 4px; border-bottom: 1px solid #eee; text-align: left; }
-  .log-table th { color: #1F4E78; }
+  .log-table th { color: #223068; }
 
   .catalog-note { font-size: 12px; color: #cfe0ee; padding: 0 16px; max-width: 480px; margin: 4px auto 0; text-align: center; }
 
@@ -250,7 +250,7 @@
       <input type="text" id="otpCode" class="otp-input" placeholder="000000" maxlength="6" inputmode="numeric">
 
       <button class="auth-btn" onclick="handleVerifyOtp()">Verify & Continue</button>
-      <button class="auth-btn" style="background:#eef3f8; color:#1F4E78; margin-top:6px;" onclick="handleResendOtp()">Resend Code</button>
+      <button class="auth-btn" style="background:#eef3f8; color:#223068; margin-top:6px;" onclick="handleResendOtp()">Resend Code</button>
       <div class="auth-error" id="otpError"></div>
       <div class="auth-info" id="otpInfo"></div>
     </div>
@@ -281,7 +281,7 @@
   <div class="banner banner-lowstock" id="lowStockBanner" onclick="switchTab('dash')" style="cursor:pointer;">
     ⚠️ <span id="lowStockBannerText"></span>
   </div>
-  <div class="banner" id="pendingSyncBanner" style="background:#1F4E78; color:#cfe0ee;" onclick="syncOfflineSales()">
+  <div class="banner" id="pendingSyncBanner" style="background:#223068; color:#cfe0ee;" onclick="syncOfflineSales()">
     🔄 <span id="pendingSyncText"></span> — tap to sync now
   </div>
 
@@ -672,7 +672,7 @@ const SUPABASE_URL = "https://uzwomzkzqrpiumtnniik.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const THEME_COLORS = ["#1F4E78", "#2e9e5b", "#c0392b", "#8e44ad", "#d35400", "#16697a"];
+const THEME_COLORS = ["#223068", "#306c5f", "#a5333f", "#6000d3", "#7c44a5", "#1e4ba3"];
 const LOCAL_QUEUE_KEY = "dogopos_offline_queue_v1";
 const LOCAL_CACHE_KEY = "dogopos_cache_v1"; // last-known catalog/customers for offline selling
 
@@ -692,6 +692,25 @@ let hotelTables = [];
 let allShifts = [];
 let currentShift = null;
 let cart = [];
+
+/* =====================================================================
+   SECURITY: escape any user-supplied text before it goes into innerHTML.
+   Product names, customer names, categories, descriptions, teller names,
+   table names, and business name/tagline are all free text a user can
+   type - without this, someone could type e.g. a product name containing
+   <img src=x onerror=...> and have it execute for every user who views
+   the Catalog, Cart, or Receipt. Always wrap user text with this before
+   interpolating it into an innerHTML template string.
+===================================================================== */
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 let receiptCounter = 0;
 let isOnline = navigator.onLine;
 
@@ -942,7 +961,7 @@ function renderPlatformSwitcher() {
 
   const select = document.getElementById('platformBusinessSelect');
   select.innerHTML = platformBusinessList.map(b =>
-    `<option value="${b.id}" ${b.id === activeBusinessId ? 'selected' : ''}>${b.name} (${b.business_type})</option>`
+    `<option value="${b.id}" ${b.id === activeBusinessId ? 'selected' : ''}>${escapeHtml(b.name)} (${escapeHtml(b.business_type)})</option>`
   ).join('');
 
   const statusEl = document.getElementById('platformSwitcherStatus');
@@ -1030,10 +1049,10 @@ function applyBusinessTheme() {
   if (!business) return;
   document.getElementById('appTitle').textContent = '🧾 ' + business.name;
   document.getElementById('appTagline').textContent = business.business_type + ' · Dogo POS';
-  document.getElementById('appHeader').style.background = business.theme_color || '#1F4E78';
+  document.getElementById('appHeader').style.background = business.theme_color || '#223068';
   const logoWrap = document.getElementById('headerLogoWrap');
   logoWrap.innerHTML = business.logo_url
-    ? `<img src="${business.logo_url}" style="max-height:44px; max-width:130px; display:block; margin:0 auto 4px;">`
+    ? `<img src="${escapeHtml(business.logo_url)}" style="max-height:44px; max-width:130px; display:block; margin:0 auto 4px;">`
     : '';
 
   // Hotel/Restaurant-only tabs: applyRoleVisibility() already ran and may have
@@ -1159,7 +1178,7 @@ function addToCart(product, qty) {
   qty = qty || 1;
   const existing = cart.find(i => i.code === product.code);
   if (existing) existing.qty += qty;
-  else cart.push({ code: product.code, name: product.name, price: product.price, vat: product.vat, unit: product.unit || 'piece', qty });
+  else cart.push({ id: product.id, code: product.code, name: product.name, price: product.price, vat: product.vat, unit: product.unit || 'piece', qty });
   renderCart();
 }
 
@@ -1190,7 +1209,7 @@ function renderCart() {
     return `
       <div class="cart-item">
         <div style="flex:1;">
-          <div class="name">${item.name}</div>
+          <div class="name">${escapeHtml(item.name)}</div>
           <div class="meta">KES ${item.price.toFixed(2)} each · VAT ${(item.vat*100).toFixed(0)}%</div>
         </div>
         <div class="qty-ctrl">
@@ -1378,7 +1397,7 @@ async function checkout() {
     subtotalExclVat += (lineTotal - lineVat);
     vatTotal += lineVat;
     grand += lineTotal;
-    return { code: item.code, name: item.name, qty: item.qty, price: item.price, vat_rate: item.vat, unit: item.unit || "piece", line_total: +lineTotal.toFixed(2) };
+    return { product_id: item.id || null, code: item.code, name: item.name, qty: item.qty, price: item.price, vat_rate: item.vat, unit: item.unit || "piece", line_total: +lineTotal.toFixed(2) };
   });
 
   receiptCounter++;
@@ -1406,7 +1425,12 @@ async function checkout() {
 
   if (isOnline) {
     const sale = await pushSaleToServer(saleRecord, lineItems);
-    if (!sale) queueOfflineSale(saleRecord, lineItems);
+    if (!sale) {
+      // A rejected sale here means the DB itself refused it (e.g. real stock
+      // conflict from another device) - queuing it offline would just fail
+      // identically on retry. Resync so the UI reflects the true stock/state.
+      await loadAllData();
+    }
     else callEdgeFunction('etims-submit', { sale_id: sale.id }).catch(() => {}); // fire-and-forget, non-blocking
   } else {
     queueOfflineSale(saleRecord, lineItems);
@@ -1422,19 +1446,27 @@ async function checkout() {
 
 async function pushSaleToServer(saleRecord, lineItems) {
   try {
-    const { data: sale, error: saleErr } = await sb.from('sales').insert(saleRecord).select().single();
-    if (saleErr) throw saleErr;
-    const itemsWithSaleId = lineItems.map(li => ({ ...li, sale_id: sale.id }));
-    const { error: itemsErr } = await sb.from('sale_items').insert(itemsWithSaleId);
-    if (itemsErr) throw itemsErr;
-
-    // persist stock deduction for real
-    for (const item of lineItems) {
-      const p = findProduct(item.code);
-      if (p && p.id) await sb.from('products').update({ stock: p.stock }).eq('id', p.id);
-    }
-    return sale;
+    const { data: saleId, error } = await sb.rpc('process_sale', {
+      p_business_id: saleRecord.business_id,
+      p_cashier_id: saleRecord.cashier_id,
+      p_receipt_no: saleRecord.receipt_no,
+      p_customer_id: saleRecord.customer_id,
+      p_subtotal_excl_vat: saleRecord.subtotal_excl_vat,
+      p_vat_total: saleRecord.vat_total,
+      p_total: saleRecord.total,
+      p_offline_uuid: saleRecord.offline_uuid,
+      p_items: lineItems,
+      p_payment_method: saleRecord.payment_method || 'cash',
+      p_shift_id: saleRecord.shift_id || null,
+      p_mpesa_receipt_no: saleRecord.mpesa_receipt_no || null
+    });
+    if (error) throw error;
+    return { id: saleId };
   } catch (e) {
+    // e.g. "Insufficient stock for product X" from a genuine race with another device -
+    // surface it instead of silently queuing offline, since offline-queueing would
+    // just fail again identically once synced.
+    showToast(e.message && e.message.includes('Insufficient stock') ? e.message : 'Could not complete sale: ' + (e.message || e));
     return null;
   }
 }
@@ -1484,12 +1516,12 @@ function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaRece
   items.forEach(item => {
     const lineTotal = item.price * item.qty;
     linesHtml += `
-      <div class="receipt-line item-name"><span>${item.name}</span><span></span></div>
-      <div class="receipt-line"><span>${item.qty}${item.unit && item.unit !== 'piece' ? ' ' + item.unit : ''} x ${item.price.toFixed(2)}</span><span>${lineTotal.toFixed(2)}</span></div>`;
+      <div class="receipt-line item-name"><span>${escapeHtml(item.name)}</span><span></span></div>
+      <div class="receipt-line"><span>${item.qty}${item.unit && item.unit !== 'piece' ? ' ' + escapeHtml(item.unit) : ''} x ${item.price.toFixed(2)}</span><span>${lineTotal.toFixed(2)}</span></div>`;
   });
   document.getElementById('receiptContent').innerHTML = `
-    <h2>${business.name}</h2>
-    <div class="sub">${business.location || ''} ${business.kra_pin ? '| PIN: ' + business.kra_pin : ''}</div>
+    <h2>${escapeHtml(business.name)}</h2>
+    <div class="sub">${escapeHtml(business.location || '')} ${business.kra_pin ? '| PIN: ' + escapeHtml(business.kra_pin) : ''}</div>
     <div class="sub">Receipt ${receiptNo} · ${now.toLocaleDateString()} ${now.toLocaleTimeString()}</div>
     <hr>
     ${linesHtml}
@@ -1497,7 +1529,7 @@ function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaRece
     <div class="receipt-line"><span>Subtotal (excl. VAT)</span><span>KES ${subtotal.toFixed(2)}</span></div>
     <div class="receipt-line"><span>VAT (included above)</span><span>KES ${vatTotal.toFixed(2)}</span></div>
     <div class="receipt-total"><span>TOTAL PAID</span><span>KES ${grand.toFixed(2)}</span></div>
-    ${mpesaReceipt ? `<div class="receipt-line"><span>M-Pesa Receipt</span><span>${mpesaReceipt}</span></div>` : ''}
+    ${mpesaReceipt ? `<div class="receipt-line"><span>M-Pesa Receipt</span><span>${escapeHtml(mpesaReceipt)}</span></div>` : ''}
     <hr>
     <div class="sub">Thank you for your business!</div>
   `;
@@ -1515,7 +1547,7 @@ function renderLog() {
   if (salesLog.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; return; }
   empty.style.display = 'none'; table.style.display = 'table';
   body.innerHTML = salesLog.slice(0, 200).map(r =>
-    `<tr><td>${r.date}</td><td>${r.receipt}</td><td>${r.name}</td><td>${r.qty}</td><td>${r.total.toFixed(2)}</td></tr>`
+    `<tr><td>${r.date}</td><td>${escapeHtml(r.receipt)}</td><td>${escapeHtml(r.name)}</td><td>${r.qty}</td><td>${r.total.toFixed(2)}</td></tr>`
   ).join('');
 }
 
@@ -1551,7 +1583,7 @@ function renderCustomers() {
     const rows = salesLog.filter(r => r.customerId === c.id);
     const spent = rows.reduce((s, r) => s + r.total, 0);
     const last = rows.length ? rows[0].date : '—';
-    return `<tr><td>${c.name}</td><td>${c.phone||'—'}</td><td>KES ${spent.toFixed(2)}</td><td>${last}</td></tr>`;
+    return `<tr><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.phone)||'—'}</td><td>KES ${spent.toFixed(2)}</td><td>${last}</td></tr>`;
   }).join('');
 }
 
@@ -1589,7 +1621,7 @@ function renderExpenses() {
   if (expenses.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; return; }
   empty.style.display = 'none'; table.style.display = 'table';
   body.innerHTML = expenses.map(e =>
-    `<tr><td>${e.date}</td><td>${e.category}</td><td>${e.desc}</td><td>${e.amount.toFixed(2)}</td></tr>`
+    `<tr><td>${e.date}</td><td>${escapeHtml(e.category)}</td><td>${escapeHtml(e.desc)}</td><td>${e.amount.toFixed(2)}</td></tr>`
   ).join('');
 }
 
@@ -1638,7 +1670,7 @@ function renderTellerPerformance(monthSalesRows) {
 
   const rows = Object.entries(byTeller).map(([id, d]) => {
     const member = team.find(t => t.id === id);
-    const name = member ? (member.full_name || 'Unnamed') + (member.role === 'admin' ? ' (Admin)' : ' (Teller)') : 'Unknown user';
+    const name = escapeHtml(member ? (member.full_name || 'Unnamed') + (member.role === 'admin' ? ' (Admin)' : ' (Teller)') : 'Unknown user');
     return { name, salesCount: d.receipts.size, total: d.total };
   }).sort((a,b) => b.total - a.total);
 
@@ -1716,7 +1748,7 @@ function renderShiftsTable() {
   empty.style.display = 'none'; table.style.display = 'table';
   body.innerHTML = closed.map(s => {
     const member = team.find(t => t.id === s.user_id);
-    const name = member ? (member.full_name || 'Unnamed') : 'Unknown';
+    const name = escapeHtml(member ? (member.full_name || 'Unnamed') : 'Unknown');
     const variance = Number(s.cash_variance || 0);
     const varColor = variance === 0 ? '#2e9e5b' : '#c0392b';
     return `<tr><td>${name}</td><td>${new Date(s.created_at).toLocaleString()}</td><td>${s.closed_at ? new Date(s.closed_at).toLocaleString() : ''}</td><td>${Number(s.expected_cash||0).toFixed(2)}</td><td>${Number(s.actual_cash||0).toFixed(2)}</td><td style="color:${varColor}; font-weight:bold;">${variance.toFixed(2)}</td></tr>`;
@@ -1734,7 +1766,7 @@ function renderLowStockTable() {
   if (lowStock.length === 0) { lowEmpty.style.display = 'block'; lowTable.style.display = 'none'; }
   else {
     lowEmpty.style.display = 'none'; lowTable.style.display = 'table';
-    lowBody.innerHTML = lowStock.map(p => `<tr><td>${p.code}</td><td>${p.name}</td><td>${p.stock}</td><td>${p.reorder}</td></tr>`).join('');
+    lowBody.innerHTML = lowStock.map(p => `<tr><td>${escapeHtml(p.code)}</td><td>${escapeHtml(p.name)}</td><td>${p.stock}</td><td>${p.reorder}</td></tr>`).join('');
   }
 }
 function updateLowStockBanner() {
@@ -1764,7 +1796,7 @@ function renderReports() {
   if (top.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; }
   else {
     empty.style.display = 'none'; table.style.display = 'table';
-    body.innerHTML = top.map(p => `<tr><td>${p.name}</td><td>${p.qty}</td><td>KES ${p.revenue.toFixed(2)}</td></tr>`).join('');
+    body.innerHTML = top.map(p => `<tr><td>${escapeHtml(p.name)}</td><td>${p.qty}</td><td>KES ${p.revenue.toFixed(2)}</td></tr>`).join('');
   }
 
   const catRev = {};
@@ -1776,7 +1808,7 @@ function renderReports() {
   const catBody = document.getElementById('catRevBody');
   const catEntries = Object.entries(catRev).sort((a,b) => b[1]-a[1]);
   catBody.innerHTML = catEntries.length
-    ? catEntries.map(([cat, rev]) => `<tr><td>${cat}</td><td>KES ${rev.toFixed(2)}</td></tr>`).join('')
+    ? catEntries.map(([cat, rev]) => `<tr><td>${escapeHtml(cat)}</td><td>KES ${rev.toFixed(2)}</td></tr>`).join('')
     : '<tr><td colspan="2" style="text-align:center; color:#888;">No sales recorded yet.</td></tr>';
 }
 
@@ -1787,7 +1819,7 @@ function renderCatalog() {
   const body = document.getElementById('catalogBody');
   if (!body) return;
   body.innerHTML = CATALOG.map(p =>
-    `<tr><td>${p.code}</td><td>${p.name}</td><td>${p.price.toFixed(2)}</td><td>${p.unit||'piece'}</td><td>${(p.vat*100).toFixed(0)}%</td><td>${p.stock||0}</td><td>${p.reorder||0}</td></tr>`
+    `<tr><td>${escapeHtml(p.code)}</td><td>${escapeHtml(p.name)}</td><td>${p.price.toFixed(2)}</td><td>${escapeHtml(p.unit||'piece')}</td><td>${(p.vat*100).toFixed(0)}%</td><td>${p.stock||0}</td><td>${p.reorder||0}</td></tr>`
   ).join('');
 
   const picker = document.getElementById('manualCatalogPick');
@@ -1882,7 +1914,7 @@ async function addTeller() {
 function renderTeam() {
   const body = document.getElementById('teamBody');
   body.innerHTML = team.map(t =>
-    `<tr><td>${t.full_name || '(unnamed)'}</td><td>${t.role}</td><td>${t.active ? 'Active' : 'Inactive'}</td></tr>`
+    `<tr><td>${escapeHtml(t.full_name || '(unnamed)')}</td><td>${escapeHtml(t.role)}</td><td>${t.active ? 'Active' : 'Inactive'}</td></tr>`
   ).join('');
 }
 
@@ -1910,10 +1942,10 @@ function renderGroupedMenu() {
 
   view.innerHTML = Object.entries(byCategory).map(([cat, items]) => `
     <div style="margin-bottom:14px;">
-      <div style="font-weight:bold; color:#1F4E78; border-bottom:1px solid #eee; padding-bottom:4px; margin-bottom:6px;">${cat}</div>
+      <div style="font-weight:bold; color:#223068; border-bottom:1px solid #eee; padding-bottom:4px; margin-bottom:6px;">${escapeHtml(cat)}</div>
       ${items.map(p => `
         <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:14px;">
-          <span>${p.name} ${(p.stock !== undefined && p.stock <= 0) ? '<span style="color:#c0392b; font-size:11px;">(out of stock)</span>' : ''}</span>
+          <span>${escapeHtml(p.name)} ${(p.stock !== undefined && p.stock <= 0) ? '<span style="color:#c0392b; font-size:11px;">(out of stock)</span>' : ''}</span>
           <span style="font-weight:bold;">KES ${p.price.toFixed(2)}</span>
         </div>`).join('')}
     </div>`).join('');
@@ -1959,7 +1991,7 @@ function renderTables() {
   empty.style.display = 'none';
   grid.innerHTML = hotelTables.map(t => `
     <div style="background:${t.status === 'free' ? '#2e9e5b' : '#c0392b'}; color:#fff; border-radius:8px; padding:10px 12px; min-width:80px; text-align:center; position:relative;">
-      <div style="font-weight:bold; cursor:pointer;" onclick="toggleTableStatus('${t.id}')">${t.name}</div>
+      <div style="font-weight:bold; cursor:pointer;" onclick="toggleTableStatus('${t.id}')">${escapeHtml(t.name)}</div>
       <div style="font-size:11px; margin-top:2px; cursor:pointer;" onclick="toggleTableStatus('${t.id}')">${t.status === 'free' ? 'Free' : 'Occupied'}</div>
       <div style="position:absolute; top:2px; right:4px; font-size:11px; cursor:pointer;" onclick="removeTable('${t.id}')">✕</div>
     </div>`).join('');
@@ -1977,12 +2009,12 @@ function renderSettingsForm() {
   const swatchWrap = document.getElementById('colorSwatches');
   swatchWrap.innerHTML = THEME_COLORS.map(c => `
     <div onclick="pickColor('${c}')" style="width:34px; height:34px; border-radius:50%; background:${c};
-      cursor:pointer; border:3px solid ${(business.theme_color||'#1F4E78') === c ? '#333' : 'transparent'};"></div>
+      cursor:pointer; border:3px solid ${(business.theme_color||'#223068') === c ? '#333' : 'transparent'};"></div>
   `).join('');
 
   const logoWrap = document.getElementById('logoPreviewWrap');
   logoWrap.innerHTML = business.logo_url
-    ? `<img src="${business.logo_url}" style="max-height:60px; max-width:160px;">`
+    ? `<img src="${escapeHtml(business.logo_url)}" style="max-height:60px; max-width:160px;">`
     : '<span style="color:#888; font-size:13px;">No logo uploaded</span>';
 }
 
@@ -2019,7 +2051,7 @@ async function saveSettings() {
     location: document.getElementById('setBizSub').value.trim(),
     kra_pin: document.getElementById('setKraPin').value.trim(),
     business_type: document.getElementById('setBizType').value,
-    theme_color: pendingThemeColor || business.theme_color || '#1F4E78'
+    theme_color: pendingThemeColor || business.theme_color || '#223068'
   };
   if (business._pendingLogo !== undefined && business._pendingLogo !== null) {
     updates.logo_url = business._pendingLogo;
@@ -2203,7 +2235,7 @@ async function completeMpesaSale(paymentRequest) {
     subtotalExclVat += (lineTotal - lineVat);
     vatTotal += lineVat;
     grand += lineTotal;
-    return { code: item.code, name: item.name, qty: item.qty, price: item.price, vat_rate: item.vat, unit: item.unit || "piece", line_total: +lineTotal.toFixed(2) };
+    return { product_id: item.id || null, code: item.code, name: item.name, qty: item.qty, price: item.price, vat_rate: item.vat, unit: item.unit || "piece", line_total: +lineTotal.toFixed(2) };
   });
 
   receiptCounter++;
@@ -2229,7 +2261,14 @@ async function completeMpesaSale(paymentRequest) {
   });
 
   const sale = await pushSaleToServer(saleRecord, lineItems);
-  if (sale) callEdgeFunction('etims-submit', { sale_id: sale.id }).catch(() => {}); // fire-and-forget, non-blocking
+  if (sale) {
+    callEdgeFunction('etims-submit', { sale_id: sale.id }).catch(() => {}); // fire-and-forget, non-blocking
+  } else {
+    // Customer's M-Pesa payment already succeeded at this point - the sale record
+    // failing to save (e.g. a genuine stock conflict) needs a human, not a silent drop.
+    await loadAllData();
+    showToast('⚠️ Payment received (' + (paymentRequest.mpesa_receipt || '') + ') but the sale could not be saved — please record this manually and check stock.');
+  }
   logAudit('sale.create', { receipt: receiptNo, total: +grand.toFixed(2), item_count: cart.length, payment_method: 'mpesa', mpesa_receipt: paymentRequest.mpesa_receipt });
 
   showReceipt(receiptNo, cart, subtotalExclVat, vatTotal, grand, now, paymentRequest.mpesa_receipt);
