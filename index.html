@@ -95,12 +95,55 @@
     width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: none;
     background: #16344d; color: #fff; outline: 1px solid #2E75B6;
   }
-  .panel button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
-  .btn-yellow { background: #FFC107; color: #020024; }
-  .btn-blue { background: #0099c2; color: #fff; }
-  .btn-green { background: #306c5f; color: #fff; }
-  .btn-red { background: #a5333f; color: #fff; }
-  .btn-small { padding: 6px 10px; font-size: 13px; width: auto; margin: 0; }
+  .panel button {
+    width: 100%; padding: 13px; margin: 5px 0; border-radius: 999px; border: none;
+    font-weight: bold; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,.28);
+    transition: transform .12s ease, box-shadow .12s ease; letter-spacing: .2px;
+  }
+  .panel button:active { transform: scale(.97); box-shadow: 0 1px 4px rgba(0,0,0,.28); }
+  .btn-yellow { background: linear-gradient(180deg, #FFD54A, #FFC107); color: #020024; }
+  .btn-blue { background: linear-gradient(180deg, #17b3e6, #0099c2); color: #fff; }
+  .btn-green { background: linear-gradient(180deg, #3d8975, #306c5f); color: #fff; }
+  .btn-red { background: linear-gradient(180deg, #c04452, #a5333f); color: #fff; }
+  .btn-small { padding: 6px 14px; font-size: 13px; width: auto; margin: 0; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .qty-stepper button { width: auto; padding: 2px 10px; margin: 0; box-shadow: none; }
+
+  /* ---- Checkout "truck delivery" animation (Buy Now -> truck -> Ordered) ---- */
+  .buy-btn { position: relative; overflow: hidden; }
+  .buy-btn__idle {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: opacity .18s ease;
+  }
+  .buy-btn.is-packing .buy-btn__idle,
+  .buy-btn.is-rolling .buy-btn__idle,
+  .buy-btn.is-done .buy-btn__idle { opacity: 0; }
+  .buy-btn__cart {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; opacity: 0; transition: opacity .18s ease; z-index: 2;
+  }
+  .buy-btn.is-packing .buy-btn__cart,
+  .buy-btn.is-rolling .buy-btn__cart { opacity: 1; }
+  .buy-btn__confirm {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: #d7f2e3; color: #1c7a4d; opacity: 0; transition: opacity .25s ease; z-index: 1;
+  }
+  .buy-btn.is-done .buy-btn__confirm { opacity: 1; }
+  .buy-btn__truck {
+    position: absolute; top: 50%; left: -15%; transform: translateY(-50%) scale(.7);
+    font-size: 20px; z-index: 3; opacity: 0; pointer-events: none;
+  }
+  .buy-btn.is-rolling .buy-btn__truck {
+    opacity: 1; animation: buyTruckRoll .7s ease-in-out forwards;
+  }
+  @keyframes buyTruckRoll {
+    0%   { left: -15%; transform: translateY(-50%) scale(.75) rotate(0deg); }
+    15%  { transform: translateY(-58%) scale(1) rotate(-2deg); }
+    30%  { transform: translateY(-50%) scale(1) rotate(0deg); }
+    45%  { transform: translateY(-58%) scale(1) rotate(2deg); }
+    60%  { transform: translateY(-50%) scale(1) rotate(0deg); }
+    80%  { left: 60%; transform: translateY(-50%) scale(1) rotate(0deg); }
+    100% { left: 118%; transform: translateY(-50%) scale(1) rotate(0deg); }
+  }
 
   .cart-box { background: #fff; color: #020024; border-radius: 10px; padding: 14px; }
   .cart-item {
@@ -198,7 +241,6 @@
   .order-item-card .oi-name { font-size: 13px; margin-bottom: 2px; }
   .order-item-card .oi-price { font-size: 12px; color: #666; margin-bottom: 6px; }
   .qty-stepper { display: flex; align-items: center; justify-content: space-between; }
-  .qty-stepper button { padding: 2px 10px; }
 </style>
 </head>
 <body>
@@ -421,7 +463,12 @@
       </div>
     </div>
 
-    <button class="btn-green" id="checkoutBtn" onclick="checkout()" style="display:none;">Checkout &amp; Print Receipt (Cash)</button>
+    <button class="btn-green buy-btn" id="checkoutBtn" onclick="handleCheckoutClick(this)" style="display:none;">
+      <span class="buy-btn__idle">🛒 Checkout &amp; Print Receipt (Cash)</span>
+      <span class="buy-btn__cart">🛒</span>
+      <span class="buy-btn__truck">🚚</span>
+      <span class="buy-btn__confirm">✅ Ordered</span>
+    </button>
     <button class="btn-blue" id="mpesaBtn" onclick="openMpesaPrompt()" style="display:none;">📱 Charge with M-Pesa</button>
     <button class="btn-red" id="clearBtn" onclick="clearCart()" style="display:none;">Clear Cart</button>
 
@@ -517,7 +564,12 @@
           <span>Total (VAT incl.)</span><span id="orderCheckTotal">KES 0.00</span>
         </div>
         <button class="btn-blue" onclick="sendToKitchen()">🔔 Send to Kitchen</button>
-        <button class="btn-green" onclick="checkoutTableOrder()">✅ Checkout Table</button>
+        <button class="btn-green buy-btn" onclick="handleTableCheckoutClick(this)">
+          <span class="buy-btn__idle">✅ Checkout Table</span>
+          <span class="buy-btn__cart">🛒</span>
+          <span class="buy-btn__truck">🚚</span>
+          <span class="buy-btn__confirm">✅ Ordered</span>
+        </button>
       </div>
     </div>
 
@@ -1342,6 +1394,7 @@ function renderCart() {
   empty.style.display = 'none';
   totals.style.display = 'block';
   checkoutBtn.style.display = 'block';
+  resetBuyAnimation(checkoutBtn);
   clearBtn.style.display = 'block';
   document.getElementById('mpesaBtn').style.display = 'block';
 
@@ -1525,6 +1578,44 @@ async function saveNewProduct() {
 /* =====================================================================
    CHECKOUT (with offline queue support)
 ===================================================================== */
+
+/* "Truck delivery" button animation: idle -> packing (cart icon) ->
+   rolling (truck drives across) -> done (green "Ordered" state).
+   Returns a Promise that resolves once the animation finishes, so
+   callers can run the real checkout logic alongside it. */
+function playBuyAnimation(btn) {
+  if (!btn) return Promise.resolve();
+  return new Promise(resolve => {
+    btn.classList.remove('is-done');
+    btn.classList.add('is-packing');
+    setTimeout(() => {
+      btn.classList.remove('is-packing');
+      btn.classList.add('is-rolling');
+      setTimeout(() => {
+        btn.classList.remove('is-rolling');
+        btn.classList.add('is-done');
+        resolve();
+      }, 700);
+    }, 220);
+  });
+}
+function resetBuyAnimation(btn) {
+  if (!btn) return;
+  btn.classList.remove('is-packing', 'is-rolling', 'is-done');
+}
+
+async function handleCheckoutClick(btn) {
+  if (cart.length === 0) return;
+  await Promise.all([playBuyAnimation(btn), checkout()]);
+}
+
+async function handleTableCheckoutClick(btn) {
+  const t = hotelTables.find(x => x.id === activeOrderTableId);
+  if (!t || !(t.current_order || []).length) { showToast('No items to checkout'); return; }
+  await Promise.all([playBuyAnimation(btn), checkoutTableOrder()]);
+  resetBuyAnimation(btn);
+}
+
 async function checkout() {
   if (cart.length === 0) return;
   const now = new Date();
