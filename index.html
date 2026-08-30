@@ -1394,7 +1394,25 @@ function qtyStep(unit) {
 }
 
 function findProduct(code) {
-  return CATALOG.find(p => p.code.toLowerCase() === String(code).trim().toLowerCase());
+  const clean = String(code).trim().toLowerCase();
+  const exact = CATALOG.find(p => p.code.toLowerCase() === clean);
+  if (exact) return exact;
+
+  // Fallback for a known scanner quirk: a 13-digit EAN barcode can get
+  // misread as 12-digit UPC-A, cleanly dropping the implicit leading digit.
+  // If the raw scan doesn't match anything, check whether it's exactly one
+  // of our catalog codes with its leading digit removed (or vice versa) -
+  // this recovers an already-cataloged item instead of wrongly treating it
+  // as new every time the camera happens to misread it that way.
+  if (/^\d{12}$/.test(clean)) {
+    const asEan13 = CATALOG.find(p => /^\d{13}$/.test(p.code) && p.code.slice(1) === clean);
+    if (asEan13) return asEan13;
+  }
+  if (/^\d{13}$/.test(clean)) {
+    const asUpcA = CATALOG.find(p => /^\d{12}$/.test(p.code) && clean.slice(1) === p.code);
+    if (asUpcA) return asUpcA;
+  }
+  return null;
 }
 
 function refreshCartCustomerPicker() {
@@ -2736,7 +2754,19 @@ async function completeMpesaSale(paymentRequest) {
    logged-in screen.)
 ===================================================================== */
 let html5QrcodeScanner = null;
-const scanConfig = { fps: 10, qrbox: { width: 220, height: 140 } };
+const scanConfig = {
+  fps: 10, qrbox: { width: 220, height: 140 },
+  // Restricting to formats actually used on retail packaging reduces the
+  // scanner's tendency to cross-detect an EAN-13 as UPC-A (which silently
+  // drops the implicit first digit - EAN-13's leading digit is encoded via
+  // parity pattern, not a literal bar group, so a UPC-A misread just loses it).
+  formatsToSupport: [
+    Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+    Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
+    Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
+    Html5QrcodeSupportedFormats.QR_CODE
+  ]
+};
 let scannerStarting = false;
 let scannerRunning = false;
 
