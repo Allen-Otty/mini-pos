@@ -152,10 +152,41 @@
 
   @media print {
     body * { visibility: hidden; }
-    #receiptModal, #receiptModal * { visibility: visible; }
+    #receiptModal, #receiptModal *, #kotModal, #kotModal * { visibility: visible; }
     #receiptModal { position: absolute; inset: 0; background: #fff !important; padding: 0; }
-    .receipt-actions { display: none !important; }
+    #kotModal { position: absolute; inset: 0; background: #fff !important; padding: 0; }
+    .receipt-actions, .kot-actions { display: none !important; }
   }
+
+  #kotModal {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1000;
+    align-items: center; justify-content: center; padding: 16px;
+  }
+  #kotModal.show { display: flex; }
+  .kot-paper {
+    background: #fff; color: #222; width: 100%; max-width: 320px; padding: 20px;
+    border-radius: 8px; font-family: 'Courier New', monospace;
+  }
+  .kot-paper h2 { text-align: center; font-size: 16px; margin: 0 0 2px; }
+  .kot-paper .sub { text-align: center; font-size: 11px; color: #555; margin-bottom: 10px; }
+  .kot-paper hr { border: none; border-top: 1px dashed #999; margin: 8px 0; }
+  .kot-line { display: flex; justify-content: space-between; font-size: 13px; margin: 4px 0; font-weight: bold; }
+  .kot-actions { max-width: 320px; margin: 10px auto 0; }
+  .kot-actions button { margin-top: 8px; }
+
+  .table-tile { border-radius: 8px; padding: 12px 8px; text-align: center; cursor: pointer; min-width: 74px; }
+  .table-tile.free { background: #2e9e5b; color: #fff; }
+  .table-tile.occupied { background: #c0392b; color: #fff; }
+  .table-tile .t-name { font-weight: bold; }
+  .table-tile .t-status { font-size: 11px; margin-top: 2px; }
+  .table-tile .t-total { font-size: 11px; margin-top: 4px; opacity: .9; }
+  .cat-chip { display: inline-block; padding: 6px 14px; margin: 0 6px 6px 0; border-radius: 16px; background: #eee; color: #333; font-size: 13px; cursor: pointer; }
+  .cat-chip.active { background: #1F4E78; color: #fff; }
+  .order-item-card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 8px; }
+  .order-item-card .oi-name { font-size: 13px; margin-bottom: 2px; }
+  .order-item-card .oi-price { font-size: 12px; color: #666; margin-bottom: 6px; }
+  .qty-stepper { display: flex; align-items: center; justify-content: space-between; }
+  .qty-stepper button { padding: 2px 10px; }
 </style>
 </head>
 <body>
@@ -427,18 +458,38 @@
 
   <!-- ================= MENU & TABLES TAB (Hotel/Restaurant only) ================= -->
   <div class="panel" id="tab-menu">
-    <div class="cart-box">
-      <div style="font-weight:bold; margin-bottom:8px;">🍽️ Menu (grouped by category)</div>
-      <div id="menuGroupedView"></div>
-      <div class="empty-note" id="menuGroupedEmpty">No menu items yet — add them from the Catalog tab (each item's Category becomes its menu section).</div>
+
+    <div id="tablesFloorView">
+      <div class="cart-box">
+        <div style="font-weight:bold; margin-bottom:8px;">🪑 Tables — tap a table to start/continue its order</div>
+        <input type="text" id="tableName" placeholder="Table number/name e.g. T1, Patio 2">
+        <button class="btn-green" onclick="addTable()">Add Table</button>
+        <div id="tablesGrid" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
+        <div class="empty-note" id="tablesEmpty">No tables added yet.</div>
+      </div>
     </div>
-    <div class="cart-box" style="margin-top:14px;">
-      <div style="font-weight:bold; margin-bottom:8px;">🪑 Tables</div>
-      <input type="text" id="tableName" placeholder="Table number/name e.g. T1, Patio 2">
-      <button class="btn-green" onclick="addTable()">Add Table</button>
-      <div id="tablesGrid" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
-      <div class="empty-note" id="tablesEmpty">No tables added yet.</div>
+
+    <div id="tableOrderView" style="display:none;">
+      <div class="cart-box">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+          <button class="btn-yellow" onclick="backToTables()">← Back</button>
+          <div style="font-weight:bold;" id="orderTableTitle"></div>
+        </div>
+        <div id="orderCatChips" style="margin-bottom:10px;"></div>
+        <div id="orderItemGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"></div>
+        <div class="empty-note" id="orderItemEmpty" style="display:none;">No items in this category — add some from the Catalog tab.</div>
+      </div>
+      <div class="cart-box" style="margin-top:14px;">
+        <div style="font-weight:bold; margin-bottom:8px;">Running check</div>
+        <div id="orderCheckLines" style="font-size:13px; margin-bottom:8px;"></div>
+        <div style="display:flex; justify-content:space-between; font-weight:bold; border-top:1px solid #eee; padding-top:8px; margin-bottom:10px;">
+          <span>Total (VAT incl.)</span><span id="orderCheckTotal">KES 0.00</span>
+        </div>
+        <button class="btn-blue" onclick="sendToKitchen()">🔔 Send to Kitchen</button>
+        <button class="btn-green" onclick="checkoutTableOrder()">✅ Checkout Table</button>
+      </div>
     </div>
+
   </div>
 
   <!-- ================= SALES LOG TAB ================= -->
@@ -658,6 +709,16 @@
     <div class="receipt-actions">
       <button class="btn-blue" onclick="window.print()">🖨️ Print / Save PDF</button>
       <button class="btn-red" onclick="closeReceipt()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="kotModal">
+  <div>
+    <div class="kot-paper" id="kotContent"></div>
+    <div class="kot-actions">
+      <button class="btn-blue" onclick="window.print()">🖨️ Print Kitchen Ticket</button>
+      <button class="btn-red" onclick="closeKOT()">Close</button>
     </div>
   </div>
 </div>
@@ -1921,34 +1982,12 @@ function renderTeam() {
 /* =====================================================================
    MENU & TABLES (Hotel/Restaurant only)
 ===================================================================== */
+let activeOrderTableId = null;
+let activeOrderCat = null;
+let orderCatList = [];
+
 function renderMenuTab() {
-  renderGroupedMenu();
   renderTables();
-}
-
-function renderGroupedMenu() {
-  const view = document.getElementById('menuGroupedView');
-  const empty = document.getElementById('menuGroupedEmpty');
-  if (!view) return;
-  if (CATALOG.length === 0) { view.innerHTML = ''; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-
-  const byCategory = {};
-  CATALOG.forEach(p => {
-    const cat = p.category || 'Uncategorized';
-    if (!byCategory[cat]) byCategory[cat] = [];
-    byCategory[cat].push(p);
-  });
-
-  view.innerHTML = Object.entries(byCategory).map(([cat, items]) => `
-    <div style="margin-bottom:14px;">
-      <div style="font-weight:bold; color:#223068; border-bottom:1px solid #eee; padding-bottom:4px; margin-bottom:6px;">${escapeHtml(cat)}</div>
-      ${items.map(p => `
-        <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:14px;">
-          <span>${escapeHtml(p.name)} ${(p.stock !== undefined && p.stock <= 0) ? '<span style="color:#c0392b; font-size:11px;">(out of stock)</span>' : ''}</span>
-          <span style="font-weight:bold;">KES ${p.price.toFixed(2)}</span>
-        </div>`).join('')}
-    </div>`).join('');
 }
 
 async function addTable() {
@@ -1956,7 +1995,7 @@ async function addTable() {
   if (!name) { showToast('Enter a table number or name'); return; }
 
   const { data, error } = await sb.from('tables').insert({
-    business_id: activeBusinessId, name, status: 'free'
+    business_id: activeBusinessId, name, status: 'free', current_order: []
   }).select().single();
   if (error) { showToast('Could not add table: ' + error.message); return; }
 
@@ -1964,16 +2003,6 @@ async function addTable() {
   renderTables();
   document.getElementById('tableName').value = '';
   showToast('Added table "' + name + '"');
-}
-
-async function toggleTableStatus(id) {
-  const t = hotelTables.find(x => x.id === id);
-  if (!t) return;
-  const newStatus = t.status === 'free' ? 'occupied' : 'free';
-  const { error } = await sb.from('tables').update({ status: newStatus }).eq('id', id);
-  if (error) { showToast('Could not update table: ' + error.message); return; }
-  t.status = newStatus;
-  renderTables();
 }
 
 async function removeTable(id) {
@@ -1989,12 +2018,152 @@ function renderTables() {
   if (!grid) return;
   if (hotelTables.length === 0) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
-  grid.innerHTML = hotelTables.map(t => `
-    <div style="background:${t.status === 'free' ? '#2e9e5b' : '#c0392b'}; color:#fff; border-radius:8px; padding:10px 12px; min-width:80px; text-align:center; position:relative;">
-      <div style="font-weight:bold; cursor:pointer;" onclick="toggleTableStatus('${t.id}')">${escapeHtml(t.name)}</div>
-      <div style="font-size:11px; margin-top:2px; cursor:pointer;" onclick="toggleTableStatus('${t.id}')">${t.status === 'free' ? 'Free' : 'Occupied'}</div>
-      <div style="position:absolute; top:2px; right:4px; font-size:11px; cursor:pointer;" onclick="removeTable('${t.id}')">✕</div>
-    </div>`).join('');
+  grid.innerHTML = hotelTables.map(t => {
+    const order = t.current_order || [];
+    const total = order.reduce((s, li) => s + li.price * li.qty, 0);
+    return `
+    <div class="table-tile ${t.status === 'free' ? 'free' : 'occupied'}" onclick="openTableOrder('${t.id}')">
+      <div class="t-name">${escapeHtml(t.name)}</div>
+      <div class="t-status">${t.status === 'free' ? 'Free' : 'Occupied'}</div>
+      ${order.length > 0 ? `<div class="t-total">KES ${total.toFixed(2)}</div>` : ''}
+      <div style="position:relative;">
+        <span style="position:absolute; top:-38px; right:-4px; font-size:11px; cursor:pointer;" onclick="event.stopPropagation(); removeTable('${t.id}')">✕</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openTableOrder(id) {
+  const t = hotelTables.find(x => x.id === id);
+  if (!t) return;
+  activeOrderTableId = id;
+  orderCatList = [...new Set(CATALOG.map(p => p.category || 'Uncategorized'))];
+  activeOrderCat = orderCatList[0] || null;
+  document.getElementById('tablesFloorView').style.display = 'none';
+  document.getElementById('tableOrderView').style.display = 'block';
+  document.getElementById('orderTableTitle').textContent = t.name + ' — order';
+  renderOrderCatChips();
+  renderOrderItems();
+  renderOrderCheck();
+}
+
+function backToTables() {
+  document.getElementById('tablesFloorView').style.display = 'block';
+  document.getElementById('tableOrderView').style.display = 'none';
+  activeOrderTableId = null;
+  renderTables();
+}
+
+function renderOrderCatChips() {
+  const wrap = document.getElementById('orderCatChips');
+  wrap.innerHTML = orderCatList.map((c, i) =>
+    `<span class="cat-chip ${c === activeOrderCat ? 'active' : ''}" onclick="setOrderCatByIndex(${i})">${escapeHtml(c)}</span>`
+  ).join('');
+}
+function setOrderCatByIndex(i) {
+  activeOrderCat = orderCatList[i];
+  renderOrderCatChips();
+  renderOrderItems();
+}
+
+function renderOrderItems() {
+  const t = hotelTables.find(x => x.id === activeOrderTableId);
+  if (!t) return;
+  const items = CATALOG.filter(p => (p.category || 'Uncategorized') === activeOrderCat);
+  const grid = document.getElementById('orderItemGrid');
+  const empty = document.getElementById('orderItemEmpty');
+  if (items.length === 0) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  const order = t.current_order || [];
+  grid.innerHTML = items.map(p => {
+    const line = order.find(li => li.code === p.code);
+    const qty = line ? line.qty : 0;
+    const safeCode = String(p.code).replace(/'/g, "\\'");
+    return `
+    <div class="order-item-card">
+      <div class="oi-name">${escapeHtml(p.name)}</div>
+      <div class="oi-price">KES ${p.price.toFixed(2)}</div>
+      <div class="qty-stepper">
+        <button onclick="changeOrderQty('${safeCode}', -1)">−</button>
+        <span>${qty}</span>
+        <button onclick="changeOrderQty('${safeCode}', 1)">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function changeOrderQty(code, delta) {
+  const t = hotelTables.find(x => x.id === activeOrderTableId);
+  if (!t) return;
+  const product = findProduct(code);
+  if (!product) return;
+  let order = t.current_order || [];
+  const idx = order.findIndex(li => li.code === code);
+  if (idx === -1 && delta > 0) {
+    order.push({ code: product.code, name: product.name, price: product.price, vat: product.vat, unit: product.unit || 'piece', qty: 1 });
+  } else if (idx !== -1) {
+    order[idx].qty += delta;
+    if (order[idx].qty <= 0) order.splice(idx, 1);
+  }
+  t.current_order = order;
+  t.status = order.length > 0 ? 'occupied' : 'free';
+
+  const { error } = await sb.from('tables').update({ current_order: order, status: t.status }).eq('id', t.id);
+  if (error) showToast('Could not save order change: ' + error.message);
+
+  renderOrderItems();
+  renderOrderCheck();
+}
+
+function renderOrderCheck() {
+  const t = hotelTables.find(x => x.id === activeOrderTableId);
+  if (!t) return;
+  const order = t.current_order || [];
+  const linesEl = document.getElementById('orderCheckLines');
+  if (order.length === 0) {
+    linesEl.innerHTML = '<span style="color:#888;">No items yet</span>';
+  } else {
+    linesEl.innerHTML = order.map(li =>
+      `<div style="display:flex; justify-content:space-between; padding:2px 0;"><span>${escapeHtml(li.name)} x${li.qty}</span><span>KES ${(li.price * li.qty).toFixed(2)}</span></div>`
+    ).join('');
+  }
+  const total = order.reduce((s, li) => s + li.price * li.qty, 0);
+  document.getElementById('orderCheckTotal').textContent = 'KES ' + total.toFixed(2);
+}
+
+function sendToKitchen() {
+  const t = hotelTables.find(x => x.id === activeOrderTableId);
+  if (!t || !(t.current_order || []).length) { showToast('No items to send'); return; }
+  const now = new Date();
+  const linesHtml = t.current_order.map(li =>
+    `<div class="kot-line"><span>${li.qty} x ${escapeHtml(li.name)}</span></div>`
+  ).join('');
+  document.getElementById('kotContent').innerHTML = `
+    <h2>KITCHEN ORDER</h2>
+    <div class="sub">${escapeHtml(t.name)} · ${now.toLocaleDateString()} ${now.toLocaleTimeString()}</div>
+    <hr>
+    ${linesHtml}
+    <hr>
+    <div class="sub">${t.current_order.reduce((s, li) => s + li.qty, 0)} item(s)</div>
+  `;
+  document.getElementById('kotModal').classList.add('show');
+  logAudit('kot.sent', { table: t.name, item_count: t.current_order.length });
+}
+function closeKOT() { document.getElementById('kotModal').classList.remove('show'); }
+
+async function checkoutTableOrder() {
+  const t = hotelTables.find(x => x.id === activeOrderTableId);
+  if (!t || !(t.current_order || []).length) { showToast('No items to checkout'); return; }
+
+  cart = t.current_order.map(li => ({ code: li.code, name: li.name, price: li.price, vat: li.vat, unit: li.unit, qty: li.qty }));
+  const savedTableId = t.id;
+  await checkout();
+
+  const { error } = await sb.from('tables').update({ current_order: [], status: 'free' }).eq('id', savedTableId);
+  if (error) { showToast('Sale completed, but could not clear table: ' + error.message); }
+  t.current_order = [];
+  t.status = 'free';
+  backToTables();
 }
 
 /* =====================================================================
