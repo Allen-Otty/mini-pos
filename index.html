@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Dogo POS">
-<meta name="theme-color" content="#223068">
+<meta name="theme-color" content="#020024">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>Dogo POS</title>
@@ -14,7 +14,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <style>
-  :root { --brand: #223068; --accent-purple: #6000d3; --accent-green: #306c5f; }
+  :root { --brand: #020024; --accent-purple: #00d4ff; --accent-green: #306c5f; }
   * { box-sizing: border-box; }
   body {
     margin: 0; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -29,7 +29,7 @@
     max-width: 380px; margin: 30px auto; padding: 0 16px;
   }
   .auth-card {
-    background: #fff; color: #223068; border-radius: 16px; padding: 28px 22px;
+    background: #fff; color: #020024; border-radius: 16px; padding: 28px 22px;
     box-shadow: 0 10px 40px rgba(0,0,0,.4);
   }
   .auth-card h2 { margin: 0 0 4px; text-align: center; }
@@ -37,20 +37,20 @@
   .auth-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
   .auth-tab {
     flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold;
-    background: #eef3f8; color: #223068; cursor: pointer; font-size: 13px;
+    background: #eef3f8; color: #020024; cursor: pointer; font-size: 13px;
   }
   .auth-tab.active { background: var(--brand); color: #fff; }
   .auth-panel { display: none; }
   .auth-panel.active { display: block; }
   .auth-card input, .auth-card select {
     width: 100%; padding: 12px; margin: 6px 0; border-radius: 8px;
-    background: #f2f6fa; color: #223068; outline: none; border: 1px solid #dbe5ee; font-size: 14px;
+    background: #f2f6fa; color: #020024; outline: none; border: 1px solid #dbe5ee; font-size: 14px;
   }
   .auth-card label { font-size: 12px; font-weight: bold; color: #445; margin-top: 8px; display: block; }
   .method-toggle { display: flex; gap: 8px; margin: 6px 0 10px; }
   .method-toggle button {
     flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #dbe5ee; background: #fff;
-    color: #223068; font-size: 12px; cursor: pointer;
+    color: #020024; font-size: 12px; cursor: pointer;
   }
   .method-toggle button.active { background: var(--brand); color: #fff; border-color: var(--brand); }
   .auth-btn {
@@ -60,7 +60,18 @@
   }
   .auth-link { text-align: center; font-size: 12px; margin-top: 14px; color: #667; }
   .auth-error { background: #fde8e8; color: #a33; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
-  .auth-info { background: #e8f4fd; color: #223068; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
+  .auth-info { background: #e8f4fd; color: #020024; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
+  .pw-wrap { position: relative; }
+  .pw-wrap input { padding-right: 42px !important; width: 100%; box-sizing: border-box; }
+  .pw-toggle {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; font-size: 16px; cursor: pointer; padding: 4px; line-height: 1;
+  }
+  .pw-rules { list-style: none; padding: 0; margin: 4px 0 10px; font-size: 12px; }
+  .pw-rules li { color: #999; margin: 2px 0; padding-left: 18px; position: relative; }
+  .pw-rules li::before { content: "○"; position: absolute; left: 0; }
+  .pw-rules li.ok { color: #2e9e5b; }
+  .pw-rules li.ok::before { content: "✓"; }
   .otp-input { text-align: center; letter-spacing: 8px; font-size: 20px !important; font-weight: bold; }
 
   /* ---------------- App shell (shown after login) ---------------- */
@@ -70,11 +81,11 @@
     flex: 1 1 30%; padding: 8px 4px; border-radius: 8px; border: none; font-weight: bold;
     font-size: 12px; background: #2E75B6; color: #fff; cursor: pointer;
   }
-  .tab-btn.active { background: var(--accent-purple); color: #fff; }
+  .tab-btn.active { background: var(--accent-purple); color: #020024; }
   .panel { max-width: 480px; margin: 16px auto; padding: 0 16px; display: none; }
   .panel.active { display: block; }
 
-  .scan-status { background: #fff; color: #223068; border-radius: 10px; padding: 12px; text-align: center; margin-bottom: 12px; }
+  .scan-status { background: #fff; color: #020024; border-radius: 10px; padding: 12px; text-align: center; margin-bottom: 12px; }
   .scan-status .code { font-size: 20px; font-weight: bold; }
   .scan-status .hint { font-size: 13px; color: #666; margin-top: 4px; }
   #reader { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
@@ -85,13 +96,13 @@
     background: #16344d; color: #fff; outline: 1px solid #2E75B6;
   }
   .panel button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
-  .btn-yellow { background: #FFC107; color: #223068; }
-  .btn-blue { background: #1e4ba3; color: #fff; }
+  .btn-yellow { background: #FFC107; color: #020024; }
+  .btn-blue { background: #0099c2; color: #fff; }
   .btn-green { background: #306c5f; color: #fff; }
   .btn-red { background: #a5333f; color: #fff; }
   .btn-small { padding: 6px 10px; font-size: 13px; width: auto; margin: 0; }
 
-  .cart-box { background: #fff; color: #223068; border-radius: 10px; padding: 14px; }
+  .cart-box { background: #fff; color: #020024; border-radius: 10px; padding: 14px; }
   .cart-item {
     display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #eee;
   }
@@ -104,16 +115,16 @@
   .line-total { font-weight: bold; min-width: 70px; text-align: right; }
   .remove-btn { background: #c0392b; color: #fff; width: 22px; height: 22px; border-radius: 50%; margin-left: 8px; padding: 0; font-size: 12px; }
 
-  .totals { margin-top: 12px; padding-top: 10px; border-top: 2px solid #223068; font-size: 14px; }
+  .totals { margin-top: 12px; padding-top: 10px; border-top: 2px solid #020024; font-size: 14px; }
   .totals .row { display: flex; justify-content: space-between; margin: 4px 0; }
-  .totals .grand { font-size: 20px; font-weight: bold; color: #223068; }
+  .totals .grand { font-size: 20px; font-weight: bold; color: #020024; }
   .totals .vat-note { font-size: 11px; color: #888; margin-top: -2px; }
 
   .empty-note { color: #888; text-align: center; padding: 20px 0; font-size: 14px; }
 
   .toast {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: #223068; color: #fff; padding: 10px 18px; border-radius: 20px;
+    background: #020024; color: #fff; padding: 10px 18px; border-radius: 20px;
     font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999; max-width: 90%; text-align: center;
   }
   .toast.show { opacity: 1; }
@@ -146,7 +157,7 @@
 
   .log-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
   .log-table th, .log-table td { padding: 6px 4px; border-bottom: 1px solid #eee; text-align: left; }
-  .log-table th { color: #223068; }
+  .log-table th { color: #020024; }
 
   .catalog-note { font-size: 12px; color: #cfe0ee; padding: 0 16px; max-width: 480px; margin: 4px auto 0; text-align: center; }
 
@@ -175,13 +186,14 @@
   .kot-actions button { margin-top: 8px; }
 
   .table-tile { border-radius: 8px; padding: 12px 8px; text-align: center; cursor: pointer; min-width: 74px; }
-  .table-tile.free { background: #2e9e5b; color: #fff; }
-  .table-tile.occupied { background: #c0392b; color: #fff; }
+  .table-tile.free { background: #306c5f; color: #fff; }
+  .table-tile.occupied { background: #a5333f; color: #fff; }
   .table-tile .t-name { font-weight: bold; }
   .table-tile .t-status { font-size: 11px; margin-top: 2px; }
   .table-tile .t-total { font-size: 11px; margin-top: 4px; opacity: .9; }
   .cat-chip { display: inline-block; padding: 6px 14px; margin: 0 6px 6px 0; border-radius: 16px; background: #eee; color: #333; font-size: 13px; cursor: pointer; }
-  .cat-chip.active { background: #1F4E78; color: #fff; }
+  .cat-chip.active { background: #020024; color: #00d4ff; }
+  .btn-grey { background: #888; color: #fff; }
   .order-item-card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 8px; }
   .order-item-card .oi-name { font-size: 13px; margin-bottom: 2px; }
   .order-item-card .oi-price { font-size: 12px; color: #666; margin-bottom: 6px; }
@@ -216,7 +228,10 @@
       <input type="text" id="loginIdentifier" placeholder="you@business.com">
 
       <label>Password</label>
-      <input type="password" id="loginPassword" placeholder="Your password">
+      <div class="pw-wrap">
+        <input type="password" id="loginPassword" placeholder="Your password">
+        <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('loginPassword', this)">👁️</button>
+      </div>
 
       <button class="auth-btn" onclick="handleLogin()">Sign In</button>
       <div class="auth-error" id="loginError"></div>
@@ -265,7 +280,23 @@
       </div>
 
       <label>Password</label>
-      <input type="password" id="suPassword" placeholder="Create a password (min 6 characters)">
+      <div class="pw-wrap">
+        <input type="password" id="suPassword" placeholder="Create a password" oninput="checkPasswordRules()">
+        <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('suPassword', this)">👁️</button>
+      </div>
+      <ul class="pw-rules" id="pwRules">
+        <li id="ruleLen">At least 8 characters</li>
+        <li id="ruleUpper">One uppercase letter</li>
+        <li id="ruleLower">One lowercase letter</li>
+        <li id="ruleNum">One number</li>
+      </ul>
+
+      <label>Confirm Password</label>
+      <div class="pw-wrap">
+        <input type="password" id="suPasswordConfirm" placeholder="Re-enter your password" oninput="checkPasswordMatch()">
+        <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('suPasswordConfirm', this)">👁️</button>
+      </div>
+      <div id="pwMatchMsg" style="font-size:12px; margin:-4px 0 6px;"></div>
 
       <button class="auth-btn" onclick="handleSignup()">Create Business Account</button>
       <div class="auth-error" id="signupError"></div>
@@ -281,7 +312,7 @@
       <input type="text" id="otpCode" class="otp-input" placeholder="000000" maxlength="6" inputmode="numeric">
 
       <button class="auth-btn" onclick="handleVerifyOtp()">Verify & Continue</button>
-      <button class="auth-btn" style="background:#eef3f8; color:#223068; margin-top:6px;" onclick="handleResendOtp()">Resend Code</button>
+      <button class="auth-btn" style="background:#eef3f8; color:#020024; margin-top:6px;" onclick="handleResendOtp()">Resend Code</button>
       <div class="auth-error" id="otpError"></div>
       <div class="auth-info" id="otpInfo"></div>
     </div>
@@ -312,7 +343,7 @@
   <div class="banner banner-lowstock" id="lowStockBanner" onclick="switchTab('dash')" style="cursor:pointer;">
     ⚠️ <span id="lowStockBannerText"></span>
   </div>
-  <div class="banner" id="pendingSyncBanner" style="background:#223068; color:#cfe0ee;" onclick="syncOfflineSales()">
+  <div class="banner" id="pendingSyncBanner" style="background:#020024; color:#cfe0ee;" onclick="syncOfflineSales()">
     🔄 <span id="pendingSyncText"></span> — tap to sync now
   </div>
 
@@ -733,7 +764,7 @@ const SUPABASE_URL = "https://uzwomzkzqrpiumtnniik.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const THEME_COLORS = ["#223068", "#306c5f", "#a5333f", "#6000d3", "#7c44a5", "#1e4ba3"];
+const THEME_COLORS = ["#020024", "#00d4ff", "#306c5f", "#a5333f", "#3a0ca3", "#6a0dad"];
 const LOCAL_QUEUE_KEY = "dogopos_offline_queue_v1";
 const LOCAL_CACHE_KEY = "dogopos_cache_v1"; // last-known catalog/customers for offline selling
 
@@ -852,12 +883,45 @@ function isStrongPassword(pw) {
 }
 const PASSWORD_HINT = 'Password must be 8+ characters with at least one uppercase letter, one lowercase letter, and one number.';
 
+function togglePasswordVisibility(fieldId, btn) {
+  const input = document.getElementById(fieldId);
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btn.textContent = showing ? '👁️' : '🙈';
+}
+
+function checkPasswordRules() {
+  const pw = document.getElementById('suPassword').value;
+  const rules = [
+    ['ruleLen', pw.length >= 8],
+    ['ruleUpper', /[A-Z]/.test(pw)],
+    ['ruleLower', /[a-z]/.test(pw)],
+    ['ruleNum', /[0-9]/.test(pw)],
+  ];
+  rules.forEach(([id, ok]) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('ok', ok);
+  });
+  checkPasswordMatch();
+}
+
+function checkPasswordMatch() {
+  const pw = document.getElementById('suPassword').value;
+  const confirm = document.getElementById('suPasswordConfirm').value;
+  const msg = document.getElementById('pwMatchMsg');
+  if (!msg) return;
+  if (!confirm) { msg.textContent = ''; return; }
+  if (pw === confirm) { msg.textContent = '✓ Passwords match'; msg.style.color = '#2e9e5b'; }
+  else { msg.textContent = '✗ Passwords do not match'; msg.style.color = '#a5333f'; }
+}
+
 async function handleSignup() {
   clearAuthMessages();
   const business_name = document.getElementById('suBizName').value.trim();
   const business_type = document.getElementById('suBizType').value;
   const full_name = document.getElementById('suFullName').value.trim();
   const password = document.getElementById('suPassword').value;
+  const passwordConfirm = document.getElementById('suPasswordConfirm').value;
 
   if (signupMethod === 'phone') {
     showAuthMsg('signupError', 'Phone sign-up needs an SMS provider connected first — please use Email for now.');
@@ -867,6 +931,10 @@ async function handleSignup() {
 
   if (!business_name || !full_name || !email || !password) {
     showAuthMsg('signupError', 'Please fill in all fields.');
+    return;
+  }
+  if (password !== passwordConfirm) {
+    showAuthMsg('signupError', 'Passwords do not match.');
     return;
   }
   if (password.length < 6) {
@@ -881,6 +949,18 @@ async function handleSignup() {
   const { data, error } = await sb.auth.signUp({ email, password });
   if (error) {
     showAuthMsg('signupError', error.message);
+    return;
+  }
+
+  // Supabase returns a "successful" signUp with an empty identities array when the
+  // email is already registered and confirmed - it doesn't error, to avoid leaking
+  // which emails exist. Detect that case explicitly and point the user to Sign In.
+  if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    showAuthMsg('signupError', 'This email is already registered. Redirecting you to Sign In...');
+    setTimeout(() => {
+      showAuthTab('login');
+      document.getElementById('loginIdentifier').value = email;
+    }, 1800);
     return;
   }
 
@@ -1110,7 +1190,7 @@ function applyBusinessTheme() {
   if (!business) return;
   document.getElementById('appTitle').textContent = '🧾 ' + business.name;
   document.getElementById('appTagline').textContent = business.business_type + ' · Dogo POS';
-  document.getElementById('appHeader').style.background = business.theme_color || '#223068';
+  document.getElementById('appHeader').style.background = business.theme_color || '#020024';
   const logoWrap = document.getElementById('headerLogoWrap');
   logoWrap.innerHTML = business.logo_url
     ? `<img src="${escapeHtml(business.logo_url)}" style="max-height:44px; max-width:130px; display:block; margin:0 auto 4px;">`
@@ -2178,7 +2258,7 @@ function renderSettingsForm() {
   const swatchWrap = document.getElementById('colorSwatches');
   swatchWrap.innerHTML = THEME_COLORS.map(c => `
     <div onclick="pickColor('${c}')" style="width:34px; height:34px; border-radius:50%; background:${c};
-      cursor:pointer; border:3px solid ${(business.theme_color||'#223068') === c ? '#333' : 'transparent'};"></div>
+      cursor:pointer; border:3px solid ${(business.theme_color||'#020024') === c ? '#333' : 'transparent'};"></div>
   `).join('');
 
   const logoWrap = document.getElementById('logoPreviewWrap');
@@ -2220,7 +2300,7 @@ async function saveSettings() {
     location: document.getElementById('setBizSub').value.trim(),
     kra_pin: document.getElementById('setKraPin').value.trim(),
     business_type: document.getElementById('setBizType').value,
-    theme_color: pendingThemeColor || business.theme_color || '#223068'
+    theme_color: pendingThemeColor || business.theme_color || '#020024'
   };
   if (business._pendingLogo !== undefined && business._pendingLogo !== null) {
     updates.logo_url = business._pendingLogo;
