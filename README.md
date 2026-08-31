@@ -6,7 +6,7 @@ A multi-business point-of-sale web app: cloud sync, role-based Admin/Teller acco
 **Backend:** Supabase project `mini-pos-backend` (id: `uzwomzkzqrpiumtnniik`)
 **Source code:** https://github.com/Allen-Otty/mini-pos
 
-> **Status note (2026-08-30):** this README describes what is *confirmed* built by direct inspection of the real code and live database. See `TASKS.md` for exactly what's in progress. This revision reconciles two sessions that were working on the same live repo in parallel (this one, and an earlier Claude Code session). Git log confirmed both sessions independently applied the same restaurant table-order patch; the other session's version had pushed first and was slightly more robust in two spots (safer onclick-attribute escaping), so that version was kept as the base with this session's exclusive work (Neon Dusk theme, signup/password hardening, security fixes) layered on top and reconciled by hand rather than a raw git merge.
+> **Status note (2026-08-31):** Added a full dual-theme system (Neon Dusk / Till Paper) and replaced every emoji icon with real Font Awesome icons — both live. The email OTP signup flow has a known, unresolved bug (see Section 3) — deliberately left as-is for now per the user's decision rather than reworked.
 
 ---
 
@@ -19,6 +19,8 @@ A multi-business point-of-sale web app: cloud sync, role-based Admin/Teller acco
 - **Menu & Tables** (Hotel/Restaurant only): **redesigned to a table-first order flow** — tap a table → category-chip menu → running check → Send to Kitchen (prints a KOT) / Checkout Table (clears the table back to Free). Live — see Section 2 for reconciliation notes
 - **Signup/Login hardening**: duplicate-email detection with a link to Sign In, Confirm Password field, show/hide password toggle (login + signup), password rules checklist (8+ chars, upper/lower/number) — live
 - **Neon Dusk theme** (`#00d4ff` / `#020024`) applied as the new default palette — live
+- **Dual-theme system**: Neon Dusk (default, dark) and Till Paper (warm, high-contrast, squared buttons for bright daylight use) — toggle in the header, Settings, and the pre-login screen; persists per-device via `localStorage`, with an anti-flash-of-wrong-theme script applying the saved theme before first paint
+- **Icons**: every emoji in the app replaced with real Font Awesome icons
 - **Platform Admin**: in-app business switcher (`checkPlatformAdminStatus()`, `renderPlatformSwitcher()`) AND a separate full console at `/admin/index.html` — business suspend/reactivate/delete, promote/demote admins, stats dashboard
 - **eTIMS Settings**: save/status/remove KRA PIN/Branch ID; every sale fires a non-blocking `etims-submit` call
 - **Dashboard, Sales Log, Customers, Reports, Expenses, Catalog, Team, Settings** tabs
@@ -79,11 +81,12 @@ See `TASKS.md` for the full, maintained list. Headline items:
 - **Still open:** duplicate permissive RLS policies on `businesses` (member vs platform-admin, for SELECT and UPDATE) — cosmetic performance note only, deliberately left alone rather than risk breaking access
 - **Still open:** leaked-password protection in Supabase Auth settings — dashboard-only toggle, needs the user to do it directly
 - **Still open:** ~20 unindexed foreign keys — fine at current scale
+- **Known bug, deliberately left unfixed (user's call):** email OTP signup verification fails as `otp_expired` within 18–52 seconds of the code being sent — confirmed via Supabase auth logs, not a real timeout or user error. The dashboard's "Email OTP Expiration" is genuinely set to 3600s, so this looks like a Supabase-side config propagation issue rather than anything fixable from our code or dashboard. Also noticed while investigating: every auth request's logged referer is `http://localhost:3000` — worth checking Authentication → URL Configuration → Site URL is set to the real production URL. Alternatives discussed (custom self-hosted OTP, magic link, SMS OTP) — user chose to leave OTP as-is for now rather than rework it.
 
 ## 6. Hosting & deployment
 
-- Live link: GitHub Pages — `https://allen-otty.github.io/mini-pos/` — every push to `main` auto-rebuilds within 1–2 minutes. (Previously went down silently when Pages got disabled on the repo — confirmed re-enabled and working as of 2026-08-29.)
-- Netlify site (`dogo-pos`) created but not yet deployed
+- **GitHub Pages:** `https://allen-otty.github.io/mini-pos/` — every push to `main` auto-rebuilds within 1–2 minutes
+- **Netlify:** `https://dogo-pos-app.netlify.app` — live, linked to the same GitHub repo/branch for continuous deployment (created to avoid exposing the GitHub username in the URL)
 
 ```bash
 git clone https://github.com/Allen-Otty/mini-pos.git

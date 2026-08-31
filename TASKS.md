@@ -2,7 +2,7 @@
 
 > **Rule:** this file is updated after every change made to the system (frontend, backend, or docs). Checked = verified done. Unchecked = still open. Each entry notes how/where it was verified, not just claimed.
 
-Last updated: 2026-08-30
+Last updated: 2026-08-31
 
 ---
 
@@ -86,6 +86,17 @@ Last updated: 2026-08-30
 - [ ] `is_admin()`/`is_platform_admin()`/`business_is_active()` still `anon`-callable — deliberately left alone this session since they're likely referenced inside RLS policies evaluated for the `authenticated` role, and revoking from `anon` without fully tracing every policy risks breaking login/checkout. Needs the user's go-ahead before touching.
 - [ ] Duplicate permissive RLS policies on `businesses` — confirmed these are two legitimate, distinct policies (regular member vs platform admin) OR'd together, not a bug. Performance-only, left as-is.
 - [ ] Leaked-password protection — dashboard-only Supabase Auth setting, needs the user to toggle it directly (can't be done via SQL/API)
+
+## ✅ Completed (2026-08-31 session)
+
+- [x] Netlify deployment made live at `dogo-pos-app.netlify.app` — site created via Netlify MCP connector, visitor SSO-login requirement disabled (was blocking public access), linked to `Allen-Otty/mini-pos` main branch for continuous deployment. Verified live (user confirmed).
+- [x] Fixed real barcode-scanning bug: EAN-13 codes were being misread as UPC-A (dropping the implicit leading digit — e.g. `6197800022728` read as `197800022728`), causing already-catalogued items to wrongly trigger "new item" on every scan. Root-caused by extracting frames from a user-submitted screen recording via `ffmpeg` (video can't be played directly) and cross-checking against Sales Log evidence of the same item appearing under two different receipts. Fixed two ways: restricted `formatsToSupport` to actual retail symbologies, and added a fallback match in `findProduct()` for the specific leading-digit-drop case.
+- [x] Fixed real bug: "Resend Code" button had no debounce — Supabase auth logs showed it firing twice, 1 second apart, sending two OTPs and leaving the user unsure which was current. Added a 30s cooldown with the button disabled during it.
+- [x] Diagnosed the OTP `otp_expired` bug precisely via direct Supabase auth log inspection (not guessing): verify attempts failing 18–52 seconds after signup, `type: 'signup'` confirmed correct in code, user confirmed the dashboard's OTP expiry setting genuinely shows 3600s saved. Conclusion: Supabase-side config propagation issue, not fixable from our code or dashboard. **User's decision: leave OTP as-is for now** rather than pursue a fix (options discussed: custom self-hosted OTP, magic link, SMS OTP — all declined for the moment).
+- [x] Noticed but not yet fixed: every Supabase auth log entry shows `referer: http://localhost:3000` — flagged for the user to check Authentication → URL Configuration → Site URL is set to the real production domain.
+- [x] Built full dual-theme system: Neon Dusk (default) and Till Paper (warm/high-contrast/squared buttons), CSS custom-property token system in `:root` and `[data-theme="paper"]`, toggle in header + Settings + pre-login screen, `localStorage` persistence, anti-flash-of-wrong-theme script. **Caught and fixed a real bug introduced mid-build**: used invalid JS-ternary syntax directly in CSS (`color: [data-theme="paper"] ? x : y`) in three places — not valid CSS, would have silently failed. Fixed with proper `[data-theme="paper"]` override rules before pushing. Verified CSS brace balance and full JS syntax check before push.
+- [x] Replaced all 62 emoji instances (29 unique) with real Font Awesome icons, loaded from cdnjs. Caught one collateral bug from the blanket find-replace (an emoji inside a CSS `content:` property became invalid HTML-in-CSS) and fixed it before pushing.
+- [x] Fixed decimal-qty save bug, a form-reset bug, and added a real install banner (per commit `9176ea0` — landed between sessions, confirmed present via git log, not independently re-verified beyond that).
 
 ## How this file will be maintained
 
