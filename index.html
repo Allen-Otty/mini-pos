@@ -171,9 +171,10 @@
   .toast {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
     background: #020024; color: #fff; padding: 10px 18px; border-radius: 20px;
-    font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999; max-width: 90%; text-align: center;
+    font-size: 13px; opacity: 0; transition: opacity .3s, bottom .2s; pointer-events: none; z-index: 999; max-width: 90%; text-align: center;
   }
   .toast.show { opacity: 1; }
+  body.has-install-banner .toast { bottom: 90px; }
 
   .banner {
     max-width: 480px; margin: 10px auto 0; padding: 10px 16px; border-radius: 8px; font-size: 13px;
@@ -244,9 +245,44 @@
   .order-item-card .oi-name { font-size: 13px; margin-bottom: 2px; }
   .order-item-card .oi-price { font-size: 12px; color: #666; margin-bottom: 6px; }
   .qty-stepper { display: flex; align-items: center; justify-content: space-between; }
+  /* ---------------- Install app banner ---------------- */
+  #installBanner {
+    display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 900;
+    background: #0d3a2f; border-top: 1px solid rgba(255,255,255,.12);
+    padding: 12px 14px; align-items: center; gap: 12px;
+    box-shadow: 0 -4px 14px rgba(0,0,0,.35);
+  }
+  #installBanner.show { display: flex; }
+  #installBanner .ib-icon {
+    width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+    background: var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  #installBanner .ib-text { flex: 1; min-width: 0; }
+  #installBanner .ib-title { font-weight: bold; font-size: 14px; }
+  #installBanner .ib-sub { font-size: 12px; color: #b7d8cd; margin-top: 1px; }
+  #installBanner button.ib-install {
+    width: auto; margin: 0; padding: 9px 16px; font-size: 13px;
+    background: linear-gradient(180deg, #3d8975, #306c5f); color: #fff;
+    border-radius: 999px; border: none; font-weight: bold; cursor: pointer;
+  }
+  #installBanner .ib-close {
+    background: none; border: none; color: #b7d8cd; font-size: 18px; line-height: 1;
+    cursor: pointer; padding: 4px; width: auto; margin: 0;
+  }
 </style>
 </head>
 <body>
+
+<div id="installBanner">
+  <div class="ib-icon">🧾</div>
+  <div class="ib-text">
+    <div class="ib-title">Install Dogo POS</div>
+    <div class="ib-sub">Add to home screen for faster, full-screen access</div>
+  </div>
+  <button class="ib-install" onclick="triggerInstall()">Install</button>
+  <button class="ib-close" onclick="dismissInstallBanner()" aria-label="Dismiss">✕</button>
+</div>
+
 
 <!-- ================================================================
      AUTH SCREEN (shown when not logged in)
@@ -1662,6 +1698,8 @@ function cancelNewProduct() {
   document.getElementById('npName').value = '';
   document.getElementById('npPrice').value = '';
   document.getElementById('npUnit').value = 'piece';
+  document.getElementById('npStock').value = '0';
+  document.getElementById('npReorder').value = '0';
   refreshNpQtyOptions();
 }
 
@@ -2216,6 +2254,8 @@ async function addProductManually() {
   logAudit('product.create', { code, name, price, unit });
   ['capCode','capName','capCategory','capPrice'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('capUnit').value = 'piece';
+  document.getElementById('capStock').value = '0';
+  document.getElementById('capReorder').value = '0';
   refreshCapQtyOptions();
   showToast('Added "' + name + '" to catalog');
 }
@@ -2833,7 +2873,50 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-/* =====================================================================
+let deferredInstallPrompt = null;
+const INSTALL_DISMISS_KEY = 'dogoPosInstallDismissedAt';
+const INSTALL_DISMISS_DAYS = 7;
+
+function isRunningInstalled() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+function wasInstallBannerRecentlyDismissed() {
+  const at = +localStorage.getItem(INSTALL_DISMISS_KEY);
+  if (!at) return false;
+  return (Date.now() - at) < INSTALL_DISMISS_DAYS * 24 * 60 * 60 * 1000;
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  if (!isRunningInstalled() && !wasInstallBannerRecentlyDismissed()) {
+    document.getElementById('installBanner').classList.add('show');
+    document.body.classList.add('has-install-banner');
+  }
+});
+
+function triggerInstall() {
+  const banner = document.getElementById('installBanner');
+  if (!deferredInstallPrompt) { banner.classList.remove('show'); document.body.classList.remove('has-install-banner'); return; }
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.finally(() => {
+    deferredInstallPrompt = null;
+    banner.classList.remove('show');
+    document.body.classList.remove('has-install-banner');
+  });
+}
+function dismissInstallBanner() {
+  document.getElementById('installBanner').classList.remove('show');
+  document.body.classList.remove('has-install-banner');
+  try { localStorage.setItem(INSTALL_DISMISS_KEY, String(Date.now())); } catch (e) {}
+}
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').classList.remove('show');
+  document.body.classList.remove('has-install-banner');
+  deferredInstallPrompt = null;
+  try { localStorage.removeItem(INSTALL_DISMISS_KEY); } catch (e) {}
+});
+
 /* =====================================================================
    INACTIVITY AUTO-LOGOUT (15 minutes of no interaction)
 ===================================================================== */
