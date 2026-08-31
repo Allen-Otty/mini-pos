@@ -31,45 +31,45 @@
      toggle instead of needing per-element overrides.
   ===================================================================== */
   :root {
-    --bg: #020024;
-    --surface: #ffffff;
-    --surface-text: #020024;
-    --text: #eaf6ff;
-    --text-secondary: #9fb3c8;
+    --bg: #0A0E27;
+    --surface: #121A33;
+    --surface-text: #F2F5FA;
+    --text: #F2F5FA;
+    --text-secondary: #7A8AA8;
     --accent: #00d4ff;
-    --accent-text: #020024;
-    --accent-minus: rgba(255,255,255,.15);
+    --accent-text: #04283A;
+    --accent-minus: rgba(255,255,255,.10);
     --success: #306c5f;
     --danger: #a5333f;
-    --border: rgba(255,255,255,.14);
-    --input-bg: #16344d;
-    --input-border: #2E75B6;
-    --header-bg: #020024;
-    --tab-inactive-bg: #2E75B6;
+    --border: rgba(255,255,255,.10);
+    --input-bg: rgba(255,255,255,.06);
+    --input-border: rgba(255,255,255,.18);
+    --header-bg: #0A0E27;
+    --tab-inactive-bg: var(--surface);
     --btn-radius: 999px;
     --btn-border: none;
-    --card-radius: 10px;
+    --card-radius: 14px;
     --brand: #020024; --accent-purple: #00d4ff; --accent-green: #306c5f;
   }
   [data-theme="paper"] {
-    --bg: #f2ead8;
-    --surface: #f8f3e6;
-    --surface-text: #1a1a1a;
-    --text: #1a1a1a;
-    --text-secondary: #6b6355;
-    --accent: #d98e2b;
-    --accent-text: #1a1a1a;
-    --accent-minus: #fff;
+    --bg: #EFE9DA;
+    --surface: #F7F3EA;
+    --surface-text: #221C10;
+    --text: #221C10;
+    --text-secondary: #8A8272;
+    --accent: #E0972B;
+    --accent-text: #221C10;
+    --accent-minus: #ffffff;
     --success: #2e7d4f;
     --danger: #a5333f;
-    --border: #d4c9a8;
+    --border: #E5DDC8;
     --input-bg: #ffffff;
-    --input-border: #d4c9a8;
-    --header-bg: #e8dcc0;
-    --tab-inactive-bg: #fff;
-    --btn-radius: 6px;
-    --btn-border: 2px solid #1a1a1a;
-    --card-radius: 6px;
+    --input-border: #D8CFB8;
+    --header-bg: #EFE9DA;
+    --tab-inactive-bg: var(--surface);
+    --btn-radius: 14px;
+    --btn-border: 1.5px solid #221C10;
+    --card-radius: 14px;
   }
 
   :root { --brand: #020024; --accent-purple: #00d4ff; --accent-green: #306c5f; }
@@ -78,27 +78,24 @@
     margin: 0; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     background: var(--bg); color: var(--text); min-height: 100vh; transition: background .2s, color .2s;
   }
-  header { background: var(--header-bg); padding: 14px 16px; text-align: center; position: relative; }
-  header h1 { margin: 4px 0 2px; font-size: 20px; color: #fff; }
-  [data-theme="paper"] header h1 { color: var(--surface-text); }
+  header { background: var(--header-bg); padding: 14px 16px; text-align: center; position: relative; border-bottom: 1px solid var(--border); }
+  header h1 { margin: 4px 0 2px; font-size: 20px; color: var(--surface-text); }
   header p { margin: 0; font-size: 12px; color: var(--text-secondary); }
 
   .theme-toggle {
-    position: absolute; top: 10px; right: 12px; background: rgba(255,255,255,.15); border: none;
-    border-radius: 999px; width: 36px; height: 36px; color: #fff; font-size: 16px; cursor: pointer;
+    position: absolute; top: 10px; right: 12px; background: var(--accent-minus); border: none;
+    border-radius: 999px; width: 40px; height: 40px; color: var(--surface-text); font-size: 16px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
   }
-  [data-theme="paper"] .theme-toggle { background: rgba(0,0,0,.1); color: #1a1a1a; }
   .theme-toggle-auth {
-    position: absolute; top: 10px; right: 16px; background: rgba(255,255,255,.12); border: none;
-    border-radius: 999px; padding: 8px 12px; color: #fff; font-size: 12px; cursor: pointer; font-weight: bold;
+    position: absolute; top: 10px; right: 16px; background: var(--accent-minus); border: none;
+    border-radius: 999px; padding: 9px 14px; color: var(--surface-text); font-size: 12px; cursor: pointer; font-weight: bold;
   }
-  [data-theme="paper"] .theme-toggle-auth { background: rgba(0,0,0,.08); color: #1a1a1a; }
   .theme-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
   .theme-row .trow-label { font-weight: bold; }
   .theme-switch-pill { display: flex; border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
   .theme-switch-pill button {
-    padding: 7px 14px; border: none; background: var(--surface); color: var(--surface-text);
+    padding: 9px 16px; border: none; background: var(--surface); color: var(--surface-text);
     font-size: 12px; font-weight: bold; cursor: pointer; width: auto; margin: 0; border-radius: 0;
   }
   .theme-switch-pill button.active { background: var(--accent); color: var(--accent-text); }
@@ -108,46 +105,46 @@
     max-width: 380px; margin: 30px auto; padding: 0 16px; position: relative;
   }
   .auth-card {
-    background: var(--surface); color: var(--surface-text); border-radius: 16px; padding: 28px 22px;
-    box-shadow: 0 10px 40px rgba(0,0,0,.4);
+    background: var(--surface); color: var(--surface-text); border-radius: 18px; padding: 28px 22px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.4); border: 1px solid var(--border);
   }
   .auth-card h2 { margin: 0 0 4px; text-align: center; }
-  .auth-card .sub { text-align: center; color: #667; font-size: 13px; margin-bottom: 20px; }
+  .auth-card .sub { text-align: center; color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; }
   .auth-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
   .auth-tab {
-    flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold;
-    background: #eef3f8; color: #020024; cursor: pointer; font-size: 13px;
+    flex: 1; padding: 13px; border-radius: var(--btn-radius); border: none; font-weight: bold;
+    background: var(--input-bg); color: var(--surface-text); cursor: pointer; font-size: 13px;
   }
-  .auth-tab.active { background: var(--brand); color: #fff; }
+  .auth-tab.active { background: var(--accent); color: var(--accent-text); }
   .auth-panel { display: none; }
   .auth-panel.active { display: block; }
   .auth-card input, .auth-card select {
-    width: 100%; padding: 12px; margin: 6px 0; border-radius: 8px;
-    background: #f2f6fa; color: #020024; outline: none; border: 1px solid #dbe5ee; font-size: 14px;
+    width: 100%; padding: 14px; margin: 6px 0; border-radius: 8px;
+    background: var(--input-bg); color: var(--surface-text); outline: none; border: 1px solid var(--input-border); font-size: 14px;
   }
-  .auth-card label { font-size: 12px; font-weight: bold; color: #445; margin-top: 8px; display: block; }
+  .auth-card label { font-size: 12px; font-weight: bold; color: var(--text-secondary); margin-top: 8px; display: block; }
   .method-toggle { display: flex; gap: 8px; margin: 6px 0 10px; }
   .method-toggle button {
-    flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #dbe5ee; background: #fff;
-    color: #020024; font-size: 12px; cursor: pointer;
+    flex: 1; padding: 10px; border-radius: var(--btn-radius); border: 1px solid var(--input-border); background: var(--input-bg);
+    color: var(--surface-text); font-size: 12px; cursor: pointer;
   }
-  .method-toggle button.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .method-toggle button.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
   .auth-btn {
-    width: 100%; padding: 13px; margin-top: 12px; border: none; border-radius: 8px;
-    background: linear-gradient(45deg, var(--brand), #2E75B6); color: #fff; font-weight: bold;
-    font-size: 15px; cursor: pointer;
+    width: 100%; padding: 17px; margin-top: 12px; border: none; border-radius: var(--btn-radius);
+    background: var(--accent); color: var(--accent-text); font-weight: bold;
+    font-size: 16px; cursor: pointer;
   }
-  .auth-link { text-align: center; font-size: 12px; margin-top: 14px; color: #667; }
+  .auth-link { text-align: center; font-size: 12px; margin-top: 14px; color: var(--text-secondary); }
   .auth-error { background: #fde8e8; color: #a33; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
   .auth-info { background: #e8f4fd; color: #020024; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
   .pw-wrap { position: relative; }
   .pw-wrap input { padding-right: 42px !important; width: 100%; box-sizing: border-box; }
   .pw-toggle {
     position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-    background: none; border: none; font-size: 16px; cursor: pointer; padding: 4px; line-height: 1;
+    background: none; border: none; color: var(--surface-text); font-size: 16px; cursor: pointer; padding: 4px; line-height: 1;
   }
   .pw-rules { list-style: none; padding: 0; margin: 4px 0 10px; font-size: 12px; }
-  .pw-rules li { color: #999; margin: 2px 0; padding-left: 18px; position: relative; }
+  .pw-rules li { color: var(--text-secondary); margin: 2px 0; padding-left: 18px; position: relative; }
   .pw-rules li::before { content: "○"; position: absolute; left: 0; }
   .pw-rules li.ok { color: #2e9e5b; }
   .pw-rules li.ok::before { content: "✓"; }
@@ -157,27 +154,26 @@
   #appShell { display: none; }
   .tabs { display: flex; flex-wrap: wrap; max-width: 480px; margin: 12px auto 0; padding: 0 16px; gap: 6px; }
   .tab-btn {
-    flex: 1 1 30%; padding: 8px 4px; border-radius: 8px; border: var(--btn-border); font-weight: bold;
-    font-size: 12px; background: var(--tab-inactive-bg); color: #fff; cursor: pointer;
+    flex: 1 1 30%; padding: 12px 4px; border-radius: var(--btn-radius); border: 1px solid var(--border); font-weight: bold;
+    font-size: 12px; background: var(--tab-inactive-bg); color: var(--surface-text); cursor: pointer;
   }
-  .tab-btn.active { background: var(--accent); color: var(--accent-text); }
-  [data-theme="paper"] .tab-btn { color: var(--surface-text); }
+  .tab-btn.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
   .panel { max-width: 480px; margin: 16px auto; padding: 0 16px; display: none; }
   .panel.active { display: block; }
 
-  .scan-status { background: var(--surface); color: var(--surface-text); border-radius: var(--card-radius); padding: 12px; text-align: center; margin-bottom: 12px; }
+  .scan-status { background: var(--surface); color: var(--surface-text); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 12px; text-align: center; margin-bottom: 12px; }
   .scan-status .code { font-size: 20px; font-weight: bold; }
-  .scan-status .hint { font-size: 13px; color: #666; margin-top: 4px; }
+  .scan-status .hint { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
   #reader { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
 
   input, select, button { font-family: inherit; }
   .panel input[type=text], .panel input[type=number], .panel input[type=file], .panel select {
-    width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: none;
-    background: var(--input-bg); color: var(--text); outline: 1px solid var(--input-border);
+    width: 100%; padding: 13px; margin: 5px 0; border-radius: 8px; border: 1px solid var(--input-border);
+    background: var(--input-bg); color: var(--text); outline: none;
   }
   .panel button {
-    width: 100%; padding: 13px; margin: 5px 0; border-radius: var(--btn-radius); border: var(--btn-border);
-    font-weight: bold; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,.28);
+    width: 100%; padding: 17px; margin: 6px 0; border-radius: var(--btn-radius); border: none;
+    font-weight: bold; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,.28); font-size: 15px;
     transition: transform .12s ease, box-shadow .12s ease; letter-spacing: .2px;
   }
   [data-theme="paper"] .panel button { box-shadow: none; }
@@ -186,12 +182,13 @@
   .btn-blue { background: linear-gradient(180deg, #17b3e6, #0099c2); color: #fff; }
   .btn-green { background: linear-gradient(180deg, #3d8975, #306c5f); color: #fff; }
   .btn-red { background: linear-gradient(180deg, #c04452, #a5333f); color: #fff; }
-  [data-theme="paper"] .btn-yellow { background: #d98e2b; color: #1a1a1a; }
-  [data-theme="paper"] .btn-blue { background: #fff; color: #1a1a1a; border: var(--btn-border); }
-  [data-theme="paper"] .btn-green { background: #fff; color: var(--success); border: 2px solid var(--success); }
-  [data-theme="paper"] .btn-red { background: #fff; color: var(--danger); border: 2px solid var(--danger); }
-  .btn-small { padding: 6px 14px; font-size: 13px; width: auto; margin: 0; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
-  .qty-stepper button { width: auto; padding: 2px 10px; margin: 0; box-shadow: none; }
+  [data-theme="paper"] .btn-yellow { background: #F2C265; color: #221C10; }
+  [data-theme="paper"] .btn-blue { background: #6FB8D6; color: #0B2430; }
+  [data-theme="paper"] .btn-green { background: var(--accent); color: var(--accent-text); }
+  [data-theme="paper"] .btn-red { background: #D4695A; color: #2E0E08; }
+  .btn-small { padding: 9px 16px; font-size: 13px; width: auto; margin: 0; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .btn-grey { background: var(--accent-minus); color: var(--surface-text); }
+  .qty-stepper button { width: auto; padding: 4px 12px; margin: 0; box-shadow: none; }
 
   /* ---- Checkout "truck delivery" animation (Buy Now -> truck -> Ordered) ---- */
   .buy-btn { position: relative; overflow: hidden; }
@@ -230,30 +227,33 @@
     100% { left: 118%; transform: translateY(-50%) scale(1) rotate(0deg); }
   }
 
-  .cart-box { background: var(--surface); color: var(--surface-text); border-radius: var(--card-radius); padding: 14px; border: none; }
-  [data-theme="paper"] .cart-box { border: 1px solid var(--border); }
+  .cart-box { background: var(--surface); color: var(--surface-text); border-radius: var(--card-radius); padding: 14px; border: 1px solid var(--border); }
   .cart-item {
-    display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #eee;
+    display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border);
   }
   .cart-item:last-child { border-bottom: none; }
   .cart-item .name { flex: 1; font-weight: bold; }
-  .cart-item .meta { font-size: 12px; color: #666; }
-  .qty-ctrl { display: flex; align-items: center; gap: 6px; }
-  .qty-ctrl button { width: 26px; height: 26px; padding: 0; margin: 0; border-radius: 6px; font-size: 16px; line-height: 1; background: var(--accent-minus); box-shadow: none; }
-  .qty-ctrl button:last-child { background: var(--accent); color: var(--accent-text); }
+  .cart-item .meta { font-size: 12px; color: var(--text-secondary); }
+  .qty-ctrl { display: flex; align-items: center; gap: 8px; }
+  .qty-ctrl button {
+    width: 42px; height: 42px; padding: 0; margin: 0; border-radius: var(--btn-radius); font-size: 19px; line-height: 1;
+    background: var(--accent-minus); color: var(--surface-text); border: var(--btn-border); box-shadow: none;
+  }
+  .qty-ctrl button:last-child { background: var(--accent); color: var(--accent-text); border: none; }
   .qty-ctrl span { min-width: 18px; text-align: center; }
   .qty-ctrl select, .qty-stepper select {
-    width: auto; min-width: 54px; padding: 4px 6px; margin: 0; font-size: 13px; border-radius: 6px;
+    width: auto; min-width: 56px; height: 42px; padding: 4px 8px; margin: 0; font-size: 14px; border-radius: var(--btn-radius);
+    background: var(--input-bg); color: var(--text); border: 1px solid var(--input-border);
   }
-  .line-total { font-weight: bold; min-width: 70px; text-align: right; }
-  .remove-btn { background: var(--danger); color: #fff; width: 22px; height: 22px; border-radius: 50%; margin-left: 8px; padding: 0; font-size: 12px; }
+  .line-total { font-weight: bold; min-width: 70px; text-align: right; font-variant-numeric: tabular-nums; }
+  .remove-btn { background: var(--danger); color: #fff; width: 26px; height: 26px; border-radius: 50%; margin-left: 8px; padding: 0; font-size: 13px; }
 
-  .totals { margin-top: 12px; padding-top: 10px; border-top: 2px solid var(--surface-text); font-size: 14px; }
+  .totals { margin-top: 12px; padding-top: 10px; border-top: 2px solid var(--border); font-size: 14px; }
   .totals .row { display: flex; justify-content: space-between; margin: 4px 0; }
-  .totals .grand { font-size: 20px; font-weight: bold; color: var(--surface-text); }
-  .totals .vat-note { font-size: 11px; color: #888; margin-top: -2px; }
+  .totals .grand { font-size: 24px; font-weight: bold; color: var(--surface-text); font-variant-numeric: tabular-nums; }
+  .totals .vat-note { font-size: 11px; color: var(--text-secondary); margin-top: -2px; }
 
-  .empty-note { color: #888; text-align: center; padding: 20px 0; font-size: 14px; }
+  .empty-note { color: var(--text-secondary); text-align: center; padding: 20px 0; font-size: 14px; }
 
   .toast {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -290,7 +290,7 @@
   .receipt-actions button { margin-top: 8px; }
 
   .log-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
-  .log-table th, .log-table td { padding: 6px 4px; border-bottom: 1px solid #eee; text-align: left; }
+  .log-table th, .log-table td { padding: 8px 4px; border-bottom: 1px solid var(--border); text-align: left; }
   .log-table th { color: var(--surface-text); }
 
   .catalog-note { font-size: 12px; color: var(--text-secondary); padding: 0 16px; max-width: 480px; margin: 4px auto 0; text-align: center; }
@@ -319,18 +319,17 @@
   .kot-actions { max-width: 320px; margin: 10px auto 0; }
   .kot-actions button { margin-top: 8px; }
 
-  .table-tile { border-radius: 8px; padding: 12px 8px; text-align: center; cursor: pointer; min-width: 74px; }
+  .table-tile { border-radius: 10px; padding: 14px 8px; text-align: center; cursor: pointer; min-width: 78px; }
   .table-tile.free { background: var(--success); color: #fff; }
   .table-tile.occupied { background: var(--danger); color: #fff; }
   .table-tile .t-name { font-weight: bold; }
   .table-tile .t-status { font-size: 11px; margin-top: 2px; }
   .table-tile .t-total { font-size: 11px; margin-top: 4px; opacity: .9; }
-  .cat-chip { display: inline-block; padding: 6px 14px; margin: 0 6px 6px 0; border-radius: 16px; background: #eee; color: #333; font-size: 13px; cursor: pointer; }
-  .cat-chip.active { background: var(--accent); color: var(--accent-text); }
-  .btn-grey { background: #888; color: #fff; }
-  .order-item-card { background: var(--surface); border: 1px solid #ddd; border-radius: 8px; padding: 8px; }
-  .order-item-card .oi-name { font-size: 13px; margin-bottom: 2px; }
-  .order-item-card .oi-price { font-size: 12px; color: #666; margin-bottom: 6px; }
+  .cat-chip { display: inline-block; padding: 9px 16px; margin: 0 6px 6px 0; border-radius: 999px; background: var(--surface); color: var(--surface-text); border: 1px solid var(--border); font-size: 13px; cursor: pointer; }
+  .cat-chip.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .order-item-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+  .order-item-card .oi-name { font-size: 13px; margin-bottom: 2px; color: var(--surface-text); }
+  .order-item-card .oi-price { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
   .qty-stepper { display: flex; align-items: center; justify-content: space-between; }
   /* ---------------- Install app banner ---------------- */
   #installBanner {
