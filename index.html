@@ -1120,7 +1120,7 @@ function togglePasswordVisibility(fieldId, btn) {
   const input = document.getElementById(fieldId);
   const showing = input.type === 'text';
   input.type = showing ? 'password' : 'text';
-  btn.textContent = showing ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
+  btn.innerHTML = showing ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
 }
 
 function checkPasswordRules() {
@@ -1144,8 +1144,8 @@ function checkPasswordMatch() {
   const msg = document.getElementById('pwMatchMsg');
   if (!msg) return;
   if (!confirm) { msg.textContent = ''; return; }
-  if (pw === confirm) { msg.textContent = '<i class="fa-solid fa-check"></i> Passwords match'; msg.style.color = '#2e9e5b'; }
-  else { msg.textContent = '<i class="fa-solid fa-xmark"></i> Passwords do not match'; msg.style.color = '#a5333f'; }
+  if (pw === confirm) { msg.innerHTML = '<i class="fa-solid fa-check"></i> Passwords match'; msg.style.color = '#2e9e5b'; }
+  else { msg.innerHTML = '<i class="fa-solid fa-xmark"></i> Passwords do not match'; msg.style.color = '#a5333f'; }
 }
 
 async function handleSignup() {
@@ -1358,10 +1358,10 @@ function renderPlatformSwitcher() {
 
   const statusEl = document.getElementById('platformSwitcherStatus');
   if (activeBusinessId === profile.business_id) {
-    statusEl.textContent = '<i class="fa-solid fa-location-dot"></i> Currently viewing your own business.';
+    statusEl.innerHTML = '<i class="fa-solid fa-location-dot"></i> Currently viewing your own business.';
   } else {
     const active = platformBusinessList.find(b => b.id === activeBusinessId);
-    statusEl.textContent = `<i class="fa-solid fa-triangle-exclamation"></i> Currently testing as: ${active ? active.name : activeBusinessId}`;
+    statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Currently testing as: ${escapeHtml(active ? active.name : activeBusinessId)}`;
   }
 }
 
@@ -1439,7 +1439,7 @@ function applyRoleVisibility() {
 
 function applyBusinessTheme() {
   if (!business) return;
-  document.getElementById('appTitle').textContent = '<i class="fa-solid fa-receipt"></i> ' + business.name;
+  document.getElementById('appTitle').innerHTML = '<i class="fa-solid fa-receipt"></i> ' + escapeHtml(business.name);
   document.getElementById('appTagline').textContent = business.business_type + ' · Dogo POS';
   document.getElementById('appHeader').style.background = business.theme_color || '#020024';
   const logoWrap = document.getElementById('headerLogoWrap');
@@ -2736,12 +2736,12 @@ async function loadMpesaStatus() {
   if (resp.error) { statusEl.textContent = 'Could not load status.'; return; }
   if (resp.data) {
     const type = resp.data.payment_type === 'paybill' ? 'Paybill' : 'Till/Pochi';
-    statusEl.textContent = `<i class="fa-solid fa-circle-check"></i> Configured — ${type} ${resp.data.shortcode} (${resp.data.is_production ? 'Production' : 'Sandbox'})`;
+    statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Configured — ${type} ${escapeHtml(resp.data.shortcode)} (${resp.data.is_production ? 'Production' : 'Sandbox'})`;
     document.getElementById('mpesaPaymentType').value = resp.data.payment_type;
     document.getElementById('mpesaShortcode').value = resp.data.shortcode;
     document.getElementById('mpesaEnv').value = String(resp.data.is_production);
   } else {
-    statusEl.textContent = '<i class="fa-solid fa-triangle-exclamation"></i> Not set up yet — fill in the fields below to enable M-Pesa checkout.';
+    statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Not set up yet — fill in the fields below to enable M-Pesa checkout.';
   }
 }
 
@@ -2777,12 +2777,12 @@ async function loadEtimsStatus() {
   if (!statusEl) return;
   if (resp.error) { statusEl.textContent = 'Could not load status.'; return; }
   if (resp.data) {
-    statusEl.textContent = `<i class="fa-solid fa-circle-check"></i> Configured — TIN ${resp.data.kra_pin}, Branch ${resp.data.bhf_id} (${resp.data.is_production ? 'Production' : 'Sandbox'}). Live KRA submission is pending device credentials.`;
+    statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Configured — TIN ${escapeHtml(resp.data.kra_pin)}, Branch ${escapeHtml(resp.data.bhf_id)} (${resp.data.is_production ? 'Production' : 'Sandbox'}). Live KRA submission is pending device credentials.`;
     document.getElementById('etimsKraPin').value = resp.data.kra_pin;
     document.getElementById('etimsBhfId').value = resp.data.bhf_id;
     document.getElementById('etimsEnv').value = String(resp.data.is_production);
   } else {
-    statusEl.textContent = '<i class="fa-solid fa-triangle-exclamation"></i> Not set up yet — add your KRA PIN below so every sale builds its fiscalization payload.';
+    statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Not set up yet — add your KRA PIN below so every sale builds its fiscalization payload.';
   }
 }
 
