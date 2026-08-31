@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+  // Apply saved theme immediately, before first paint, to avoid a flash of
+  // the wrong theme on load. Must stay this early in <head>.
+  (function() {
+    var t = localStorage.getItem('dogopos_theme');
+    if (t === 'paper') document.documentElement.setAttribute('data-theme', 'paper');
+  })();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="mobile-web-app-capable" content="yes">
@@ -11,25 +19,96 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>Dogo POS</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <style>
+  /* =====================================================================
+     THEME TOKENS
+     Two themes: default (Neon Dusk, refined) and [data-theme="paper"]
+     (Till Paper). Everything themeable references these variables instead
+     of a literal color, so the whole app switches consistently from one
+     toggle instead of needing per-element overrides.
+  ===================================================================== */
+  :root {
+    --bg: #020024;
+    --surface: #ffffff;
+    --surface-text: #020024;
+    --text: #eaf6ff;
+    --text-secondary: #9fb3c8;
+    --accent: #00d4ff;
+    --accent-text: #020024;
+    --accent-minus: rgba(255,255,255,.15);
+    --success: #306c5f;
+    --danger: #a5333f;
+    --border: rgba(255,255,255,.14);
+    --input-bg: #16344d;
+    --input-border: #2E75B6;
+    --header-bg: #020024;
+    --tab-inactive-bg: #2E75B6;
+    --btn-radius: 999px;
+    --btn-border: none;
+    --card-radius: 10px;
+    --brand: #020024; --accent-purple: #00d4ff; --accent-green: #306c5f;
+  }
+  [data-theme="paper"] {
+    --bg: #f2ead8;
+    --surface: #f8f3e6;
+    --surface-text: #1a1a1a;
+    --text: #1a1a1a;
+    --text-secondary: #6b6355;
+    --accent: #d98e2b;
+    --accent-text: #1a1a1a;
+    --accent-minus: #fff;
+    --success: #2e7d4f;
+    --danger: #a5333f;
+    --border: #d4c9a8;
+    --input-bg: #ffffff;
+    --input-border: #d4c9a8;
+    --header-bg: #e8dcc0;
+    --tab-inactive-bg: #fff;
+    --btn-radius: 6px;
+    --btn-border: 2px solid #1a1a1a;
+    --card-radius: 6px;
+  }
+
   :root { --brand: #020024; --accent-purple: #00d4ff; --accent-green: #306c5f; }
   * { box-sizing: border-box; }
   body {
     margin: 0; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    background: #12283b; color: #fff; min-height: 100vh;
+    background: var(--bg); color: var(--text); min-height: 100vh; transition: background .2s, color .2s;
   }
-  header { background: var(--brand); padding: 14px 16px; text-align: center; }
-  header h1 { margin: 4px 0 2px; font-size: 20px; }
-  header p { margin: 0; font-size: 12px; color: #cfe0ee; }
+  header { background: var(--header-bg); padding: 14px 16px; text-align: center; position: relative; }
+  header h1 { margin: 4px 0 2px; font-size: 20px; color: #fff; }
+  [data-theme="paper"] header h1 { color: var(--surface-text); }
+  header p { margin: 0; font-size: 12px; color: var(--text-secondary); }
+
+  .theme-toggle {
+    position: absolute; top: 10px; right: 12px; background: rgba(255,255,255,.15); border: none;
+    border-radius: 999px; width: 36px; height: 36px; color: #fff; font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  [data-theme="paper"] .theme-toggle { background: rgba(0,0,0,.1); color: #1a1a1a; }
+  .theme-toggle-auth {
+    position: absolute; top: 10px; right: 16px; background: rgba(255,255,255,.12); border: none;
+    border-radius: 999px; padding: 8px 12px; color: #fff; font-size: 12px; cursor: pointer; font-weight: bold;
+  }
+  [data-theme="paper"] .theme-toggle-auth { background: rgba(0,0,0,.08); color: #1a1a1a; }
+  .theme-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+  .theme-row .trow-label { font-weight: bold; }
+  .theme-switch-pill { display: flex; border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+  .theme-switch-pill button {
+    padding: 7px 14px; border: none; background: var(--surface); color: var(--surface-text);
+    font-size: 12px; font-weight: bold; cursor: pointer; width: auto; margin: 0; border-radius: 0;
+  }
+  .theme-switch-pill button.active { background: var(--accent); color: var(--accent-text); }
 
   /* ---------------- Auth screens ---------------- */
   #authScreen {
-    max-width: 380px; margin: 30px auto; padding: 0 16px;
+    max-width: 380px; margin: 30px auto; padding: 0 16px; position: relative;
   }
   .auth-card {
-    background: #fff; color: #020024; border-radius: 16px; padding: 28px 22px;
+    background: var(--surface); color: var(--surface-text); border-radius: 16px; padding: 28px 22px;
     box-shadow: 0 10px 40px rgba(0,0,0,.4);
   }
   .auth-card h2 { margin: 0 0 4px; text-align: center; }
@@ -78,14 +157,15 @@
   #appShell { display: none; }
   .tabs { display: flex; flex-wrap: wrap; max-width: 480px; margin: 12px auto 0; padding: 0 16px; gap: 6px; }
   .tab-btn {
-    flex: 1 1 30%; padding: 8px 4px; border-radius: 8px; border: none; font-weight: bold;
-    font-size: 12px; background: #2E75B6; color: #fff; cursor: pointer;
+    flex: 1 1 30%; padding: 8px 4px; border-radius: 8px; border: var(--btn-border); font-weight: bold;
+    font-size: 12px; background: var(--tab-inactive-bg); color: #fff; cursor: pointer;
   }
-  .tab-btn.active { background: var(--accent-purple); color: #020024; }
+  .tab-btn.active { background: var(--accent); color: var(--accent-text); }
+  [data-theme="paper"] .tab-btn { color: var(--surface-text); }
   .panel { max-width: 480px; margin: 16px auto; padding: 0 16px; display: none; }
   .panel.active { display: block; }
 
-  .scan-status { background: #fff; color: #020024; border-radius: 10px; padding: 12px; text-align: center; margin-bottom: 12px; }
+  .scan-status { background: var(--surface); color: var(--surface-text); border-radius: var(--card-radius); padding: 12px; text-align: center; margin-bottom: 12px; }
   .scan-status .code { font-size: 20px; font-weight: bold; }
   .scan-status .hint { font-size: 13px; color: #666; margin-top: 4px; }
   #reader { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
@@ -93,18 +173,23 @@
   input, select, button { font-family: inherit; }
   .panel input[type=text], .panel input[type=number], .panel input[type=file], .panel select {
     width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: none;
-    background: #16344d; color: #fff; outline: 1px solid #2E75B6;
+    background: var(--input-bg); color: var(--text); outline: 1px solid var(--input-border);
   }
   .panel button {
-    width: 100%; padding: 13px; margin: 5px 0; border-radius: 999px; border: none;
+    width: 100%; padding: 13px; margin: 5px 0; border-radius: var(--btn-radius); border: var(--btn-border);
     font-weight: bold; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,.28);
     transition: transform .12s ease, box-shadow .12s ease; letter-spacing: .2px;
   }
+  [data-theme="paper"] .panel button { box-shadow: none; }
   .panel button:active { transform: scale(.97); box-shadow: 0 1px 4px rgba(0,0,0,.28); }
   .btn-yellow { background: linear-gradient(180deg, #FFD54A, #FFC107); color: #020024; }
   .btn-blue { background: linear-gradient(180deg, #17b3e6, #0099c2); color: #fff; }
   .btn-green { background: linear-gradient(180deg, #3d8975, #306c5f); color: #fff; }
   .btn-red { background: linear-gradient(180deg, #c04452, #a5333f); color: #fff; }
+  [data-theme="paper"] .btn-yellow { background: #d98e2b; color: #1a1a1a; }
+  [data-theme="paper"] .btn-blue { background: #fff; color: #1a1a1a; border: var(--btn-border); }
+  [data-theme="paper"] .btn-green { background: #fff; color: var(--success); border: 2px solid var(--success); }
+  [data-theme="paper"] .btn-red { background: #fff; color: var(--danger); border: 2px solid var(--danger); }
   .btn-small { padding: 6px 14px; font-size: 13px; width: auto; margin: 0; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
   .qty-stepper button { width: auto; padding: 2px 10px; margin: 0; box-shadow: none; }
 
@@ -145,7 +230,8 @@
     100% { left: 118%; transform: translateY(-50%) scale(1) rotate(0deg); }
   }
 
-  .cart-box { background: #fff; color: #020024; border-radius: 10px; padding: 14px; }
+  .cart-box { background: var(--surface); color: var(--surface-text); border-radius: var(--card-radius); padding: 14px; border: none; }
+  [data-theme="paper"] .cart-box { border: 1px solid var(--border); }
   .cart-item {
     display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #eee;
   }
@@ -153,24 +239,25 @@
   .cart-item .name { flex: 1; font-weight: bold; }
   .cart-item .meta { font-size: 12px; color: #666; }
   .qty-ctrl { display: flex; align-items: center; gap: 6px; }
-  .qty-ctrl button { width: 26px; height: 26px; padding: 0; margin: 0; border-radius: 6px; font-size: 16px; line-height: 1; }
+  .qty-ctrl button { width: 26px; height: 26px; padding: 0; margin: 0; border-radius: 6px; font-size: 16px; line-height: 1; background: var(--accent-minus); box-shadow: none; }
+  .qty-ctrl button:last-child { background: var(--accent); color: var(--accent-text); }
   .qty-ctrl span { min-width: 18px; text-align: center; }
   .qty-ctrl select, .qty-stepper select {
     width: auto; min-width: 54px; padding: 4px 6px; margin: 0; font-size: 13px; border-radius: 6px;
   }
   .line-total { font-weight: bold; min-width: 70px; text-align: right; }
-  .remove-btn { background: #c0392b; color: #fff; width: 22px; height: 22px; border-radius: 50%; margin-left: 8px; padding: 0; font-size: 12px; }
+  .remove-btn { background: var(--danger); color: #fff; width: 22px; height: 22px; border-radius: 50%; margin-left: 8px; padding: 0; font-size: 12px; }
 
-  .totals { margin-top: 12px; padding-top: 10px; border-top: 2px solid #020024; font-size: 14px; }
+  .totals { margin-top: 12px; padding-top: 10px; border-top: 2px solid var(--surface-text); font-size: 14px; }
   .totals .row { display: flex; justify-content: space-between; margin: 4px 0; }
-  .totals .grand { font-size: 20px; font-weight: bold; color: #020024; }
+  .totals .grand { font-size: 20px; font-weight: bold; color: var(--surface-text); }
   .totals .vat-note { font-size: 11px; color: #888; margin-top: -2px; }
 
   .empty-note { color: #888; text-align: center; padding: 20px 0; font-size: 14px; }
 
   .toast {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: #020024; color: #fff; padding: 10px 18px; border-radius: 20px;
+    background: var(--surface-text); color: var(--bg); padding: 10px 18px; border-radius: 20px;
     font-size: 13px; opacity: 0; transition: opacity .3s, bottom .2s; pointer-events: none; z-index: 999; max-width: 90%; text-align: center;
   }
   .toast.show { opacity: 1; }
@@ -204,9 +291,9 @@
 
   .log-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
   .log-table th, .log-table td { padding: 6px 4px; border-bottom: 1px solid #eee; text-align: left; }
-  .log-table th { color: #020024; }
+  .log-table th { color: var(--surface-text); }
 
-  .catalog-note { font-size: 12px; color: #cfe0ee; padding: 0 16px; max-width: 480px; margin: 4px auto 0; text-align: center; }
+  .catalog-note { font-size: 12px; color: var(--text-secondary); padding: 0 16px; max-width: 480px; margin: 4px auto 0; text-align: center; }
 
   @media print {
     body * { visibility: hidden; }
@@ -233,15 +320,15 @@
   .kot-actions button { margin-top: 8px; }
 
   .table-tile { border-radius: 8px; padding: 12px 8px; text-align: center; cursor: pointer; min-width: 74px; }
-  .table-tile.free { background: #306c5f; color: #fff; }
-  .table-tile.occupied { background: #a5333f; color: #fff; }
+  .table-tile.free { background: var(--success); color: #fff; }
+  .table-tile.occupied { background: var(--danger); color: #fff; }
   .table-tile .t-name { font-weight: bold; }
   .table-tile .t-status { font-size: 11px; margin-top: 2px; }
   .table-tile .t-total { font-size: 11px; margin-top: 4px; opacity: .9; }
   .cat-chip { display: inline-block; padding: 6px 14px; margin: 0 6px 6px 0; border-radius: 16px; background: #eee; color: #333; font-size: 13px; cursor: pointer; }
-  .cat-chip.active { background: #020024; color: #00d4ff; }
+  .cat-chip.active { background: var(--accent); color: var(--accent-text); }
   .btn-grey { background: #888; color: #fff; }
-  .order-item-card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 8px; }
+  .order-item-card { background: var(--surface); border: 1px solid #ddd; border-radius: 8px; padding: 8px; }
   .order-item-card .oi-name { font-size: 13px; margin-bottom: 2px; }
   .order-item-card .oi-price { font-size: 12px; color: #666; margin-bottom: 6px; }
   .qty-stepper { display: flex; align-items: center; justify-content: space-between; }
@@ -274,13 +361,13 @@
 <body>
 
 <div id="installBanner">
-  <div class="ib-icon">🧾</div>
+  <div class="ib-icon"><i class="fa-solid fa-receipt"></i></div>
   <div class="ib-text">
     <div class="ib-title">Install Dogo POS</div>
     <div class="ib-sub">Add to home screen for faster, full-screen access</div>
   </div>
   <button class="ib-install" onclick="triggerInstall()">Install</button>
-  <button class="ib-close" onclick="dismissInstallBanner()" aria-label="Dismiss">✕</button>
+  <button class="ib-close" onclick="dismissInstallBanner()" aria-label="Dismiss"><i class="fa-solid fa-xmark"></i></button>
 </div>
 
 
@@ -288,8 +375,9 @@
      AUTH SCREEN (shown when not logged in)
 ================================================================= -->
 <div id="authScreen">
+  <button class="theme-toggle-auth" id="authThemeToggle" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i> Theme</button>
   <div style="text-align:center; margin-bottom: 18px;">
-    <div style="font-size:34px;">🧾</div>
+    <div style="font-size:34px;"><i class="fa-solid fa-receipt"></i></div>
     <div style="font-weight:bold; font-size:22px;">Dogo POS</div>
     <div style="font-size:12px; color:#9fc1de;">Sell, track, and grow — from your phone.</div>
   </div>
@@ -311,7 +399,7 @@
       <label>Password</label>
       <div class="pw-wrap">
         <input type="password" id="loginPassword" placeholder="Your password">
-        <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('loginPassword', this)">👁️</button>
+        <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('loginPassword', this)"><i class="fa-solid fa-eye"></i></button>
       </div>
 
       <button class="auth-btn" onclick="handleLogin()">Sign In</button>
@@ -363,7 +451,7 @@
       <label>Password</label>
       <div class="pw-wrap">
         <input type="password" id="suPassword" placeholder="Create a password" oninput="checkPasswordRules()">
-        <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('suPassword', this)">👁️</button>
+        <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('suPassword', this)"><i class="fa-solid fa-eye"></i></button>
       </div>
       <ul class="pw-rules" id="pwRules">
         <li id="ruleLen">At least 8 characters</li>
@@ -375,7 +463,7 @@
       <label>Confirm Password</label>
       <div class="pw-wrap">
         <input type="password" id="suPasswordConfirm" placeholder="Re-enter your password" oninput="checkPasswordMatch()">
-        <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('suPasswordConfirm', this)">👁️</button>
+        <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('suPasswordConfirm', this)"><i class="fa-solid fa-eye"></i></button>
       </div>
       <div id="pwMatchMsg" style="font-size:12px; margin:-4px 0 6px;"></div>
 
@@ -409,8 +497,9 @@
 ================================================================= -->
 <div id="appShell">
   <header id="appHeader">
+    <button class="theme-toggle" id="appThemeToggle" onclick="toggleTheme()" title="Switch theme"><i class="fa-solid fa-moon"></i></button>
     <div id="headerLogoWrap"></div>
-    <h1 id="appTitle">🧾 Dogo POS</h1>
+    <h1 id="appTitle"><i class="fa-solid fa-receipt"></i> Dogo POS</h1>
     <p id="appTagline">Signed in</p>
     <div style="margin-top:6px; font-size:11px; display:flex; justify-content:center; gap:10px; align-items:center;">
       <span id="userBadge"></span>
@@ -419,13 +508,13 @@
   </header>
 
   <div class="banner banner-offline" id="offlineBanner">
-    📴 <span>You're offline — sales will save locally and sync when back online.</span>
+    <i class="fa-solid fa-wifi"></i> <span>You're offline — sales will save locally and sync when back online.</span>
   </div>
   <div class="banner banner-lowstock" id="lowStockBanner" onclick="switchTab('dash')" style="cursor:pointer;">
-    ⚠️ <span id="lowStockBannerText"></span>
+    <i class="fa-solid fa-triangle-exclamation"></i> <span id="lowStockBannerText"></span>
   </div>
   <div class="banner" id="pendingSyncBanner" style="background:#020024; color:#cfe0ee;" onclick="syncOfflineSales()">
-    🔄 <span id="pendingSyncText"></span> — tap to sync now
+    <i class="fa-solid fa-arrows-rotate"></i> <span id="pendingSyncText"></span> — tap to sync now
   </div>
 
   <div class="tabs" id="mainTabs">
@@ -445,12 +534,12 @@
   <div class="panel active" id="tab-sell">
     <div class="cart-box" id="shiftBanner" style="margin-bottom:10px;">
       <div id="shiftClosedView">
-        <div style="font-weight:bold; margin-bottom:6px;">🕐 No open shift</div>
+        <div style="font-weight:bold; margin-bottom:6px;"><i class="fa-solid fa-clock"></i> No open shift</div>
         <input type="number" id="openingFloat" placeholder="Opening cash float, KES" step="0.01">
         <button class="btn-green" onclick="openShift()">Open Shift</button>
       </div>
       <div id="shiftOpenView" style="display:none;">
-        <div style="font-weight:bold; margin-bottom:4px;">🕐 Shift open — <span id="shiftOpenedAt"></span></div>
+        <div style="font-weight:bold; margin-bottom:4px;"><i class="fa-solid fa-clock"></i> Shift open — <span id="shiftOpenedAt"></span></div>
         <div style="font-size:13px; color:#555; margin-bottom:8px;">Opening float: KES <span id="shiftFloatDisplay"></span></div>
         <button class="btn-red" onclick="closeShift()">Close Shift</button>
       </div>
@@ -466,7 +555,7 @@
     <select id="manualCatalogPick"><option value="">-- or pick an item manually --</option></select>
 
     <input type="file" id="photoScanInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoScan(this.files[0])">
-    <button class="btn-blue" onclick="document.getElementById('photoScanInput').click()">📷 Scan Item Photo (barcode or label)</button>
+    <button class="btn-blue" onclick="document.getElementById('photoScanInput').click()"><i class="fa-solid fa-camera"></i> Scan Item Photo (barcode or label)</button>
     <div id="fileScanReader" style="display:none;"></div>
 
     <div class="cart-box" id="newProductForm" style="display:none; margin-top:10px;">
@@ -508,16 +597,16 @@
     </div>
 
     <button class="btn-green buy-btn" id="checkoutBtn" onclick="handleCheckoutClick(this)" style="display:none;">
-      <span class="buy-btn__idle">🛒 Checkout &amp; Print Receipt (Cash)</span>
-      <span class="buy-btn__cart">🛒</span>
-      <span class="buy-btn__truck">🚚</span>
-      <span class="buy-btn__confirm">✅ Ordered</span>
+      <span class="buy-btn__idle"><i class="fa-solid fa-cart-shopping"></i> Checkout &amp; Print Receipt (Cash)</span>
+      <span class="buy-btn__cart"><i class="fa-solid fa-cart-shopping"></i></span>
+      <span class="buy-btn__truck"><i class="fa-solid fa-truck"></i></span>
+      <span class="buy-btn__confirm"><i class="fa-solid fa-circle-check"></i> Ordered</span>
     </button>
-    <button class="btn-blue" id="mpesaBtn" onclick="openMpesaPrompt()" style="display:none;">📱 Charge with M-Pesa</button>
+    <button class="btn-blue" id="mpesaBtn" onclick="openMpesaPrompt()" style="display:none;"><i class="fa-solid fa-mobile-screen-button"></i> Charge with M-Pesa</button>
     <button class="btn-red" id="clearBtn" onclick="clearCart()" style="display:none;">Clear Cart</button>
 
     <div class="cart-box" id="mpesaPromptBox" style="display:none; margin-top:10px;">
-      <div style="font-weight:bold; margin-bottom:6px;">📱 M-Pesa Payment</div>
+      <div style="font-weight:bold; margin-bottom:6px;"><i class="fa-solid fa-mobile-screen-button"></i> M-Pesa Payment</div>
       <input type="text" id="mpesaPhone" placeholder="Customer phone e.g. 0712345678">
       <button class="btn-green" onclick="sendMpesaPrompt()">Send Payment Prompt</button>
       <button class="btn-red" onclick="cancelMpesaPrompt()">Cancel</button>
@@ -535,7 +624,7 @@
   <!-- ================= DASHBOARD TAB (admin only) ================= -->
   <div class="panel" id="tab-dash">
     <div class="cart-box">
-      <div style="font-weight:bold; margin-bottom:8px;">📊 Today &amp; This Month</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-chart-column"></i> Today &amp; This Month</div>
       <div class="totals" style="border-top:none; padding-top:0;">
         <div class="row"><span>Today's Sales</span><span id="dashTodaySales">KES 0.00</span></div>
         <div class="row"><span>This Month's Sales</span><span id="dashMonthSales">KES 0.00</span></div>
@@ -544,7 +633,7 @@
       </div>
     </div>
     <div class="cart-box" style="margin-top:14px;">
-      <div style="font-weight:bold; margin-bottom:8px;">🧾 KRA VAT (this month)</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-receipt"></i> KRA VAT (this month)</div>
       <div class="totals" style="border-top:none; padding-top:0;">
         <div class="row"><span>VAT collected (extracted from sales)</span><span id="dashOutVat">KES 0.00</span></div>
         <div class="row"><span>VAT on expenses (input VAT)</span><span id="dashInVat">KES 0.00</span></div>
@@ -553,7 +642,7 @@
       <p class="catalog-note" style="color:#666;">Estimate only — confirm in KRA iTax before filing.</p>
     </div>
     <div class="cart-box" style="margin-top:14px;">
-      <div style="font-weight:bold; margin-bottom:8px;">⚠️ Low Stock Items</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-triangle-exclamation"></i> Low Stock Items</div>
       <table class="log-table" id="lowStockTable">
         <thead><tr><th>Code</th><th>Name</th><th>Stock Left</th><th>Reorder At</th></tr></thead>
         <tbody id="lowStockBody"></tbody>
@@ -561,7 +650,7 @@
       <div class="empty-note" id="lowStockEmpty">Nothing low on stock right now.</div>
     </div>
     <div class="cart-box" style="margin-top:14px;">
-      <div style="font-weight:bold; margin-bottom:8px;">👥 Team Performance (this month)</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-users"></i> Team Performance (this month)</div>
       <table class="log-table" id="tellerPerfTable">
         <thead><tr><th>Teller</th><th>Sales</th><th>Total (KES)</th></tr></thead>
         <tbody id="tellerPerfBody"></tbody>
@@ -569,7 +658,7 @@
       <div class="empty-note" id="tellerPerfEmpty">No sales recorded yet this month.</div>
     </div>
     <div class="cart-box" style="margin-top:14px;">
-      <div style="font-weight:bold; margin-bottom:8px;">🕐 Recent Shifts (cash reconciliation)</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-clock"></i> Recent Shifts (cash reconciliation)</div>
       <table class="log-table" id="shiftsTable">
         <thead><tr><th>Teller</th><th>Opened</th><th>Closed</th><th>Expected</th><th>Actual</th><th>Variance</th></tr></thead>
         <tbody id="shiftsBody"></tbody>
@@ -583,7 +672,7 @@
 
     <div id="tablesFloorView">
       <div class="cart-box">
-        <div style="font-weight:bold; margin-bottom:8px;">🪑 Tables — tap a table to start/continue its order</div>
+        <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-chair"></i> Tables — tap a table to start/continue its order</div>
         <input type="text" id="tableName" placeholder="Table number/name e.g. T1, Patio 2">
         <button class="btn-green" onclick="addTable()">Add Table</button>
         <div id="tablesGrid" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
@@ -607,12 +696,12 @@
         <div style="display:flex; justify-content:space-between; font-weight:bold; border-top:1px solid #eee; padding-top:8px; margin-bottom:10px;">
           <span>Total (VAT incl.)</span><span id="orderCheckTotal">KES 0.00</span>
         </div>
-        <button class="btn-blue" onclick="sendToKitchen()">🔔 Send to Kitchen</button>
+        <button class="btn-blue" onclick="sendToKitchen()"><i class="fa-solid fa-bell"></i> Send to Kitchen</button>
         <button class="btn-green buy-btn" onclick="handleTableCheckoutClick(this)">
-          <span class="buy-btn__idle">✅ Checkout Table</span>
-          <span class="buy-btn__cart">🛒</span>
-          <span class="buy-btn__truck">🚚</span>
-          <span class="buy-btn__confirm">✅ Ordered</span>
+          <span class="buy-btn__idle"><i class="fa-solid fa-circle-check"></i> Checkout Table</span>
+          <span class="buy-btn__cart"><i class="fa-solid fa-cart-shopping"></i></span>
+          <span class="buy-btn__truck"><i class="fa-solid fa-truck"></i></span>
+          <span class="buy-btn__confirm"><i class="fa-solid fa-circle-check"></i> Ordered</span>
         </button>
       </div>
     </div>
@@ -633,7 +722,7 @@
   <!-- ================= CUSTOMERS TAB ================= -->
   <div class="panel" id="tab-customers">
     <div class="cart-box">
-      <div style="font-weight:bold; margin-bottom:8px;">➕ Add a customer</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-plus"></i> Add a customer</div>
       <input type="text" id="custName" placeholder="Customer name">
       <input type="text" id="custPhone" placeholder="Phone number">
       <button class="btn-green" onclick="addCustomer()">Add Customer</button>
@@ -650,7 +739,7 @@
   <!-- ================= REPORTS TAB (admin only) ================= -->
   <div class="panel" id="tab-reports">
     <div class="cart-box">
-      <div style="font-weight:bold; margin-bottom:8px;">🏆 Top-selling items (all-time)</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-trophy"></i> Top-selling items (all-time)</div>
       <table class="log-table" id="topSellersTable">
         <thead><tr><th>Item</th><th>Qty Sold</th><th>Revenue</th></tr></thead>
         <tbody id="topSellersBody"></tbody>
@@ -658,7 +747,7 @@
       <div class="empty-note" id="topSellersEmpty">No sales recorded yet.</div>
     </div>
     <div class="cart-box" style="margin-top:14px;">
-      <div style="font-weight:bold; margin-bottom:8px;">📂 Revenue by category</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-folder-open"></i> Revenue by category</div>
       <table class="log-table" id="catRevTable">
         <thead><tr><th>Category</th><th>Revenue</th></tr></thead>
         <tbody id="catRevBody"></tbody>
@@ -669,7 +758,7 @@
   <!-- ================= EXPENSES TAB ================= -->
   <div class="panel" id="tab-expenses">
     <div class="cart-box">
-      <div style="font-weight:bold; margin-bottom:8px;">➕ Log an expense</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-plus"></i> Log an expense</div>
       <input type="text" id="expDesc" placeholder="Description (e.g. Rent - August)">
       <select id="expCategory">
         <option>Rent</option><option>Utilities</option><option>Stock Purchases</option>
@@ -692,7 +781,7 @@
   <!-- ================= CATALOG TAB (admin only) ================= -->
   <div class="panel" id="tab-catalog">
     <div class="cart-box">
-      <div style="font-weight:bold; margin-bottom:8px;">➕ Add a product</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-plus"></i> Add a product</div>
       <input type="text" id="capCode" placeholder="Code / barcode">
       <input type="text" id="capName" placeholder="Item name">
       <input type="text" id="capCategory" placeholder="Category (e.g. Retail, Restaurant)">
@@ -714,7 +803,7 @@
       <button class="btn-green" onclick="addProductManually()">Add Product</button>
     </div>
     <div class="cart-box" style="margin-top:14px;">
-      <div style="font-weight:bold; margin-bottom:8px;">📦 Restock an item</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-box"></i> Restock an item</div>
       <select id="restockPick"><option value="">-- pick item --</option></select>
       <div style="font-size:12px; color:#667; margin:6px 2px 2px;">Quantity to add</div>
       <select id="restockQty"></select>
@@ -731,7 +820,7 @@
   <!-- ================= TEAM TAB (admin only) ================= -->
   <div class="panel" id="tab-team">
     <div class="cart-box">
-      <div style="font-weight:bold; margin-bottom:8px;">➕ Add a teller</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-plus"></i> Add a teller</div>
       <p class="catalog-note" style="color:#666;">Creates a login for a till/attendant account. They'll sign in with the email + password you set here — they cannot self-signup.</p>
       <input type="text" id="tellerName" placeholder="Teller full name">
       <input type="text" id="tellerEmail" placeholder="Teller email">
@@ -739,7 +828,7 @@
       <button class="btn-green" onclick="addTeller()">Create Teller Account</button>
     </div>
     <div class="cart-box" style="margin-top:14px;">
-      <div style="font-weight:bold; margin-bottom:8px;">👥 Team members</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-users"></i> Team members</div>
       <table class="log-table" id="teamTable">
         <thead><tr><th>Name</th><th>Role</th><th>Status</th></tr></thead>
         <tbody id="teamBody"></tbody>
@@ -750,7 +839,7 @@
   <!-- ================= SETTINGS TAB (admin only) ================= -->
   <div class="panel" id="tab-settings">
     <div class="cart-box">
-      <div style="font-weight:bold; margin-bottom:8px;">🏪 Business Profile</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-store"></i> Business Profile</div>
       <input type="text" id="setBizName" placeholder="Business name">
       <input type="text" id="setBizSub" placeholder="Location / phone / PIN (shown on receipt)">
       <input type="text" id="setKraPin" placeholder="KRA PIN">
@@ -764,10 +853,10 @@
         <option value="Kiosk">Kiosk / Kibanda</option>
       </select>
 
-      <div style="font-weight:bold; margin:14px 0 8px;">🎨 Theme Color</div>
+      <div style="font-weight:bold; margin:14px 0 8px;"><i class="fa-solid fa-palette"></i> Theme Color</div>
       <div id="colorSwatches" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;"></div>
 
-      <div style="font-weight:bold; margin:14px 0 8px;">🖼️ Business Logo</div>
+      <div style="font-weight:bold; margin:14px 0 8px;"><i class="fa-solid fa-image"></i> Business Logo</div>
       <input type="file" id="setLogoFile" accept="image/*">
       <div id="logoPreviewWrap" style="margin:8px 0;"></div>
       <button class="btn-red" onclick="removeLogo()" style="margin-bottom:10px;">Remove Logo</button>
@@ -776,7 +865,7 @@
     </div>
 
     <div class="cart-box" style="margin-top:14px;">
-      <div style="font-weight:bold; margin-bottom:8px;">📱 M-Pesa Payments</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-mobile-screen-button"></i> M-Pesa Payments</div>
       <p class="catalog-note" style="color:#666; text-align:left; padding:0;" id="mpesaStatusText">Checking status...</p>
 
       <select id="mpesaPaymentType">
@@ -800,7 +889,21 @@
     </div>
 
     <div class="cart-box" style="margin-top:14px;">
-      <div style="font-weight:bold; margin-bottom:8px;">🧾 KRA eTIMS (Tax Fiscalization)</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-palette"></i> Appearance</div>
+      <div class="theme-row">
+        <span class="trow-label">Theme</span>
+        <div class="theme-switch-pill" id="settingsThemeSwitch">
+          <button id="themeBtnNeon" onclick="setTheme('neon')">Neon Dusk</button>
+          <button id="themeBtnPaper" onclick="setTheme('paper')">Till Paper</button>
+        </div>
+      </div>
+      <p class="catalog-note" style="color:#888; text-align:left; padding:0; font-size:11px;">
+        Till Paper is a high-contrast, daylight-readable look with squared buttons — handy in bright shops. Neon Dusk is the default dark theme. Your choice is saved on this device.
+      </p>
+    </div>
+
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-receipt"></i> KRA eTIMS (Tax Fiscalization)</div>
       <p class="catalog-note" style="color:#666; text-align:left; padding:0;" id="etimsStatusText">Checking status...</p>
 
       <input type="text" id="etimsKraPin" placeholder="KRA PIN / TIN e.g. A001234567Z">
@@ -819,7 +922,7 @@
     </div>
 
     <div class="cart-box" style="margin-top:14px; border:2px solid #F59E0B; display:none;" id="platformSwitcherCard">
-      <div style="font-weight:bold; margin-bottom:8px;">🛠️ Platform Admin — Switch Business</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-screwdriver-wrench"></i> Platform Admin — Switch Business</div>
       <p class="catalog-note" style="color:#666; text-align:left; padding:0;" id="platformSwitcherStatus"></p>
       <select id="platformBusinessSelect"></select>
       <button class="btn-green" onclick="switchToBusiness()">Switch to Selected Business</button>
@@ -837,7 +940,7 @@
   <div>
     <div class="receipt-paper" id="receiptContent"></div>
     <div class="receipt-actions">
-      <button class="btn-blue" onclick="window.print()">🖨️ Print / Save PDF</button>
+      <button class="btn-blue" onclick="window.print()"><i class="fa-solid fa-print"></i> Print / Save PDF</button>
       <button class="btn-red" onclick="closeReceipt()">Close</button>
     </div>
   </div>
@@ -847,7 +950,7 @@
   <div>
     <div class="kot-paper" id="kotContent"></div>
     <div class="kot-actions">
-      <button class="btn-blue" onclick="window.print()">🖨️ Print Kitchen Ticket</button>
+      <button class="btn-blue" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Kitchen Ticket</button>
       <button class="btn-red" onclick="closeKOT()">Close</button>
     </div>
   </div>
@@ -869,6 +972,37 @@ const LOCAL_CACHE_KEY = "dogopos_cache_v1"; // last-known catalog/customers for 
 
 let session = null;
 let profile = null;   // { id, business_id, role, full_name, active }
+
+/* =====================================================================
+   THEME (Neon Dusk / Till Paper)
+===================================================================== */
+function getTheme() {
+  return document.documentElement.getAttribute('data-theme') === 'paper' ? 'paper' : 'neon';
+}
+function setTheme(theme) {
+  if (theme === 'paper') document.documentElement.setAttribute('data-theme', 'paper');
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('dogopos_theme', theme);
+  updateThemeToggleUI();
+}
+function toggleTheme() {
+  setTheme(getTheme() === 'paper' ? 'neon' : 'paper');
+}
+function updateThemeToggleUI() {
+  const isPaper = getTheme() === 'paper';
+  const icon = isPaper ? 'fa-sun' : 'fa-moon';
+  const appBtn = document.getElementById('appThemeToggle');
+  if (appBtn) appBtn.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+  const authBtn = document.getElementById('authThemeToggle');
+  if (authBtn) authBtn.innerHTML = `<i class="fa-solid ${icon}"></i> Theme`;
+  const neonBtn = document.getElementById('themeBtnNeon');
+  const paperBtn = document.getElementById('themeBtnPaper');
+  if (neonBtn && paperBtn) {
+    neonBtn.classList.toggle('active', !isPaper);
+    paperBtn.classList.toggle('active', isPaper);
+  }
+}
+updateThemeToggleUI(); // sync icon/pill state with whatever the anti-flash script already applied
 let business = null;  // { id, name, business_type, theme_color, logo_url, kra_pin, location }
 let activeBusinessId = null;  // profile.business_id normally; overridden while a platform admin is testing another business
 let isPlatformAdmin = false;
@@ -986,7 +1120,7 @@ function togglePasswordVisibility(fieldId, btn) {
   const input = document.getElementById(fieldId);
   const showing = input.type === 'text';
   input.type = showing ? 'password' : 'text';
-  btn.textContent = showing ? '👁️' : '🙈';
+  btn.textContent = showing ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
 }
 
 function checkPasswordRules() {
@@ -1010,8 +1144,8 @@ function checkPasswordMatch() {
   const msg = document.getElementById('pwMatchMsg');
   if (!msg) return;
   if (!confirm) { msg.textContent = ''; return; }
-  if (pw === confirm) { msg.textContent = '✓ Passwords match'; msg.style.color = '#2e9e5b'; }
-  else { msg.textContent = '✗ Passwords do not match'; msg.style.color = '#a5333f'; }
+  if (pw === confirm) { msg.textContent = '<i class="fa-solid fa-check"></i> Passwords match'; msg.style.color = '#2e9e5b'; }
+  else { msg.textContent = '<i class="fa-solid fa-xmark"></i> Passwords do not match'; msg.style.color = '#a5333f'; }
 }
 
 async function handleSignup() {
@@ -1224,10 +1358,10 @@ function renderPlatformSwitcher() {
 
   const statusEl = document.getElementById('platformSwitcherStatus');
   if (activeBusinessId === profile.business_id) {
-    statusEl.textContent = '📍 Currently viewing your own business.';
+    statusEl.textContent = '<i class="fa-solid fa-location-dot"></i> Currently viewing your own business.';
   } else {
     const active = platformBusinessList.find(b => b.id === activeBusinessId);
-    statusEl.textContent = `⚠️ Currently testing as: ${active ? active.name : activeBusinessId}`;
+    statusEl.textContent = `<i class="fa-solid fa-triangle-exclamation"></i> Currently testing as: ${active ? active.name : activeBusinessId}`;
   }
 }
 
@@ -1305,7 +1439,7 @@ function applyRoleVisibility() {
 
 function applyBusinessTheme() {
   if (!business) return;
-  document.getElementById('appTitle').textContent = '🧾 ' + business.name;
+  document.getElementById('appTitle').textContent = '<i class="fa-solid fa-receipt"></i> ' + business.name;
   document.getElementById('appTagline').textContent = business.business_type + ' · Dogo POS';
   document.getElementById('appHeader').style.background = business.theme_color || '#020024';
   const logoWrap = document.getElementById('headerLogoWrap');
@@ -1528,7 +1662,7 @@ function renderCart() {
           <button onclick="changeQty(${idx},1)">+</button>
         </div>
         <div class="line-total">${lineTotal.toFixed(2)}</div>
-        <button class="remove-btn" onclick="removeItem(${idx})">✕</button>
+        <button class="remove-btn" onclick="removeItem(${idx})"><i class="fa-solid fa-xmark"></i></button>
       </div>`;
   }).join('');
 
@@ -2119,7 +2253,7 @@ async function closeShift() {
   }).eq('id', currentShift.id);
   if (error) { showToast('Could not close shift: ' + error.message); return; }
 
-  showToast(variance === 0 ? 'Shift closed — drawer balanced ✅' : `Shift closed — variance KES ${variance.toFixed(2)}`);
+  showToast(variance === 0 ? 'Shift closed — drawer balanced <i class="fa-solid fa-circle-check"></i>' : `Shift closed — variance KES ${variance.toFixed(2)}`);
   currentShift = null;
   await loadAllData();
   renderShiftBanner();
@@ -2357,7 +2491,7 @@ function renderTables() {
       <div class="t-status">${t.status === 'free' ? 'Free' : 'Occupied'}</div>
       ${order.length > 0 ? `<div class="t-total">KES ${total.toFixed(2)}</div>` : ''}
       <div style="position:relative;">
-        <span style="position:absolute; top:-38px; right:-4px; font-size:11px; cursor:pointer;" onclick="event.stopPropagation(); removeTable('${t.id}')">✕</span>
+        <span style="position:absolute; top:-38px; right:-4px; font-size:11px; cursor:pointer;" onclick="event.stopPropagation(); removeTable('${t.id}')"><i class="fa-solid fa-xmark"></i></span>
       </div>
     </div>`;
   }).join('');
@@ -2602,12 +2736,12 @@ async function loadMpesaStatus() {
   if (resp.error) { statusEl.textContent = 'Could not load status.'; return; }
   if (resp.data) {
     const type = resp.data.payment_type === 'paybill' ? 'Paybill' : 'Till/Pochi';
-    statusEl.textContent = `✅ Configured — ${type} ${resp.data.shortcode} (${resp.data.is_production ? 'Production' : 'Sandbox'})`;
+    statusEl.textContent = `<i class="fa-solid fa-circle-check"></i> Configured — ${type} ${resp.data.shortcode} (${resp.data.is_production ? 'Production' : 'Sandbox'})`;
     document.getElementById('mpesaPaymentType').value = resp.data.payment_type;
     document.getElementById('mpesaShortcode').value = resp.data.shortcode;
     document.getElementById('mpesaEnv').value = String(resp.data.is_production);
   } else {
-    statusEl.textContent = '⚠️ Not set up yet — fill in the fields below to enable M-Pesa checkout.';
+    statusEl.textContent = '<i class="fa-solid fa-triangle-exclamation"></i> Not set up yet — fill in the fields below to enable M-Pesa checkout.';
   }
 }
 
@@ -2643,12 +2777,12 @@ async function loadEtimsStatus() {
   if (!statusEl) return;
   if (resp.error) { statusEl.textContent = 'Could not load status.'; return; }
   if (resp.data) {
-    statusEl.textContent = `✅ Configured — TIN ${resp.data.kra_pin}, Branch ${resp.data.bhf_id} (${resp.data.is_production ? 'Production' : 'Sandbox'}). Live KRA submission is pending device credentials.`;
+    statusEl.textContent = `<i class="fa-solid fa-circle-check"></i> Configured — TIN ${resp.data.kra_pin}, Branch ${resp.data.bhf_id} (${resp.data.is_production ? 'Production' : 'Sandbox'}). Live KRA submission is pending device credentials.`;
     document.getElementById('etimsKraPin').value = resp.data.kra_pin;
     document.getElementById('etimsBhfId').value = resp.data.bhf_id;
     document.getElementById('etimsEnv').value = String(resp.data.is_production);
   } else {
-    statusEl.textContent = '⚠️ Not set up yet — add your KRA PIN below so every sale builds its fiscalization payload.';
+    statusEl.textContent = '<i class="fa-solid fa-triangle-exclamation"></i> Not set up yet — add your KRA PIN below so every sale builds its fiscalization payload.';
   }
 }
 
@@ -2792,7 +2926,7 @@ async function completeMpesaSale(paymentRequest) {
     // Customer's M-Pesa payment already succeeded at this point - the sale record
     // failing to save (e.g. a genuine stock conflict) needs a human, not a silent drop.
     await loadAllData();
-    showToast('⚠️ Payment received (' + (paymentRequest.mpesa_receipt || '') + ') but the sale could not be saved — please record this manually and check stock.');
+    showToast('<i class="fa-solid fa-triangle-exclamation"></i> Payment received (' + (paymentRequest.mpesa_receipt || '') + ') but the sale could not be saved — please record this manually and check stock.');
   }
   logAudit('sale.create', { receipt: receiptNo, total: +grand.toFixed(2), item_count: cart.length, payment_method: 'mpesa', mpesa_receipt: paymentRequest.mpesa_receipt });
 
