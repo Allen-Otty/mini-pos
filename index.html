@@ -466,23 +466,9 @@
       </div>
       <div id="pwMatchMsg" style="font-size:12px; margin:-4px 0 6px;"></div>
 
-      <button class="auth-btn" onclick="handleSignup()">Create Business Account</button>
+      <button class="auth-btn" id="signupBtn" onclick="handleSignup()">Create Business Account</button>
       <div class="auth-error" id="signupError"></div>
       <div class="auth-info" id="signupInfo"></div>
-    </div>
-
-    <!-- ---------- OTP VERIFY PANEL ---------- -->
-    <div class="auth-panel" id="authPanelOtp">
-      <h2>Verify Your Email</h2>
-      <div class="sub" id="otpSubtext">We sent a 6-digit code to your email</div>
-
-      <label>Enter Code</label>
-      <input type="text" id="otpCode" class="otp-input" placeholder="000000" maxlength="6" inputmode="numeric">
-
-      <button class="auth-btn" onclick="handleVerifyOtp()">Verify & Continue</button>
-      <button class="auth-btn" id="resendOtpBtn" style="background:#eef3f8; color:#020024; margin-top:6px;" onclick="handleResendOtp()">Resend Code</button>
-      <div class="auth-error" id="otpError"></div>
-      <div class="auth-info" id="otpInfo"></div>
     </div>
   </div>
 
@@ -533,21 +519,27 @@
   <div class="panel active" id="tab-sell">
     <div class="cart-box" id="shiftBanner" style="margin-bottom:10px;">
       <div id="shiftClosedView">
+        <div id="staleShiftWarning" style="display:none; background:#7a4a00; color:#ffe6ac; border-radius:8px; padding:10px; margin-bottom:10px; font-size:13px;">
+          <div style="font-weight:bold; margin-bottom:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Unclosed shift from <span id="staleShiftDate"></span></div>
+          <div style="margin-bottom:8px;">Close it out before opening today's shift.</div>
+          <button class="btn-yellow btn-small" onclick="closeStaleShift()">Close that shift now</button>
+        </div>
         <div style="font-weight:bold; margin-bottom:6px;"><i class="fa-solid fa-clock"></i> No open shift</div>
-        <input type="number" id="openingFloat" placeholder="Opening cash float, KES" step="0.01">
+        <input type="number" id="openingFloat" placeholder="Opening cash float, KES" step="0.01" value="0.00">
         <button class="btn-green" onclick="openShift()">Open Shift</button>
       </div>
       <div id="shiftOpenView" style="display:none;">
         <div style="font-weight:bold; margin-bottom:4px;"><i class="fa-solid fa-clock"></i> Shift open — <span id="shiftOpenedAt"></span></div>
-        <div style="font-size:13px; color:#555; margin-bottom:8px;">Opening float: KES <span id="shiftFloatDisplay"></span></div>
+        <div style="font-size:13px; color:var(--text-secondary); margin-bottom:8px;">Opening float: KES <span id="shiftFloatDisplay"></span></div>
         <button class="btn-red" onclick="closeShift()">Close Shift</button>
       </div>
     </div>
 
-    <div id="reader"></div>
+    <button class="btn-blue" id="scannerToggleBtn" onclick="toggleScanner()"><i class="fa-solid fa-camera"></i> Start Camera Scanner</button>
+    <div id="reader" style="display:none;"></div>
     <div class="scan-status">
-      <div class="code" id="scanFeedback">Point camera at a barcode</div>
-      <div class="hint" id="scanHint">Recognized items are added to the cart automatically.</div>
+      <div class="code" id="scanFeedback">Tap "Start Camera Scanner" to begin</div>
+      <div class="hint" id="scanHint">Or use manual entry / photo scan below.</div>
     </div>
 
     <input type="text" id="manualCode" placeholder="No scanner? Type code + Enter">
@@ -963,7 +955,9 @@
 ===================================================================== */
 const SUPABASE_URL = "https://uzwomzkzqrpiumtnniik.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D";
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { persistSession: false }
+});
 
 const THEME_COLORS = ["#020024", "#00d4ff", "#306c5f", "#a5333f", "#3a0ca3", "#6a0dad"];
 const LOCAL_QUEUE_KEY = "dogopos_offline_queue_v1";
@@ -1015,6 +1009,7 @@ let team = [];
 let hotelTables = [];
 let allShifts = [];
 let currentShift = null;
+let staleOpenShift = null; // an OPEN shift from a previous calendar day that was never closed
 let cart = [];
 
 /* =====================================================================
@@ -1056,19 +1051,11 @@ function showAuthTab(name) {
   document.getElementById('tabSignupBtn').classList.toggle('active', name === 'signup');
   document.getElementById('authPanelLogin').classList.toggle('active', name === 'login');
   document.getElementById('authPanelSignup').classList.toggle('active', name === 'signup');
-  document.getElementById('authPanelOtp').classList.remove('active');
-  clearAuthMessages();
-}
-
-function showOtpPanel(subtext) {
-  document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('authPanelOtp').classList.add('active');
-  document.getElementById('otpSubtext').textContent = subtext;
   clearAuthMessages();
 }
 
 function clearAuthMessages() {
-  ['loginError','loginInfo','signupError','signupInfo','otpError','otpInfo'].forEach(id => {
+  ['loginError','loginInfo','signupError','signupInfo'].forEach(id => {
     const el = document.getElementById(id);
     el.style.display = 'none';
     el.textContent = '';
@@ -1089,7 +1076,6 @@ function setSignupMethod(method) {
   document.getElementById('suPhoneField').style.display = method === 'phone' ? 'block' : 'none';
 }
 
-let pendingSignup = null; // holds { email, password, business_name, business_type, full_name } while awaiting OTP
 
 /* =====================================================================
    AUTH ACTIONS
@@ -1178,92 +1164,61 @@ async function handleSignup() {
     return;
   }
 
-  const { data, error } = await sb.auth.signUp({ email, password });
-  if (error) {
-    showAuthMsg('signupError', error.message);
-    return;
-  }
+  const btn = document.getElementById('signupBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating your account...'; }
 
-  // Supabase returns a "successful" signUp with an empty identities array when the
-  // email is already registered and confirmed - it doesn't error, to avoid leaking
-  // which emails exist. Detect that case explicitly and point the user to Sign In.
-  if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-    showAuthMsg('signupError', 'This email is already registered. Redirecting you to Sign In...');
-    setTimeout(() => {
-      showAuthTab('login');
-      document.getElementById('loginIdentifier').value = email;
-    }, 1800);
-    return;
-  }
+  // Creates the auth user (pre-confirmed, no email OTP step), the business,
+  // and the admin profile all in one server-side call.
+  const resp = await callEdgeFunction('create-business', { business_name, business_type, full_name, email, password });
 
-  pendingSignup = { business_name, business_type, full_name, email };
-  showOtpPanel(`We sent a 6-digit code to ${email}. Enter it below to verify and activate your business.`);
-}
-
-async function handleVerifyOtp() {
-  clearAuthMessages();
-  const token = document.getElementById('otpCode').value.trim();
-  if (!token || token.length < 6) {
-    showAuthMsg('otpError', 'Enter the 6-digit code from your email.');
-    return;
-  }
-  const email = pendingSignup ? pendingSignup.email : (session && session.user ? session.user.email : null);
-  if (!email) {
-    showAuthMsg('otpError', 'Something went wrong — please sign up again.');
-    return;
-  }
-
-  const { data, error } = await sb.auth.verifyOtp({ email, token, type: 'signup' });
-  if (error) {
-    showAuthMsg('otpError', error.message);
-    return;
-  }
-  session = data.session;
-
-  if (pendingSignup) {
-    // Now create the business + admin profile via secure edge function
-    const resp = await callEdgeFunction('create-business', {
-      business_name: pendingSignup.business_name,
-      business_type: pendingSignup.business_type,
-      full_name: pendingSignup.full_name
-    });
-    pendingSignup = null;
-    if (resp.error) {
-      showAuthMsg('otpError', 'Verified, but business setup failed: ' + resp.error);
-      return;
+  if (resp.error) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Create Business Account'; }
+    if (/already registered/i.test(resp.error)) {
+      showAuthMsg('signupError', 'This email is already registered. Redirecting you to Sign In...');
+      setTimeout(() => {
+        showAuthTab('login');
+        document.getElementById('loginIdentifier').value = email;
+      }, 1800);
+    } else {
+      showAuthMsg('signupError', resp.error);
     }
-    showToast('Business created! Welcome to Dogo POS.');
-  } else {
-    showToast('Verified!');
+    return;
   }
+
+  const result = await performLogin(email, password);
+  if (btn) { btn.disabled = false; btn.textContent = 'Create Business Account'; }
+  if (result.error) {
+    // Account/business were created successfully - this would only fail on a
+    // network hiccup right after, so send them to Sign In rather than losing the account.
+    showAuthMsg('signupError', 'Account created — please sign in.');
+    showAuthTab('login');
+    document.getElementById('loginIdentifier').value = email;
+    return;
+  }
+  showToast('Business created! Welcome to Dogo POS.');
   await afterLogin();
 }
 
-let resendCooldownUntil = 0;
-async function handleResendOtp() {
-  clearAuthMessages();
-  const btn = document.getElementById('resendOtpBtn');
-  const now = Date.now();
-  if (now < resendCooldownUntil) {
-    showAuthMsg('otpInfo', `Please wait ${Math.ceil((resendCooldownUntil - now) / 1000)}s before requesting another code.`);
-    return;
+// Shared by handleLogin() and the post-signup auto-login - calls the
+// secure-login edge function (enforces lockout after repeated failures,
+// logs every attempt) and applies the returned session to the client.
+async function performLogin(identifier, password) {
+  let resp;
+  try {
+    const r = await fetch(SUPABASE_URL + '/functions/v1/secure-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+      body: JSON.stringify({ email: identifier, password })
+    });
+    resp = await r.json();
+  } catch (e) {
+    return { error: 'Could not reach the server. Check your connection.' };
   }
-  const email = pendingSignup ? pendingSignup.email : (session && session.user ? session.user.email : null);
-  if (!email) { showAuthMsg('otpError', 'No email on file — please sign up again.'); return; }
+  if (resp.error) return { error: resp.error };
 
-  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
-  resendCooldownUntil = now + 30000; // 30s cooldown - also prevents accidental double-taps firing two sends
-
-  const { error } = await sb.auth.resend({ type: 'signup', email });
-  if (error) showAuthMsg('otpError', error.message);
-  else showAuthMsg('otpInfo', 'A new code was sent — use the latest one, earlier codes no longer work.');
-
-  if (btn) {
-    setTimeout(() => {
-      btn.disabled = false;
-      btn.textContent = 'Resend Code';
-    }, 30000);
-  }
+  await sb.auth.setSession({ access_token: resp.session.access_token, refresh_token: resp.session.refresh_token });
+  session = resp.session;
+  return { success: true, isNewDevice: resp.isNewDevice };
 }
 
 async function handleLogin() {
@@ -1275,35 +1230,9 @@ async function handleLogin() {
     return;
   }
 
-  // Uses the secure-login edge function instead of calling Supabase directly -
-  // this enforces lockout after repeated failures, and logs every attempt for audit purposes.
-  let resp;
-  try {
-    const r = await fetch(SUPABASE_URL + '/functions/v1/secure-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
-      body: JSON.stringify({ email: identifier, password })
-    });
-    resp = await r.json();
-  } catch (e) {
-    showAuthMsg('loginError', 'Could not reach the server. Check your connection.');
-    return;
-  }
-
-  if (resp.error) {
-    if (resp.error === 'EMAIL_NOT_VERIFIED') {
-      pendingSignup = { email: identifier };
-      showOtpPanel(`Your email isn't verified yet. Enter the code sent to ${identifier}.`);
-    } else {
-      showAuthMsg('loginError', resp.error);
-    }
-    return;
-  }
-
-  // Apply the returned session to the client SDK so subsequent calls are authenticated
-  await sb.auth.setSession({ access_token: resp.session.access_token, refresh_token: resp.session.refresh_token });
-  session = resp.session;
-  if (resp.isNewDevice) showToast('New device detected on this login — check Team activity if this wasn\'t you.');
+  const result = await performLogin(identifier, password);
+  if (result.error) { showAuthMsg('loginError', result.error); return; }
+  if (result.isNewDevice) showToast('New device detected on this login — check Team activity if this wasn\'t you.');
   await afterLogin();
 }
 
@@ -1422,7 +1351,6 @@ async function afterLogin() {
   await loadAllData();
   switchTab('sell');
   resetInactivityTimer();
-  initScanner();
 }
 
 function applyRoleVisibility() {
@@ -1461,6 +1389,7 @@ function switchTab(name) {
   if (name !== 'sell' && document.querySelector(`.tab-btn[data-tab="${name}"]`).hasAttribute('data-admin-only') && profile.role !== 'admin') {
     return; // silently refuse - button is hidden anyway
   }
+  if (name !== 'sell') stopScanner();
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
@@ -1506,7 +1435,10 @@ async function loadAllData() {
       team = teamRes.data || [];
       hotelTables = tablesRes.data || [];
       allShifts = shiftsRes.data || [];
-      currentShift = allShifts.find(s => s.user_id === profile.id && s.status === 'OPEN') || null;
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const myOpenShifts = allShifts.filter(s => s.user_id === profile.id && s.status === 'OPEN');
+      currentShift = myOpenShifts.find(s => s.created_at.slice(0, 10) === todayStr) || null;
+      staleOpenShift = myOpenShifts.find(s => s.created_at.slice(0, 10) !== todayStr) || null;
 
       const salesById = {};
       (salesRes.data || []).forEach(s => salesById[s.id] = s);
@@ -1894,18 +1826,25 @@ function resetBuyAnimation(btn) {
 
 async function handleCheckoutClick(btn) {
   if (cart.length === 0) return;
+  if (!currentShift) { showToast('Open a shift before making a sale — see the Sell tab.'); return; }
   await Promise.all([playBuyAnimation(btn), checkout()]);
 }
 
 async function handleTableCheckoutClick(btn) {
   const t = hotelTables.find(x => x.id === activeOrderTableId);
   if (!t || !(t.current_order || []).length) { showToast('No items to checkout'); return; }
+  if (!currentShift) { showToast('Open a shift before making a sale — see the Sell tab.'); return; }
   await Promise.all([playBuyAnimation(btn), checkoutTableOrder()]);
   resetBuyAnimation(btn);
 }
 
 async function checkout() {
   if (cart.length === 0) return;
+  if (!currentShift) {
+    showToast('Open a shift before making a sale — see the Sell tab.');
+    switchTab('sell');
+    return;
+  }
   const now = new Date();
   const custId = document.getElementById('cartCustomerPick').value || null;
   const offlineUuid = crypto.randomUUID ? crypto.randomUUID() : ('o-' + now.getTime() + '-' + Math.random());
@@ -2216,6 +2155,13 @@ function renderShiftBanner() {
   } else {
     closedView.style.display = 'block';
     openView.style.display = 'none';
+    const warning = document.getElementById('staleShiftWarning');
+    if (staleOpenShift) {
+      warning.style.display = 'block';
+      document.getElementById('staleShiftDate').textContent = new Date(staleOpenShift.created_at).toLocaleDateString();
+    } else {
+      warning.style.display = 'none';
+    }
   }
 }
 
@@ -2227,18 +2173,19 @@ async function openShift() {
   if (error) { showToast('Could not open shift: ' + error.message); return; }
   currentShift = data;
   allShifts.unshift(data);
-  document.getElementById('openingFloat').value = '';
+  document.getElementById('openingFloat').value = '0.00';
   renderShiftBanner();
   showToast('Shift opened with float KES ' + floatVal.toFixed(2));
 }
 
-async function closeShift() {
-  if (!currentShift) return;
+async function closeShift(shift) {
+  shift = shift || currentShift;
+  if (!shift) return;
   // expected cash = opening float + cash-only sales made by this user since the shift opened
   const cashSalesTotal = salesLog
-    .filter(r => r.cashierId === profile.id && new Date(r.date + 'T00:00:00') >= new Date(currentShift.created_at.slice(0,10) + 'T00:00:00') && (r.paymentMethod || 'cash') === 'cash')
+    .filter(r => r.cashierId === profile.id && new Date(r.date + 'T00:00:00') >= new Date(shift.created_at.slice(0,10) + 'T00:00:00') && (r.paymentMethod || 'cash') === 'cash')
     .reduce((sum, r) => sum + r.total, 0);
-  const expected = Number(currentShift.opening_float) + cashSalesTotal;
+  const expected = Number(shift.opening_float) + cashSalesTotal;
 
   const actualStr = prompt(`Expected cash in drawer: KES ${expected.toFixed(2)}\n\nCount the drawer and enter the actual cash amount:`);
   if (actualStr === null) return;
@@ -2249,13 +2196,16 @@ async function closeShift() {
   const { error } = await sb.from('shift_sessions').update({
     expected_cash: +expected.toFixed(2), actual_cash: actual, cash_variance: variance,
     status: 'CLOSED', closed_at: new Date().toISOString()
-  }).eq('id', currentShift.id);
+  }).eq('id', shift.id);
   if (error) { showToast('Could not close shift: ' + error.message); return; }
 
   showToast(variance === 0 ? 'Shift closed — drawer balanced <i class="fa-solid fa-circle-check"></i>' : `Shift closed — variance KES ${variance.toFixed(2)}`);
-  currentShift = null;
   await loadAllData();
   renderShiftBanner();
+}
+
+async function closeStaleShift() {
+  if (staleOpenShift) await closeShift(staleOpenShift);
 }
 
 function renderShiftsTable() {
@@ -2964,6 +2914,8 @@ let scannerRunning = false;
 function initScanner() {
   if (scannerRunning || scannerStarting) return; // already started / starting - don't double-init
   scannerStarting = true;
+  const toggleBtn = document.getElementById('scannerToggleBtn');
+  if (toggleBtn) { toggleBtn.disabled = true; toggleBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Starting camera...'; }
   if (!html5QrcodeScanner) html5QrcodeScanner = new Html5Qrcode("reader");
   Html5Qrcode.getCameras().then(cameras => {
     if (cameras && cameras.length) {
@@ -2973,20 +2925,27 @@ function initScanner() {
       html5QrcodeScanner.start(camId, scanConfig, onScanSuccess, onScanFailure).then(() => {
         scannerRunning = true;
         scannerStarting = false;
+        document.getElementById('reader').style.display = 'block';
+        document.getElementById('scanFeedback').textContent = "Point camera at a barcode";
+        document.getElementById('scanHint').textContent = "Recognized items are added to the cart automatically.";
+        if (toggleBtn) { toggleBtn.disabled = false; toggleBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Stop Camera Scanner'; }
       }).catch(() => {
         scannerStarting = false;
         document.getElementById('scanFeedback').textContent = "Could not start camera";
         document.getElementById('scanHint').textContent = "Use manual entry below instead.";
+        if (toggleBtn) { toggleBtn.disabled = false; toggleBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Start Camera Scanner'; }
       });
     } else {
       scannerStarting = false;
       document.getElementById('scanFeedback').textContent = "No camera found";
       document.getElementById('scanHint').textContent = "Use manual entry or the dropdown below instead.";
+      if (toggleBtn) { toggleBtn.disabled = false; toggleBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Start Camera Scanner'; }
     }
   }).catch(() => {
     scannerStarting = false;
     document.getElementById('scanFeedback').textContent = "Camera permission needed";
     document.getElementById('scanHint').textContent = "Tap Allow when prompted, or use manual entry below.";
+    if (toggleBtn) { toggleBtn.disabled = false; toggleBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Start Camera Scanner'; }
   });
 }
 
@@ -2995,6 +2954,21 @@ function stopScanner() {
     html5QrcodeScanner.stop().catch(() => {});
     scannerRunning = false;
   }
+  scannerStarting = false;
+  const toggleBtn = document.getElementById('scannerToggleBtn');
+  const readerEl = document.getElementById('reader');
+  if (readerEl) readerEl.style.display = 'none';
+  if (toggleBtn) { toggleBtn.disabled = false; toggleBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Start Camera Scanner'; }
+  const feedback = document.getElementById('scanFeedback');
+  if (feedback) {
+    feedback.textContent = 'Tap "Start Camera Scanner" to begin';
+    document.getElementById('scanHint').textContent = 'Or use manual entry / photo scan below.';
+  }
+}
+
+function toggleScanner() {
+  if (scannerRunning || scannerStarting) stopScanner();
+  else initScanner();
 }
 
 /* =====================================================================
@@ -3070,16 +3044,12 @@ function resetInactivityTimer() {
 );
 
 /* =====================================================================
-   SESSION RESTORE ON LOAD
+   AUTH STATE
+   Session persistence is intentionally disabled (see createClient above) -
+   this is a shared POS terminal used across shifts/tellers, so every app
+   launch should require an explicit login rather than silently staying
+   signed in as whoever last used the device.
 ===================================================================== */
-(async function initSession() {
-  const { data } = await sb.auth.getSession();
-  if (data.session) {
-    session = data.session;
-    await afterLogin();
-  }
-})();
-
 sb.auth.onAuthStateChange((event, s) => {
   if (event === 'SIGNED_OUT') {
     session = null; profile = null; business = null;

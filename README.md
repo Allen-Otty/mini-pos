@@ -6,13 +6,13 @@ A multi-business point-of-sale web app: cloud sync, role-based Admin/Teller acco
 **Backend:** Supabase project `mini-pos-backend` (id: `uzwomzkzqrpiumtnniik`)
 **Source code:** https://github.com/Allen-Otty/mini-pos
 
-> **Status note (2026-08-31):** Added a full dual-theme system (Neon Dusk / Till Paper) and replaced every emoji icon with real Font Awesome icons — both live. The email OTP signup flow has a known, unresolved bug (see Section 3) — deliberately left as-is for now per the user's decision rather than reworked.
+> **Status note (2026-08-31):** Added a full dual-theme system (Neon Dusk / Till Paper) and replaced every emoji icon with real Font Awesome icons — both live. The email OTP signup flow (which had a known, unresolved `otp_expired` bug — see git history) has been **removed entirely** per the owner's decision: `create-business` now creates the auth user pre-confirmed server-side via the Admin API, so signup is a single step with no email verification at all. Also fixed: session persistence was on by default (any login silently persisted across app launches on a shared device) — now disabled, every launch requires explicit login; the camera scanner used to auto-start on login and run for the whole session — now gated behind a Start/Stop button and stops when leaving the Sell tab; shifts were matched by status alone with no date scoping, so a forgotten open shift from a previous day would silently stay "current" — now scoped to today's date, with a stale-shift warning + one-tap close if an old one is found; checkout is now blocked entirely unless today's shift is open.
 
 ---
 
 ## 1. What's confirmed working (frontend + backend both wired, verified by reading the real code)
 
-- **Multi-tenant auth**: Sign Up (email OTP, duplicate-email handling) → Create Business, Sign In (with show/hide password toggle, confirm-password, password rules), Admin/Teller roles — via `create-business`, `create-teller`, `secure-login` edge functions
+- **Multi-tenant auth**: Sign Up (single-step, pre-confirmed account — no email OTP) → Create Business, Sign In (with show/hide password toggle, confirm-password, password rules), Admin/Teller roles — via `create-business`, `create-teller`, `secure-login` edge functions
 - **Sell tab**: camera barcode scanning, manual entry, cart, VAT-inclusive pricing
 - **Checkout**: Cash, or M-Pesa via STK Push — wired to the real Supabase project (`mpesa-stk-push`, `mpesa-callback`, `mpesa-settings` edge functions; `payment_requests` table)
 - **Shift management**: `openShift()`/`closeShift()`, opening float, expected vs actual cash, variance tracking, shifts history table
@@ -81,7 +81,7 @@ See `TASKS.md` for the full, maintained list. Headline items:
 - **Still open:** duplicate permissive RLS policies on `businesses` (member vs platform-admin, for SELECT and UPDATE) — cosmetic performance note only, deliberately left alone rather than risk breaking access
 - **Still open:** leaked-password protection in Supabase Auth settings — dashboard-only toggle, needs the user to do it directly
 - **Still open:** ~20 unindexed foreign keys — fine at current scale
-- **Known bug, deliberately left unfixed (user's call):** email OTP signup verification fails as `otp_expired` within 18–52 seconds of the code being sent — confirmed via Supabase auth logs, not a real timeout or user error. The dashboard's "Email OTP Expiration" is genuinely set to 3600s, so this looks like a Supabase-side config propagation issue rather than anything fixable from our code or dashboard. Also noticed while investigating: every auth request's logged referer is `http://localhost:3000` — worth checking Authentication → URL Configuration → Site URL is set to the real production URL. Alternatives discussed (custom self-hosted OTP, magic link, SMS OTP) — user chose to leave OTP as-is for now rather than rework it.
+- **Resolved:** email OTP signup verification was failing as `otp_expired` within 18–52 seconds of the code being sent — confirmed via Supabase auth logs to be a Supabase-side config propagation issue (dashboard's expiry setting genuinely showed 3600s), not fixable from our code or dashboard. Rather than working around a platform-side issue, the owner opted to remove the OTP step entirely: `create-business` now creates the auth user pre-confirmed via the Admin API (`email_confirm: true`), so signup completes in a single step with no email verification. Also worth double-checking separately: every auth request's logged referer was `http://localhost:3000` — worth confirming Authentication → URL Configuration → Site URL is set to the real production URL.
 
 ## 6. Hosting & deployment
 
