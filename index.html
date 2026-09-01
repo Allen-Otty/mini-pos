@@ -961,7 +961,8 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 
 const THEME_COLORS = ["#020024", "#00d4ff", "#306c5f", "#a5333f", "#3a0ca3", "#6a0dad"];
 const LOCAL_QUEUE_KEY = "dogopos_offline_queue_v1";
-const LOCAL_CACHE_KEY = "dogopos_cache_v1"; // last-known catalog/customers for offline selling
+const LOCAL_SHIFT_QUEUE_KEY = "dogopos_offline_shift_queue_v1";
+const LOCAL_CACHE_KEY = "dogopos_cache_v1"; // last-known full app state for offline selling
 
 let session = null;
 let profile = null;   // { id, business_id, role, full_name, active }
@@ -1435,10 +1436,8 @@ async function loadAllData() {
       team = teamRes.data || [];
       hotelTables = tablesRes.data || [];
       allShifts = shiftsRes.data || [];
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const myOpenShifts = allShifts.filter(s => s.user_id === profile.id && s.status === 'OPEN');
-      currentShift = myOpenShifts.find(s => s.created_at.slice(0, 10) === todayStr) || null;
-      staleOpenShift = myOpenShifts.find(s => s.created_at.slice(0, 10) !== todayStr) || null;
+      applyOfflineShiftQueueToLocalState(); // fold in any not-yet-synced offline shift actions
+      deriveShiftState();
 
       const salesById = {};
       (salesRes.data || []).forEach(s => salesById[s.id] = s);
@@ -1452,7 +1451,7 @@ async function loadAllData() {
       });
       receiptCounter = (salesRes.data || []).length;
 
-      localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({ CATALOG, customers, business }));
+      saveToLocalCache();
     } catch (e) {
       showToast('Could not reach the server — using last saved data.');
       loadFromLocalCache();
@@ -1466,6 +1465,18 @@ async function loadAllData() {
   updatePendingSyncBanner();
 }
 
+// Everything the app needs to keep working (Sell, Catalog, Team roster
+// display, Hotel tables, and shift open/close cash math) while offline,
+// not just the catalog. Kept in one object so save/restore can't drift
+// out of sync with each other.
+function saveToLocalCache() {
+  try {
+    localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({
+      CATALOG, customers, business, team, hotelTables, allShifts, salesLog, receiptCounter
+    }));
+  } catch (e) {}
+}
+
 function loadFromLocalCache() {
   try {
     const raw = localStorage.getItem(LOCAL_CACHE_KEY);
@@ -1473,8 +1484,26 @@ function loadFromLocalCache() {
       const cached = JSON.parse(raw);
       CATALOG = cached.CATALOG || [];
       customers = cached.customers || [];
+      business = cached.business || business;
+      team = cached.team || [];
+      hotelTables = cached.hotelTables || [];
+      allShifts = cached.allShifts || [];
+      salesLog = cached.salesLog || [];
+      receiptCounter = cached.receiptCounter || 0;
     }
   } catch (e) {}
+  applyOfflineShiftQueueToLocalState();
+  deriveShiftState();
+}
+
+// Single source of truth for currentShift/staleOpenShift, used after every
+// load path (online, cache, and post-offline-action) so the three copies
+// of this logic that used to exist can't drift apart.
+function deriveShiftState() {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const myOpenShifts = allShifts.filter(s => s.user_id === profile.id && s.status === 'OPEN');
+  currentShift = myOpenShifts.find(s => s.created_at.slice(0, 10) === todayStr) || null;
+  staleOpenShift = myOpenShifts.find(s => s.created_at.slice(0, 10) !== todayStr) || null;
 }
 
 /* =====================================================================
@@ -1940,18 +1969,53 @@ function getOfflineQueue() {
 }
 function updatePendingSyncBanner() {
   const queue = getOfflineQueue();
+  const shiftQueue = getOfflineShiftQueue();
+  const total = queue.length + shiftQueue.length;
   const banner = document.getElementById('pendingSyncBanner');
-  if (queue.length > 0 && isOnline) {
-    document.getElementById('pendingSyncText').textContent = `${queue.length} sale(s) waiting to sync`;
+  if (total > 0 && isOnline) {
+    const parts = [];
+    if (shiftQueue.length > 0) parts.push(`${shiftQueue.length} shift action(s)`);
+    if (queue.length > 0) parts.push(`${queue.length} sale(s)`);
+    document.getElementById('pendingSyncText').textContent = `${parts.join(', ')} waiting to sync`;
     banner.classList.add('show');
   } else {
     banner.classList.remove('show');
   }
 }
+
+// Shifts must sync before sales - a queued sale can carry a shift_id that
+// only exists in shift_sessions once its own queued 'open' entry has been
+// pushed (the id itself is a real client-generated UUID already, so no
+// remapping is needed - just ordering).
+async function syncOfflineShifts() {
+  if (!isOnline) return;
+  const queue = getOfflineShiftQueue();
+  if (queue.length === 0) return;
+  const remaining = [];
+  for (const entry of queue) {
+    try {
+      if (entry.type === 'open') {
+        const { error } = await sb.from('shift_sessions').insert(entry.shift);
+        if (error && !String(error.message).includes('duplicate key')) throw error;
+      } else if (entry.type === 'close') {
+        const { error } = await sb.from('shift_sessions').update({
+          expected_cash: entry.expected_cash, actual_cash: entry.actual_cash,
+          cash_variance: entry.cash_variance, status: 'CLOSED', closed_at: entry.closed_at
+        }).eq('id', entry.shiftId);
+        if (error) throw error;
+      }
+    } catch (e) {
+      remaining.push(entry);
+    }
+  }
+  saveOfflineShiftQueue(remaining);
+}
+
 async function syncOfflineSales() {
   if (!isOnline) { showToast('Still offline — will sync automatically once connected.'); return; }
+  await syncOfflineShifts(); // must land first - sales may reference a shift_id that only just got created
   const queue = getOfflineQueue();
-  if (queue.length === 0) return;
+  if (queue.length === 0) { updatePendingSyncBanner(); return; }
   showToast('Syncing ' + queue.length + ' sale(s)...');
   const remaining = [];
   for (const entry of queue) {
@@ -2165,10 +2229,55 @@ function renderShiftBanner() {
   }
 }
 
+function getOfflineShiftQueue() {
+  try { return JSON.parse(localStorage.getItem(LOCAL_SHIFT_QUEUE_KEY) || '[]'); } catch (e) { return []; }
+}
+function saveOfflineShiftQueue(queue) {
+  localStorage.setItem(LOCAL_SHIFT_QUEUE_KEY, JSON.stringify(queue));
+}
+// Folds any not-yet-synced offline shift open/close actions into the
+// in-memory allShifts array, so currentShift/staleOpenShift and the cash
+// math in closeShift() all see an offline-opened shift exactly like a
+// normal one - the queue is the source of truth until sync succeeds.
+function applyOfflineShiftQueueToLocalState() {
+  const queue = getOfflineShiftQueue();
+  queue.forEach(entry => {
+    if (entry.type === 'open') {
+      if (!allShifts.find(s => s.id === entry.shift.id)) allShifts.unshift(entry.shift);
+    } else if (entry.type === 'close') {
+      const s = allShifts.find(x => x.id === entry.shiftId);
+      if (s) {
+        s.expected_cash = entry.expected_cash; s.actual_cash = entry.actual_cash;
+        s.cash_variance = entry.cash_variance; s.status = 'CLOSED'; s.closed_at = entry.closed_at;
+      }
+    }
+  });
+}
+
 async function openShift() {
   const floatVal = parseFloat(document.getElementById('openingFloat').value) || 0;
+
+  if (!isOnline) {
+    const shift = {
+      id: crypto.randomUUID(), business_id: activeBusinessId, user_id: profile.id,
+      opening_float: floatVal, status: 'OPEN', created_at: new Date().toISOString(),
+      expected_cash: null, actual_cash: null, cash_variance: null, closed_at: null
+    };
+    const queue = getOfflineShiftQueue();
+    queue.push({ type: 'open', shift });
+    saveOfflineShiftQueue(queue);
+    allShifts.unshift(shift);
+    currentShift = shift;
+    saveToLocalCache();
+    document.getElementById('openingFloat').value = '0.00';
+    renderShiftBanner();
+    updatePendingSyncBanner();
+    showToast('Offline — shift opened locally, will sync once back online.');
+    return;
+  }
+
   const { data, error } = await sb.from('shift_sessions').insert({
-    business_id: activeBusinessId, user_id: profile.id, opening_float: floatVal, status: 'OPEN'
+    id: crypto.randomUUID(), business_id: activeBusinessId, user_id: profile.id, opening_float: floatVal, status: 'OPEN'
   }).select().single();
   if (error) { showToast('Could not open shift: ' + error.message); return; }
   currentShift = data;
@@ -2193,9 +2302,24 @@ async function closeShift(shift) {
   if (isNaN(actual)) { showToast('Enter a valid number'); return; }
 
   const variance = +(actual - expected).toFixed(2);
+  const closedAt = new Date().toISOString();
+
+  if (!isOnline) {
+    const queue = getOfflineShiftQueue();
+    queue.push({ type: 'close', shiftId: shift.id, expected_cash: +expected.toFixed(2), actual_cash: actual, cash_variance: variance, closed_at: closedAt });
+    saveOfflineShiftQueue(queue);
+    applyOfflineShiftQueueToLocalState();
+    deriveShiftState();
+    saveToLocalCache();
+    showToast('Offline — shift close saved locally, will sync once back online.');
+    renderShiftBanner();
+    updatePendingSyncBanner();
+    return;
+  }
+
   const { error } = await sb.from('shift_sessions').update({
     expected_cash: +expected.toFixed(2), actual_cash: actual, cash_variance: variance,
-    status: 'CLOSED', closed_at: new Date().toISOString()
+    status: 'CLOSED', closed_at: closedAt
   }).eq('id', shift.id);
   if (error) { showToast('Could not close shift: ' + error.message); return; }
 
