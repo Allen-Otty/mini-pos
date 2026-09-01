@@ -2,7 +2,7 @@
 
 A multi-business point-of-sale web app: cloud sync, role-based Admin/Teller accounts, offline sales, KRA VAT-ready reporting, and M-Pesa payments.
 
-**Live app:** https://allen-otty.github.io/mini-pos/
+**Live app:** https://dogo-pos-app.netlify.app
 **Backend:** Supabase project `mini-pos-backend` (id: `uzwomzkzqrpiumtnniik`)
 **Source code:** https://github.com/Allen-Otty/mini-pos
 
@@ -85,8 +85,8 @@ See `TASKS.md` for the full, maintained list. Headline items:
 
 ## 6. Hosting & deployment
 
-- **GitHub Pages:** `https://allen-otty.github.io/mini-pos/` — every push to `main` auto-rebuilds within 1–2 minutes
-- **Netlify:** `https://dogo-pos-app.netlify.app` — live, linked to the same GitHub repo/branch for continuous deployment (created to avoid exposing the GitHub username in the URL)
+- **Netlify (default):** `https://dogo-pos-app.netlify.app` — live, linked to `Allen-Otty/mini-pos` main branch for continuous deployment
+- **GitHub Pages (secondary):** `https://allen-otty.github.io/mini-pos/` — every push to `main` auto-rebuilds within 1–2 minutes
 
 ```bash
 git clone https://github.com/Allen-Otty/mini-pos.git
