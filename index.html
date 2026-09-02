@@ -153,7 +153,6 @@
   /* ---------------- App shell (shown after login) ---------------- */
   #appShell { display: none; }
   .tabs { display: flex; flex-wrap: wrap; max-width: 480px; margin: 12px auto 0; padding: 0 16px; gap: 6px; }
-  #desktopSidebar { display: none; }
   .tab-btn {
     flex: 1 1 30%; padding: 12px 4px; border-radius: var(--btn-radius); border: 1px solid var(--border); font-weight: bold;
     font-size: 12px; background: var(--tab-inactive-bg); color: var(--surface-text); cursor: pointer;
@@ -357,70 +356,35 @@
     cursor: pointer; padding: 4px; width: auto; margin: 0;
   }
   /* =====================================================================
-     DESKTOP LAYOUT (>=900px) — standard sidebar nav (header stays as the
-     top bar), wide content, two-column Sell screen, hover/animation
-     polish. Additive only: nothing here changes mobile behavior below
-     the breakpoint, and the mobile horizontal .tabs bar is untouched
-     below 900px - it's simply hidden in favor of the sidebar above it.
+     FLUID SCALING — the exact same phone-style layout (pill tabs, single-
+     column stacked cards) just scales up gracefully on wider screens
+     instead of switching to a different paradigm like a sidebar. Content
+     stays centered with a comfortable reading width; spacing, type, and
+     tap targets grow a little on bigger screens so it doesn't look like
+     a tiny phone view stranded in a large blank page. Button/card
+     hover polish is kept since it's pure interactivity, not a layout
+     change, and helps on any pointer-driven (non-touch) device.
   ===================================================================== */
+  @media (min-width: 640px) {
+    .tabs, .panel, #authScreen { max-width: 640px; }
+  }
   @media (min-width: 900px) {
-    body { font-size: 15px; }
-
-    #appShell {
-      display: grid;
-      grid-template-columns: 220px 1fr;
-      grid-template-areas: "header header" "banners banners" "sidebar main";
-      align-items: start;
-    }
-    #appHeader { grid-area: header; padding: 18px 32px; }
-    #appHeader h1 { font-size: 24px; }
-    .banner-offline, #lowStockBanner, #pendingSyncBanner { grid-area: banners; }
-    .tabs { display: none; } /* replaced by the sidebar on desktop */
-
-    #desktopSidebar {
-      grid-area: sidebar; display: flex; flex-direction: column; justify-content: space-between;
-      align-self: stretch; min-height: calc(100vh - 90px); padding: 18px 12px;
-      background: var(--header-bg); border-right: 1px solid var(--border);
-    }
-    .sidebar-nav { display: flex; flex-direction: column; gap: 2px; }
-    .tab-btn.sidebar-btn {
-      display: flex; align-items: center; gap: 12px; text-align: left; width: auto;
-      padding: 11px 14px; margin: 0; border-radius: 8px; font-size: 13.5px; font-weight: 500;
-      background: transparent; color: rgba(255,255,255,.82);
-      box-shadow: none; border: none; transition: background .15s ease, color .15s ease;
-    }
-    [data-theme="paper"] .tab-btn.sidebar-btn { color: var(--surface-text); }
-    .tab-btn.sidebar-btn i { width: 18px; text-align: center; font-size: 15px; opacity: .85; }
-    .tab-btn.sidebar-btn:hover { background: rgba(255,255,255,.1); transform: none; box-shadow: none; filter: none; }
-    [data-theme="paper"] .tab-btn.sidebar-btn:hover { background: rgba(0,0,0,.05); }
-    .tab-btn.sidebar-btn.active { background: var(--accent); color: var(--accent-text); }
-    .tab-btn.sidebar-btn.active i { opacity: 1; }
-
-    .sidebar-footer { padding: 12px 14px 4px; border-top: 1px solid var(--border); margin-top: 12px; }
-    .sidebar-footer-biz { font-size: 13px; font-weight: 600; color: #fff; }
-    [data-theme="paper"] .sidebar-footer-biz { color: var(--surface-text); }
-    .sidebar-footer-brand, .sidebar-footer-copy { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
-
-    .panel { grid-area: main; max-width: 1100px; padding: 20px 32px; margin: 0; }
-    .panel.active { display: block; animation: panelFadeIn .25s ease; }
+    body { font-size: 15.5px; }
+    header { padding: 18px 32px; }
+    header h1 { font-size: 23px; }
+    .tabs, .panel { max-width: 720px; padding-left: 0; padding-right: 0; }
+    .tabs { gap: 8px; }
+    .tab-btn { padding: 11px 6px; font-size: 12.5px; }
+    .panel.active { animation: panelFadeIn .2s ease; }
     @keyframes panelFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Sell screen: scanning/catalog on the left, sticky cart on the right */
-    #tab-sell { display: grid; grid-template-columns: 1fr 400px; gap: 24px; align-items: start; }
-    #tab-sell > * { grid-column: 1; }
-    #tab-sell > #cartBox, #tab-sell > #checkoutBtn, #tab-sell > #mpesaBtn,
-    #tab-sell > #clearBtn, #tab-sell > #mpesaPromptBox, #tab-sell > #mpesaWaitingBox {
-      grid-column: 2; position: sticky; top: 20px;
-    }
-
-    /* Cards: real elevation + hover lift, feels tactile without being gimmicky */
     .cart-box {
       box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.06);
       transition: box-shadow .2s ease;
     }
     [data-theme="paper"] .cart-box { box-shadow: 0 1px 2px rgba(0,0,0,.05); }
 
-    /* Buttons: real hover state (mobile has no hover, desktop should) */
+    /* Real hover state - mobile has none, pointer devices should */
     .panel button:not(:disabled) { cursor: pointer; }
     .panel button:hover:not(:disabled) {
       transform: translateY(-2px);
@@ -431,21 +395,22 @@
     .panel button:active:not(:disabled) { transform: translateY(0) scale(.98); }
     .qty-ctrl button:hover, .qty-stepper button:hover { filter: brightness(1.15); transform: none; box-shadow: none; }
 
-    .table-tile, .order-item-card, .cat-chip {
-      transition: transform .15s ease, box-shadow .15s ease;
-    }
+    .table-tile, .order-item-card, .cat-chip { transition: transform .15s ease, box-shadow .15s ease; }
     .table-tile:hover, .order-item-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.18); }
     .cat-chip:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,.12); }
-
-    /* Dashboard and Team benefit from a card grid; table-heavy tabs
-       (Catalog, Sales Log, Customers, Expenses, Reports) stay single-column
-       at the wider panel width so their tables get room to breathe instead
-       of being squeezed into a narrow grid track. */
-    #tab-dash { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; align-items: start; }
 
     .auth-card { max-width: 420px; margin: 0 auto; }
     #authScreen { max-width: 460px; margin: 60px auto; }
   }
+  @media (min-width: 1200px) {
+    .tabs, .panel { max-width: 780px; }
+  }
+
+  .app-footer {
+    text-align: center; padding: 18px 16px 90px; font-size: 11px; color: var(--text-secondary);
+  }
+  .app-footer-biz { font-weight: 600; font-size: 12px; color: var(--text); }
+  .app-footer-brand, .app-footer-copy { margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -605,31 +570,6 @@
     <button class="tab-btn" data-tab="team" data-admin-only="1" onclick="switchTab('team')">Team</button>
     <button class="tab-btn" data-tab="settings" data-admin-only="1" onclick="switchTab('settings')">Settings</button>
   </div>
-
-  <!-- Desktop-only standard sidebar (>=900px). Buttons share .tab-btn class
-       and the same data-tab/data-admin-only/data-hotel-only attributes as
-       the mobile top bar above, so switchTab()'s active-state toggling and
-       the existing applyRoleVisibility()/applyBusinessTheme() gating both
-       pick these up automatically with no JS changes. Hidden on mobile. -->
-  <nav id="desktopSidebar">
-    <div class="sidebar-nav">
-      <button class="tab-btn sidebar-btn active" data-tab="sell" onclick="switchTab('sell')"><i class="fa-solid fa-cash-register"></i><span>Sell</span></button>
-      <button class="tab-btn sidebar-btn" data-tab="dash" data-admin-only="1" onclick="switchTab('dash')"><i class="fa-solid fa-chart-column"></i><span>Dashboard</span></button>
-      <button class="tab-btn sidebar-btn" data-tab="menu" data-admin-only="1" data-hotel-only="1" style="display:none;" onclick="switchTab('menu')"><i class="fa-solid fa-utensils"></i><span>Menu &amp; Tables</span></button>
-      <button class="tab-btn sidebar-btn" data-tab="log" onclick="switchTab('log')"><i class="fa-solid fa-receipt"></i><span>Sales Log</span></button>
-      <button class="tab-btn sidebar-btn" data-tab="customers" onclick="switchTab('customers')"><i class="fa-solid fa-users"></i><span>Customers</span></button>
-      <button class="tab-btn sidebar-btn" data-tab="reports" data-admin-only="1" onclick="switchTab('reports')"><i class="fa-solid fa-trophy"></i><span>Reports</span></button>
-      <button class="tab-btn sidebar-btn" data-tab="expenses" onclick="switchTab('expenses')"><i class="fa-solid fa-box"></i><span>Expenses</span></button>
-      <button class="tab-btn sidebar-btn" data-tab="catalog" data-admin-only="1" onclick="switchTab('catalog')"><i class="fa-solid fa-folder-open"></i><span>Catalog</span></button>
-      <button class="tab-btn sidebar-btn" data-tab="team" data-admin-only="1" onclick="switchTab('team')"><i class="fa-solid fa-users"></i><span>Team</span></button>
-      <button class="tab-btn sidebar-btn" data-tab="settings" data-admin-only="1" onclick="switchTab('settings')"><i class="fa-solid fa-screwdriver-wrench"></i><span>Settings</span></button>
-    </div>
-    <div class="sidebar-footer">
-      <div class="sidebar-footer-biz" id="sidebarFooterBiz">—</div>
-      <div class="sidebar-footer-brand">Dogo POS · Multi-business POS</div>
-      <div class="sidebar-footer-copy">© 2026 Hot-T Ventures</div>
-    </div>
-  </nav>
 
   <!-- ================= SELL TAB ================= -->
   <div class="panel active" id="tab-sell">
@@ -1040,6 +980,12 @@
       </p>
     </div>
   </div>
+
+  <footer class="app-footer">
+    <div class="app-footer-biz" id="appFooterBiz">—</div>
+    <div class="app-footer-brand">Dogo POS · Multi-business POS</div>
+    <div class="app-footer-copy">© 2026 Hot-T Ventures</div>
+  </footer>
 
 </div><!-- /appShell -->
 
@@ -1485,8 +1431,8 @@ function applyBusinessTheme() {
   if (!business) return;
   document.getElementById('appTitle').innerHTML = '<i class="fa-solid fa-receipt"></i> ' + escapeHtml(business.name);
   document.getElementById('appTagline').textContent = business.business_type + ' · Dogo POS';
-  const sidebarBiz = document.getElementById('sidebarFooterBiz');
-  if (sidebarBiz) sidebarBiz.textContent = business.name;
+  const footerBiz = document.getElementById('appFooterBiz');
+  if (footerBiz) footerBiz.textContent = business.name;
   document.getElementById('appHeader').style.background = business.theme_color || '#020024';
   const logoWrap = document.getElementById('headerLogoWrap');
   logoWrap.innerHTML = business.logo_url
