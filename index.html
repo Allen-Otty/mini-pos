@@ -153,6 +153,7 @@
   /* ---------------- App shell (shown after login) ---------------- */
   #appShell { display: none; }
   .tabs { display: flex; flex-wrap: wrap; max-width: 480px; margin: 12px auto 0; padding: 0 16px; gap: 6px; }
+  #desktopSidebar { display: none; }
   .tab-btn {
     flex: 1 1 30%; padding: 12px 4px; border-radius: var(--btn-radius); border: 1px solid var(--border); font-weight: bold;
     font-size: 12px; background: var(--tab-inactive-bg); color: var(--surface-text); cursor: pointer;
@@ -2029,14 +2030,14 @@ async function checkout() {
   });
 
   if (isOnline) {
-    const sale = await pushSaleToServer(saleRecord, lineItems);
-    if (!sale) {
+    const result = await pushSaleToServer(saleRecord, lineItems);
+    if (!result.ok) {
       // A rejected sale here means the DB itself refused it (e.g. real stock
       // conflict from another device) - queuing it offline would just fail
       // identically on retry. Resync so the UI reflects the true stock/state.
       await loadAllData();
     }
-    else callEdgeFunction('etims-submit', { sale_id: sale.id }).catch(() => {}); // fire-and-forget, non-blocking
+    else callEdgeFunction('etims-submit', { sale_id: result.id }).catch(() => {}); // fire-and-forget, non-blocking
   } else {
     queueOfflineSale(saleRecord, lineItems);
   }
@@ -2049,7 +2050,7 @@ async function checkout() {
   updatePendingSyncBanner();
 }
 
-async function pushSaleToServer(saleRecord, lineItems) {
+async function pushSaleToServer(saleRecord, lineItems, suppressToast) {
   try {
     const { data: saleId, error } = await sb.rpc('process_sale', {
       p_business_id: saleRecord.business_id,
@@ -2066,13 +2067,13 @@ async function pushSaleToServer(saleRecord, lineItems) {
       p_mpesa_receipt_no: saleRecord.mpesa_receipt_no || null
     });
     if (error) throw error;
-    return { id: saleId };
+    return { ok: true, id: saleId, error: null };
   } catch (e) {
-    // e.g. "Insufficient stock for product X" from a genuine race with another device -
-    // surface it instead of silently queuing offline, since offline-queueing would
-    // just fail again identically once synced.
-    showToast(e.message && e.message.includes('Insufficient stock') ? e.message : 'Could not complete sale: ' + (e.message || e));
-    return null;
+    const msg = e.message || String(e);
+    if (!suppressToast) {
+      showToast(msg.includes('Insufficient stock') ? msg : 'Could not complete sale: ' + msg);
+    }
+    return { ok: false, id: null, error: msg };
   }
 }
 
@@ -2135,14 +2136,24 @@ async function syncOfflineSales() {
   if (queue.length === 0) { updatePendingSyncBanner(); return; }
   showToast('Syncing ' + queue.length + ' sale(s)...');
   const remaining = [];
+  let lastError = null;
   for (const entry of queue) {
-    const ok = await pushSaleToServer(entry.saleRecord, entry.lineItems);
-    if (!ok) remaining.push(entry);
+    const result = await pushSaleToServer(entry.saleRecord, entry.lineItems, true);
+    if (!result.ok) { remaining.push(entry); lastError = result.error; }
   }
   localStorage.setItem(LOCAL_QUEUE_KEY, JSON.stringify(remaining));
   updatePendingSyncBanner();
   if (remaining.length === 0) showToast('All sales synced!');
-  else showToast(remaining.length + ' sale(s) still pending.');
+  else {
+    // A vague "still pending" toast that then gets overwritten by the next
+    // toast leaves no way to see WHY a sale is stuck - show the real reason
+    // and keep it up long enough to actually read.
+    const el = document.getElementById('toast');
+    el.textContent = `${remaining.length} sale(s) still pending — ${lastError || 'unknown error'}`;
+    el.classList.add('show');
+    clearTimeout(window._syncErrToastTimer);
+    window._syncErrToastTimer = setTimeout(() => el.classList.remove('show'), 6000);
+  }
 }
 
 window.addEventListener('online', () => { isOnline = true; document.getElementById('offlineBanner').classList.remove('show'); syncOfflineSales(); loadAllData(); });
@@ -3109,14 +3120,14 @@ async function completeMpesaSale(paymentRequest) {
     salesLog.unshift({ date: now.toISOString().slice(0,10), receipt: receiptNo, code: li.code, name: li.name, qty: li.qty, price: li.price, vat: li.vat_rate, total: li.line_total, customerId: custId, cashierId: profile.id, paymentMethod: 'mpesa' });
   });
 
-  const sale = await pushSaleToServer(saleRecord, lineItems);
-  if (sale) {
-    callEdgeFunction('etims-submit', { sale_id: sale.id }).catch(() => {}); // fire-and-forget, non-blocking
+  const result = await pushSaleToServer(saleRecord, lineItems);
+  if (result.ok) {
+    callEdgeFunction('etims-submit', { sale_id: result.id }).catch(() => {}); // fire-and-forget, non-blocking
   } else {
     // Customer's M-Pesa payment already succeeded at this point - the sale record
     // failing to save (e.g. a genuine stock conflict) needs a human, not a silent drop.
     await loadAllData();
-    showToast('<i class="fa-solid fa-triangle-exclamation"></i> Payment received (' + (paymentRequest.mpesa_receipt || '') + ') but the sale could not be saved — please record this manually and check stock.');
+    showToast('<i class="fa-solid fa-triangle-exclamation"></i> Payment received (' + (paymentRequest.mpesa_receipt || '') + ') but the sale could not be saved: ' + result.error);
   }
   logAudit('sale.create', { receipt: receiptNo, total: +grand.toFixed(2), item_count: cart.length, payment_method: 'mpesa', mpesa_receipt: paymentRequest.mpesa_receipt });
 
