@@ -912,6 +912,26 @@
     </div>
 
     <div class="cart-box" style="margin-top:14px;">
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-receipt"></i> Receipt Settings</div>
+      <p class="catalog-note" style="text-align:left; padding:0; margin-bottom:8px;">Controls what appears on every printed/emailed receipt for your customers.</p>
+      <input type="text" id="setReceiptPhone" placeholder="Phone number shown on receipt (optional)">
+      <input type="text" id="setReceiptFooter" placeholder="Footer message, e.g. Thank you for your business!">
+      <div class="theme-row">
+        <span class="trow-label">Show logo on receipt</span>
+        <label style="display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="setReceiptShowLogo" style="width:auto; margin:0;">
+        </label>
+      </div>
+      <div class="theme-row">
+        <span class="trow-label">Show VAT breakdown</span>
+        <label style="display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="setReceiptShowVat" style="width:auto; margin:0;">
+        </label>
+      </div>
+      <button class="btn-green" onclick="saveSettings()">Save Settings</button>
+    </div>
+
+    <div class="cart-box" style="margin-top:14px;">
       <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-mobile-screen-button"></i> M-Pesa Payments</div>
       <p class="catalog-note" style="color:#666; text-align:left; padding:0;" id="mpesaStatusText">Checking status...</p>
 
@@ -2116,19 +2136,25 @@ function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaRece
       <div class="receipt-line item-name"><span>${escapeHtml(item.name)}</span><span></span></div>
       <div class="receipt-line"><span>${item.qty}${item.unit && item.unit !== 'piece' ? ' ' + escapeHtml(item.unit) : ''} x ${item.price.toFixed(2)}</span><span>${lineTotal.toFixed(2)}</span></div>`;
   });
+  const showLogo = business.receipt_show_logo !== false;
+  const showVat = business.receipt_show_vat_breakdown !== false;
+  const footerMsg = business.receipt_footer || 'Thank you for your business!';
   document.getElementById('receiptContent').innerHTML = `
+    ${showLogo && business.logo_url ? `<div style="text-align:center;"><img src="${escapeHtml(business.logo_url)}" style="max-height:50px; max-width:160px; margin-bottom:4px;"></div>` : ''}
     <h2>${escapeHtml(business.name)}</h2>
     <div class="sub">${escapeHtml(business.location || '')} ${business.kra_pin ? '| PIN: ' + escapeHtml(business.kra_pin) : ''}</div>
+    ${business.receipt_phone ? `<div class="sub">Tel: ${escapeHtml(business.receipt_phone)}</div>` : ''}
     <div class="sub">Receipt ${receiptNo} · ${now.toLocaleDateString()} ${now.toLocaleTimeString()}</div>
     <hr>
     ${linesHtml}
     <hr>
+    ${showVat ? `
     <div class="receipt-line"><span>Subtotal (excl. VAT)</span><span>KES ${subtotal.toFixed(2)}</span></div>
-    <div class="receipt-line"><span>VAT (included above)</span><span>KES ${vatTotal.toFixed(2)}</span></div>
+    <div class="receipt-line"><span>VAT (included above)</span><span>KES ${vatTotal.toFixed(2)}</span></div>` : ''}
     <div class="receipt-total"><span>TOTAL PAID</span><span>KES ${grand.toFixed(2)}</span></div>
     ${mpesaReceipt ? `<div class="receipt-line"><span>M-Pesa Receipt</span><span>${escapeHtml(mpesaReceipt)}</span></div>` : ''}
     <hr>
-    <div class="sub">Thank you for your business!</div>
+    <div class="sub">${escapeHtml(footerMsg)}</div>
   `;
   document.getElementById('receiptModal').classList.add('show');
 }
@@ -2811,6 +2837,10 @@ function renderSettingsForm() {
   document.getElementById('setBizSub').value = business.location || '';
   document.getElementById('setKraPin').value = business.kra_pin || '';
   document.getElementById('setBizType').value = business.business_type || 'Retail';
+  document.getElementById('setReceiptPhone').value = business.receipt_phone || '';
+  document.getElementById('setReceiptFooter').value = business.receipt_footer || 'Thank you for your business!';
+  document.getElementById('setReceiptShowLogo').checked = business.receipt_show_logo !== false;
+  document.getElementById('setReceiptShowVat').checked = business.receipt_show_vat_breakdown !== false;
 
   const swatchWrap = document.getElementById('colorSwatches');
   swatchWrap.innerHTML = THEME_COLORS.map(c => `
@@ -2857,7 +2887,11 @@ async function saveSettings() {
     location: document.getElementById('setBizSub').value.trim(),
     kra_pin: document.getElementById('setKraPin').value.trim(),
     business_type: document.getElementById('setBizType').value,
-    theme_color: pendingThemeColor || business.theme_color || '#020024'
+    theme_color: pendingThemeColor || business.theme_color || '#020024',
+    receipt_phone: document.getElementById('setReceiptPhone').value.trim(),
+    receipt_footer: document.getElementById('setReceiptFooter').value.trim() || 'Thank you for your business!',
+    receipt_show_logo: document.getElementById('setReceiptShowLogo').checked,
+    receipt_show_vat_breakdown: document.getElementById('setReceiptShowVat').checked
   };
   if (business._pendingLogo !== undefined && business._pendingLogo !== null) {
     updates.logo_url = business._pendingLogo;
@@ -3127,10 +3161,10 @@ function initScanner() {
         document.getElementById('scanFeedback').textContent = "Point camera at a barcode";
         document.getElementById('scanHint').textContent = "Recognized items are added to the cart automatically.";
         if (toggleBtn) { toggleBtn.disabled = false; toggleBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Stop Camera Scanner'; }
-      }).catch(() => {
+      }).catch((err) => {
         scannerStarting = false;
         document.getElementById('scanFeedback').textContent = "Could not start camera";
-        document.getElementById('scanHint').textContent = "Use manual entry below instead.";
+        document.getElementById('scanHint').textContent = "(" + (err && err.message ? err.message : err) + ") Use manual entry below instead.";
         if (toggleBtn) { toggleBtn.disabled = false; toggleBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Start Camera Scanner'; }
       });
     } else {
@@ -3139,10 +3173,29 @@ function initScanner() {
       document.getElementById('scanHint').textContent = "Use manual entry or the dropdown below instead.";
       if (toggleBtn) { toggleBtn.disabled = false; toggleBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Start Camera Scanner'; }
     }
-  }).catch(() => {
+  }).catch((err) => {
     scannerStarting = false;
-    document.getElementById('scanFeedback').textContent = "Camera permission needed";
-    document.getElementById('scanHint').textContent = "Tap Allow when prompted, or use manual entry below.";
+    // getCameras() itself calls getUserMedia to enumerate devices with labels,
+    // so its rejection IS the permission/hardware error - branch on the real
+    // cause instead of showing one generic message for every failure mode.
+    const name = err && err.name;
+    if (name === 'NotAllowedError' || /denied/i.test(String(err))) {
+      // Browsers only show the native prompt once per site; if it was ever
+      // explicitly denied (even accidentally, even in an earlier broken build),
+      // no code can force it to reappear - that's a hard browser security
+      // restriction, not something fixable from here. Guide them to the fix.
+      document.getElementById('scanFeedback').textContent = "Camera access is blocked for this site";
+      document.getElementById('scanHint').innerHTML = 'Tap the <i class="fa-solid fa-lock"></i> or site-info icon next to the address bar → Permissions → Camera → Allow, then reload the page. Or use manual entry below.';
+    } else if (name === 'NotFoundError' || name === 'OverconstrainedError') {
+      document.getElementById('scanFeedback').textContent = "No camera found on this device";
+      document.getElementById('scanHint').textContent = "Use manual entry or the dropdown below instead.";
+    } else if (name === 'NotReadableError') {
+      document.getElementById('scanFeedback').textContent = "Camera is in use by another app";
+      document.getElementById('scanHint').textContent = "Close any other app using the camera, then try again.";
+    } else {
+      document.getElementById('scanFeedback').textContent = "Could not access camera";
+      document.getElementById('scanHint').textContent = "(" + (err && err.message ? err.message : err) + ") Use manual entry below instead.";
+    }
     if (toggleBtn) { toggleBtn.disabled = false; toggleBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Start Camera Scanner'; }
   });
 }
