@@ -763,6 +763,7 @@
         <thead><tr><th>Date</th><th>Receipt</th><th>Item</th><th>Qty</th><th>Total</th></tr></thead>
         <tbody id="logBody"></tbody>
       </table>
+      <button class="btn-blue" onclick="downloadSalesLogCSV()" style="margin-top:10px;"><i class="fa-solid fa-print"></i> Download all sales as CSV</button>
     </div>
   </div>
 
@@ -780,6 +781,7 @@
         <thead><tr><th>Name</th><th>Phone</th><th>Total Spent</th><th>Last Purchase</th></tr></thead>
         <tbody id="custBody"></tbody>
       </table>
+      <button class="btn-blue" onclick="downloadCustomersCSV()" style="margin-top:10px;"><i class="fa-solid fa-print"></i> Download customers as CSV</button>
     </div>
   </div>
 
@@ -799,6 +801,32 @@
         <thead><tr><th>Category</th><th>Revenue</th></tr></thead>
         <tbody id="catRevBody"></tbody>
       </table>
+    </div>
+
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-box"></i> Sales Archive</div>
+      <p class="catalog-note" style="color:#888; text-align:left; padding:0; font-size:11px; margin-bottom:8px;">
+        Every sale is kept forever — this just gives you a quick way to look at any single day, roll it up into a
+        month, or a whole year, and download it. Works offline too, from whatever's already synced to this device.
+      </p>
+      <select id="archivePeriodType" onchange="renderSalesArchive()">
+        <option value="daily">Daily</option>
+        <option value="monthly">Monthly</option>
+        <option value="yearly">Yearly</option>
+      </select>
+      <input type="date" id="archiveDateInput" onchange="renderSalesArchive()">
+      <input type="month" id="archiveMonthInput" onchange="renderSalesArchive()" style="display:none;">
+      <input type="number" id="archiveYearInput" onchange="renderSalesArchive()" style="display:none;" placeholder="Year e.g. 2026">
+
+      <div id="archiveSummary" style="margin:12px 0; font-size:14px;"></div>
+
+      <table class="log-table" id="archiveTable">
+        <thead><tr><th>Date</th><th>Receipt</th><th>Item</th><th>Qty</th><th>Total</th></tr></thead>
+        <tbody id="archiveBody"></tbody>
+      </table>
+      <div class="empty-note" id="archiveEmpty">No sales in this period.</div>
+
+      <button class="btn-blue" onclick="downloadArchiveCSV()" style="margin-top:10px;"><i class="fa-solid fa-print"></i> Download this period as CSV</button>
     </div>
   </div>
 
@@ -822,6 +850,7 @@
         <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr></thead>
         <tbody id="expBody"></tbody>
       </table>
+      <button class="btn-blue" onclick="downloadExpensesCSV()" style="margin-top:10px;"><i class="fa-solid fa-print"></i> Download expenses as CSV</button>
     </div>
   </div>
 
@@ -861,6 +890,7 @@
         <thead><tr><th>Code</th><th>Name</th><th>Price</th><th>Unit</th><th>VAT</th><th>Stock</th><th>Reorder</th></tr></thead>
         <tbody id="catalogBody"></tbody>
       </table>
+      <button class="btn-blue" onclick="downloadCatalogCSV()" style="margin-top:10px;"><i class="fa-solid fa-print"></i> Download catalog as CSV</button>
     </div>
   </div>
 
@@ -880,6 +910,7 @@
         <thead><tr><th>Name</th><th>Role</th><th>Status</th></tr></thead>
         <tbody id="teamBody"></tbody>
       </table>
+      <button class="btn-blue" onclick="downloadTeamCSV()" style="margin-top:10px;"><i class="fa-solid fa-print"></i> Download team list as CSV</button>
     </div>
   </div>
 
@@ -1486,7 +1517,7 @@ function switchTab(name) {
   if (name === 'expenses') renderExpenses();
   if (name === 'dash') renderDashboard();
   if (name === 'customers') renderCustomers();
-  if (name === 'reports') renderReports();
+  if (name === 'reports') { renderReports(); renderSalesArchive(); }
   if (name === 'catalog') renderCatalog();
   if (name === 'team') renderTeam();
   if (name === 'menu') renderMenuTab();
@@ -2504,6 +2535,134 @@ function renderReports() {
   catBody.innerHTML = catEntries.length
     ? catEntries.map(([cat, rev]) => `<tr><td>${escapeHtml(cat)}</td><td>KES ${rev.toFixed(2)}</td></tr>`).join('')
     : '<tr><td colspan="2" style="text-align:center; color:#888;">No sales recorded yet.</td></tr>';
+}
+
+/* =====================================================================
+   CSV DOWNLOAD (generic) — works fully offline, no library needed.
+===================================================================== */
+function downloadCSV(filename, headers, rows) {
+  const escapeCsv = v => {
+    const s = String(v === null || v === undefined ? '' : v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [headers.map(escapeCsv).join(',')].concat(
+    rows.map(r => r.map(escapeCsv).join(','))
+  );
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* =====================================================================
+   SALES ARCHIVE — daily rolls into monthly rolls into yearly, all
+   computed client-side from salesLog/expenses that are already loaded
+   (or cached for offline), no new data fetch needed.
+===================================================================== */
+function getArchivePeriodRange() {
+  const type = document.getElementById('archivePeriodType').value;
+  if (type === 'daily') {
+    const val = document.getElementById('archiveDateInput').value || new Date().toISOString().slice(0,10);
+    return { type, label: val, matches: dateStr => dateStr === val };
+  }
+  if (type === 'monthly') {
+    const val = document.getElementById('archiveMonthInput').value || new Date().toISOString().slice(0,7);
+    return { type, label: val, matches: dateStr => dateStr.slice(0,7) === val };
+  }
+  const val = document.getElementById('archiveYearInput').value || String(new Date().getFullYear());
+  return { type, label: val, matches: dateStr => dateStr.slice(0,4) === val };
+}
+
+function renderSalesArchive() {
+  const typeSel = document.getElementById('archivePeriodType');
+  if (!typeSel) return;
+  document.getElementById('archiveDateInput').style.display = typeSel.value === 'daily' ? 'block' : 'none';
+  document.getElementById('archiveMonthInput').style.display = typeSel.value === 'monthly' ? 'block' : 'none';
+  document.getElementById('archiveYearInput').style.display = typeSel.value === 'yearly' ? 'block' : 'none';
+
+  const range = getArchivePeriodRange();
+  const rows = salesLog.filter(r => range.matches(r.date));
+  const expRows = expenses.filter(e => range.matches(e.date));
+
+  const totalSales = rows.reduce((s, r) => s + r.total, 0);
+  const totalVat = rows.reduce((s, r) => s + (r.total - r.total / (1 + r.vat)), 0);
+  const totalExpenses = expRows.reduce((s, e) => s + e.amount, 0);
+  const receiptCount = new Set(rows.map(r => r.receipt)).size;
+
+  document.getElementById('archiveSummary').innerHTML = `
+    <div style="display:flex; justify-content:space-between; padding:2px 0;"><span>Transactions</span><b>${receiptCount}</b></div>
+    <div style="display:flex; justify-content:space-between; padding:2px 0;"><span>Total sales (VAT incl.)</span><b>KES ${totalSales.toFixed(2)}</b></div>
+    <div style="display:flex; justify-content:space-between; padding:2px 0;"><span>VAT collected</span><b>KES ${totalVat.toFixed(2)}</b></div>
+    <div style="display:flex; justify-content:space-between; padding:2px 0;"><span>Expenses</span><b>KES ${totalExpenses.toFixed(2)}</b></div>
+    <div style="display:flex; justify-content:space-between; padding:4px 0; border-top:1px solid #eee; margin-top:4px; font-size:16px;"><span>Net</span><b>KES ${(totalSales - totalExpenses).toFixed(2)}</b></div>
+  `;
+
+  const body = document.getElementById('archiveBody');
+  const empty = document.getElementById('archiveEmpty');
+  const table = document.getElementById('archiveTable');
+  if (rows.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; return; }
+  empty.style.display = 'none'; table.style.display = 'table';
+  body.innerHTML = rows.map(r =>
+    `<tr><td>${r.date}</td><td>${escapeHtml(r.receipt)}</td><td>${escapeHtml(r.name)}</td><td>${r.qty}</td><td>${r.total.toFixed(2)}</td></tr>`
+  ).join('');
+}
+
+function downloadArchiveCSV() {
+  const range = getArchivePeriodRange();
+  const rows = salesLog.filter(r => range.matches(r.date));
+  if (rows.length === 0) { showToast('Nothing to download for this period.'); return; }
+  downloadCSV(
+    `dogo-pos-sales-${range.type}-${range.label}.csv`,
+    ['Date', 'Receipt', 'Item', 'Qty', 'Price', 'VAT Rate', 'Total'],
+    rows.map(r => [r.date, r.receipt, r.name, r.qty, r.price.toFixed(2), (r.vat*100).toFixed(0)+'%', r.total.toFixed(2)])
+  );
+}
+
+function downloadSalesLogCSV() {
+  if (salesLog.length === 0) { showToast('No sales to download.'); return; }
+  downloadCSV(
+    `dogo-pos-all-sales-${new Date().toISOString().slice(0,10)}.csv`,
+    ['Date', 'Receipt', 'Item', 'Qty', 'Price', 'VAT Rate', 'Total', 'Payment Method'],
+    salesLog.map(r => [r.date, r.receipt, r.name, r.qty, r.price.toFixed(2), (r.vat*100).toFixed(0)+'%', r.total.toFixed(2), r.paymentMethod || 'cash'])
+  );
+}
+
+function downloadCustomersCSV() {
+  if (customers.length === 0) { showToast('No customers to download.'); return; }
+  downloadCSV(
+    `dogo-pos-customers-${new Date().toISOString().slice(0,10)}.csv`,
+    ['Name', 'Phone'],
+    customers.map(c => [c.name, c.phone || ''])
+  );
+}
+
+function downloadExpensesCSV() {
+  if (expenses.length === 0) { showToast('No expenses to download.'); return; }
+  downloadCSV(
+    `dogo-pos-expenses-${new Date().toISOString().slice(0,10)}.csv`,
+    ['Date', 'Category', 'Description', 'Amount'],
+    expenses.map(e => [e.date, e.category, e.desc, e.amount.toFixed(2)])
+  );
+}
+
+function downloadCatalogCSV() {
+  if (CATALOG.length === 0) { showToast('No catalog items to download.'); return; }
+  downloadCSV(
+    `dogo-pos-catalog-${new Date().toISOString().slice(0,10)}.csv`,
+    ['Code', 'Name', 'Category', 'Price', 'Unit', 'VAT Rate', 'Stock', 'Reorder Level'],
+    CATALOG.map(p => [p.code, p.name, p.category || '', p.price.toFixed(2), p.unit || 'piece', (p.vat*100).toFixed(0)+'%', p.stock || 0, p.reorder || 0])
+  );
+}
+
+function downloadTeamCSV() {
+  if (team.length === 0) { showToast('No team members to download.'); return; }
+  downloadCSV(
+    `dogo-pos-team-${new Date().toISOString().slice(0,10)}.csv`,
+    ['Name', 'Role', 'Status'],
+    team.map(t => [t.full_name || '(unnamed)', t.role, t.active ? 'Active' : 'Inactive'])
+  );
 }
 
 /* =====================================================================
