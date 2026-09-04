@@ -758,12 +758,20 @@
   <!-- ================= SALES LOG TAB ================= -->
   <div class="panel" id="tab-log">
     <div class="cart-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+        <div style="font-weight:bold;"><i class="fa-solid fa-receipt"></i> Sales Log</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label style="font-size:12px; color:#888;">Group by</label>
+          <select id="logGroupBy" onchange="renderLog()" style="width:auto; margin:0;">
+            <option value="day">Day</option>
+            <option value="month">Month</option>
+            <option value="none">Flat list</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-blue" onclick="downloadSalesLogCSV()" style="margin-bottom:10px;"><i class="fa-solid fa-print"></i> Download all sales as CSV</button>
       <div class="empty-note" id="logEmpty">No sales recorded yet.</div>
-      <table class="log-table" id="logTable" style="display:none;">
-        <thead><tr><th>Date</th><th>Receipt</th><th>Item</th><th>Qty</th><th>Total</th></tr></thead>
-        <tbody id="logBody"></tbody>
-      </table>
-      <button class="btn-blue" onclick="downloadSalesLogCSV()" style="margin-top:10px;"><i class="fa-solid fa-print"></i> Download all sales as CSV</button>
+      <div id="logGrouped"></div>
     </div>
   </div>
 
@@ -2208,14 +2216,65 @@ function closeReceipt() { document.getElementById('receiptModal').classList.remo
    SALES LOG
 ===================================================================== */
 function renderLog() {
-  const body = document.getElementById('logBody');
   const empty = document.getElementById('logEmpty');
-  const table = document.getElementById('logTable');
-  if (salesLog.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; return; }
-  empty.style.display = 'none'; table.style.display = 'table';
-  body.innerHTML = salesLog.slice(0, 200).map(r =>
-    `<tr><td>${r.date}</td><td>${escapeHtml(r.receipt)}</td><td>${escapeHtml(r.name)}</td><td>${r.qty}</td><td>${r.total.toFixed(2)}</td></tr>`
-  ).join('');
+  const wrap = document.getElementById('logGrouped');
+  if (salesLog.length === 0) { empty.style.display = 'block'; wrap.innerHTML = ''; return; }
+  empty.style.display = 'none';
+
+  const groupBy = document.getElementById('logGroupBy').value;
+  const rows = salesLog.slice(0, 500);
+
+  if (groupBy === 'none') {
+    wrap.innerHTML = `<table class="log-table">
+      <thead><tr><th>Date</th><th>Receipt</th><th>Item</th><th>Qty</th><th>Total</th></tr></thead>
+      <tbody>${rows.map(r => `<tr><td>${r.date}</td><td>${escapeHtml(r.receipt)}</td><td>${escapeHtml(r.name)}</td><td>${r.qty}</td><td>${r.total.toFixed(2)}</td></tr>`).join('')}</tbody>
+    </table>`;
+    return;
+  }
+
+  const groups = {};
+  const order = [];
+  rows.forEach(r => {
+    const key = groupBy === 'month' ? r.date.slice(0,7) : r.date;
+    if (!groups[key]) { groups[key] = []; order.push(key); }
+    groups[key].push(r);
+  });
+
+  wrap.innerHTML = order.map(key => {
+    const items = groups[key];
+    const total = items.reduce((s, r) => s + r.total, 0);
+    const receiptCount = new Set(items.map(r => r.receipt)).size;
+    const label = groupBy === 'month'
+      ? new Date(key + '-01').toLocaleDateString(undefined, { year: 'numeric', month: 'long' })
+      : new Date(key + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+    return `
+      <div style="margin-top:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); border-radius:8px; padding:8px 12px;">
+          <div>
+            <div style="font-weight:bold; font-size:13px;">${label}</div>
+            <div style="font-size:11px; color:#888;">${receiptCount} transaction(s)</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:bold;">KES ${total.toFixed(2)}</div>
+            <button class="btn-small btn-blue" onclick="downloadLogGroupCSV('${key}', '${groupBy}')" style="margin-top:4px;"><i class="fa-solid fa-print"></i> Download</button>
+          </div>
+        </div>
+        <table class="log-table">
+          <thead><tr><th>Date</th><th>Receipt</th><th>Item</th><th>Qty</th><th>Total</th></tr></thead>
+          <tbody>${items.map(r => `<tr><td>${r.date}</td><td>${escapeHtml(r.receipt)}</td><td>${escapeHtml(r.name)}</td><td>${r.qty}</td><td>${r.total.toFixed(2)}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+  }).join('');
+}
+
+function downloadLogGroupCSV(key, groupBy) {
+  const rows = salesLog.filter(r => (groupBy === 'month' ? r.date.slice(0,7) : r.date) === key);
+  if (rows.length === 0) { showToast('Nothing to download.'); return; }
+  downloadCSV(
+    `dogo-pos-sales-${key}.csv`,
+    ['Date', 'Receipt', 'Item', 'Qty', 'Price', 'VAT Rate', 'Total', 'Payment Method'],
+    rows.map(r => [r.date, r.receipt, r.name, r.qty, r.price.toFixed(2), (r.vat*100).toFixed(0)+'%', r.total.toFixed(2), r.paymentMethod || 'cash'])
+  );
 }
 
 /* =====================================================================
