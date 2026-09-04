@@ -876,7 +876,8 @@
       <select id="capStock"></select>
       <div style="font-size:12px; color:#667; margin:6px 2px 2px;">Reorder alert level</div>
       <select id="capReorder"></select>
-      <button class="btn-green" onclick="addProductManually()">Add Product</button>
+      <button class="btn-green" id="capSaveBtn" onclick="addProductManually()">Add Product</button>
+      <button class="btn-grey" id="capCancelEditBtn" onclick="cancelEditProduct()" style="display:none;">Cancel Edit</button>
     </div>
     <div class="cart-box" style="margin-top:14px;">
       <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-box"></i> Restock an item</div>
@@ -887,7 +888,7 @@
     </div>
     <div class="cart-box" style="margin-top:14px;">
       <table class="log-table" id="catalogTable">
-        <thead><tr><th>Code</th><th>Name</th><th>Price</th><th>Unit</th><th>VAT</th><th>Stock</th><th>Reorder</th></tr></thead>
+        <thead><tr><th>Code</th><th>Name</th><th>Price</th><th>Unit</th><th>VAT</th><th>Stock</th><th>Reorder</th><th></th></tr></thead>
         <tbody id="catalogBody"></tbody>
       </table>
       <button class="btn-blue" onclick="downloadCatalogCSV()" style="margin-top:10px;"><i class="fa-solid fa-print"></i> Download catalog as CSV</button>
@@ -1561,7 +1562,7 @@ async function loadAllData() {
         return {
           date: (s.created_at || '').slice(0,10), receipt: s.receipt_no, code: li.code, name: li.name,
           qty: li.qty, price: Number(li.price), vat: Number(li.vat_rate), total: Number(li.line_total),
-          customerId: s.customer_id, cashierId: s.cashier_id, paymentMethod: s.payment_method || 'cash'
+          customerId: s.customer_id, cashierId: s.cashier_id, paymentMethod: s.payment_method || 'cash', shiftId: s.shift_id
         };
       });
       receiptCounter = (salesRes.data || []).length;
@@ -2023,7 +2024,7 @@ async function checkout() {
 
   // add to local salesLog display immediately
   lineItems.forEach(li => {
-    salesLog.unshift({ date: now.toISOString().slice(0,10), receipt: receiptNo, code: li.code, name: li.name, qty: li.qty, price: li.price, vat: li.vat_rate, total: li.line_total, customerId: custId, cashierId: profile.id, paymentMethod: 'cash' });
+    salesLog.unshift({ date: now.toISOString().slice(0,10), receipt: receiptNo, code: li.code, name: li.name, qty: li.qty, price: li.price, vat: li.vat_rate, total: li.line_total, customerId: custId, cashierId: profile.id, paymentMethod: 'cash', shiftId: saleRecord.shift_id });
   });
 
   if (isOnline) {
@@ -2034,9 +2035,10 @@ async function checkout() {
       // identically on retry. Resync so the UI reflects the true stock/state.
       await loadAllData();
     }
-    else callEdgeFunction('etims-submit', { sale_id: result.id }).catch(() => {}); // fire-and-forget, non-blocking
+    else { callEdgeFunction('etims-submit', { sale_id: result.id }).catch(() => {}); refreshLiveViews(); } // fire-and-forget, non-blocking
   } else {
     queueOfflineSale(saleRecord, lineItems);
+    refreshLiveViews();
   }
 
   showReceipt(receiptNo, cart, subtotalExclVat, vatTotal, grand, now);
@@ -2045,6 +2047,17 @@ async function checkout() {
   renderCart();
   document.getElementById('cartCustomerPick').value = '';
   updatePendingSyncBanner();
+}
+
+
+// Refreshes whichever log/report view is currently visible so a new sale
+// shows up immediately instead of only after the next tab switch.
+function refreshLiveViews() {
+  const activePanel = document.querySelector('.panel.active');
+  if (!activePanel) return;
+  if (activePanel.id === 'tab-log') renderLog();
+  if (activePanel.id === 'tab-reports') { renderReports(); renderSalesArchive(); }
+  if (activePanel.id === 'tab-dash') renderDashboard();
 }
 
 async function pushSaleToServer(saleRecord, lineItems, suppressToast) {
@@ -2421,9 +2434,13 @@ async function openShift() {
 async function closeShift(shift) {
   shift = shift || currentShift;
   if (!shift) return;
-  // expected cash = opening float + cash-only sales made by this user since the shift opened
+  // Expected cash = opening float + this shift's OWN cash sales only.
+  // Was previously filtered by cashier+date with no upper bound, which
+  // silently re-summed a previous, already-reconciled shift's sales into
+  // the next one opened on/after the same day. Sales now carry their real
+  // shift_id, so scope to that directly instead of guessing from dates.
   const cashSalesTotal = salesLog
-    .filter(r => r.cashierId === profile.id && new Date(r.date + 'T00:00:00') >= new Date(shift.created_at.slice(0,10) + 'T00:00:00') && (r.paymentMethod || 'cash') === 'cash')
+    .filter(r => r.shiftId === shift.id && (r.paymentMethod || 'cash') === 'cash')
     .reduce((sum, r) => sum + r.total, 0);
   const expected = Number(shift.opening_float) + cashSalesTotal;
 
@@ -2578,9 +2595,16 @@ function getArchivePeriodRange() {
 function renderSalesArchive() {
   const typeSel = document.getElementById('archivePeriodType');
   if (!typeSel) return;
-  document.getElementById('archiveDateInput').style.display = typeSel.value === 'daily' ? 'block' : 'none';
-  document.getElementById('archiveMonthInput').style.display = typeSel.value === 'monthly' ? 'block' : 'none';
-  document.getElementById('archiveYearInput').style.display = typeSel.value === 'yearly' ? 'block' : 'none';
+  const dateInput = document.getElementById('archiveDateInput');
+  const monthInput = document.getElementById('archiveMonthInput');
+  const yearInput = document.getElementById('archiveYearInput');
+  const now = new Date();
+  if (!dateInput.value) dateInput.value = now.toISOString().slice(0,10);
+  if (!monthInput.value) monthInput.value = now.toISOString().slice(0,7);
+  if (!yearInput.value) yearInput.value = String(now.getFullYear());
+  dateInput.style.display = typeSel.value === 'daily' ? 'block' : 'none';
+  monthInput.style.display = typeSel.value === 'monthly' ? 'block' : 'none';
+  yearInput.style.display = typeSel.value === 'yearly' ? 'block' : 'none';
 
   const range = getArchivePeriodRange();
   const rows = salesLog.filter(r => range.matches(r.date));
@@ -2672,7 +2696,7 @@ function renderCatalog() {
   const body = document.getElementById('catalogBody');
   if (!body) return;
   body.innerHTML = CATALOG.map(p =>
-    `<tr><td>${escapeHtml(p.code)}</td><td>${escapeHtml(p.name)}</td><td>${p.price.toFixed(2)}</td><td>${escapeHtml(p.unit||'piece')}</td><td>${(p.vat*100).toFixed(0)}%</td><td>${p.stock||0}</td><td>${p.reorder||0}</td></tr>`
+    `<tr><td>${escapeHtml(p.code)}</td><td>${escapeHtml(p.name)}</td><td>${p.price.toFixed(2)}</td><td>${escapeHtml(p.unit||'piece')}</td><td>${(p.vat*100).toFixed(0)}%</td><td>${p.stock||0}</td><td>${p.reorder||0}</td><td><button class="btn-small btn-blue" onclick="editProduct('${p.code.replace(/'/g, "\\'")}')">Edit</button></td></tr>`
   ).join('');
 
   const picker = document.getElementById('manualCatalogPick');
@@ -2695,6 +2719,37 @@ function renderCatalog() {
   }
 }
 
+let editingProductId = null;
+
+function editProduct(code) {
+  const p = findProduct(code);
+  if (!p) return;
+  editingProductId = p.id;
+  document.getElementById('capCode').value = p.code;
+  document.getElementById('capCode').disabled = true; // code is the natural key elsewhere - don't let it change mid-edit
+  document.getElementById('capName').value = p.name;
+  document.getElementById('capCategory').value = p.category || '';
+  document.getElementById('capPrice').value = p.price;
+  document.getElementById('capVat').value = String(p.vat);
+  document.getElementById('capUnit').value = p.unit || 'piece';
+  document.getElementById('capStock').value = String(p.stock || 0);
+  document.getElementById('capReorder').value = String(p.reorder || 0);
+  document.getElementById('capSaveBtn').textContent = 'Update Product';
+  document.getElementById('capCancelEditBtn').style.display = 'block';
+  document.getElementById('tab-catalog').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cancelEditProduct() {
+  editingProductId = null;
+  document.getElementById('capCode').disabled = false;
+  document.getElementById('capSaveBtn').textContent = 'Add Product';
+  document.getElementById('capCancelEditBtn').style.display = 'none';
+  ['capCode','capName','capCategory','capPrice'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('capUnit').value = 'piece';
+  document.getElementById('capStock').value = '0';
+  document.getElementById('capReorder').value = '0';
+}
+
 async function addProductManually() {
   const code = document.getElementById('capCode').value.trim();
   const name = document.getElementById('capName').value.trim();
@@ -2706,6 +2761,28 @@ async function addProductManually() {
   const reorder = parseFloat(document.getElementById('capReorder').value) || 0;
 
   if (!code || !name || isNaN(price) || price < 0) { showToast('Fill in code, name, and a valid price'); return; }
+
+  if (editingProductId) {
+    // Editing an existing product: prices/names/stock change often as the
+    // market shifts - this updates the live catalog record. Past sales keep
+    // their own historical price/name copy already stored on sale_items, so
+    // editing here never rewrites old receipts.
+    const { error } = await sb.from('products').update({
+      name, category, price, vat_rate: vat, unit, stock, reorder_level: reorder
+    }).eq('id', editingProductId);
+    if (error) { showToast('Could not update product: ' + error.message); return; }
+
+    const p = CATALOG.find(x => x.id === editingProductId);
+    if (p) Object.assign(p, { name, category, price, vat, unit, stock, reorder });
+    logAudit('product.update', { code, name, price, unit, stock });
+    showToast('Updated "' + name + '"');
+    cancelEditProduct();
+    renderCatalog();
+    updateLowStockBanner();
+    refreshCapQtyOptions();
+    return;
+  }
+
   if (findProduct(code)) { showToast('That code already exists in the catalog'); return; }
 
   const { data, error } = await sb.from('products').insert({
@@ -3256,12 +3333,13 @@ async function completeMpesaSale(paymentRequest) {
   updateLowStockBanner();
 
   lineItems.forEach(li => {
-    salesLog.unshift({ date: now.toISOString().slice(0,10), receipt: receiptNo, code: li.code, name: li.name, qty: li.qty, price: li.price, vat: li.vat_rate, total: li.line_total, customerId: custId, cashierId: profile.id, paymentMethod: 'mpesa' });
+    salesLog.unshift({ date: now.toISOString().slice(0,10), receipt: receiptNo, code: li.code, name: li.name, qty: li.qty, price: li.price, vat: li.vat_rate, total: li.line_total, customerId: custId, cashierId: profile.id, paymentMethod: 'mpesa', shiftId: saleRecord.shift_id });
   });
 
   const result = await pushSaleToServer(saleRecord, lineItems);
   if (result.ok) {
     callEdgeFunction('etims-submit', { sale_id: result.id }).catch(() => {}); // fire-and-forget, non-blocking
+    refreshLiveViews();
   } else {
     // Customer's M-Pesa payment already succeeded at this point - the sale record
     // failing to save (e.g. a genuine stock conflict) needs a human, not a silent drop.
