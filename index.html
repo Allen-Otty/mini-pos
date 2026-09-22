@@ -1733,6 +1733,95 @@
     background: none; border: none; color: #9ca3af; font-size: 17px; line-height: 1;
     cursor: pointer; padding: 4px; width: auto; margin: 0; box-shadow: none;
   }
+
+  /* Hero Mockup */
+  .hero-laptop-wrap {
+    max-width: 860px;
+    margin: 32px auto -10px;
+    position: relative;
+    padding: 0 10px;
+  }
+  .hero-laptop-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.22));
+    border-radius: 12px;
+  }
+
+  /* Sector Card with Photo */
+  .sector-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    padding: 0;
+    transition: all .18s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .sector-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-sm);
+  }
+  .sector-img-wrap {
+    height: 140px;
+    width: 100%;
+    overflow: hidden;
+    background: var(--surface-alt);
+    position: relative;
+  }
+  .sector-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .25s ease;
+  }
+  .sector-card:hover .sector-img-wrap img {
+    transform: scale(1.04);
+  }
+  .sector-content {
+    padding: 16px 18px 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Restaurant Workflow Cards */
+  .rst-workflow-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+    margin-top: 24px;
+  }
+  .rst-workflow-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: transform .18s ease;
+  }
+  .rst-workflow-card:hover { transform: translateY(-3px); }
+  .rst-workflow-img-wrap {
+    height: 180px;
+    background: #0b2117;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    padding: 12px;
+  }
+  .rst-workflow-img-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 10px;
+  }
+  .rst-workflow-body {
+    padding: 20px;
+  }
+
 </style>
 </head>
 <body>
@@ -1758,7 +1847,7 @@
   <header class="posfiti-nav" id="posfitiNav">
     <div class="posfiti-nav-inner">
       <a href="#hero" class="posfiti-brand">
-        <div class="posfiti-brand-icon"><i class="fa-solid fa-receipt"></i></div>
+        <img src="images/pos-fiti-light.png" alt="Logo" style="height:32px; width:auto; border-radius:6px;">
         <span>Dogo POS</span>
         <span class="posfiti-brand-badge">Global</span>
       </a>
@@ -1826,11 +1915,18 @@
       </a>
     </div>
 
+    
     <div class="hero-perks">
       <div class="hero-perk"><i class="fa-solid fa-circle-check"></i> Free forever plan</div>
       <div class="hero-perk"><i class="fa-solid fa-circle-check"></i> No card required</div>
       <div class="hero-perk"><i class="fa-solid fa-circle-check"></i> Multi-currency ready</div>
     </div>
+
+    <!-- Posfiti Platform Laptop Mockup Showcase -->
+    <div class="hero-laptop-wrap">
+      <img src="images/laptop.png" alt="POS Platform Showcase" class="hero-laptop-img" loading="eager">
+    </div>
+
 
     <!-- Interactive Live POS Demo Widget -->
     <div class="demo-widget-container" id="demo">
@@ -1919,29 +2015,39 @@
 
       <div class="integrations-grid">
         <div class="integration-item">
-          <div class="integration-icon" style="color:#008751;"><i class="fa-solid fa-mobile-screen-button"></i></div>
+          <div style="height:44px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;">
+            <img src="images/Mpesa.png" alt="M-Pesa" style="height:36px; max-width:100%; object-fit:contain;">
+          </div>
           <div class="integration-name">M-Pesa</div>
           <div class="integration-desc">Instant STK push &amp; paybill</div>
         </div>
         <div class="integration-item">
-          <div class="integration-icon" style="color:#dc2626;"><i class="fa-solid fa-file-invoice"></i></div>
+          <div style="height:44px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;">
+            <img src="images/etims.png" alt="KRA eTIMS" style="height:38px; max-width:100%; object-fit:contain;">
+          </div>
           <div class="integration-name">KRA eTIMS</div>
           <div class="integration-desc">Tax fiscalization payload</div>
         </div>
         <div class="integration-item">
-          <div class="integration-icon" style="color:#0ea5e9;"><i class="fa-solid fa-credit-card"></i></div>
+          <div style="height:44px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;">
+            <img src="images/Paystack.png" alt="Paystack" style="height:22px; max-width:100%; object-fit:contain;">
+          </div>
           <div class="integration-name">Paystack</div>
           <div class="integration-desc">Card &amp; bank settlement</div>
         </div>
         <div class="integration-item">
-          <div class="integration-icon" style="color:#2563eb;"><i class="fa-solid fa-building-columns"></i></div>
+          <div style="height:44px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;">
+            <img src="images/Kcb.png" alt="KCB Buni" style="height:34px; max-width:100%; object-fit:contain;">
+          </div>
           <div class="integration-name">KCB Buni</div>
           <div class="integration-desc">Bank payment channel</div>
         </div>
         <div class="integration-item">
-          <div class="integration-icon" style="color:#16a34a;"><i class="fa-solid fa-money-bill-wave"></i></div>
-          <div class="integration-name">Cash &amp; Cards</div>
-          <div class="integration-desc">Multi-currency sales</div>
+          <div style="height:44px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;">
+            <img src="images/Digitax.png" alt="Digitax" style="height:26px; max-width:100%; object-fit:contain;">
+          </div>
+          <div class="integration-name">Digitax</div>
+          <div class="integration-desc">Automated tax invoices</div>
         </div>
       </div>
     </div>
@@ -1996,6 +2102,43 @@
       </div>
     </div>
 
+    
+    <!-- Restaurant POS 3-Step Workflow Showcase -->
+    <div class="rst-workflow-grid">
+      <div class="rst-workflow-card">
+        <div class="rst-workflow-img-wrap">
+          <img src="images/rst5.png" alt="Order Desk" loading="lazy">
+        </div>
+        <div class="rst-workflow-body">
+          <div class="sector-badge">Step 1 · Front of House</div>
+          <h3 style="font-size:16px; font-weight:800; margin:4px 0 6px;">Order Desk</h3>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin:0; line-height:1.5;">Staff choose dine-in, takeaway, or delivery and record orders quickly by table.</p>
+        </div>
+      </div>
+
+      <div class="rst-workflow-card">
+        <div class="rst-workflow-img-wrap">
+          <img src="images/rst1.png" alt="Kitchen Handoff" loading="lazy">
+        </div>
+        <div class="rst-workflow-body">
+          <div class="sector-badge">Step 2 · Kitchen Coordination</div>
+          <h3 style="font-size:16px; font-weight:800; margin:4px 0 6px;">Kitchen Handoff (KOT)</h3>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin:0; line-height:1.5;">Orders print instantly as kitchen order tickets so preparation starts without delay.</p>
+        </div>
+      </div>
+
+      <div class="rst-workflow-card">
+        <div class="rst-workflow-img-wrap">
+          <img src="images/rst4.png" alt="Final Settlement" loading="lazy">
+        </div>
+        <div class="rst-workflow-body">
+          <div class="sector-badge">Step 3 · Payment Collection</div>
+          <h3 style="font-size:16px; font-weight:800; margin:4px 0 6px;">Final Bill Settlement</h3>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin:0; line-height:1.5;">Collect cash or trigger instant M-Pesa push, clear the table, and issue the final receipt.</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Restaurant POS Highlight -->
     <div class="restaurant-pos-banner" id="restaurant-pos">
       <div style="display:flex; align-items:center; gap:16px;">
@@ -2023,44 +2166,68 @@
 
     <div class="sectors-grid">
       <div class="sector-card">
-        <div class="sector-badge">Volume-driven</div>
-        <h3 class="sector-title">Wholesalers</h3>
-        <p class="sector-desc">Fast bulk sales, larger catalogues, carton units, and quick checkout speed.</p>
+        <div class="sector-img-wrap"><img src="images/im1.png" alt="Wholesalers" loading="lazy"></div>
+        <div class="sector-content">
+          <div class="sector-badge">Volume-driven</div>
+          <h3 class="sector-title">Wholesalers</h3>
+          <p class="sector-desc">Fast bulk sales, larger catalogues, carton units, and quick checkout speed.</p>
+        </div>
       </div>
       <div class="sector-card">
-        <div class="sector-badge">High-volume retail</div>
-        <h3 class="sector-title">Supermarkets</h3>
-        <p class="sector-desc">Fast camera barcode scanning, large product ranges, and reliable shift cash reconciliations.</p>
+        <div class="sector-img-wrap"><img src="images/im2.png" alt="Supermarkets" loading="lazy"></div>
+        <div class="sector-content">
+          <div class="sector-badge">High-volume retail</div>
+          <h3 class="sector-title">Supermarkets</h3>
+          <p class="sector-desc">Fast camera barcode scanning, large product ranges, and reliable shift cash reconciliations.</p>
+        </div>
       </div>
       <div class="sector-card">
-        <div class="sector-badge">Service-led selling</div>
-        <h3 class="sector-title">Restaurants &amp; Cafes</h3>
-        <p class="sector-desc">Table management, category chips, running orders, and Kitchen Order Ticket printing.</p>
+        <div class="sector-img-wrap"><img src="images/im3.png" alt="Restaurants & Cafes" loading="lazy"></div>
+        <div class="sector-content">
+          <div class="sector-badge">Service-led selling</div>
+          <h3 class="sector-title">Restaurants &amp; Cafes</h3>
+          <p class="sector-desc">Table management, category chips, running orders, and Kitchen Order Ticket printing.</p>
+        </div>
       </div>
       <div class="sector-card">
-        <div class="sector-badge">Stock-heavy trade</div>
-        <h3 class="sector-title">Agrovets &amp; Feeds</h3>
-        <p class="sector-desc">Animal feeds, farm inputs, fertilizer stock control, and unit price calculations.</p>
+        <div class="sector-img-wrap"><img src="images/im4.png" alt="Agrovets & Feeds" loading="lazy"></div>
+        <div class="sector-content">
+          <div class="sector-badge">Stock-heavy trade</div>
+          <h3 class="sector-title">Agrovets &amp; Feeds</h3>
+          <p class="sector-desc">Animal feeds, farm inputs, fertilizer stock control, and unit price calculations.</p>
+        </div>
       </div>
       <div class="sector-card">
-        <div class="sector-badge">Accuracy-focused</div>
-        <h3 class="sector-title">Pharmacies &amp; Chemists</h3>
-        <p class="sector-desc">Precise product cataloguing, cashier discipline, and clear customer payment records.</p>
+        <div class="sector-img-wrap"><img src="images/im5.png" alt="Pharmacies & Chemists" loading="lazy"></div>
+        <div class="sector-content">
+          <div class="sector-badge">Accuracy-focused</div>
+          <h3 class="sector-title">Pharmacies &amp; Chemists</h3>
+          <p class="sector-desc">Precise product cataloguing, cashier discipline, and clear customer payment records.</p>
+        </div>
       </div>
       <div class="sector-card">
-        <div class="sector-badge">Fast-moving counter</div>
-        <h3 class="sector-title">Bars &amp; Lounges</h3>
-        <p class="sector-desc">Fast beverage ordering, running tabs, shift float balance, and fast M-Pesa receipts.</p>
+        <div class="sector-img-wrap"><img src="images/im6.png" alt="Bars & Lounges" loading="lazy"></div>
+        <div class="sector-content">
+          <div class="sector-badge">Fast-moving counter</div>
+          <h3 class="sector-title">Bars &amp; Lounges</h3>
+          <p class="sector-desc">Fast beverage ordering, running tabs, shift float balance, and fast M-Pesa receipts.</p>
+        </div>
       </div>
       <div class="sector-card">
-        <div class="sector-badge">Style-focused</div>
-        <h3 class="sector-title">Boutiques &amp; Fashion</h3>
-        <p class="sector-desc">Clothing, shoes, accessories, customer accounts, and professional receipts.</p>
+        <div class="sector-img-wrap"><img src="images/im7.png" alt="Boutiques & Fashion" loading="lazy"></div>
+        <div class="sector-content">
+          <div class="sector-badge">Style-focused</div>
+          <h3 class="sector-title">Boutiques &amp; Fashion</h3>
+          <p class="sector-desc">Clothing, shoes, accessories, customer accounts, and professional receipts.</p>
+        </div>
       </div>
       <div class="sector-card">
-        <div class="sector-badge">Stock-intensive</div>
-        <h3 class="sector-title">Hardware Stores</h3>
-        <p class="sector-desc">Building supplies, tools, fittings, pieces/kg units, and contractor credit tracking.</p>
+        <div class="sector-img-wrap"><img src="images/im8.png" alt="Hardware Stores" loading="lazy"></div>
+        <div class="sector-content">
+          <div class="sector-badge">Stock-intensive</div>
+          <h3 class="sector-title">Hardware Stores</h3>
+          <p class="sector-desc">Building supplies, tools, fittings, pieces/kg units, and contractor credit tracking.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -2983,9 +3150,9 @@ updateThemeToggleUI();
    POSFITI LANDING PAGE INTERACTIVITY (Live Demo & Modals)
 ===================================================================== */
 const DEMO_PRODUCTS = [
-  { id: 'rice', name: 'Rice (2kg)', price: 145, icon: '🌾' },
-  { id: 'detergent', name: 'Detergent (1kg)', price: 310, icon: '🧼' },
-  { id: 'coffee', name: 'Coffee (250g)', price: 120, icon: '☕' },
+  { id: 'rice', name: 'Rice (2kg)', price: 145, image: 'images/demo/1788534931087.webp', icon: '🌾' },
+  { id: 'detergent', name: 'Detergent (1kg)', price: 310, image: 'images/demo/1788535215892.webp', icon: '🧼' },
+  { id: 'coffee', name: 'Coffee (250g)', price: 120, image: 'images/demo/1788535505809.webp', icon: '☕' },
   { id: 'oil', name: 'Cooking Oil (1L)', price: 280, icon: '🫒' },
   { id: 'milk', name: 'Fresh Milk (500ml)', price: 70, icon: '🥛' },
   { id: 'flour', name: 'Wheat Flour (2kg)', price: 160, icon: '🍞' }
@@ -3003,7 +3170,7 @@ function renderDemoProducts(filterText = '') {
   }
   grid.innerHTML = filtered.map(p => `
     <div class="demo-prod-item" onclick="demoAddToCart('${p.id}')">
-      <div class="demo-prod-icon">${p.icon}</div>
+      ${p.image ? `<div style="height:62px; display:flex; align-items:center; justify-content:center; margin-bottom:6px;"><img src="${p.image}" alt="${p.name}" style="max-height:100%; max-width:100%; object-fit:contain;"></div>` : `<div class="demo-prod-icon">${p.icon}</div>`}
       <div>
         <div class="demo-prod-name">${p.name}</div>
         <div class="demo-prod-price">KES ${p.price.toLocaleString()}</div>
