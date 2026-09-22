@@ -3498,6 +3498,620 @@
   color: #2563eb;
 }
 
+
+/* Auth vs Portal Display Handling */
+#authScreen.hidden {
+  display: none !important;
+}
+#appShell {
+  display: none;
+}
+#appShell.portal-shell-active {
+  display: flex !important;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-primary);
+}
+
+/* Fully Hidden Sidebar State (Desktop & Tablet) */
+.portal-sidebar.sidebar-hidden {
+  margin-left: calc(-1 * var(--sidebar-w, 260px)) !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  padding: 0 !important;
+  border-right: none !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.sidebar-hide-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s ease;
+  margin-left: auto;
+}
+.sidebar-hide-btn:hover {
+  background: var(--bg);
+  color: var(--text-primary);
+  border-color: #2563eb;
+}
+
+/* Balanced Cart Item Stepper & Actions */
+.cart-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.cart-item:last-child {
+  border-bottom: none;
+}
+.cart-item .name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.cart-item .meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.qty-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.qty-ctrl button {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--bg) !important;
+  color: var(--text-primary) !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.qty-ctrl button:hover {
+  border-color: #2563eb !important;
+  color: #2563eb !important;
+  background: rgba(37, 99, 235, 0.08) !important;
+}
+.qty-ctrl select {
+  height: 30px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--card) !important;
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  padding: 2px 6px !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+}
+.remove-btn {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #ef4444 !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  margin-left: 4px !important;
+}
+.remove-btn:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+/* Progressive Money Select Styling */
+.rc-progressive-select {
+  width: 100%;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 700;
+  font-size: 13px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  cursor: pointer;
+  outline: none;
+}
+.rc-progressive-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+/* =====================================================================
+   RETAIL CHECKOUT (POSFITI-STYLE 2-COLUMN LAYOUT)
+===================================================================== */
+.retail-checkout-container {
+  display: grid;
+  grid-template-columns: 1fr 390px;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 1080px) {
+  .retail-checkout-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rc-products-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+}
+
+.rc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.rc-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rc-title-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.rc-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.rc-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 2px 0 0 0;
+}
+
+.rc-controls-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rc-branch-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 16px;
+}
+
+.rc-branch-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.rc-branch-select {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+  padding-right: 4px;
+}
+
+.rc-scan-btn {
+  background: transparent;
+  border: 1.5px solid #22c55e;
+  color: #16a34a;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rc-scan-btn:hover {
+  background: rgba(34, 197, 94, 0.1);
+  transform: translateY(-1px);
+}
+
+.rc-search-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.rc-search-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rc-search-heading {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.rc-stats-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rc-stat-pill {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.rc-pill-avail {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+}
+
+.rc-pill-vis {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.rc-pill-low {
+  background: rgba(234, 179, 8, 0.15);
+  color: #b45309;
+}
+
+.rc-search-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.rc-search-input-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.rc-search-input-wrap i {
+  position: absolute;
+  left: 14px;
+  color: #4ade80;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.rc-search-input {
+  width: 100%;
+  background: #081a10;
+  color: #dcfce7;
+  border: 1.5px solid #15803d;
+  border-radius: 12px;
+  padding: 12px 14px 12px 40px;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.rc-search-input::placeholder {
+  color: #86efac;
+  opacity: 0.8;
+}
+
+.rc-search-input:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.rc-add-btn {
+  background: #22c55e;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 22px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.rc-add-btn:hover {
+  background: #16a34a;
+  transform: translateY(-1px);
+}
+
+.rc-pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+}
+
+.rc-page-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.rc-page-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.rc-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rc-page-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.rc-page-btn.active {
+  background: #22c55e;
+  color: #ffffff;
+  border-color: #22c55e;
+}
+
+.rc-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 16px;
+}
+
+.rc-prod-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  position: relative;
+}
+
+.rc-prod-card:hover {
+  border-color: #2563eb;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.08);
+}
+
+.rc-prod-card:active {
+  transform: scale(0.97);
+}
+
+.rc-prod-img-wrap {
+  width: 100%;
+  height: 140px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rc-prod-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.rc-prod-info {
+  padding: 14px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.rc-prod-category {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #16a34a;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.rc-prod-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  line-height: 1.25;
+}
+
+.rc-prod-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.rc-prod-price {
+  font-size: 15px;
+  font-weight: 800;
+  color: #2563eb;
+}
+
+[data-theme="dark"] .rc-prod-price {
+  color: #60a5fa;
+}
+
+.rc-prod-stock {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg);
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+
+.rc-sale-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  position: sticky;
+  top: 80px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+}
+
+.rc-sale-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+}
+
+.rc-sale-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rc-sale-title-wrap i {
+  color: #2563eb;
+  font-size: 22px;
+}
+
+.rc-sale-title {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.rc-sale-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.rc-sale-count-badge {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.rc-checkout-cta {
+  width: 100%;
+  background: #a3e635;
+  color: #14532d;
+  border: none;
+  border-radius: 16px;
+  padding: 16px 20px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(163, 230, 53, 0.3);
+  transition: all 0.15s ease;
+  margin-top: 14px;
+}
+
+.rc-checkout-cta:hover {
+  background: #bef264;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(163, 230, 53, 0.4);
+}
+
+.rc-checkout-cta-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.rc-checkout-cta-sub {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
 /* Collapsed state on desktop */
 @media (min-width: 1024px) {
   .portal-sidebar.collapsed {
@@ -4801,7 +5415,7 @@
 
 </div><!-- /authScreen -->
 
-<div id="appShell" class="portal-shell-active">
+<div id="appShell">
 
 <div class="portal-backdrop" id="portalBackdrop" onclick="togglePortalSidebar()"></div>
 
@@ -4854,27 +5468,6 @@
         </div>
       </div>
 
-      <!-- Restaurant POS Group -->
-      <div class="nav-group" id="group-restaurant">
-        <button class="nav-item-btn" onclick="toggleNavGroup('group-restaurant')" data-tooltip="Restaurant POS">
-          <div class="nav-item-left"><i class="fa-solid fa-utensils"></i> <span>Restaurant POS</span></div>
-          <i class="fa-solid fa-chevron-down nav-chevron"></i>
-        </button>
-        <div class="nav-sub-list">
-          <button class="nav-sub-btn" data-tab="restaurant-module" onclick="switchTab('restaurant-module')">
-            <i class="fa-solid fa-compass"></i> <span>Overview Flow</span>
-          </button>
-          <button class="nav-sub-btn" data-tab="restaurant-order" onclick="switchTab('restaurant-order')">
-            <i class="fa-solid fa-plus-circle"></i> <span>Take Order</span>
-          </button>
-          <button class="nav-sub-btn" data-tab="kitchen" onclick="switchTab('kitchen')">
-            <i class="fa-solid fa-kitchen-set"></i> <span>Kitchen Board</span>
-          </button>
-          <button class="nav-sub-btn" data-tab="menu" data-admin-only="1" onclick="switchTab('menu')">
-            <i class="fa-solid fa-table-cells"></i> <span>Floor Tables</span>
-          </button>
-        </div>
-      </div>
 
       <!-- Business Group -->
       <div class="nav-group" id="group-business">
@@ -5658,164 +6251,252 @@
     </div>
   </div>
 
-  <div class="panel active" id="tab-sell">
-    <div class="cart-box" id="shiftBanner" style="margin-bottom:10px;">
-      <div id="shiftClosedView">
-        <div id="staleShiftWarning" style="display:none; background:#7a4a00; color:#ffe6ac; border-radius:8px; padding:10px; margin-bottom:10px; font-size:13px;">
-          <div style="font-weight:bold; margin-bottom:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Unclosed shift from <span id="staleShiftDate"></span></div>
-          <div style="margin-bottom:8px;">Close it out before opening today's shift.</div>
-          <button class="btn-yellow btn-small" onclick="closeStaleShift()">Close that shift now</button>
+    <div class="panel active" id="tab-sell">
+    <div class="retail-checkout-container">
+      <!-- Left Column: Products Panel -->
+      <div class="rc-products-panel">
+        <!-- Products Header -->
+        <div class="rc-header">
+          <div class="rc-title-wrap">
+            <div class="rc-title-icon"><i class="fa-solid fa-box-open"></i></div>
+            <div>
+              <h2 class="rc-title">Products</h2>
+              <p class="rc-subtitle">Choose a branch, then tap products to add them.</p>
+            </div>
+          </div>
+          <div class="rc-controls-wrap">
+            <div class="rc-branch-box">
+              <span class="rc-branch-label">SELLING FROM</span>
+              <select id="rcBranchSelect" class="rc-branch-select" onchange="handleBranchChange(this.value)">
+                <option value="luanda" selected>luanda</option>
+                <option value="main">Main Branch</option>
+              </select>
+            </div>
+            <button type="button" class="rc-scan-btn" id="scannerToggleBtn" onclick="toggleScanner()">
+              <i class="fa-solid fa-camera"></i> Scan barcode
+            </button>
+          </div>
         </div>
-        <div style="font-weight:bold; margin-bottom:6px;"><i class="fa-solid fa-clock"></i> No open shift</div>
-        <input type="number" id="openingFloat" placeholder="Opening cash float, KES" step="0.01" value="0.00">
-        <button class="btn-green" onclick="openShift()">Open Shift</button>
-      </div>
-      <div id="shiftOpenView" style="display:none;">
-        <div style="font-weight:bold; margin-bottom:4px;"><i class="fa-solid fa-clock"></i> Shift open — <span id="shiftOpenedAt"></span></div>
-        <div style="font-size:13px; color:var(--text-secondary); margin-bottom:8px;">Opening float: KES <span id="shiftFloatDisplay"></span></div>
-        <button class="btn-red" onclick="closeShift()">Close Shift</button>
-      </div>
-    </div>
 
-    <button class="btn-blue" id="scannerToggleBtn" onclick="toggleScanner()"><i class="fa-solid fa-camera"></i> Start Camera Scanner</button>
-    <div id="reader" style="display:none;"></div>
-    <div class="scan-status">
-      <div class="code" id="scanFeedback">Tap "Start Camera Scanner" to begin</div>
-      <div class="hint" id="scanHint">Or use manual entry / photo scan below.</div>
-    </div>
-
-    <input type="text" id="manualCode" placeholder="No scanner? Type code + Enter">
-    <select id="manualCatalogPick"><option value="">-- or pick an item manually --</option></select>
-
-    <input type="file" id="photoScanInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoScan(this.files[0])">
-    <button class="btn-blue" onclick="document.getElementById('photoScanInput').click()"><i class="fa-solid fa-camera"></i> Scan Item Photo (barcode or label)</button>
-    <div id="fileScanReader" style="display:none;"></div>
-
-    <div class="cart-box" id="newProductForm" style="display:none; margin-top:10px;">
-      <div style="font-weight:bold; margin-bottom:6px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-        🆕 New item:
-        <input type="text" id="npCode" placeholder="scan or type code" style="width:150px; display:inline-block; padding:4px 8px; margin:0; font-weight:bold;">
-      </div>
-      <input type="text" id="npName" placeholder="Item name">
-      <input type="number" id="npPrice" placeholder="Selling price (VAT included), KES" step="0.01">
-      <select id="npVat">
-        <option value="0.16">VAT 16% (standard)</option>
-        <option value="0">No VAT (exempt/zero-rated)</option>
-      </select>
-      <select id="npUnit">
-        <option value="piece">Piece</option>
-        <option value="kg">Kilogram (kg)</option>
-        <option value="g">Gram (g)</option>
-        <option value="litre">Litre</option>
-      </select>
-      <div style="font-size:12px; color:#667; margin:6px 2px 2px;">Opening stock quantity</div>
-      <select id="npStock"></select>
-      <div style="font-size:12px; color:#667; margin:6px 2px 2px;">Reorder alert level</div>
-      <select id="npReorder"></select>
-      <button class="btn-green" onclick="saveNewProduct()">Add to Catalog & Cart</button>
-      <button class="btn-red" onclick="cancelNewProduct()">Cancel</button>
-    </div>
-
-    <div class="cart-box" id="cartBox" style="margin-top:14px;">
-      <div class="empty-note" id="cartEmpty">Cart is empty. Scan an item to begin.</div>
-      <div id="cartItems"></div>
-      <select id="cartCustomerPick" style="margin-top:8px;">
-        <option value="">-- Walk-in customer (no account) --</option>
-      </select>
-      <div class="totals" id="cartTotals" style="display:none;">
-        <div class="row"><span>Total (VAT-inclusive)</span><span id="totGrand">0.00</span></div>
-        <div class="row"><span>— of which VAT</span><span id="totVat">0.00</span></div>
-        <div class="vat-note">Prices already include VAT — nothing is added at checkout.</div>
-      </div>
-    </div>
-
-    
-    <!-- Quick Cash Tender Box -->
-    <div class="cart-box" id="quickTenderBox" style="display:none; margin-top:10px; background:var(--bg); border-radius:14px; padding:14px; border:1px solid var(--border);">
-      <div style="font-weight:700; font-size:13px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-        <span><i class="fa-solid fa-money-bill-wave" style="color:#16a34a;"></i> Cash Tendered</span>
-        <span id="quickTenderChange" style="font-weight:800; font-size:15px; color:#16a34a;">Change: KES 0.00</span>
-      </div>
-      <div style="display:flex; gap:8px; margin-bottom:8px;">
-        <input type="number" id="cashTenderedInput" placeholder="Amount given, KES" step="10" style="flex:1; margin:0; font-weight:700;" oninput="calcChangeDue()">
-        <button class="btn-small btn-blue" onclick="setExactTender()" style="white-space:nowrap; padding:0 14px;">Exact</button>
-      </div>
-      <div class="quick-cash-grid">
-        <button class="quick-cash-pill" onclick="addQuickCash(100)">+100</button>
-        <button class="quick-cash-pill" onclick="addQuickCash(200)">+200</button>
-        <button class="quick-cash-pill" onclick="addQuickCash(500)">+500</button>
-        <button class="quick-cash-pill" onclick="addQuickCash(1000)">+1k</button>
-        <button class="quick-cash-pill" onclick="addQuickCash(2000)">+2k</button>
-        <button class="quick-cash-pill" onclick="addQuickCash(5000)">+5k</button>
-      </div>
-    </div>
-
-    <!-- Regional Payment Method Selector -->
-    <div style="margin-top:12px; margin-bottom:10px; display:none;" id="paymentMethodSelector">
-      <div style="font-size:11.5px; font-weight:800; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.06em;">Select Payment Method</div>
-      <div style="display:flex; flex-wrap:wrap; gap:6px;">
-        <button type="button" class="pos-pay-method-pill active" id="payMethodCash" onclick="selectPaymentMethod('cash')">
-          <i class="fa-solid fa-money-bill-wave"></i> <span>Cash</span>
-        </button>
-        <button type="button" class="pos-pay-method-pill" id="payMethodMpesa" onclick="selectPaymentMethod('mpesa')">
-          <i class="fa-solid fa-mobile-screen-button"></i> <span>M-Pesa STK</span>
-        </button>
-        <button type="button" class="pos-pay-method-pill" id="payMethodKcb" onclick="selectPaymentMethod('kcb')">
-          <i class="fa-solid fa-building-columns"></i> <span>KCB Buni</span>
-        </button>
-        <button type="button" class="pos-pay-method-pill" id="payMethodPaystack" onclick="selectPaymentMethod('paystack')">
-          <i class="fa-solid fa-credit-card"></i> <span>Paystack</span>
-        </button>
-        <button type="button" class="pos-pay-method-pill" id="payMethodAirtel" onclick="selectPaymentMethod('airtel')">
-          <i class="fa-solid fa-tower-broadcast"></i> <span>Airtel Money</span>
-        </button>
-      </div>
-    </div>
-
-    <button class="btn-green buy-btn" id="checkoutBtn" onclick="handleCheckoutClick(this)" style="display:none;">
-      <span class="buy-btn__idle"><i class="fa-solid fa-cart-shopping"></i> Checkout &amp; Print Receipt (Cash)</span>
-      <span class="buy-btn__cart"><i class="fa-solid fa-cart-shopping"></i></span>
-      <span class="buy-btn__truck"><i class="fa-solid fa-truck"></i></span>
-      <span class="buy-btn__confirm"><i class="fa-solid fa-circle-check"></i> Ordered</span>
-    </button>
-    <button class="btn-blue" id="mpesaBtn" onclick="openDigitalPrompt()" style="display:none;"><i class="fa-solid fa-bolt"></i> <span id="mpesaBtnLabel">Charge with M-Pesa</span></button>
-    <button class="btn-red" id="clearBtn" onclick="clearCart()" style="display:none;">Clear Cart</button>
-
-    <div class="cart-box" id="mpesaPromptBox" style="display:none; margin-top:10px; border:1px solid var(--accent); background:var(--surface);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <div style="font-weight:800; font-size:14.5px;" id="digitalPromptTitle">
-          <i class="fa-solid fa-mobile-screen-button" style="color:var(--accent);"></i> M-Pesa STK Push
+        <!-- Camera Scanner Area (toggled by button) -->
+        <div id="reader" style="display:none; margin-bottom:16px; border-radius:12px; overflow:hidden;"></div>
+        <div class="scan-status" id="scanStatusBox" style="display:none; margin-bottom:16px;">
+          <div class="code" id="scanFeedback">Camera active</div>
+          <div class="hint" id="scanHint">Align barcode within viewfinder</div>
         </div>
-        <span class="tag tag-active" id="digitalPromptTag">INSTANT STK</span>
-      </div>
-      <p style="font-size:12px; color:var(--text-secondary); margin:0 0 10px;" id="digitalPromptDesc">
-        Customer will receive an instant push prompt on their phone to enter their PIN.
-      </p>
 
-      <div id="digitalInputContainer">
-        <input type="text" id="mpesaPhone" placeholder="Customer phone e.g. 0712345678" style="margin-bottom:8px;">
-        <input type="text" id="digitalAccountInput" placeholder="Account / Card Ref (optional)" style="display:none; margin-bottom:8px;">
+        <!-- Search or Scan Card -->
+        <div class="rc-search-card">
+          <div class="rc-search-top">
+            <div class="rc-search-heading">SEARCH OR SCAN</div>
+            <div class="rc-stats-pills">
+              <span class="rc-stat-pill rc-pill-avail" id="rcAvailCount">7 available</span>
+              <span class="rc-stat-pill rc-pill-vis" id="rcVisCount">7 visible</span>
+              <span class="rc-stat-pill rc-pill-low" id="rcLowStockCount">0 low stock</span>
+            </div>
+          </div>
+          <div class="rc-search-row">
+            <div class="rc-search-input-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="rcSearchInput" class="rc-search-input" placeholder="Search products or barcode" oninput="handlePosSearch(this.value)" onkeydown="handlePosBarcodeKey(event)">
+            </div>
+            <button type="button" class="rc-add-btn" onclick="switchTab('product-create')">Add item</button>
+          </div>
+        </div>
+
+        <!-- Catalog Page strip -->
+        <div class="rc-pagination-bar">
+          <div>
+            <div class="rc-page-title">CATALOG PAGE</div>
+            <div class="rc-page-meta">Showing 1-<span id="rcShownCount">7</span> of <span id="rcTotalCount">7</span></div>
+          </div>
+          <div class="rc-pagination-controls">
+            <button type="button" class="rc-page-btn" onclick="showToast('First page')">Previous</button>
+            <button type="button" class="rc-page-btn active">1</button>
+            <button type="button" class="rc-page-btn" onclick="showToast('Last page')">Next</button>
+          </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="rc-products-grid" id="rcProductsGrid">
+          <!-- Populated by renderPosProductsGrid() -->
+        </div>
+
+        <!-- Secondary entry inputs (hidden / preserved for scanner bindings) -->
+        <input type="hidden" id="manualCode">
+        <select id="manualCatalogPick" style="display:none;"><option value="">-- or pick an item manually --</option></select>
+        <input type="file" id="photoScanInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoScan(this.files[0])">
+        <div id="fileScanReader" style="display:none;"></div>
       </div>
 
-      <div style="display:flex; gap:8px;">
-        <button class="btn-green" style="flex:1;" id="digitalSendBtn" onclick="sendDigitalPrompt()">Send Payment Prompt</button>
-        <button class="btn-red" style="padding:0 18px;" onclick="cancelDigitalPrompt()">Cancel</button>
-      </div>
-    </div>
+      <!-- Right Column: Current Sale sticky panel -->
+      <div class="rc-sale-panel">
+        <div class="rc-sale-header">
+          <div class="rc-sale-title-wrap">
+            <i class="fa-solid fa-basket-shopping"></i>
+            <div>
+              <h3 class="rc-sale-title">Current sale</h3>
+              <div class="rc-sale-meta"><span id="rcCurrentBranchMeta">luanda</span> &middot; KES</div>
+            </div>
+          </div>
+          <span class="rc-sale-count-badge" id="rcSaleCountBadge">0 items</span>
+        </div>
 
-    <div class="cart-box" id="mpesaWaitingBox" style="display:none; margin-top:10px; text-align:center; border:2px solid var(--accent); background:var(--surface);">
-      <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:6px;">
-        <div class="digital-pulse-spinner"></div>
-        <div style="font-size:15px; font-weight:800;" id="digitalWaitingTitle">Waiting for customer to authorize payment...</div>
-      </div>
-      <div style="font-size:13px; font-weight:700; color:var(--text); margin-top:6px;" id="mpesaWaitingHint">Prompt sent to customer's phone</div>
-      <div style="font-size:11.5px; color:var(--text-secondary); margin-top:4px;" id="digitalWaitingSubhint">Listening for secure server webhook callback confirmation...</div>
+        <!-- Shift Banner (Drawer Float / Shift state) -->
+        <div class="cart-box" id="shiftBanner" style="margin-bottom:14px; padding:12px; background:var(--bg); border:1px solid var(--border); border-radius:12px;">
+          <div id="shiftClosedView">
+            <div id="staleShiftWarning" style="display:none; background:#7a4a00; color:#ffe6ac; border-radius:8px; padding:10px; margin-bottom:10px; font-size:13px;">
+              <div style="font-weight:bold; margin-bottom:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Unclosed shift from <span id="staleShiftDate"></span></div>
+              <div style="margin-bottom:8px;">Close it out before opening today's shift.</div>
+              <button class="btn-yellow btn-small" onclick="closeStaleShift()">Close that shift now</button>
+            </div>
+            <div style="font-weight:700; font-size:13px; margin-bottom:6px;"><i class="fa-solid fa-clock"></i> No open shift</div>
+            <div style="display:flex; gap:6px;">
+              <input type="number" id="openingFloat" placeholder="Float, KES" step="0.01" value="0.00" style="flex:1; margin:0; padding:6px 10px; font-size:13px;">
+              <button class="btn-green" onclick="openShift()" style="padding:6px 14px; font-size:13px; white-space:nowrap;">Open Shift</button>
+            </div>
+          </div>
+          <div id="shiftOpenView" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-weight:700; font-size:12px; color:#16a34a;"><i class="fa-solid fa-circle-check"></i> Shift open</div>
+                <div style="font-size:11px; color:var(--text-secondary);">Float: KES <span id="shiftFloatDisplay">0.00</span></div>
+              </div>
+              <button class="btn-red" onclick="closeShift()" style="padding:4px 10px; font-size:11px;">Close Shift</button>
+            </div>
+          </div>
+        </div>
 
-      <div style="margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-        <button class="btn-small btn-blue" id="btnSimulateApproval" onclick="simulateCurrentGatewayApproval()" style="background:var(--brand); color:#fff; font-weight:700;">
-          <i class="fa-solid fa-bolt"></i> Test Confirm (Simulate Callback)
+        <!-- Cart Box Container -->
+        <div id="cartBox">
+          <div class="empty-note" id="cartEmpty" style="padding:32px 12px; text-align:center; color:var(--text-secondary); font-size:14px;">
+            Your cart is empty. Add a product to start.
+          </div>
+          <div id="cartItems" style="max-height:280px; overflow-y:auto; margin-bottom:12px;"></div>
+          
+          <select id="cartCustomerPick" style="margin-top:6px; margin-bottom:12px; width:100%; border-radius:10px; padding:8px 12px; font-size:13px;">
+            <option value="">-- Walk-in customer (no account) --</option>
+          </select>
+
+          <div class="totals" id="cartTotals" style="display:none; border-top:1px solid var(--border); padding-top:12px; margin-top:10px;">
+            <div class="row" style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:14px;">
+              <span style="color:var(--text-secondary);">Subtotal (VAT-inclusive)</span>
+              <span id="totSub" style="font-weight:700;">0.00</span>
+            </div>
+            <div class="row" style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; color:var(--text-secondary);">
+              <span>— of which VAT (16%)</span>
+              <span id="totVat">0.00</span>
+            </div>
+            <div class="row" style="display:flex; justify-content:space-between; align-items:baseline; margin-top:8px; border-top:1px dashed var(--border); padding-top:10px;">
+              <span style="font-size:16px; font-weight:700;">Total</span>
+              <span id="totGrand" style="font-size:24px; font-weight:800; color:var(--text-primary);">KES 0.00</span>
+            </div>
+            <div class="vat-note" style="font-size:11px; color:var(--text-secondary); margin-top:4px;">Prices already include VAT — nothing is added at checkout.</div>
+          </div>
+        </div>
+
+        <!-- Quick Cash Tender Box -->
+        <div class="cart-box" id="quickTenderBox" style="display:none; margin-top:14px; background:var(--bg); border-radius:14px; padding:14px; border:1px solid var(--border);">
+          <div style="font-weight:700; font-size:13px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <span><i class="fa-solid fa-money-bill-wave" style="color:#16a34a;"></i> Cash Tendered</span>
+            <span id="quickTenderChange" style="font-weight:800; font-size:15px; color:#16a34a;">Change: KES 0.00</span>
+          </div>
+
+          <!-- Progressive Money Dropdown -->
+          <div style="margin-bottom:8px;">
+            <div style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">
+              Progressive Cash Presets
+            </div>
+            <select id="progressiveMoneySelect" class="rc-progressive-select" onchange="applyProgressiveMoney(this.value)">
+              <option value="">-- Choose Progressive Tender --</option>
+            </select>
+          </div>
+
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <input type="number" id="cashTenderedInput" placeholder="Amount given, KES" step="10" style="flex:1; margin:0; font-weight:700; padding:8px 12px; border-radius:10px;" oninput="calcChangeDue()">
+            <button class="btn-small btn-blue" onclick="setExactTender()" style="white-space:nowrap; padding:0 14px; border-radius:10px; font-weight:700;">Exact</button>
+          </div>
+
+          <div class="quick-cash-grid">
+            <button class="quick-cash-pill" onclick="addQuickCash(50)">+50</button>
+            <button class="quick-cash-pill" onclick="addQuickCash(100)">+100</button>
+            <button class="quick-cash-pill" onclick="addQuickCash(200)">+200</button>
+            <button class="quick-cash-pill" onclick="addQuickCash(500)">+500</button>
+            <button class="quick-cash-pill" onclick="addQuickCash(1000)">+1k</button>
+            <button class="quick-cash-pill" onclick="addQuickCash(2000)">+2k</button>
+          </div>
+        </div>
+
+        <!-- Regional Multi-Gateway Payment Method Selector -->
+        <div style="margin-top:12px; margin-bottom:10px; display:none;" id="paymentMethodSelector">
+          <div style="font-size:11.5px; font-weight:800; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.06em;">Select Payment Gateway</div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px;">
+            <button type="button" class="pos-pay-method-pill active" id="payMethodCash" onclick="selectPaymentMethod('cash')">
+              <i class="fa-solid fa-money-bill-wave"></i> <span>Cash</span>
+            </button>
+            <button type="button" class="pos-pay-method-pill" id="payMethodMpesa" onclick="selectPaymentMethod('mpesa')">
+              <i class="fa-solid fa-mobile-screen-button"></i> <span>M-Pesa STK</span>
+            </button>
+            <button type="button" class="pos-pay-method-pill" id="payMethodKcb" onclick="selectPaymentMethod('kcb')">
+              <i class="fa-solid fa-building-columns"></i> <span>KCB Buni</span>
+            </button>
+            <button type="button" class="pos-pay-method-pill" id="payMethodPaystack" onclick="selectPaymentMethod('paystack')">
+              <i class="fa-solid fa-credit-card"></i> <span>Paystack</span>
+            </button>
+            <button type="button" class="pos-pay-method-pill" id="payMethodAirtel" onclick="selectPaymentMethod('airtel')">
+              <i class="fa-solid fa-tower-broadcast"></i> <span>Airtel Money</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Primary Action Button: Big Lime Yellow Checkout -->
+        <button class="rc-checkout-cta" id="checkoutBtn" onclick="handleCheckoutClick(this)" style="display:none;">
+          <div class="rc-checkout-cta-title">Checkout</div>
+          <div class="rc-checkout-cta-sub">Payment details on the next step.</div>
         </button>
-        <button class="btn-small btn-red" onclick="cancelMpesaWait()">Cancel Wait</button>
+
+        <button class="btn-blue" id="mpesaBtn" onclick="openDigitalPrompt()" style="display:none; width:100%; margin-top:10px; border-radius:12px; padding:12px; font-weight:700;">
+          <i class="fa-solid fa-bolt"></i> <span id="mpesaBtnLabel">Charge with M-Pesa</span>
+        </button>
+        <button class="btn-red" id="clearBtn" onclick="clearCart()" style="display:none; width:100%; margin-top:8px; border-radius:12px; padding:8px; font-size:12px;">
+          Clear Cart
+        </button>
+
+        <!-- Digital Payment Prompts & Modals -->
+        <div class="cart-box" id="mpesaPromptBox" style="display:none; margin-top:10px; border:1px solid var(--accent); background:var(--surface);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:800; font-size:13.5px;"><i class="fa-solid fa-bolt" style="color:var(--accent);"></i> <span id="promptModalTitle">Digital Payment Prompt</span></div>
+            <button class="btn-small btn-grey" onclick="cancelDigitalPrompt()" style="padding:2px 8px; font-size:11px;">✕</button>
+          </div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;" id="promptModalSub">Enter customer phone number to initiate payment request.</div>
+          <input type="text" id="mpesaPhone" placeholder="Customer phone e.g. 0712345678" style="margin-bottom:8px; font-size:14px; font-weight:700;">
+          <div style="display:flex; gap:8px;">
+            <button class="btn-green" onclick="sendDigitalPrompt()" id="btnSendPrompt" style="flex:1;"><i class="fa-solid fa-paper-plane"></i> Send Prompt</button>
+            <button class="btn-red" onclick="cancelDigitalPrompt()">Cancel</button>
+          </div>
+        </div>
+
+        <div class="cart-box" id="mpesaWaitingBox" style="display:none; margin-top:12px; text-align:center;">
+          <div style="font-size:14px; font-weight:bold;">⏳ Waiting for customer to complete payment...</div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;" id="mpesaWaitingHint">Prompt sent to their phone</div>
+          <button class="btn-red" onclick="cancelDigitalWait()" style="margin-top:8px; padding:6px 12px; font-size:12px;">Cancel Wait</button>
+        </div>
+
+        <!-- Quick New Item modal if needed -->
+        <div class="cart-box" id="newProductForm" style="display:none; margin-top:12px;">
+          <div style="font-weight:bold; margin-bottom:6px;">Quick Add Item:</div>
+          <input type="text" id="npCode" placeholder="Code">
+          <input type="text" id="npName" placeholder="Item name">
+          <input type="number" id="npPrice" placeholder="Selling price, KES" step="0.01">
+          <select id="npVat"><option value="0.16">VAT 16%</option><option value="0">No VAT</option></select>
+          <select id="npUnit"><option value="piece">Piece</option><option value="kg">kg</option></select>
+          <select id="npStock" style="display:none;"></select>
+          <select id="npReorder" style="display:none;"></select>
+          <div style="display:flex; gap:6px; margin-top:6px;">
+            <button class="btn-green" onclick="saveNewProduct()">Save</button>
+            <button class="btn-red" onclick="cancelNewProduct()">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -6652,7 +7333,7 @@
 const SUPABASE_URL = "https://uzwomzkzqrpiumtnniik.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { persistSession: false }
+  auth: { persistSession: true, autoRefreshToken: true }
 });
 
 const THEME_COLORS = ["#0f172a", "#1e3a8a", "#16a34a", "#facc15", "#0284c7", "#7c3aed"];
@@ -6663,6 +7344,240 @@ const LOCAL_CACHE_KEY = "dogopos_cache_v1"; // last-known full app state for off
 let session = null;
 let profile = null;   // { id, business_id, role, full_name, active }
 
+
+
+/* =====================================================================
+   PROGRESSIVE MONEY & UI STATE CONTROLLER
+===================================================================== */
+function updateProgressiveMoneyOptions(grand) {
+  const sel = document.getElementById('progressiveMoneySelect');
+  if (!sel) return;
+  if (!grand || grand <= 0) {
+    sel.innerHTML = '<option value="">-- Cart is empty --</option>';
+    return;
+  }
+  const curVal = parseFloat(document.getElementById('cashTenderedInput')?.value || '0');
+  const options = [];
+
+  // 1. Exact amount
+  options.push({ val: grand, label: `Exact Cash: KES ${grand.toFixed(2)}` });
+
+  // 2. Next nearest 10, 50, 100
+  const next10 = Math.ceil(grand / 10) * 10;
+  if (next10 > grand) options.push({ val: next10, label: `KES ${next10.toFixed(2)} (Change: KES ${(next10 - grand).toFixed(2)})` });
+
+  const next50 = Math.ceil(grand / 50) * 50;
+  if (next50 > grand && next50 !== next10) options.push({ val: next50, label: `KES ${next50.toFixed(2)} (Change: KES ${(next50 - grand).toFixed(2)})` });
+
+  const next100 = Math.ceil(grand / 100) * 100;
+  if (next100 > grand && next100 !== next50) options.push({ val: next100, label: `KES ${next100.toFixed(2)} (Change: KES ${(next100 - grand).toFixed(2)})` });
+
+  // 3. Progressive Kenyan Shilling notes: 200, 500, 1000, 2000, 5000
+  [200, 500, 1000, 2000, 5000].forEach(note => {
+    if (note > grand && !options.some(o => Math.abs(o.val - note) < 0.01)) {
+      options.push({ val: note, label: `KES ${note.toFixed(2)} Note (Change: KES ${(note - grand).toFixed(2)})` });
+    }
+  });
+
+  // 4. Progressive jumps above total (+50, +100, +200, +500, +1000)
+  [50, 100, 200, 500, 1000].forEach(add => {
+    const val = grand + add;
+    if (!options.some(o => Math.abs(o.val - val) < 0.01) && val <= 10000) {
+      options.push({ val: val, label: `+KES ${add} (KES ${val.toFixed(2)} · Change: KES ${add.toFixed(2)})` });
+    }
+  });
+
+  options.sort((a, b) => a.val - b.val);
+
+  sel.innerHTML = '<option value="">-- Choose Progressive Tender --</option>' +
+    options.map(o => `<option value="${o.val}" ${Math.abs(o.val - curVal) < 0.01 ? 'selected' : ''}>${o.label}</option>`).join('');
+}
+
+function applyProgressiveMoney(val) {
+  if (!val) return;
+  const input = document.getElementById('cashTenderedInput');
+  if (input) {
+    input.value = parseFloat(val).toFixed(2);
+    calcChangeDue();
+  }
+}
+
+function setAppLoggedIn(isLoggedIn) {
+  const authScreen = document.getElementById('authScreen');
+  const appShell = document.getElementById('appShell');
+  if (isLoggedIn) {
+    if (authScreen) {
+      authScreen.style.display = 'none';
+      authScreen.classList.add('hidden');
+    }
+    if (appShell) {
+      appShell.style.display = 'flex';
+      appShell.classList.add('portal-shell-active');
+    }
+    try { localStorage.setItem('dogopos_is_logged_in', 'true'); } catch(e) {}
+  } else {
+    if (appShell) {
+      appShell.style.display = 'none';
+      appShell.classList.remove('portal-shell-active');
+    }
+    if (authScreen) {
+      authScreen.style.display = 'block';
+      authScreen.classList.remove('hidden');
+    }
+    try { localStorage.removeItem('dogopos_is_logged_in'); } catch(e) {}
+  }
+}
+
+const DEFAULT_RETAIL_PRODUCTS = [
+  { id: 'dp-1', code: 'AJAB-2KG', name: 'Ajab Flour', category: 'GRAINS', price: 220.00, vat: 0.16, stock: 50, reorder: 10, unit: 'piece', image: 'images/demo/ajab_flour.png' },
+  { id: 'dp-2', code: 'RAHA-2KG', name: 'Raha Flour', category: 'GRAINS', price: 140.00, vat: 0.16, stock: 35, reorder: 5, unit: 'piece', image: 'images/demo/raha_flour.png' },
+  { id: 'dp-3', code: 'HAMMER-CLAW', name: 'Claw Hammer', category: 'TOOLS', price: 750.00, vat: 0.16, stock: 12, reorder: 3, unit: 'piece', image: 'images/demo/claw_hammer.png' },
+  { id: 'dp-4', code: 'PAINT-EMUL-4L', name: 'Emulsion Paint 4L', category: 'PAINT', price: 1850.00, vat: 0.16, stock: 8, reorder: 2, unit: 'piece', image: 'images/demo/paint_emulsion.png' },
+  { id: 'dp-5', code: 'RICE-MWEA-2K', name: 'CIL Pure Mwea Pishori Rice 2kg', category: 'GRAINS', price: 340.00, vat: 0.16, stock: 24, reorder: 5, unit: 'piece', image: 'images/demo/1788534931087.webp' },
+  { id: 'dp-6', code: 'PERSIL-500G', name: 'Persil Universal Detergent 500g', category: 'HOUSEHOLD', price: 195.00, vat: 0.16, stock: 40, reorder: 8, unit: 'piece', image: 'images/demo/1788535215892.webp' },
+  { id: 'dp-7', code: 'DORMANS-100G', name: 'Dormans Fine Instant Coffee 100g', category: 'BEVERAGES', price: 420.00, vat: 0.16, stock: 18, reorder: 4, unit: 'piece', image: 'images/demo/1788535505809.webp' },
+];
+
+function getProductImage(p) {
+  if (p.image) return p.image;
+  const name = (p.name || '').toLowerCase();
+  if (name.includes('ajab')) return 'images/demo/ajab_flour.png';
+  if (name.includes('raha')) return 'images/demo/raha_flour.png';
+  if (name.includes('hammer')) return 'images/demo/claw_hammer.png';
+  if (name.includes('paint')) return 'images/demo/paint_emulsion.png';
+  if (name.includes('rice') || name.includes('mwea')) return 'images/demo/1788534931087.webp';
+  if (name.includes('persil') || name.includes('detergent') || name.includes('soap')) return 'images/demo/1788535215892.webp';
+  if (name.includes('coffee') || name.includes('dormans')) return 'images/demo/1788535505809.webp';
+  return null;
+}
+
+function getEffectiveCatalog() {
+  if (CATALOG && CATALOG.length > 0) return CATALOG;
+  return DEFAULT_RETAIL_PRODUCTS;
+}
+
+function renderPosProductsGrid(filterText) {
+  const grid = document.getElementById('rcProductsGrid');
+  if (!grid) return;
+
+  const list = getEffectiveCatalog();
+  const query = (filterText || '').toLowerCase().trim();
+
+  const filtered = query
+    ? list.filter(p => (p.name && p.name.toLowerCase().includes(query)) || (p.code && p.code.toLowerCase().includes(query)) || (p.category && p.category.toLowerCase().includes(query)))
+    : list;
+
+  // Update stats pills
+  const availEl = document.getElementById('rcAvailCount');
+  const visEl = document.getElementById('rcVisCount');
+  const lowEl = document.getElementById('rcLowStockCount');
+  const shownEl = document.getElementById('rcShownCount');
+  const totalEl = document.getElementById('rcTotalCount');
+
+  if (availEl) availEl.textContent = `${list.length} available`;
+  if (visEl) visEl.textContent = `${filtered.length} visible`;
+  if (shownEl) shownEl.textContent = `${filtered.length}`;
+  if (totalEl) totalEl.textContent = `${list.length}`;
+
+  const lowStockCount = list.filter(p => (p.stock || 0) <= (p.reorder || 5)).length;
+  if (lowEl) lowEl.textContent = `${lowStockCount} low stock`;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; color: var(--text-secondary);">
+        <i class="fa-solid fa-magnifying-glass" style="font-size: 32px; opacity: 0.4; margin-bottom: 12px; display: block;"></i>
+        <div style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">No matching products found</div>
+        <p style="font-size: 13px; margin: 0 0 16px;">Try searching with a different keyword or barcode.</p>
+        <button class="btn-green btn-small" onclick="switchTab('product-create')">+ Add New Product</button>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(p => {
+    const imgUrl = getProductImage(p);
+    const category = escapeHtml(p.category || 'GENERAL');
+    const name = escapeHtml(p.name);
+    const price = Number(p.price || 0).toFixed(2);
+    const stock = p.stock || 0;
+    const safeCode = (p.code || '').replace(/'/g, "\\'");
+
+    return `
+      <div class="rc-prod-card" onclick="posCardClick('${safeCode}')" title="Tap to add ${name}">
+        <div class="rc-prod-img-wrap">
+          ${imgUrl
+            ? `<img src="${imgUrl}" alt="${name}" class="rc-prod-img" loading="lazy">`
+            : `<div style="font-size:36px; color:#2563eb; opacity:0.7;"><i class="fa-solid fa-box"></i></div>`
+          }
+        </div>
+        <div class="rc-prod-info">
+          <div class="rc-prod-category">${category}</div>
+          <div class="rc-prod-name">${name}</div>
+          <div class="rc-prod-footer">
+            <div class="rc-prod-price">KES ${price}</div>
+            <div class="rc-prod-stock">${stock} in stock</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function posCardClick(code) {
+  const list = getEffectiveCatalog();
+  const prod = list.find(p => p.code === code);
+  if (prod) {
+    addToCart(prod, 1);
+    showToast(`Added ${prod.name} to cart`);
+  }
+}
+
+function handlePosSearch(val) {
+  renderPosProductsGrid(val);
+}
+
+function handlePosBarcodeKey(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const val = (e.target.value || '').trim();
+    if (!val) return;
+    const list = getEffectiveCatalog();
+    const match = list.find(p => p.code.toLowerCase() === val.toLowerCase() || p.name.toLowerCase() === val.toLowerCase());
+    if (match) {
+      addToCart(match, 1);
+      e.target.value = '';
+      renderPosProductsGrid('');
+      showToast(`Added ${match.name} to cart`);
+    } else {
+      showToast(`Barcode "${val}" not found`);
+    }
+  }
+}
+
+function handleBranchChange(branch) {
+  const badge = document.getElementById('portalBranchName');
+  if (badge) badge.textContent = branch.charAt(0).toUpperCase() + branch.slice(1);
+  const meta = document.getElementById('rcCurrentBranchMeta');
+  if (meta) meta.textContent = branch;
+  showToast(`Active branch set to ${branch}`);
+}
+
+function toggleSidebarHide() {
+  const sidebar = document.getElementById('portalSidebar');
+  const backdrop = document.getElementById('portalBackdrop');
+  if (!sidebar) return;
+
+  if (window.innerWidth >= 1024) {
+    sidebar.classList.toggle('sidebar-hidden');
+    const isHidden = sidebar.classList.contains('sidebar-hidden');
+    try { localStorage.setItem('dogopos_sidebar_hidden', isHidden ? 'true' : 'false'); } catch(e) {}
+  } else {
+    sidebar.classList.toggle('drawer-open');
+    if (backdrop) backdrop.classList.toggle('visible');
+  }
+}
+
+function toggleSidebarCollapse() {
+  toggleSidebarHide();
+}
 
 /* =====================================================================
    DOGO POS THEME (Light / Dark)
@@ -7251,8 +8166,7 @@ async function afterLogin() {
   const { data: biz } = await sb.from('businesses').select('*').eq('id', activeBusinessId).single();
   business = biz;
 
-  document.getElementById('authScreen').style.display = 'none';
-  document.getElementById('appShell').style.display = 'flex'; document.getElementById('appShell').classList.add('portal-shell-active');
+  setAppLoggedIn(true);
 
   applyRoleVisibility();
   applyBusinessTheme();
@@ -7458,11 +8372,23 @@ function buildQtyOptions(unit) {
   const fractional = unit === 'kg' || unit === 'litre';
   const opts = [0];
   if (fractional) {
-    for (let q = 0.25; q <= 10; q += 0.25) opts.push(+q.toFixed(2));
-    [12, 15, 20, 25, 30, 40, 50, 75, 100].forEach(q => opts.push(q));
+    // Fractional progressive:
+    // 0.25 to 3.0 by 0.25
+    for (let q = 0.25; q <= 3; q += 0.25) opts.push(+q.toFixed(2));
+    // 3.5 to 10 by 0.5
+    for (let q = 3.5; q <= 10; q += 0.5) opts.push(+q.toFixed(1));
+    // Progressive bulk steps
+    [12, 15, 20, 25, 30, 40, 50, 75, 100, 250, 500].forEach(q => opts.push(q));
   } else {
-    for (let q = 1; q <= 20; q++) opts.push(q);
-    [25, 30, 40, 50, 75, 100, 150, 200, 300, 500, 1000].forEach(q => opts.push(q));
+    // Whole unit progressive:
+    // 1 to 10 by 1
+    for (let q = 1; q <= 10; q++) opts.push(q);
+    // 12 to 50 progressive steps
+    [12, 15, 20, 25, 30, 35, 40, 45, 50].forEach(q => opts.push(q));
+    // 60 to 100 by 10s
+    [60, 70, 80, 90, 100].forEach(q => opts.push(q));
+    // Progressive bulk / wholesale jumps
+    [150, 200, 250, 300, 400, 500, 750, 1000, 2000, 5000].forEach(q => opts.push(q));
   }
   return opts;
 }
@@ -7542,6 +8468,8 @@ function renderCart() {
     checkoutBtn.style.display = 'none';
     clearBtn.style.display = 'none';
     document.getElementById('mpesaBtn').style.display = 'none';
+    const countBadge0 = document.getElementById('rcSaleCountBadge');
+    if (countBadge0) countBadge0.textContent = '0 items';
     if (paySelector) paySelector.style.display = 'none';
     if (mpesaPromptBox) mpesaPromptBox.style.display = 'none';
     if (mpesaWaitingBox) mpesaWaitingBox.style.display = 'none';
@@ -7583,6 +8511,12 @@ function renderCart() {
     vatTotal += lineVat;
   });
   document.getElementById('totGrand').textContent = 'KES ' + grand.toFixed(2);
+  const countBadge = document.getElementById('rcSaleCountBadge');
+  const totalItems = cart.reduce((sum, i) => sum + (i.qty || 1), 0);
+  if (countBadge) countBadge.textContent = `${totalItems} item${totalItems === 1 ? '' : 's'}`;
+  const totSub = document.getElementById('totSub');
+  if (totSub) totSub.textContent = 'KES ' + grand.toFixed(2);
+  updateProgressiveMoneyOptions(grand);
   document.getElementById('totVat').textContent = 'KES ' + vatTotal.toFixed(2);
 }
 
@@ -9493,14 +10427,7 @@ function downloadArchiveCSV() {
   );
 }
 
-function downloadSalesLogCSV() {
-  if (salesLog.length === 0) { showToast('No sales to download.'); return; }
-  downloadCSV(
-    `dogo-pos-all-sales-${new Date().toISOString().slice(0,10)}.csv`,
-    ['Date', 'Receipt', 'Item', 'Qty', 'Price', 'VAT Rate', 'Total', 'Payment Method'],
-    salesLog.map(r => [r.date, r.receipt, r.name, r.qty, r.price.toFixed(2), (r.vat*100).toFixed(0)+'%', r.total.toFixed(2), r.paymentMethod || 'cash'])
-  );
-}
+
 
 function downloadCustomersCSV() {
   if (customers.length === 0) { showToast('No customers to download.'); return; }
@@ -10710,8 +11637,7 @@ sb.auth.onAuthStateChange((event, s) => {
   if (event === 'SIGNED_OUT') {
     session = null; profile = null; business = null;
     clearTimeout(inactivityTimer);
-    document.getElementById('appShell').style.display = 'none';
-    document.getElementById('authScreen').style.display = 'block';
+    setAppLoggedIn(false);
   }
 });
 
@@ -11318,34 +12244,54 @@ async function saveNewProductFromPage() {
 }
 
 
-/* =====================================================================
-   COLLAPSIBLE SIDEBAR TOGGLE & RESTORATION
-===================================================================== */
-function toggleSidebarCollapse() {
-  const sidebar = document.getElementById('portalSidebar');
-  const backdrop = document.getElementById('portalBackdrop');
-  if (!sidebar) return;
 
-  if (window.innerWidth >= 1024) {
-    // Desktop: toggle compact icon-rail collapsed state
-    sidebar.classList.toggle('collapsed');
-    const isCollapsed = sidebar.classList.contains('collapsed');
-    try { localStorage.setItem('dogopos_sidebar_collapsed', isCollapsed ? 'true' : 'false'); } catch(e) {}
-  } else {
-    // Mobile: toggle sliding drawer
-    sidebar.classList.toggle('drawer-open');
-    if (backdrop) backdrop.classList.toggle('visible');
-  }
-}
 
-// Restore user preference on init
-(function initSidebarState() {
+// Restore user preference and session state on app init
+(async function initAppState() {
   try {
-    const saved = localStorage.getItem('dogopos_sidebar_collapsed');
-    if (saved === 'true' && window.innerWidth >= 1024) {
-      document.getElementById('portalSidebar')?.classList.add('collapsed');
+    const isHidden = localStorage.getItem('dogopos_sidebar_hidden') === 'true';
+    if (isHidden && window.innerWidth >= 1024) {
+      document.getElementById('portalSidebar')?.classList.add('sidebar-hidden');
     }
   } catch(e) {}
+
+  // Check if session is active or user was logged in
+  let hasValidSession = false;
+  try {
+    const { data: { session: s } } = await sb.auth.getSession();
+    if (s && s.user) {
+      session = s;
+      hasValidSession = true;
+      await afterLogin();
+    }
+  } catch(e) {}
+
+  if (!hasValidSession) {
+    const wasLoggedIn = localStorage.getItem('dogopos_is_logged_in') === 'true';
+    const cached = localStorage.getItem(LOCAL_CACHE_KEY);
+    if (wasLoggedIn && cached) {
+      try {
+        loadFromLocalCache();
+        profile = profile || { full_name: 'Allen Otiende', role: 'admin', business_id: 'default' };
+        setAppLoggedIn(true);
+        applyRoleVisibility();
+        applyBusinessTheme();
+        renderCatalog();
+        switchTab('sell');
+        hasValidSession = true;
+      } catch(e) {}
+    }
+  }
+
+  if (!hasValidSession) {
+    // Default logged-out view: landing page ONLY, appShell hidden
+    setAppLoggedIn(false);
+  }
+
+  // Initialize POS grid
+  setTimeout(function() {
+    renderPosProductsGrid('');
+  }, 100);
 })();
 
 </script>
