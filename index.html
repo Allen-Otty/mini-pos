@@ -4296,7 +4296,7 @@
 
       <!-- Sales Group -->
       <div class="nav-group" id="group-sales">
-        <button class="nav-item-btn" onclick="toggleNavGroup('group-sales') data-tooltip="Sales"">
+        <button class="nav-item-btn" onclick="toggleNavGroup('group-sales')" data-tooltip="Sales">
           <div class="nav-item-left"><i class="fa-solid fa-receipt"></i> <span>Sales</span></div>
           <i class="fa-solid fa-chevron-down nav-chevron"></i>
         </button>
@@ -4315,7 +4315,7 @@
 
       <!-- Restaurant POS Group -->
       <div class="nav-group" id="group-restaurant">
-        <button class="nav-item-btn" onclick="toggleNavGroup('group-restaurant') data-tooltip="Restaurant POS"">
+        <button class="nav-item-btn" onclick="toggleNavGroup('group-restaurant')" data-tooltip="Restaurant POS">
           <div class="nav-item-left"><i class="fa-solid fa-utensils"></i> <span>Restaurant POS</span></div>
           <i class="fa-solid fa-chevron-down nav-chevron"></i>
         </button>
@@ -4337,7 +4337,7 @@
 
       <!-- Business Group -->
       <div class="nav-group" id="group-business">
-        <button class="nav-item-btn" onclick="toggleNavGroup('group-business') data-tooltip="Business"">
+        <button class="nav-item-btn" onclick="toggleNavGroup('group-business')" data-tooltip="Business">
           <div class="nav-item-left"><i class="fa-solid fa-briefcase"></i> <span>Business</span></div>
           <i class="fa-solid fa-chevron-down nav-chevron"></i>
         </button>
@@ -4353,7 +4353,7 @@
 
       <!-- Account Group -->
       <div class="nav-group" id="group-account">
-        <button class="nav-item-btn" onclick="toggleNavGroup('group-account') data-tooltip="Account"">
+        <button class="nav-item-btn" onclick="toggleNavGroup('group-account')" data-tooltip="Account">
           <div class="nav-item-left"><i class="fa-solid fa-id-card"></i> <span>Account</span></div>
           <i class="fa-solid fa-chevron-down nav-chevron"></i>
         </button>
@@ -4370,6 +4370,9 @@
           <button class="nav-sub-btn" data-tab="settings" data-admin-only="1" onclick="switchTab('settings')">
             <i class="fa-solid fa-sliders"></i> <span>Settings</span>
           </button>
+          <a href="admin/index.html" class="nav-sub-btn" data-admin-only="1" style="text-decoration:none;" title="Open Super Admin Platform Console">
+            <i class="fa-solid fa-shield-halved" style="color:#2563eb;"></i> <span>Platform Console</span>
+          </a>
         </div>
       </div>
     </div>
@@ -5586,6 +5589,11 @@
       <select id="platformBusinessSelect"></select>
       <button class="btn-green" onclick="switchToBusiness()">Switch to Selected Business</button>
       <button class="btn-red" onclick="returnToMyBusiness()" style="margin-top:6px;">Return to My Own Business</button>
+      <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--border);">
+        <a href="admin/index.html" class="btn-blue" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none; padding:10px 20px; border-radius:999px; font-weight:700;">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full Platform Admin Console
+        </a>
+      </div>
       <p class="catalog-note" style="color:#888; text-align:left; padding:0; font-size:11px;">
         While switched, every tab (Sell, Catalog, Dashboard, Settings, M-Pesa, eTIMS...) operates on that
         business's real data for testing. Nothing you do here is visible to other businesses' users.
