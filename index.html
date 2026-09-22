@@ -3429,6 +3429,115 @@
   border-color: #facc15;
 }
 
+
+/* =====================================================================
+   COLLAPSIBLE SIDEBAR STYLES (Desktop & Mobile)
+===================================================================== */
+.portal-sidebar {
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.portal-collapse-toggle-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 15px;
+  transition: all 0.15s ease;
+}
+
+.portal-collapse-toggle-btn:hover {
+  background: var(--bg);
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+/* Collapsed state on desktop */
+@media (min-width: 1024px) {
+  .portal-sidebar.collapsed {
+    width: 74px !important;
+    min-width: 74px !important;
+  }
+  
+  .portal-sidebar.collapsed .sidebar-header {
+    padding: 18px 8px;
+    justify-content: center;
+  }
+  
+  .portal-sidebar.collapsed .sidebar-logo span:not(.sidebar-logo-dot),
+  .portal-sidebar.collapsed .sidebar-sub-badge,
+  .portal-sidebar.collapsed .nav-item-btn span,
+  .portal-sidebar.collapsed .nav-chevron,
+  .portal-sidebar.collapsed .nav-sub-list,
+  .portal-sidebar.collapsed .user-text-meta,
+  .portal-sidebar.collapsed .sidebar-logout-icon {
+    display: none !important;
+  }
+  
+  .portal-sidebar.collapsed .nav-item-btn {
+    justify-content: center;
+    padding: 14px 0;
+    position: relative;
+    border-radius: 14px;
+  }
+  
+  .portal-sidebar.collapsed .nav-item-left {
+    gap: 0;
+    justify-content: center;
+  }
+  
+  .portal-sidebar.collapsed .nav-item-left i {
+    font-size: 18px;
+    width: auto;
+    margin: 0;
+  }
+  
+  .portal-sidebar.collapsed .sidebar-user-footer {
+    justify-content: center;
+    padding: 14px 6px;
+  }
+  
+  .portal-sidebar.collapsed .user-profile-info {
+    justify-content: center;
+  }
+  
+  .portal-sidebar.collapsed .user-avatar-circle {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+
+  /* Tooltip on hover when collapsed */
+  .portal-sidebar.collapsed .nav-item-btn:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+  }
+  [data-theme="dark"] .portal-sidebar.collapsed .nav-item-btn:hover::after {
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #facc15;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -4164,28 +4273,28 @@
 
     <div class="sidebar-nav-container">
       <!-- Checkout -->
-      <button class="nav-item-btn active" data-tab="sell" onclick="switchTab('sell')">
+      <button class="nav-item-btn active" data-tab="sell" data-tooltip="Checkout / Till" onclick="switchTab('sell')">
         <div class="nav-item-left"><i class="fa-solid fa-cash-register"></i> <span>Checkout</span></div>
       </button>
 
       <!-- Dashboard -->
-      <button class="nav-item-btn" data-tab="dash" onclick="switchTab('dash')">
+      <button class="nav-item-btn" data-tab="dash" data-tooltip="Dashboard" onclick="switchTab('dash')">
         <div class="nav-item-left"><i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span></div>
       </button>
 
       <!-- Products -->
-      <button class="nav-item-btn" data-tab="catalog" onclick="switchTab('catalog')">
+      <button class="nav-item-btn" data-tab="catalog" data-tooltip="Products" onclick="switchTab('catalog')">
         <div class="nav-item-left"><i class="fa-solid fa-boxes-stacked"></i> <span>Products</span></div>
       </button>
 
       <!-- Reports -->
-      <button class="nav-item-btn" data-tab="reports" onclick="switchTab('reports')">
+      <button class="nav-item-btn" data-tab="reports" data-tooltip="Reports" onclick="switchTab('reports')">
         <div class="nav-item-left"><i class="fa-solid fa-chart-simple"></i> <span>Reports</span></div>
       </button>
 
       <!-- Sales Group -->
       <div class="nav-group" id="group-sales">
-        <button class="nav-item-btn" onclick="toggleNavGroup('group-sales')">
+        <button class="nav-item-btn" onclick="toggleNavGroup('group-sales') data-tooltip="Sales"">
           <div class="nav-item-left"><i class="fa-solid fa-receipt"></i> <span>Sales</span></div>
           <i class="fa-solid fa-chevron-down nav-chevron"></i>
         </button>
@@ -4204,7 +4313,7 @@
 
       <!-- Restaurant POS Group -->
       <div class="nav-group" id="group-restaurant">
-        <button class="nav-item-btn" onclick="toggleNavGroup('group-restaurant')">
+        <button class="nav-item-btn" onclick="toggleNavGroup('group-restaurant') data-tooltip="Restaurant POS"">
           <div class="nav-item-left"><i class="fa-solid fa-utensils"></i> <span>Restaurant POS</span></div>
           <i class="fa-solid fa-chevron-down nav-chevron"></i>
         </button>
@@ -4226,7 +4335,7 @@
 
       <!-- Business Group -->
       <div class="nav-group" id="group-business">
-        <button class="nav-item-btn" onclick="toggleNavGroup('group-business')">
+        <button class="nav-item-btn" onclick="toggleNavGroup('group-business') data-tooltip="Business"">
           <div class="nav-item-left"><i class="fa-solid fa-briefcase"></i> <span>Business</span></div>
           <i class="fa-solid fa-chevron-down nav-chevron"></i>
         </button>
@@ -4242,7 +4351,7 @@
 
       <!-- Account Group -->
       <div class="nav-group" id="group-account">
-        <button class="nav-item-btn" onclick="toggleNavGroup('group-account')">
+        <button class="nav-item-btn" onclick="toggleNavGroup('group-account') data-tooltip="Account"">
           <div class="nav-item-left"><i class="fa-solid fa-id-card"></i> <span>Account</span></div>
           <i class="fa-solid fa-chevron-down nav-chevron"></i>
         </button>
@@ -4282,7 +4391,7 @@
 <div class="portal-main-content">
   <header class="portal-topbar">
     <div class="portal-topbar-left">
-      <button class="portal-mobile-toggle" onclick="togglePortalSidebar()" title="Toggle navigation">
+      <button class="portal-collapse-toggle-btn" onclick="toggleSidebarCollapse()" title="Toggle sidebar (expand/collapse)">
         <i class="fa-solid fa-bars"></i>
       </button>
       <div class="portal-breadcrumbs">
@@ -4293,9 +4402,12 @@
     </div>
     <div class="portal-topbar-right">
       <div class="portal-branch-badge">
-        <i class="fa-solid fa-location-dot" style="color:#16a34a;"></i>
+        <i class="fa-solid fa-location-dot" style="color:#2563eb;"></i>
         <span id="portalBranchName">Luanda</span>
       </div>
+      <button class="portal-circle-btn" onclick="toggleSidebarCollapse()" title="Toggle sidebar menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
       <button class="portal-circle-btn" onclick="toggleTheme()" title="Switch theme">
         <i class="fa-solid fa-moon" id="portalThemeIcon"></i>
       </button>
@@ -4342,14 +4454,14 @@
   </div>
 
   <div class="tabs" id="mainTabs">
-    <button class="tab-btn active" data-tab="sell" onclick="switchTab('sell')">Sell</button>
-    <button class="tab-btn" data-tab="dash" data-admin-only="1" onclick="switchTab('dash')">Dashboard</button>
+    <button class="tab-btn active" data-tab="sell" data-tooltip="Checkout / Till" onclick="switchTab('sell')">Sell</button>
+    <button class="tab-btn" data-tab="dash" data-tooltip="Dashboard" data-admin-only="1" onclick="switchTab('dash')">Dashboard</button>
     <button class="tab-btn" data-tab="menu" data-admin-only="1" data-hotel-only="1" style="display:none;" onclick="switchTab('menu')">Menu &amp; Tables</button>
     <button class="tab-btn" data-tab="log" onclick="switchTab('log')">Sales Log</button>
     <button class="tab-btn" data-tab="customers" onclick="switchTab('customers')">Customers</button>
-    <button class="tab-btn" data-tab="reports" data-admin-only="1" onclick="switchTab('reports')">Reports</button>
+    <button class="tab-btn" data-tab="reports" data-tooltip="Reports" data-admin-only="1" onclick="switchTab('reports')">Reports</button>
     <button class="tab-btn" data-tab="expenses" onclick="switchTab('expenses')">Expenses</button>
-    <button class="tab-btn" data-tab="catalog" data-admin-only="1" onclick="switchTab('catalog')">Catalog</button>
+    <button class="tab-btn" data-tab="catalog" data-tooltip="Products" data-admin-only="1" onclick="switchTab('catalog')">Catalog</button>
     <button class="tab-btn" data-tab="team" data-admin-only="1" onclick="switchTab('team')">Team</button>
     <button class="tab-btn" data-tab="settings" data-admin-only="1" onclick="switchTab('settings')">Settings</button>
   </div>
@@ -8869,6 +8981,37 @@ async function saveNewProductFromPage() {
     renderCatalog();
   }
 }
+
+
+/* =====================================================================
+   COLLAPSIBLE SIDEBAR TOGGLE & RESTORATION
+===================================================================== */
+function toggleSidebarCollapse() {
+  const sidebar = document.getElementById('portalSidebar');
+  const backdrop = document.getElementById('portalBackdrop');
+  if (!sidebar) return;
+
+  if (window.innerWidth >= 1024) {
+    // Desktop: toggle compact icon-rail collapsed state
+    sidebar.classList.toggle('collapsed');
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    try { localStorage.setItem('dogopos_sidebar_collapsed', isCollapsed ? 'true' : 'false'); } catch(e) {}
+  } else {
+    // Mobile: toggle sliding drawer
+    sidebar.classList.toggle('drawer-open');
+    if (backdrop) backdrop.classList.toggle('visible');
+  }
+}
+
+// Restore user preference on init
+(function initSidebarState() {
+  try {
+    const saved = localStorage.getItem('dogopos_sidebar_collapsed');
+    if (saved === 'true' && window.innerWidth >= 1024) {
+      document.getElementById('portalSidebar')?.classList.add('collapsed');
+    }
+  } catch(e) {}
+})();
 
 </script>
 </body>
