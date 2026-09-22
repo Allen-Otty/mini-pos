@@ -4,54 +4,173 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Platform Console</title>
+<title>Dogo POS — Platform Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   * { box-sizing: border-box; }
-  body { margin:0; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#0d1b2a; color:#eee; }
-  header { background:#111827; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #2E75B6;}
-  header h1 { margin:0; font-size:18px; }
-  header button { background:transparent; border:1px solid #888; color:#ccc; border-radius:8px; padding:6px 12px; cursor:pointer; }
-  main { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
+  body {
+    margin: 0;
+    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #07130c;
+    color: #f4f1ea;
+    line-height: 1.5;
+  }
+  header {
+    background: #0b2117;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(163, 230, 53, 0.25);
+  }
+  header h1 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #f4f1ea;
+  }
+  header button {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #f4f1ea;
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-weight: 700;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  header button:hover {
+    border-color: #a3e635;
+    color: #a3e635;
+  }
+  main { max-width: 1040px; margin: 28px auto; padding: 0 16px; }
 
-  #loginBox { max-width:360px; margin:80px auto; background:#fff; color:#111; border-radius:12px; padding:26px; }
-  #loginBox h2 { margin-top:0; text-align:center; }
-  #loginBox input { width:100%; padding:11px; margin:6px 0; border-radius:8px; border:1px solid #ccc; }
-  #loginBox button { width:100%; padding:12px; margin-top:10px; border:none; border-radius:8px; background:#111827; color:#fff; font-weight:bold; cursor:pointer; }
-  #loginError { color:#c0392b; font-size:13px; margin-top:8px; text-align:center; }
+  #loginBox {
+    max-width: 380px;
+    margin: 80px auto;
+    background: #0f2419;
+    color: #f4f1ea;
+    border-radius: 20px;
+    padding: 32px 26px;
+    border: 1px solid rgba(163, 230, 53, 0.2);
+    box-shadow: 0 18px 50px -10px rgba(0,0,0,0.6);
+  }
+  #loginBox h2 { margin-top: 0; text-align: center; font-weight: 800; letter-spacing: -0.02em; }
+  #loginBox input {
+    width: 100%;
+    padding: 12px 14px;
+    margin: 8px 0;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.06);
+    color: #f4f1ea;
+    font-size: 14px;
+    outline: none;
+  }
+  #loginBox input:focus { border-color: #a3e635; }
+  #loginBox button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 14px;
+    border: none;
+    border-radius: 999px;
+    background: #a3e635;
+    color: #052e16;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  #loginBox button:hover { background: #bef264; }
+  #loginError { color: #ef4444; font-size: 13px; font-weight: 600; margin-top: 10px; text-align: center; }
 
-  .stat-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
-  .stat-card { background:#111827; border-radius:10px; padding:16px; text-align:center; }
-  .stat-card .num { font-size:24px; font-weight:bold; color:#4fc3f7; }
-  .stat-card .label { font-size:12px; color:#999; margin-top:4px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: #0f2419;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .stat-card .num { font-size: 28px; font-weight: 900; color: #a3e635; letter-spacing: -0.03em; }
+  .stat-card .label { font-size: 12px; font-weight: 700; color: #94a39b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
 
-  table { width:100%; border-collapse: collapse; margin-top:10px; font-size:13px; background:#111827; border-radius:10px; overflow:hidden;}
-  th, td { padding:9px 10px; border-bottom:1px solid #1f2937; text-align:left; }
-  th { background:#1f2937; }
-  tr:hover { background:#16202e; }
-  .tag { padding:2px 8px; border-radius:10px; font-size:11px; font-weight:bold; }
-  .tag-active { background:#1b4332; color:#8fdc9c; }
-  .tag-suspended { background:#4d1f1f; color:#f5a3a3; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 13px;
+    background: #0f2419;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  th, td { padding: 11px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: left; }
+  th { background: rgba(255, 255, 255, 0.04); font-weight: 800; color: #a3e635; }
+  tr:hover { background: rgba(255, 255, 255, 0.03); }
+  .tag { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+  .tag-active { background: rgba(163, 230, 53, 0.18); color: #a3e635; border: 1px solid rgba(163, 230, 53, 0.3); }
+  .tag-suspended { background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
 
-  .actions button { padding:4px 9px; margin-right:4px; font-size:12px; border:none; border-radius:6px; cursor:pointer; }
-  .btn-suspend { background:#c0392b; color:#fff; }
-  .btn-reactivate { background:#2e9e5b; color:#fff; }
-  .btn-view { background:#2E75B6; color:#fff; }
-  .btn-delete { background:#4d1f1f; color:#f5a3a3; border:1px solid #c0392b !important; }
+  .actions button {
+    padding: 6px 12px;
+    margin-right: 4px;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform .12s;
+  }
+  .actions button:hover { transform: translateY(-1px); }
+  .btn-suspend { background: #dc2626; color: #fff; }
+  .btn-reactivate { background: #16a34a; color: #fff; }
+  .btn-view { background: #0b2117; color: #a3e635; border: 1px solid rgba(163, 230, 53, 0.35) !important; }
+  .btn-delete { background: rgba(220, 38, 38, 0.2); color: #f87171; border: 1px solid #dc2626 !important; }
 
-  .section-title { font-size:16px; font-weight:bold; margin:26px 0 8px; color:#4fc3f7; }
-  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#111827; border:1px solid #2E75B6; padding:10px 18px; border-radius:20px; font-size:13px; opacity:0; transition:opacity .3s; z-index:999;}
-  .toast.show { opacity:1; }
+  .section-title { font-size: 17px; font-weight: 800; margin: 32px 0 10px; color: #a3e635; letter-spacing: -0.02em; }
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #0b2117; border: 1px solid rgba(163, 230, 53, 0.4); color: #a3e635;
+    padding: 11px 22px; border-radius: 999px; font-size: 13px; font-weight: 700;
+    opacity: 0; transition: opacity .3s; z-index: 999;
+  }
+  .toast.show { opacity: 1; }
 
-  #detailModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:1000; align-items:center; justify-content:center; padding:16px; }
-  #detailModal.show { display:flex; }
-  .detail-box { background:#111827; border-radius:12px; padding:20px; max-width:600px; width:100%; max-height:80vh; overflow-y:auto; }
-  .detail-box h3 { margin-top:0; }
-  .close-btn { background:#333; color:#fff; border:none; border-radius:8px; padding:8px 16px; cursor:pointer; margin-top:12px; }
+  #detailModal {
+    display: none; position: fixed; inset: 0; background: rgba(7, 19, 12, 0.75);
+    backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 16px;
+  }
+  #detailModal.show { display: flex; }
+  .detail-box {
+    background: #0f2419; border: 1px solid rgba(163, 230, 53, 0.25);
+    border-radius: 20px; padding: 24px; max-width: 620px; width: 100%;
+    max-height: 80vh; overflow-y: auto; box-shadow: 0 18px 50px -10px rgba(0,0,0,0.7);
+  }
+  .detail-box h3 { margin-top: 0; font-weight: 800; color: #a3e635; }
+  .close-btn {
+    background: #0b2117; color: #f4f1ea; border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px; padding: 9px 20px; font-weight: 700; cursor: pointer; margin-top: 14px;
+  }
+  .close-btn:hover { border-color: #a3e635; color: #a3e635; }
 
-  .add-admin-row { display:flex; gap:8px; margin-top:8px; }
-  .add-admin-row input { flex:1; padding:9px; border-radius:8px; border:1px solid #333; background:#0d1b2a; color:#fff; }
-  .add-admin-row button { padding:9px 14px; border:none; border-radius:8px; background:#2e9e5b; color:#fff; cursor:pointer; }
+  .add-admin-row { display: flex; gap: 8px; margin-top: 10px; }
+  .add-admin-row input {
+    flex: 1; padding: 11px 14px; border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.06); color: #fff; font-size: 13.5px;
+  }
+  .add-admin-row button {
+    padding: 11px 22px; border: none; border-radius: 999px;
+    background: #a3e635; color: #052e16; font-weight: 800; cursor: pointer;
+  }
+  .add-admin-row button:hover { background: #bef264; }
 </style>
 </head>
 <body>

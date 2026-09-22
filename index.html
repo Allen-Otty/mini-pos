@@ -6,7 +6,12 @@
   // the wrong theme on load. Must stay this early in <head>.
   (function() {
     var t = localStorage.getItem('dogopos_theme');
-    if (t === 'paper') document.documentElement.setAttribute('data-theme', 'paper');
+    if (t === 'dark' || t === 'neon') document.documentElement.setAttribute('data-theme', 'dark');
+    else if (t === 'light' || t === 'paper') document.documentElement.setAttribute('data-theme', 'light');
+    else {
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+    }
   })();
 </script>
 <meta charset="UTF-8">
@@ -14,183 +19,1529 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Dogo POS">
-<meta name="theme-color" content="#020024">
+<meta name="theme-color" content="#0b2117">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<title>Dogo POS</title>
+<title>Dogo POS — Modern POS &amp; Restaurant Platform</title>
+
+<!-- Fonts: Instrument Sans from Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&display=swap" rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <style>
   /* =====================================================================
-     THEME TOKENS
-     Two themes: default (Neon Dusk, refined) and [data-theme="paper"]
-     (Till Paper). Everything themeable references these variables instead
-     of a literal color, so the whole app switches consistently from one
-     toggle instead of needing per-element overrides.
+     POSFITI DESIGN SYSTEM TOKENS
+     Colors & typography inspired directly by posfiti.com:
+     - Signature Deep Forest Green: #0b2117 / #07130c
+     - Vibrant Electric Lime: #a3e635 (hover: #bef264, text: #052e16)
+     - Clean warm ivory background: #f4f1ea / #fafbf8 (Light)
+     - High-contrast deep emerald canvas: #07130c / #0f2419 (Dark)
+     - Instrument Sans typography with tight tracking and bold display weights
+     - Pill-shaped buttons and navigation bars (rounded-full)
   ===================================================================== */
-  :root {
-    --bg: #0A0E27;
-    --surface: #121A33;
-    --surface-text: #F2F5FA;
-    --text: #F2F5FA;
-    --text-secondary: #7A8AA8;
-    --accent: #00d4ff;
-    --accent-text: #04283A;
-    --accent-minus: rgba(255,255,255,.10);
-    --success: #306c5f;
-    --danger: #a5333f;
-    --border: rgba(255,255,255,.10);
-    --input-bg: rgba(255,255,255,.06);
-    --input-border: rgba(255,255,255,.18);
-    --header-bg: #0A0E27;
-    --tab-inactive-bg: var(--surface);
+  :root, [data-theme="light"] {
+    --bg: #f4f1ea;
+    --bg-alt: #eae5da;
+    --surface: #ffffff;
+    --surface-alt: #fafbf8;
+    --surface-text: #0b2117;
+    --text: #0b2117;
+    --text-secondary: #526057;
+    --text-muted: #788a80;
+    --brand: #0b2117;
+    --brand-dark: #05180f;
+    --brand-light: #133827;
+    --accent: #a3e635;
+    --accent-hover: #bef264;
+    --accent-text: #052e16;
+    --accent-minus: rgba(163, 230, 53, 0.15);
+    --accent-pill: rgba(163, 230, 53, 0.20);
+    --accent-glow: rgba(163, 230, 53, 0.35);
+    --border: rgba(11, 33, 23, 0.10);
+    --border-strong: rgba(11, 33, 23, 0.20);
+    --input-bg: #ffffff;
+    --input-border: rgba(11, 33, 23, 0.16);
+    --header-bg: rgba(255, 255, 255, 0.82);
+    --nav-bg: rgba(255, 255, 255, 0.88);
+    --tab-inactive-bg: rgba(11, 33, 23, 0.05);
+    --btn-radius: 999px;
+    --card-radius: 20px;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #d97706;
+    --shadow-sm: 0 2px 8px rgba(11, 33, 23, 0.05);
+    --shadow-md: 0 10px 30px rgba(11, 33, 23, 0.08);
+    --shadow-float: 0 18px 50px -10px rgba(15, 23, 42, 0.14);
+  }
+
+  [data-theme="dark"] {
+    --bg: #07130c;
+    --bg-alt: #0b1c13;
+    --surface: #0f2419;
+    --surface-alt: #132b1f;
+    --surface-text: #f4f1ea;
+    --text: #f4f1ea;
+    --text-secondary: #94a39b;
+    --text-muted: #6b7c73;
+    --brand: #0b2117;
+    --brand-dark: #05180f;
+    --brand-light: #164230;
+    --accent: #a3e635;
+    --accent-hover: #bef264;
+    --accent-text: #052e16;
+    --accent-minus: rgba(163, 230, 53, 0.12);
+    --accent-pill: rgba(163, 230, 53, 0.15);
+    --accent-glow: rgba(163, 230, 53, 0.25);
+    --border: rgba(255, 255, 255, 0.10);
+    --border-strong: rgba(255, 255, 255, 0.20);
+    --input-bg: rgba(255, 255, 255, 0.06);
+    --input-border: rgba(255, 255, 255, 0.16);
+    --header-bg: rgba(11, 28, 19, 0.85);
+    --nav-bg: rgba(15, 36, 25, 0.88);
+    --tab-inactive-bg: rgba(255, 255, 255, 0.06);
+    --btn-radius: 999px;
+    --card-radius: 20px;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.5);
+    --shadow-float: 0 18px 50px -10px rgba(0, 0, 0, 0.65);
+  }
+
+  /* Compatibility alias for existing [data-theme="paper"] */
+  [data-theme="paper"] {
+    --bg: #f4f1ea;
+    --surface: #ffffff;
+    --surface-text: #0b2117;
+    --text: #0b2117;
+    --text-secondary: #526057;
+    --accent: #a3e635;
+    --accent-text: #052e16;
+    --accent-minus: rgba(163, 230, 53, 0.15);
+    --border: rgba(11, 33, 23, 0.10);
+    --input-bg: #ffffff;
+    --input-border: rgba(11, 33, 23, 0.16);
+    --header-bg: rgba(255, 255, 255, 0.85);
     --btn-radius: 999px;
     --btn-border: none;
-    --card-radius: 14px;
-    --brand: #020024; --accent-purple: #00d4ff; --accent-green: #306c5f;
-  }
-  [data-theme="paper"] {
-    --bg: #EFE9DA;
-    --surface: #F7F3EA;
-    --surface-text: #221C10;
-    --text: #221C10;
-    --text-secondary: #8A8272;
-    --accent: #E0972B;
-    --accent-text: #221C10;
-    --accent-minus: #ffffff;
-    --success: #2e7d4f;
-    --danger: #a5333f;
-    --border: #E5DDC8;
-    --input-bg: #ffffff;
-    --input-border: #D8CFB8;
-    --header-bg: #EFE9DA;
-    --tab-inactive-bg: var(--surface);
-    --btn-radius: 14px;
-    --btn-border: 1.5px solid #221C10;
-    --card-radius: 14px;
+    --card-radius: 20px;
   }
 
-  :root { --brand: #020024; --accent-purple: #00d4ff; --accent-green: #306c5f; }
   * { box-sizing: border-box; }
+  html {
+    scroll-behavior: smooth;
+    font-size: 15px;
+    background: var(--bg);
+  }
   body {
-    margin: 0; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    background: var(--bg); color: var(--text); min-height: 100vh; transition: background .2s, color .2s;
+    margin: 0;
+    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background .2s, color .2s;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
-  header { background: var(--header-bg); padding: 14px 16px; text-align: center; position: relative; border-bottom: 1px solid var(--border); }
-  header h1 { margin: 4px 0 2px; font-size: 20px; color: var(--surface-text); }
-  header p { margin: 0; font-size: 12px; color: var(--text-secondary); }
 
-  .theme-toggle {
-    position: absolute; top: 10px; right: 12px; background: var(--accent-minus); border: none;
-    border-radius: 999px; width: 40px; height: 40px; color: var(--surface-text); font-size: 16px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .theme-toggle-auth {
-    position: absolute; top: 10px; right: 16px; background: var(--accent-minus); border: none;
-    border-radius: 999px; padding: 9px 14px; color: var(--surface-text); font-size: 12px; cursor: pointer; font-weight: bold;
-  }
-  .theme-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
-  .theme-row .trow-label { font-weight: bold; }
-  .theme-switch-pill { display: flex; border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
-  .theme-switch-pill button {
-    padding: 9px 16px; border: none; background: var(--surface); color: var(--surface-text);
-    font-size: 12px; font-weight: bold; cursor: pointer; width: auto; margin: 0; border-radius: 0;
-  }
-  .theme-switch-pill button.active { background: var(--accent); color: var(--accent-text); }
+  /* Utility classes */
+  .text-lime { color: #15803d; }
+  [data-theme="dark"] .text-lime { color: var(--accent); }
+  .font-black { font-weight: 800; }
+  .font-bold { font-weight: 700; }
+  .tabular { font-variant-numeric: tabular-nums; }
 
-  /* ---------------- Auth screens ---------------- */
-  #authScreen {
-    max-width: 380px; margin: 30px auto; padding: 0 16px; position: relative;
+  /* =====================================================================
+     FLOATING PILL NAVBAR (Posfiti Style)
+  ===================================================================== */
+  .posfiti-nav {
+    position: fixed;
+    top: 14px;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    padding: 0 16px;
+    pointer-events: none;
+  }
+  .posfiti-nav-inner {
+    pointer-events: auto;
+    max-width: 1140px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px 8px 18px;
+    border-radius: 999px;
+    background: var(--nav-bg);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: var(--shadow-float);
+  }
+  .posfiti-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--text);
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.02em;
+  }
+  .posfiti-brand-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: var(--accent-text);
+    display: grid;
+    place-items: center;
+    font-size: 15px;
+    box-shadow: 0 2px 8px var(--accent-glow);
+  }
+  .posfiti-brand-badge {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(163, 230, 53, 0.2);
+    color: #15803d;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  [data-theme="dark"] .posfiti-brand-badge { color: var(--accent); }
+
+  .posfiti-links {
+    display: none;
+    align-items: center;
+    gap: 24px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  @media (min-width: 860px) {
+    .posfiti-links { display: flex; }
+  }
+  .posfiti-links a {
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: 600;
+    transition: color .15s;
+  }
+  .posfiti-links a:hover { color: var(--text); }
+
+  .posfiti-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .nav-theme-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    width: 36px;
+    height: 36px;
+    color: var(--text);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    transition: transform .15s, background .15s;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+  }
+  .nav-theme-btn:hover { transform: scale(1.05); }
+
+  .nav-btn-signin {
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .15s;
+    box-shadow: none;
+    margin: 0;
+  }
+  .nav-btn-signin:hover { border-color: var(--text); }
+
+  .nav-btn-start {
+    padding: 8px 20px;
+    border-radius: 999px;
+    border: none;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all .15s;
+    box-shadow: 0 2px 10px var(--accent-glow);
+    margin: 0;
+  }
+  .nav-btn-start:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+  }
+
+  .nav-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 15px;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+  }
+  @media (min-width: 860px) {
+    .nav-menu-toggle { display: none; }
+  }
+
+  /* Mobile Dropdown */
+  .posfiti-mobile-menu {
+    display: none;
+    position: fixed;
+    top: 76px;
+    left: 16px;
+    right: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 20px;
+    z-index: 998;
+    box-shadow: var(--shadow-float);
+    backdrop-filter: blur(20px);
+  }
+  .posfiti-mobile-menu.show { display: block; }
+  .posfiti-mobile-menu a {
+    display: block;
+    padding: 10px 14px;
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+  .posfiti-mobile-menu a:hover { background: var(--tab-inactive-bg); }
+  .posfiti-mobile-menu .m-actions {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    display: grid;
+    gap: 8px;
+  }
+
+  /* =====================================================================
+     HERO SECTION (Posfiti Style)
+  ===================================================================== */
+  .posfiti-hero {
+    padding: 120px 20px 48px;
+    text-align: center;
+    max-width: 1080px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .hero-pill-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: rgba(163, 230, 53, 0.18);
+    border: 1px solid rgba(163, 230, 53, 0.45);
+    color: #14532d;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 22px;
+  }
+  [data-theme="dark"] .hero-pill-badge {
+    color: var(--accent);
+    background: rgba(163, 230, 53, 0.10);
+    border-color: rgba(163, 230, 53, 0.25);
+  }
+  .ping-dot {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #16a34a;
+  }
+  [data-theme="dark"] .ping-dot { background: var(--accent); }
+  .ping-dot::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: inherit;
+    opacity: 0.4;
+    animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  @keyframes ping { 75%, 100% { transform: scale(2.2); opacity: 0; } }
+
+  .hero-heading {
+    font-size: clamp(2.4rem, 5.8vw, 4.4rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    margin: 0 0 20px;
+    color: var(--text);
+  }
+  .hero-subheading {
+    font-size: clamp(15px, 2vw, 18px);
+    color: var(--text-secondary);
+    max-width: 680px;
+    margin: 0 auto 32px;
+    line-height: 1.6;
+  }
+  .hero-ctas {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .hero-btn-primary {
+    height: 54px;
+    padding: 0 32px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: 15px;
+    font-weight: 800;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all .18s;
+    box-shadow: 0 6px 20px var(--accent-glow);
+    margin: 0;
+  }
+  .hero-btn-primary:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+  }
+  .hero-btn-secondary {
+    height: 54px;
+    padding: 0 30px;
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 800;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid var(--border-strong);
+    cursor: pointer;
+    transition: all .18s;
+    box-shadow: var(--shadow-sm);
+    margin: 0;
+  }
+  .hero-btn-secondary:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .hero-perks {
+    display: flex;
+    justify-content: center;
+    gap: 22px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+  .hero-perk {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hero-perk i { color: #16a34a; }
+  [data-theme="dark"] .hero-perk i { color: var(--accent); }
+
+  /* =====================================================================
+     INTERACTIVE LIVE DEMO WIDGET (Posfiti Feature)
+  ===================================================================== */
+  .demo-widget-container {
+    max-width: 1040px;
+    margin: 40px auto 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: var(--shadow-float);
+    text-align: left;
+  }
+  .demo-widget-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-alt);
+  }
+  .demo-widget-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .demo-widget-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: var(--accent-text);
+    display: grid;
+    place-items: center;
+    font-size: 17px;
+  }
+  .demo-badge-pill {
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(163, 230, 53, 0.2);
+    color: #14532d;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  [data-theme="dark"] .demo-badge-pill { color: var(--accent); }
+
+  .demo-widget-body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 22px;
+  }
+  @media (min-width: 820px) {
+    .demo-widget-body { grid-template-columns: 1.15fr 0.85fr; }
+  }
+
+  .demo-search-input {
+    width: 100%;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 12px;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .demo-search-input:focus { border-color: var(--accent); }
+
+  .demo-prods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .demo-prod-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .demo-prod-item:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+  .demo-prod-icon {
+    font-size: 26px;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  .demo-prod-name {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .demo-prod-price {
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .demo-prod-add {
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #15803d;
+  }
+  [data-theme="dark"] .demo-prod-add { color: var(--accent); }
+
+  /* Demo Cart Panel */
+  .demo-cart-box {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .demo-cart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .demo-cart-items-list {
+    min-height: 120px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .demo-cart-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .demo-cart-item-row:last-child { border-bottom: none; }
+  .demo-qty-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 800;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+  }
+  .demo-qty-btn:hover { background: var(--accent-minus); }
+  .demo-checkout-btn {
+    width: 100%;
+    height: 48px;
+    border-radius: 999px;
+    border: none;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 14px;
+    transition: all .15s;
+    box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  .demo-checkout-btn:hover:not(:disabled) {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+  }
+  .demo-checkout-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .demo-success-alert {
+    display: none;
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(163, 230, 53, 0.25);
+    color: #14532d;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+  [data-theme="dark"] .demo-success-alert { color: #bef264; }
+
+  /* =====================================================================
+     INTEGRATIONS SECTION (Deep Forest Green Posfiti Banner)
+  ===================================================================== */
+  .posfiti-section {
+    padding: 70px 20px;
+    max-width: 1140px;
+    margin: 0 auto;
+  }
+  .integrations-card-forest {
+    background: #0b2117;
+    color: #ffffff;
+    border-radius: 28px;
+    padding: 40px 24px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(163, 230, 53, 0.25);
+    box-shadow: var(--shadow-float);
+  }
+  @media (min-width: 640px) {
+    .integrations-card-forest { padding: 48px 40px; }
+  }
+  .integrations-header {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+  @media (min-width: 768px) {
+    .integrations-header {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+  }
+  .integrations-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 14px;
+    border-radius: 999px;
+    background: rgba(163, 230, 53, 0.18);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 12px;
+  }
+  .integrations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+  }
+  .integration-item {
+    background: #ffffff;
+    color: #0b2117;
+    border-radius: 18px;
+    padding: 18px 14px;
+    text-align: center;
+    transition: transform .15s;
+  }
+  .integration-item:hover { transform: translateY(-3px); }
+  .integration-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+  .integration-name {
+    font-weight: 800;
+    font-size: 15px;
+    margin-bottom: 2px;
+  }
+  .integration-desc {
+    font-size: 11.5px;
+    color: #555;
+  }
+
+  /* =====================================================================
+     CAPABILITIES / FEATURES GRID (8 Cards)
+  ===================================================================== */
+  .section-eyebrow {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: #15803d;
+    margin-bottom: 10px;
+  }
+  [data-theme="dark"] .section-eyebrow { color: var(--accent); }
+  .section-title {
+    font-size: clamp(1.8rem, 3.8vw, 2.6rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    margin: 0 0 12px;
+    color: var(--text);
+  }
+  .section-sub {
+    font-size: 15px;
+    color: var(--text-secondary);
+    max-width: 620px;
+    margin-bottom: 32px;
+  }
+
+  .capabilities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .cap-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px 20px;
+    transition: all .18s;
+  }
+  .cap-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-sm);
+  }
+  .cap-icon-wrap {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+  .cap-icon-wrap.lime {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+  .cap-icon-wrap.forest {
+    background: #0b2117;
+    color: var(--accent);
+  }
+  .cap-title {
+    font-weight: 800;
+    font-size: 16px;
+    margin: 0 0 6px;
+    color: var(--text);
+  }
+  .cap-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.55;
+  }
+
+  /* Restaurant POS Banner */
+  .restaurant-pos-banner {
+    margin-top: 24px;
+    background: #0b2117;
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 22px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: flex-start;
+    justify-content: space-between;
+    border: 1px solid rgba(163, 230, 53, 0.25);
+  }
+  @media (min-width: 680px) {
+    .restaurant-pos-banner {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  /* =====================================================================
+     SECTORS & INDUSTRIES
+  ===================================================================== */
+  .sectors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+  }
+  .sector-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+    transition: all .15s;
+  }
+  .sector-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+  .sector-badge {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #15803d;
+    margin-bottom: 6px;
+  }
+  [data-theme="dark"] .sector-badge { color: var(--accent); }
+  .sector-title {
+    font-size: 18px;
+    font-weight: 800;
+    margin: 0 0 6px;
+    color: var(--text);
+  }
+  .sector-desc {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* =====================================================================
+     PRICING SECTION (Monthly / Yearly Switch)
+  ===================================================================== */
+  .pricing-toggle-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 36px;
+  }
+  .pricing-switch-pill {
+    display: inline-flex;
+    border-radius: 999px;
+    padding: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
+  }
+  .pricing-switch-pill button {
+    border: none;
+    background: transparent;
+    padding: 8px 20px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all .15s;
+    width: auto;
+    margin: 0;
+    box-shadow: none;
+  }
+  .pricing-switch-pill button.active {
+    background: #0b2117;
+    color: #ffffff;
+  }
+  [data-theme="dark"] .pricing-switch-pill button.active {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    max-width: 1040px;
+    margin: 0 auto;
+  }
+  .pricing-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 32px 24px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform .18s, box-shadow .18s;
+  }
+  .pricing-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-float);
+  }
+  .pricing-card.featured {
+    border: 2px solid var(--accent);
+    box-shadow: var(--shadow-float);
+  }
+  .pricing-badge {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 12px;
+    border-radius: 999px;
+  }
+  .pricing-plan-name {
+    font-size: 20px;
+    font-weight: 800;
+    margin: 0 0 4px;
+  }
+  .pricing-eyebrow {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+  .pricing-price-wrap {
+    margin: 20px 0;
+  }
+  .pricing-amount {
+    font-size: 38px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    color: var(--text);
+  }
+  .pricing-period {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+  .pricing-features {
+    list-style: none;
+    margin: 0 0 28px;
+    padding: 0;
+  }
+  .pricing-features li {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pricing-features li i { color: #16a34a; font-size: 14px; }
+  [data-theme="dark"] .pricing-features li i { color: var(--accent); }
+
+  /* =====================================================================
+     FAQS ACCORDION
+  ===================================================================== */
+  .faqs-container {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .faq-accordion-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: border-color .15s;
+  }
+  .faq-accordion-item:hover { border-color: var(--border-strong); }
+  .faq-btn {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 20px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    text-align: left;
+    margin: 0;
+    box-shadow: none;
+  }
+  .faq-content {
+    display: none;
+    padding: 0 20px 18px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .faq-accordion-item.open .faq-content { display: block; }
+  .faq-accordion-item.open .faq-icon { transform: rotate(180deg); }
+  .faq-icon { transition: transform .2s ease; }
+
+  /* =====================================================================
+     AUTH CARD & MODAL (Embedded and Modal Overlay)
+  ===================================================================== */
+  .auth-section-wrap {
+    padding: 60px 16px;
+    max-width: 520px;
+    margin: 0 auto;
   }
   .auth-card {
-    background: var(--surface); color: var(--surface-text); border-radius: 18px; padding: 28px 22px;
-    box-shadow: 0 10px 40px rgba(0,0,0,.4); border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--surface-text);
+    border-radius: 24px;
+    padding: 32px 26px;
+    box-shadow: var(--shadow-float);
+    border: 1px solid var(--border);
   }
-  .auth-card h2 { margin: 0 0 4px; text-align: center; }
-  .auth-card .sub { text-align: center; color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; }
-  .auth-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+  .auth-card h2 {
+    margin: 0 0 4px;
+    text-align: center;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+  .auth-card .sub {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: 22px;
+  }
+  .auth-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: var(--surface-alt);
+    padding: 4px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+  }
   .auth-tab {
-    flex: 1; padding: 13px; border-radius: var(--btn-radius); border: none; font-weight: bold;
-    background: var(--input-bg); color: var(--surface-text); cursor: pointer; font-size: 13px;
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: none;
+    font-weight: 800;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all .15s;
+    width: auto;
+    margin: 0;
+    box-shadow: none;
   }
-  .auth-tab.active { background: var(--accent); color: var(--accent-text); }
+  .auth-tab.active {
+    background: #0b2117;
+    color: #ffffff;
+  }
+  [data-theme="dark"] .auth-tab.active {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
   .auth-panel { display: none; }
   .auth-panel.active { display: block; }
   .auth-card input, .auth-card select {
-    width: 100%; padding: 14px; margin: 6px 0; border-radius: 8px;
-    background: var(--input-bg); color: var(--surface-text); outline: none; border: 1px solid var(--input-border); font-size: 14px;
+    width: 100%;
+    padding: 13px 15px;
+    margin: 6px 0;
+    border-radius: 12px;
+    background: var(--input-bg);
+    color: var(--surface-text);
+    outline: none;
+    border: 1px solid var(--input-border);
+    font-size: 14px;
+    transition: border-color .15s;
   }
-  .auth-card label { font-size: 12px; font-weight: bold; color: var(--text-secondary); margin-top: 8px; display: block; }
-  .method-toggle { display: flex; gap: 8px; margin: 6px 0 10px; }
+  .auth-card input:focus, .auth-card select:focus {
+    border-color: var(--accent);
+  }
+  .auth-card label {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text-secondary);
+    margin-top: 10px;
+    display: block;
+  }
+  .method-toggle {
+    display: flex;
+    gap: 8px;
+    margin: 6px 0 10px;
+  }
   .method-toggle button {
-    flex: 1; padding: 10px; border-radius: var(--btn-radius); border: 1px solid var(--input-border); background: var(--input-bg);
-    color: var(--surface-text); font-size: 12px; cursor: pointer;
+    flex: 1;
+    padding: 9px;
+    border-radius: 999px;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--surface-text);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    width: auto;
+    margin: 0;
+    box-shadow: none;
   }
-  .method-toggle button.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .method-toggle button.active {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+  }
   .auth-btn {
-    width: 100%; padding: 17px; margin-top: 12px; border: none; border-radius: var(--btn-radius);
-    background: var(--accent); color: var(--accent-text); font-weight: bold;
-    font-size: 16px; cursor: pointer;
+    width: 100%;
+    padding: 16px;
+    margin-top: 14px;
+    border: none;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all .15s;
+    box-shadow: 0 4px 14px var(--accent-glow);
   }
-  .auth-link { text-align: center; font-size: 12px; margin-top: 14px; color: var(--text-secondary); }
-  .auth-error { background: #fde8e8; color: #a33; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
-  .auth-info { background: #e8f4fd; color: #020024; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
+  .auth-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+  }
+  .auth-link {
+    text-align: center;
+    font-size: 12.5px;
+    margin-top: 16px;
+    color: var(--text-secondary);
+  }
+  .auth-error {
+    background: rgba(220, 38, 38, 0.12);
+    color: #dc2626;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 12px;
+    display: none;
+  }
+  .auth-info {
+    background: rgba(163, 230, 53, 0.2);
+    color: #14532d;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 12px;
+    display: none;
+  }
+  [data-theme="dark"] .auth-info { color: #bef264; }
   .pw-wrap { position: relative; }
   .pw-wrap input { padding-right: 42px !important; width: 100%; box-sizing: border-box; }
   .pw-toggle {
-    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-    background: none; border: none; color: var(--surface-text); font-size: 16px; cursor: pointer; padding: 4px; line-height: 1;
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 15px;
+    cursor: pointer;
+    padding: 6px;
+    line-height: 1;
+    box-shadow: none;
+    width: auto;
+    margin: 0;
   }
-  .pw-rules { list-style: none; padding: 0; margin: 4px 0 10px; font-size: 12px; }
+  .pw-rules { list-style: none; padding: 0; margin: 6px 0 10px; font-size: 12px; }
   .pw-rules li { color: var(--text-secondary); margin: 2px 0; padding-left: 18px; position: relative; }
   .pw-rules li::before { content: "○"; position: absolute; left: 0; }
-  .pw-rules li.ok { color: #2e9e5b; }
+  .pw-rules li.ok { color: #16a34a; font-weight: 700; }
   .pw-rules li.ok::before { content: "✓"; }
-  .otp-input { text-align: center; letter-spacing: 8px; font-size: 20px !important; font-weight: bold; }
 
-  /* ---------------- App shell (shown after login) ---------------- */
-  #appShell { display: none; }
-  .tabs { display: flex; flex-wrap: wrap; max-width: 480px; margin: 12px auto 0; padding: 0 16px; gap: 6px; }
-  .tab-btn {
-    flex: 1 1 30%; padding: 12px 4px; border-radius: var(--btn-radius); border: 1px solid var(--border); font-weight: bold;
-    font-size: 12px; background: var(--tab-inactive-bg); color: var(--surface-text); cursor: pointer;
+  /* Auth Modal Overlay */
+  .auth-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(7, 19, 12, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    overflow-y: auto;
   }
-  .tab-btn.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
-  .panel { max-width: 480px; margin: 16px auto; padding: 0 16px; display: none; }
-  .panel.active { display: block; }
+  .auth-modal-overlay.show { display: flex; }
+  .auth-modal-content {
+    width: 100%;
+    max-width: 440px;
+    position: relative;
+    animation: modalPop .2s ease-out;
+  }
+  @keyframes modalPop {
+    from { opacity: 0; transform: scale(0.96) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .auth-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    z-index: 2;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+  }
 
-  .scan-status { background: var(--surface); color: var(--surface-text); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 12px; text-align: center; margin-bottom: 12px; }
-  .scan-status .code { font-size: 20px; font-weight: bold; }
-  .scan-status .hint { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
-  #reader { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+  /* =====================================================================
+     LANDING FOOTER
+  ===================================================================== */
+  .landing-footer {
+    border-top: 1px solid var(--border);
+    padding: 50px 20px 80px;
+    background: var(--surface);
+  }
+  .landing-footer-inner {
+    max-width: 1140px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  @media (min-width: 768px) {
+    .landing-footer-inner {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+
+  /* =====================================================================
+     APP SHELL (SHOWN AFTER LOGIN)
+  ===================================================================== */
+  #appShell { display: none; }
+
+  /* App Header Pill */
+  .app-header-posfiti {
+    background: var(--header-bg);
+    padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+  .app-header-container {
+    max-width: 1040px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .app-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .app-header-logo-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: var(--accent-text);
+    display: grid;
+    place-items: center;
+    font-size: 17px;
+    flex-shrink: 0;
+  }
+  .app-header-titles {
+    min-width: 0;
+  }
+  .app-header-titles h1 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .app-header-titles p {
+    margin: 0;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .app-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .app-user-pill {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+  }
+  .app-logout-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    width: auto;
+    margin: 0;
+    box-shadow: none;
+    transition: all .15s;
+  }
+  .app-logout-btn:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+
+  /* In-App Tabs */
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 780px;
+    margin: 16px auto 0;
+    padding: 0 16px;
+    gap: 6px;
+  }
+  .tab-btn {
+    flex: 1 1 20%;
+    padding: 10px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-weight: 800;
+    font-size: 12px;
+    background: var(--tab-inactive-bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all .15s;
+    box-shadow: none;
+    margin: 0;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+    box-shadow: 0 2px 10px var(--accent-glow);
+  }
+  .panel {
+    max-width: 780px;
+    margin: 16px auto 40px;
+    padding: 0 16px;
+    display: none;
+  }
+  .panel.active { display: block; animation: panelFadeIn .2s ease; }
+  @keyframes panelFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Scan & In-app components */
+  .scan-status {
+    background: var(--surface);
+    color: var(--surface-text);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 14px;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .scan-status .code { font-size: 18px; font-weight: 800; }
+  .scan-status .hint { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+  #reader { width: 100%; border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
 
   input, select, button { font-family: inherit; }
   .panel input[type=text], .panel input[type=number], .panel input[type=file], .panel select {
-    width: 100%; padding: 13px; margin: 5px 0; border-radius: 8px; border: 1px solid var(--input-border);
-    background: var(--input-bg); color: var(--text); outline: none;
+    width: 100%;
+    padding: 12px 14px;
+    margin: 5px 0;
+    border-radius: 12px;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--text);
+    outline: none;
+    font-size: 14px;
   }
+  .panel input:focus, .panel select:focus {
+    border-color: var(--accent);
+  }
+
+  /* Buttons */
   .panel button {
-    width: 100%; padding: 17px; margin: 6px 0; border-radius: var(--btn-radius); border: none;
-    font-weight: bold; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,.28); font-size: 15px;
-    transition: transform .12s ease, box-shadow .12s ease; letter-spacing: .2px;
+    width: 100%;
+    padding: 15px;
+    margin: 6px 0;
+    border-radius: 999px;
+    border: none;
+    font-weight: 800;
+    cursor: pointer;
+    font-size: 14.5px;
+    transition: transform .12s ease, box-shadow .12s ease;
+    letter-spacing: .2px;
   }
-  [data-theme="paper"] .panel button { box-shadow: none; }
-  .panel button:active { transform: scale(.97); box-shadow: 0 1px 4px rgba(0,0,0,.28); }
-  .btn-yellow { background: linear-gradient(180deg, #FFD54A, #FFC107); color: #020024; }
-  .btn-blue { background: linear-gradient(180deg, #17b3e6, #0099c2); color: #fff; }
-  .btn-green { background: linear-gradient(180deg, #3d8975, #306c5f); color: #fff; }
-  .btn-red { background: linear-gradient(180deg, #c04452, #a5333f); color: #fff; }
-  [data-theme="paper"] .btn-yellow { background: #F2C265; color: #221C10; }
-  [data-theme="paper"] .btn-blue { background: #6FB8D6; color: #0B2430; }
-  [data-theme="paper"] .btn-green { background: var(--accent); color: var(--accent-text); }
-  [data-theme="paper"] .btn-red { background: #D4695A; color: #2E0E08; }
-  .btn-small { padding: 9px 16px; font-size: 13px; width: auto; margin: 0; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
-  .btn-grey { background: var(--accent-minus); color: var(--surface-text); }
+  .panel button:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+  .panel button:active:not(:disabled) {
+    transform: scale(.98);
+  }
+
+  .btn-green {
+    background: var(--accent);
+    color: var(--accent-text);
+    box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  .btn-green:hover { background: var(--accent-hover); }
+
+  .btn-blue {
+    background: #0b2117;
+    color: var(--accent);
+    border: 1px solid rgba(163, 230, 53, 0.35);
+  }
+  [data-theme="dark"] .btn-blue {
+    background: #143324;
+    color: var(--accent);
+  }
+
+  .btn-yellow {
+    background: #0b2117;
+    color: #ffffff;
+  }
+  .btn-red {
+    background: #dc2626;
+    color: #ffffff;
+  }
+  .btn-small {
+    padding: 8px 16px;
+    font-size: 12px;
+    width: auto;
+    margin: 0;
+  }
+  .btn-grey {
+    background: var(--tab-inactive-bg);
+    color: var(--text);
+  }
   .qty-stepper button { width: auto; padding: 4px 12px; margin: 0; box-shadow: none; }
 
-  /* ---- Checkout "truck delivery" animation (Buy Now -> truck -> Ordered) ---- */
+  /* Buy truck animation */
   .buy-btn { position: relative; overflow: hidden; }
   .buy-btn__idle {
     display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -227,190 +1578,161 @@
     100% { left: 118%; transform: translateY(-50%) scale(1) rotate(0deg); }
   }
 
-  .cart-box { background: var(--surface); color: var(--surface-text); border-radius: var(--card-radius); padding: 14px; border: 1px solid var(--border); }
+  /* Cart box */
+  .cart-box {
+    background: var(--surface);
+    color: var(--surface-text);
+    border-radius: var(--card-radius);
+    padding: 18px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+  }
   .cart-item {
-    display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
   }
   .cart-item:last-child { border-bottom: none; }
-  .cart-item .name { flex: 1; font-weight: bold; }
+  .cart-item .name { flex: 1; font-weight: 700; }
   .cart-item .meta { font-size: 12px; color: var(--text-secondary); }
-  .qty-ctrl { display: flex; align-items: center; gap: 8px; }
+  .qty-ctrl { display: flex; align-items: center; gap: 6px; }
   .qty-ctrl button {
-    width: 42px; height: 42px; padding: 0; margin: 0; border-radius: var(--btn-radius); font-size: 19px; line-height: 1;
-    background: var(--accent-minus); color: var(--surface-text); border: var(--btn-border); box-shadow: none;
+    width: 36px; height: 36px; padding: 0; margin: 0; border-radius: 999px;
+    font-size: 16px; line-height: 1; background: var(--surface-alt);
+    color: var(--text); border: 1px solid var(--border); box-shadow: none;
   }
-  .qty-ctrl button:last-child { background: var(--accent); color: var(--accent-text); border: none; }
-  .qty-ctrl span { min-width: 18px; text-align: center; }
+  .qty-ctrl button:last-child {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+  }
+  .qty-ctrl span { min-width: 18px; text-align: center; font-weight: 700; }
   .qty-ctrl select, .qty-stepper select {
-    width: auto; min-width: 56px; height: 42px; padding: 4px 8px; margin: 0; font-size: 14px; border-radius: var(--btn-radius);
-    background: var(--input-bg); color: var(--text); border: 1px solid var(--input-border);
+    width: auto; min-width: 56px; height: 36px; padding: 4px 8px; margin: 0; font-size: 13px;
+    border-radius: 999px; background: var(--input-bg); color: var(--text); border: 1px solid var(--input-border);
   }
-  .line-total { font-weight: bold; min-width: 70px; text-align: right; font-variant-numeric: tabular-nums; }
-  .remove-btn { background: var(--danger); color: #fff; width: 26px; height: 26px; border-radius: 50%; margin-left: 8px; padding: 0; font-size: 13px; }
+  .line-total { font-weight: 800; min-width: 70px; text-align: right; font-variant-numeric: tabular-nums; }
+  .remove-btn {
+    background: rgba(220, 38, 38, 0.15); color: #dc2626; width: 28px; height: 28px;
+    border-radius: 50%; margin-left: 8px; padding: 0; font-size: 13px; border: none; cursor: pointer;
+  }
 
-  .totals { margin-top: 12px; padding-top: 10px; border-top: 2px solid var(--border); font-size: 14px; }
+  .totals { margin-top: 14px; padding-top: 12px; border-top: 2px solid var(--border); font-size: 14px; }
   .totals .row { display: flex; justify-content: space-between; margin: 4px 0; }
-  .totals .grand { font-size: 24px; font-weight: bold; color: var(--surface-text); font-variant-numeric: tabular-nums; }
+  .totals .grand { font-size: 24px; font-weight: 900; color: var(--surface-text); font-variant-numeric: tabular-nums; }
   .totals .vat-note { font-size: 11px; color: var(--text-secondary); margin-top: -2px; }
 
-  .empty-note { color: var(--text-secondary); text-align: center; padding: 20px 0; font-size: 14px; }
+  .empty-note { color: var(--text-secondary); text-align: center; padding: 24px 0; font-size: 14px; }
 
   .toast {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: var(--surface-text); color: var(--bg); padding: 10px 18px; border-radius: 20px;
-    font-size: 13px; opacity: 0; transition: opacity .3s, bottom .2s; pointer-events: none; z-index: 999; max-width: 90%; text-align: center;
+    background: #0b2117; color: #a3e635; padding: 11px 22px; border-radius: 999px;
+    font-size: 13px; font-weight: 700; opacity: 0; transition: opacity .3s, bottom .2s;
+    pointer-events: none; z-index: 9999; max-width: 90%; text-align: center;
+    border: 1px solid rgba(163, 230, 53, 0.3); box-shadow: var(--shadow-float);
   }
   .toast.show { opacity: 1; }
-  body.has-install-banner .toast { bottom: 90px; }
 
   .banner {
-    max-width: 480px; margin: 10px auto 0; padding: 10px 16px; border-radius: 8px; font-size: 13px;
-    display: none; align-items: center; gap: 8px;
+    max-width: 780px; margin: 10px auto 0; padding: 10px 16px; border-radius: 12px; font-size: 13px;
+    display: none; align-items: center; gap: 8px; font-weight: 600;
   }
   .banner.show { display: flex; }
-  .banner-offline { background: #7a4a00; color: #ffe6ac; }
-  .banner-lowstock { background: #7a1f1f; color: #ffd4d4; }
+  .banner-offline { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .banner-lowstock { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
-  #receiptModal {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1000;
-    align-items: center; justify-content: center; padding: 16px;
+  /* Modals */
+  #receiptModal, #kotModal {
+    display: none; position: fixed; inset: 0; background: rgba(7, 19, 12, 0.7);
+    backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 16px;
   }
-  #receiptModal.show { display: flex; }
-  .receipt-paper {
-    background: #fff; color: #222; width: 100%; max-width: 320px; padding: 20px;
-    border-radius: 8px; font-family: 'Courier New', monospace;
+  #receiptModal.show, #kotModal.show { display: flex; }
+  .receipt-paper, .kot-paper {
+    background: #fff; color: #111; width: 100%; max-width: 320px; padding: 20px;
+    border-radius: 16px; font-family: 'Courier New', monospace; box-shadow: var(--shadow-float);
   }
-  .receipt-paper h2 { text-align: center; font-size: 16px; margin: 0 0 2px; }
-  .receipt-paper .sub { text-align: center; font-size: 11px; color: #555; margin-bottom: 10px; }
-  .receipt-paper hr { border: none; border-top: 1px dashed #999; margin: 8px 0; }
-  .receipt-line { display: flex; justify-content: space-between; font-size: 12px; margin: 3px 0; }
+  .receipt-paper h2, .kot-paper h2 { text-align: center; font-size: 16px; margin: 0 0 2px; }
+  .receipt-paper .sub, .kot-paper .sub { text-align: center; font-size: 11px; color: #555; margin-bottom: 10px; }
+  .receipt-paper hr, .kot-paper hr { border: none; border-top: 1px dashed #999; margin: 8px 0; }
+  .receipt-line, .kot-line { display: flex; justify-content: space-between; font-size: 12px; margin: 3px 0; }
   .receipt-line.item-name { font-weight: bold; margin-top: 6px; }
   .receipt-total { font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; }
-  .receipt-actions { max-width: 320px; margin: 10px auto 0; }
-  .receipt-actions button { margin-top: 8px; }
-
-  .log-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
-  .log-table th, .log-table td { padding: 8px 4px; border-bottom: 1px solid var(--border); text-align: left; }
-  .log-table th { color: var(--surface-text); }
-
-  .catalog-note { font-size: 12px; color: var(--text-secondary); padding: 0 16px; max-width: 480px; margin: 4px auto 0; text-align: center; }
+  .receipt-actions, .kot-actions { max-width: 320px; margin: 12px auto 0; }
+  .receipt-actions button, .kot-actions button { margin-top: 8px; }
 
   @media print {
     body * { visibility: hidden; }
     #receiptModal, #receiptModal *, #kotModal, #kotModal * { visibility: visible; }
-    #receiptModal { position: absolute; inset: 0; background: #fff !important; padding: 0; }
-    #kotModal { position: absolute; inset: 0; background: #fff !important; padding: 0; }
+    #receiptModal, #kotModal { position: absolute; inset: 0; background: #fff !important; padding: 0; }
     .receipt-actions, .kot-actions { display: none !important; }
   }
 
-  #kotModal {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1000;
-    align-items: center; justify-content: center; padding: 16px;
-  }
-  #kotModal.show { display: flex; }
-  .kot-paper {
-    background: #fff; color: #222; width: 100%; max-width: 320px; padding: 20px;
-    border-radius: 8px; font-family: 'Courier New', monospace;
-  }
-  .kot-paper h2 { text-align: center; font-size: 16px; margin: 0 0 2px; }
-  .kot-paper .sub { text-align: center; font-size: 11px; color: #555; margin-bottom: 10px; }
-  .kot-paper hr { border: none; border-top: 1px dashed #999; margin: 8px 0; }
-  .kot-line { display: flex; justify-content: space-between; font-size: 13px; margin: 4px 0; font-weight: bold; }
-  .kot-actions { max-width: 320px; margin: 10px auto 0; }
-  .kot-actions button { margin-top: 8px; }
+  .log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+  .log-table th, .log-table td { padding: 9px 6px; border-bottom: 1px solid var(--border); text-align: left; }
+  .log-table th { color: var(--text); font-weight: 800; }
 
-  .table-tile { border-radius: 10px; padding: 14px 8px; text-align: center; cursor: pointer; min-width: 78px; }
-  .table-tile.free { background: var(--success); color: #fff; }
-  .table-tile.occupied { background: var(--danger); color: #fff; }
-  .table-tile .t-name { font-weight: bold; }
+  .table-tile { border-radius: 14px; padding: 14px 8px; text-align: center; cursor: pointer; min-width: 78px; transition: transform .15s; }
+  .table-tile:hover { transform: translateY(-2px); }
+  .table-tile.free { background: rgba(163, 230, 53, 0.2); border: 1px solid var(--accent); color: var(--text); }
+  .table-tile.occupied { background: rgba(220, 38, 38, 0.15); border: 1px solid var(--danger); color: var(--text); }
+  .table-tile .t-name { font-weight: 800; font-size: 14px; }
   .table-tile .t-status { font-size: 11px; margin-top: 2px; }
-  .table-tile .t-total { font-size: 11px; margin-top: 4px; opacity: .9; }
-  .cat-chip { display: inline-block; padding: 9px 16px; margin: 0 6px 6px 0; border-radius: 999px; background: var(--surface); color: var(--surface-text); border: 1px solid var(--border); font-size: 13px; cursor: pointer; }
+  .table-tile .t-total { font-size: 11px; margin-top: 4px; font-weight: 700; }
+
+  .cat-chip {
+    display: inline-block; padding: 8px 16px; margin: 0 6px 6px 0; border-radius: 999px;
+    background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border);
+    font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all .15s;
+  }
   .cat-chip.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
-  .order-item-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
-  .order-item-card .oi-name { font-size: 13px; margin-bottom: 2px; color: var(--surface-text); }
+  .order-item-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px; }
+  .order-item-card .oi-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; color: var(--surface-text); }
   .order-item-card .oi-price { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
   .qty-stepper { display: flex; align-items: center; justify-content: space-between; }
-  /* ---------------- Install app banner ---------------- */
+
+  /* Appearance settings */
+  .theme-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+  .theme-row .trow-label { font-weight: 800; font-size: 13px; }
+  .theme-switch-pill { display: flex; border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+  .theme-switch-pill button {
+    padding: 8px 16px; border: none; background: var(--surface); color: var(--text-secondary);
+    font-size: 12px; font-weight: 800; cursor: pointer; width: auto; margin: 0; border-radius: 0;
+  }
+  .theme-switch-pill button.active { background: var(--accent); color: var(--accent-text); }
+
+  /* App Footer */
+  .app-footer {
+    text-align: center; padding: 24px 16px 90px; font-size: 11px; color: var(--text-secondary);
+  }
+  .app-footer-biz { font-weight: 700; font-size: 13px; color: var(--text); }
+  .app-footer-brand, .app-footer-copy { margin-top: 2px; }
+
+  /* Install Banner */
   #installBanner {
     display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 900;
-    background: #0d3a2f; border-top: 1px solid rgba(255,255,255,.12);
-    padding: 12px 14px; align-items: center; gap: 12px;
+    background: #0b2117; border-top: 1px solid rgba(163, 230, 53, 0.25);
+    padding: 12px 16px; align-items: center; gap: 12px; color: #fff;
     box-shadow: 0 -4px 14px rgba(0,0,0,.35);
   }
   #installBanner.show { display: flex; }
   #installBanner .ib-icon {
-    width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
-    background: var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 20px;
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+    background: var(--accent); color: var(--accent-text); display: grid; place-items: center; font-size: 17px;
   }
   #installBanner .ib-text { flex: 1; min-width: 0; }
-  #installBanner .ib-title { font-weight: bold; font-size: 14px; }
-  #installBanner .ib-sub { font-size: 12px; color: #b7d8cd; margin-top: 1px; }
+  #installBanner .ib-title { font-weight: 800; font-size: 13.5px; }
+  #installBanner .ib-sub { font-size: 11.5px; color: #9ca3af; margin-top: 1px; }
   #installBanner button.ib-install {
-    width: auto; margin: 0; padding: 9px 16px; font-size: 13px;
-    background: linear-gradient(180deg, #3d8975, #306c5f); color: #fff;
-    border-radius: 999px; border: none; font-weight: bold; cursor: pointer;
+    width: auto; margin: 0; padding: 8px 16px; font-size: 12.5px;
+    background: var(--accent); color: var(--accent-text);
+    border-radius: 999px; border: none; font-weight: 800; cursor: pointer;
   }
   #installBanner .ib-close {
-    background: none; border: none; color: #b7d8cd; font-size: 18px; line-height: 1;
-    cursor: pointer; padding: 4px; width: auto; margin: 0;
+    background: none; border: none; color: #9ca3af; font-size: 17px; line-height: 1;
+    cursor: pointer; padding: 4px; width: auto; margin: 0; box-shadow: none;
   }
-  /* =====================================================================
-     FLUID SCALING — the exact same phone-style layout (pill tabs, single-
-     column stacked cards) just scales up gracefully on wider screens
-     instead of switching to a different paradigm like a sidebar. Content
-     stays centered with a comfortable reading width; spacing, type, and
-     tap targets grow a little on bigger screens so it doesn't look like
-     a tiny phone view stranded in a large blank page. Button/card
-     hover polish is kept since it's pure interactivity, not a layout
-     change, and helps on any pointer-driven (non-touch) device.
-  ===================================================================== */
-  @media (min-width: 640px) {
-    .tabs, .panel, #authScreen { max-width: 640px; }
-  }
-  @media (min-width: 900px) {
-    body { font-size: 15.5px; }
-    header { padding: 18px 32px; }
-    header h1 { font-size: 23px; }
-    .tabs, .panel { max-width: 720px; padding-left: 0; padding-right: 0; }
-    .tabs { gap: 8px; }
-    .tab-btn { padding: 11px 6px; font-size: 12.5px; }
-    .panel.active { animation: panelFadeIn .2s ease; }
-    @keyframes panelFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-
-    .cart-box {
-      box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.06);
-      transition: box-shadow .2s ease;
-    }
-    [data-theme="paper"] .cart-box { box-shadow: 0 1px 2px rgba(0,0,0,.05); }
-
-    /* Real hover state - mobile has none, pointer devices should */
-    .panel button:not(:disabled) { cursor: pointer; }
-    .panel button:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0,0,0,.22);
-      filter: brightness(1.06);
-    }
-    [data-theme="paper"] .panel button:hover:not(:disabled) { filter: none; box-shadow: 0 4px 10px rgba(0,0,0,.1); }
-    .panel button:active:not(:disabled) { transform: translateY(0) scale(.98); }
-    .qty-ctrl button:hover, .qty-stepper button:hover { filter: brightness(1.15); transform: none; box-shadow: none; }
-
-    .table-tile, .order-item-card, .cat-chip { transition: transform .15s ease, box-shadow .15s ease; }
-    .table-tile:hover, .order-item-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.18); }
-    .cat-chip:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,.12); }
-
-    .auth-card { max-width: 420px; margin: 0 auto; }
-    #authScreen { max-width: 460px; margin: 60px auto; }
-  }
-  @media (min-width: 1200px) {
-    .tabs, .panel { max-width: 780px; }
-  }
-
-  .app-footer {
-    text-align: center; padding: 18px 16px 90px; font-size: 11px; color: var(--text-secondary);
-  }
-  .app-footer-biz { font-weight: 600; font-size: 12px; color: var(--text); }
-  .app-footer-brand, .app-footer-copy { margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -419,7 +1741,7 @@
   <div class="ib-icon"><i class="fa-solid fa-receipt"></i></div>
   <div class="ib-text">
     <div class="ib-title">Install Dogo POS</div>
-    <div class="ib-sub">Add to home screen for faster, full-screen access</div>
+    <div class="ib-sub">Add to home screen for faster full-screen selling</div>
   </div>
   <button class="ib-install" onclick="triggerInstall()">Install</button>
   <button class="ib-close" onclick="dismissInstallBanner()" aria-label="Dismiss"><i class="fa-solid fa-xmark"></i></button>
@@ -427,124 +1749,654 @@
 
 
 <!-- ================================================================
-     AUTH SCREEN (shown when not logged in)
+     PUBLIC LANDING & AUTH SCREEN (Posfiti Style)
+     Shown when user is not logged in.
 ================================================================= -->
 <div id="authScreen">
-  <button class="theme-toggle-auth" id="authThemeToggle" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i> Theme</button>
-  <div style="text-align:center; margin-bottom: 18px;">
-    <div style="font-size:34px;"><i class="fa-solid fa-receipt"></i></div>
-    <div style="font-weight:bold; font-size:22px;">Dogo POS</div>
-    <div style="font-size:12px; color:#9fc1de;">Sell, track, and grow — from your phone.</div>
+
+  <!-- Floating Pill Navbar -->
+  <header class="posfiti-nav" id="posfitiNav">
+    <div class="posfiti-nav-inner">
+      <a href="#hero" class="posfiti-brand">
+        <div class="posfiti-brand-icon"><i class="fa-solid fa-receipt"></i></div>
+        <span>Dogo POS</span>
+        <span class="posfiti-brand-badge">Global</span>
+      </a>
+
+      <ul class="posfiti-links">
+        <li><a href="#demo">Live Demo</a></li>
+        <li><a href="#capabilities">Features</a></li>
+        <li><a href="#restaurant-pos">Restaurant POS</a></li>
+        <li><a href="#industries">Industries</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#faqs">FAQs</a></li>
+      </ul>
+
+      <div class="posfiti-nav-actions">
+        <button class="nav-theme-btn" id="navThemeToggle" onclick="toggleTheme()" aria-label="Toggle theme" title="Toggle Light / Dark">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+        <button class="nav-btn-signin" onclick="openAuthModal('login')">Sign In</button>
+        <button class="nav-btn-start" onclick="openAuthModal('signup')">
+          <span>Start Free</span> <i class="fa-solid fa-arrow-right"></i>
+        </button>
+        <button class="nav-menu-toggle" onclick="toggleMobileNav()" aria-label="Menu">
+          <i class="fa-solid fa-bars" id="navMenuIcon"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Dropdown Menu -->
+  <div class="posfiti-mobile-menu" id="posfitiMobileMenu">
+    <a href="#demo" onclick="toggleMobileNav()">Live Demo</a>
+    <a href="#capabilities" onclick="toggleMobileNav()">Features</a>
+    <a href="#restaurant-pos" onclick="toggleMobileNav()">Restaurant POS</a>
+    <a href="#industries" onclick="toggleMobileNav()">Industries</a>
+    <a href="#pricing" onclick="toggleMobileNav()">Pricing</a>
+    <a href="#faqs" onclick="toggleMobileNav()">FAQs</a>
+    <div class="m-actions">
+      <button class="nav-btn-signin" style="width:100%; text-align:center;" onclick="toggleMobileNav(); openAuthModal('login');">Sign In</button>
+      <button class="nav-btn-start" style="width:100%; justify-content:center;" onclick="toggleMobileNav(); openAuthModal('signup');">Start Free</button>
+    </div>
   </div>
 
-  <div class="auth-card">
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tabLoginBtn" onclick="showAuthTab('login')">Sign In</button>
-      <button class="auth-tab" id="tabSignupBtn" onclick="showAuthTab('signup')">Create Business</button>
+  <!-- Hero Section -->
+  <section class="posfiti-hero" id="hero">
+    <div class="hero-pill-badge">
+      <span class="ping-dot"></span>
+      <span>Built for businesses everywhere</span>
     </div>
 
-    <!-- ---------- LOGIN PANEL ---------- -->
-    <div class="auth-panel active" id="authPanelLogin">
-      <h2>Welcome Back</h2>
-      <div class="sub">Sign in to your account</div>
+    <h1 class="hero-heading">
+      Sell faster. <span class="text-lime">Know your stock.</span><br>
+      Grow with control.
+    </h1>
 
-      <label>Email or Phone</label>
-      <input type="text" id="loginIdentifier" placeholder="you@business.com">
+    <p class="hero-subheading">
+      POS platform for shops, supermarkets, and restaurants worldwide. Sell in your currency, record M-Pesa or cash, manage stock, and know your profit.
+    </p>
 
-      <label>Password</label>
-      <div class="pw-wrap">
-        <input type="password" id="loginPassword" placeholder="Your password">
-        <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('loginPassword', this)"><i class="fa-solid fa-eye"></i></button>
-      </div>
-
-      <button class="auth-btn" onclick="handleLogin()">Sign In</button>
-      <div class="auth-error" id="loginError"></div>
-      <div class="auth-info" id="loginInfo"></div>
-      <div class="auth-link">Don't have a business account? <a href="#" onclick="showAuthTab('signup'); return false;" style="color:#2E75B6;">Create one</a></div>
+    <div class="hero-ctas">
+      <button class="hero-btn-primary" onclick="openAuthModal('signup')">
+        <span>Start free today</span> <i class="fa-solid fa-arrow-right"></i>
+      </button>
+      <a href="#demo" class="hero-btn-secondary">
+        <i class="fa-solid fa-play"></i> <span>Try live demo</span>
+      </a>
     </div>
 
-    <!-- ---------- SIGNUP PANEL (Admin registers their business) ---------- -->
-    <div class="auth-panel" id="authPanelSignup">
-      <h2>Create Your Business</h2>
-      <div class="sub">You'll be the Admin of this account</div>
+    <div class="hero-perks">
+      <div class="hero-perk"><i class="fa-solid fa-circle-check"></i> Free forever plan</div>
+      <div class="hero-perk"><i class="fa-solid fa-circle-check"></i> No card required</div>
+      <div class="hero-perk"><i class="fa-solid fa-circle-check"></i> Multi-currency ready</div>
+    </div>
 
-      <label>Business Name</label>
-      <input type="text" id="suBizName" placeholder="e.g. Greenleaf Restaurant">
-
-      <label>Business Type</label>
-      <select id="suBizType">
-        <option value="Retail">Retail Shop</option>
-        <option value="Wholesale">Wholesale</option>
-        <option value="Supermarket">Supermarket</option>
-        <option value="SME">SME / General Business</option>
-        <option value="Hotel">Hotel / Restaurant</option>
-        <option value="Hardware">Hardware Store</option>
-        <option value="Kiosk">Kiosk / Kibanda</option>
-      </select>
-
-      <label>Your Full Name</label>
-      <input type="text" id="suFullName" placeholder="e.g. Jane Wanjiru">
-
-      <label>Sign up with</label>
-      <div class="method-toggle">
-        <button type="button" class="active" id="suMethodEmailBtn" onclick="setSignupMethod('email')">Email</button>
-        <button type="button" id="suMethodPhoneBtn" onclick="setSignupMethod('phone')">Phone</button>
+    <!-- Interactive Live POS Demo Widget -->
+    <div class="demo-widget-container" id="demo">
+      <div class="demo-widget-header">
+        <div class="demo-widget-header-left">
+          <div class="demo-widget-icon"><i class="fa-solid fa-store"></i></div>
+          <div>
+            <div style="font-weight:800; font-size:14px;">Try your first sale</div>
+            <div style="font-size:12px; color:var(--text-secondary);">Tap a product to add it to your sale</div>
+          </div>
+        </div>
+        <span class="demo-badge-pill">Practice mode</span>
       </div>
 
-      <div id="suEmailField">
-        <label>Email</label>
-        <input type="text" id="suEmail" placeholder="you@business.com">
+      <div class="demo-widget-body">
+        <!-- Products Column -->
+        <div>
+          <input type="search" id="demoSearchInput" class="demo-search-input" placeholder="Search demo products…" oninput="demoSearch(this.value)">
+
+          <div class="demo-prods-grid" id="demoProdsGrid">
+            <!-- Rendered by JS -->
+          </div>
+          <div style="font-size:11.5px; color:var(--text-secondary); margin-top:12px;">
+            <i class="fa-solid fa-circle-info"></i> Explore freely. This interactive demo does not save sales or charge payments.
+          </div>
+        </div>
+
+        <!-- Cart Column -->
+        <div class="demo-cart-box">
+          <div>
+            <div class="demo-cart-header">
+              <span style="font-weight:800; font-size:14px;">Current sale</span>
+              <span class="demo-badge-pill" id="demoCartCountBadge">0 items</span>
+            </div>
+
+            <div class="demo-cart-items-list" id="demoCartItemsList">
+              <div style="text-align:center; color:var(--text-secondary); padding:36px 0; font-size:13px;">
+                Your cart is empty.<br>Add a product to get started.
+              </div>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="font-size:12px; font-weight:800; text-transform:uppercase; color:var(--text-secondary);">Total</span>
+              <span style="font-size:24px; font-weight:900;" class="tabular" id="demoCartTotal">KES 0</span>
+            </div>
+
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button class="demo-checkout-btn" id="demoCheckoutBtn" onclick="demoCheckout()" disabled>
+                Try demo checkout
+              </button>
+              <button onclick="demoClearCart()" id="demoClearBtn" style="display:none; width:auto; padding:0 12px; height:48px; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-secondary); font-size:12px; cursor:pointer; margin-top:14px;">
+                Clear
+              </button>
+            </div>
+
+            <div class="demo-success-alert" id="demoSuccessAlert"></div>
+          </div>
+        </div>
       </div>
-      <div id="suPhoneField" style="display:none;">
-        <label>Phone (with country code)</label>
-        <input type="text" id="suPhone" placeholder="+2547XXXXXXXX">
-        <div style="font-size:11px; color:#a33; margin:-2px 0 4px;">
-          Phone sign-up isn't wired to an SMS provider yet — use Email for now.
+    </div>
+  </section>
+
+  <!-- Integrations Section (Posfiti Green Card) -->
+  <section class="posfiti-section" id="integrations">
+    <div class="integrations-card-forest">
+      <div class="integrations-header">
+        <div>
+          <div class="integrations-pill">
+            <span class="ping-dot"></span> <span>Integrations</span>
+          </div>
+          <h2 style="font-size:clamp(1.8rem,3.5vw,2.5rem); font-weight:900; line-height:1.15; margin:0 0 10px;">
+            Cash, M-Pesa, stock and sales — <span style="color:var(--accent);">all in one POS.</span>
+          </h2>
+          <p style="font-size:14px; color:rgba(255,255,255,0.8); max-width:560px; margin:0;">
+            Use cash and cards globally, with regional integrations such as M-Pesa STK Push and KRA eTIMS available where supported.
+          </p>
+        </div>
+        <div>
+          <a href="#pricing" style="background:var(--accent); color:var(--accent-text); padding:12px 24px; border-radius:999px; text-decoration:none; font-weight:800; font-size:14px; display:inline-flex; align-items:center; gap:8px;">
+            <span>Compare plans</span> <i class="fa-solid fa-arrow-right"></i>
+          </a>
         </div>
       </div>
 
-      <label>Password</label>
-      <div class="pw-wrap">
-        <input type="password" id="suPassword" placeholder="Create a password" oninput="checkPasswordRules()">
-        <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('suPassword', this)"><i class="fa-solid fa-eye"></i></button>
+      <div class="integrations-grid">
+        <div class="integration-item">
+          <div class="integration-icon" style="color:#008751;"><i class="fa-solid fa-mobile-screen-button"></i></div>
+          <div class="integration-name">M-Pesa</div>
+          <div class="integration-desc">Instant STK push &amp; paybill</div>
+        </div>
+        <div class="integration-item">
+          <div class="integration-icon" style="color:#dc2626;"><i class="fa-solid fa-file-invoice"></i></div>
+          <div class="integration-name">KRA eTIMS</div>
+          <div class="integration-desc">Tax fiscalization payload</div>
+        </div>
+        <div class="integration-item">
+          <div class="integration-icon" style="color:#0ea5e9;"><i class="fa-solid fa-credit-card"></i></div>
+          <div class="integration-name">Paystack</div>
+          <div class="integration-desc">Card &amp; bank settlement</div>
+        </div>
+        <div class="integration-item">
+          <div class="integration-icon" style="color:#2563eb;"><i class="fa-solid fa-building-columns"></i></div>
+          <div class="integration-name">KCB Buni</div>
+          <div class="integration-desc">Bank payment channel</div>
+        </div>
+        <div class="integration-item">
+          <div class="integration-icon" style="color:#16a34a;"><i class="fa-solid fa-money-bill-wave"></i></div>
+          <div class="integration-name">Cash &amp; Cards</div>
+          <div class="integration-desc">Multi-currency sales</div>
+        </div>
       </div>
-      <ul class="pw-rules" id="pwRules">
-        <li id="ruleLen">At least 8 characters</li>
-        <li id="ruleUpper">One uppercase letter</li>
-        <li id="ruleLower">One lowercase letter</li>
-        <li id="ruleNum">One number</li>
-      </ul>
+    </div>
+  </section>
 
-      <label>Confirm Password</label>
-      <div class="pw-wrap">
-        <input type="password" id="suPasswordConfirm" placeholder="Re-enter your password" oninput="checkPasswordMatch()">
-        <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('suPasswordConfirm', this)"><i class="fa-solid fa-eye"></i></button>
+  <!-- Capabilities / Features Grid -->
+  <section class="posfiti-section" id="capabilities">
+    <div class="section-eyebrow">Point of sale for growing businesses</div>
+    <h2 class="section-title">From the first sale to the daily report.</h2>
+    <p class="section-sub">The tools to sell faster, track real stock, manage tellers, and keep profits clear.</p>
+
+    <div class="capabilities-grid">
+      <div class="cap-card">
+        <div class="cap-icon-wrap lime"><i class="fa-solid fa-receipt"></i></div>
+        <h3 class="cap-title">Checkout &amp; receipts</h3>
+        <p class="cap-text">Find products fast via search, barcode camera, or photo OCR, and print thermal receipts.</p>
       </div>
-      <div id="pwMatchMsg" style="font-size:12px; margin:-4px 0 6px;"></div>
+      <div class="cap-card">
+        <div class="cap-icon-wrap forest"><i class="fa-solid fa-boxes-stacked"></i></div>
+        <h3 class="cap-title">Stock &amp; inventory</h3>
+        <p class="cap-text">Manage your catalogue, track stock deductions in real-time, and get low-inventory warnings.</p>
+      </div>
+      <div class="cap-card">
+        <div class="cap-icon-wrap forest"><i class="fa-solid fa-shield-halved"></i></div>
+        <h3 class="cap-title">Payments &amp; invoicing</h3>
+        <p class="cap-text">Record cash, trigger instant M-Pesa STK push, and build KRA eTIMS fiscal invoices.</p>
+      </div>
+      <div class="cap-card">
+        <div class="cap-icon-wrap lime"><i class="fa-solid fa-chart-line"></i></div>
+        <h3 class="cap-title">Reports &amp; profit</h3>
+        <p class="cap-text">Review real-time sales, revenue, expenses, and gross profit breakdown at a glance.</p>
+      </div>
+      <div class="cap-card">
+        <div class="cap-icon-wrap forest"><i class="fa-solid fa-users"></i></div>
+        <h3 class="cap-title">Tellers &amp; roles</h3>
+        <p class="cap-text">Create secure staff accounts with Admin and Teller roles protected by server-side policies.</p>
+      </div>
+      <div class="cap-card">
+        <div class="cap-icon-wrap lime"><i class="fa-solid fa-clock"></i></div>
+        <h3 class="cap-title">Shifts &amp; cash floats</h3>
+        <p class="cap-text">Open shifts with morning cash float, record sales, and reconcile expected vs actual cash.</p>
+      </div>
+      <div class="cap-card">
+        <div class="cap-icon-wrap lime"><i class="fa-solid fa-utensils"></i></div>
+        <h3 class="cap-title">Restaurant orders</h3>
+        <p class="cap-text">Table-first order flow, category chips, print Kitchen Order Tickets (KOT), and table bills.</p>
+      </div>
+      <div class="cap-card">
+        <div class="cap-icon-wrap forest"><i class="fa-solid fa-wifi"></i></div>
+        <h3 class="cap-title">Offline selling</h3>
+        <p class="cap-text">Never stop selling when internet cuts out. Sales queue locally and sync automatically on reconnect.</p>
+      </div>
+    </div>
 
-      <button class="auth-btn" id="signupBtn" onclick="handleSignup()">Create Business Account</button>
-      <div class="auth-error" id="signupError"></div>
-      <div class="auth-info" id="signupInfo"></div>
+    <!-- Restaurant POS Highlight -->
+    <div class="restaurant-pos-banner" id="restaurant-pos">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <div style="width:48px; height:48px; border-radius:14px; background:var(--accent); color:var(--accent-text); display:grid; place-items:center; font-size:22px; flex-shrink:0;">
+          <i class="fa-solid fa-utensils"></i>
+        </div>
+        <div>
+          <div style="font-weight:800; font-size:16px;">Running a restaurant, cafe, or bar?</div>
+          <div style="font-size:13px; color:rgba(255,255,255,0.8); margin-top:2px;">
+            Enjoy our table-first order flow, kitchen tickets (KOT), and split bill settlement.
+          </div>
+        </div>
+      </div>
+      <button class="nav-btn-start" onclick="openAuthModal('signup')">
+        <span>Explore Restaurant POS</span> <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </section>
+
+  <!-- Industries & Sectors -->
+  <section class="posfiti-section" id="industries">
+    <div class="section-eyebrow">Built for your business</div>
+    <h2 class="section-title">Different businesses. One simple POS.</h2>
+    <p class="section-sub">Tailored to the exact workflows of retail, wholesale, food service, and trade.</p>
+
+    <div class="sectors-grid">
+      <div class="sector-card">
+        <div class="sector-badge">Volume-driven</div>
+        <h3 class="sector-title">Wholesalers</h3>
+        <p class="sector-desc">Fast bulk sales, larger catalogues, carton units, and quick checkout speed.</p>
+      </div>
+      <div class="sector-card">
+        <div class="sector-badge">High-volume retail</div>
+        <h3 class="sector-title">Supermarkets</h3>
+        <p class="sector-desc">Fast camera barcode scanning, large product ranges, and reliable shift cash reconciliations.</p>
+      </div>
+      <div class="sector-card">
+        <div class="sector-badge">Service-led selling</div>
+        <h3 class="sector-title">Restaurants &amp; Cafes</h3>
+        <p class="sector-desc">Table management, category chips, running orders, and Kitchen Order Ticket printing.</p>
+      </div>
+      <div class="sector-card">
+        <div class="sector-badge">Stock-heavy trade</div>
+        <h3 class="sector-title">Agrovets &amp; Feeds</h3>
+        <p class="sector-desc">Animal feeds, farm inputs, fertilizer stock control, and unit price calculations.</p>
+      </div>
+      <div class="sector-card">
+        <div class="sector-badge">Accuracy-focused</div>
+        <h3 class="sector-title">Pharmacies &amp; Chemists</h3>
+        <p class="sector-desc">Precise product cataloguing, cashier discipline, and clear customer payment records.</p>
+      </div>
+      <div class="sector-card">
+        <div class="sector-badge">Fast-moving counter</div>
+        <h3 class="sector-title">Bars &amp; Lounges</h3>
+        <p class="sector-desc">Fast beverage ordering, running tabs, shift float balance, and fast M-Pesa receipts.</p>
+      </div>
+      <div class="sector-card">
+        <div class="sector-badge">Style-focused</div>
+        <h3 class="sector-title">Boutiques &amp; Fashion</h3>
+        <p class="sector-desc">Clothing, shoes, accessories, customer accounts, and professional receipts.</p>
+      </div>
+      <div class="sector-card">
+        <div class="sector-badge">Stock-intensive</div>
+        <h3 class="sector-title">Hardware Stores</h3>
+        <p class="sector-desc">Building supplies, tools, fittings, pieces/kg units, and contractor credit tracking.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="posfiti-section" id="pricing">
+    <div style="text-align:center;">
+      <div class="section-eyebrow" style="display:inline-block;">Transparent pricing</div>
+      <h2 class="section-title">Simple plans that grow with your shop.</h2>
+      <p class="section-sub" style="margin:0 auto 24px;">Start free, upgrade as your volume grows. No hidden transaction cuts.</p>
+
+      <div class="pricing-toggle-wrap">
+        <div class="pricing-switch-pill">
+          <button id="priceCycleMonthly" class="active" onclick="setBillingCycle('monthly')">Monthly billing</button>
+          <button id="priceCycleYearly" onclick="setBillingCycle('yearly')">Yearly (Save 2 months!)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pricing-grid">
+      <!-- Free Plan -->
+      <div class="pricing-card">
+        <div>
+          <div class="pricing-eyebrow">Starter store</div>
+          <h3 class="pricing-plan-name">Free</h3>
+          <p style="font-size:13px; color:var(--text-secondary); margin:0;">For small kiosks and single tellers getting started.</p>
+
+          <div class="pricing-price-wrap">
+            <span class="pricing-amount">KES 0</span>
+            <span class="pricing-period">/ month</span>
+          </div>
+
+          <ul class="pricing-features">
+            <li><i class="fa-solid fa-circle-check"></i> 1 branch &amp; 1 user</li>
+            <li><i class="fa-solid fa-circle-check"></i> Up to 5 catalog products</li>
+            <li><i class="fa-solid fa-circle-check"></i> Cash sales &amp; basic receipts</li>
+            <li><i class="fa-solid fa-circle-check"></i> Camera barcode scanner</li>
+            <li><i class="fa-solid fa-circle-check"></i> Offline sales storage</li>
+          </ul>
+        </div>
+
+        <button class="hero-btn-secondary" style="width:100%; border-radius:999px;" onclick="openAuthModal('signup')">
+          Start for free
+        </button>
+      </div>
+
+      <!-- Core POS Plan (Featured) -->
+      <div class="pricing-card featured">
+        <div class="pricing-badge">Recommended</div>
+        <div>
+          <div class="pricing-eyebrow">Growth store</div>
+          <h3 class="pricing-plan-name">Core POS</h3>
+          <p style="font-size:13px; color:var(--text-secondary); margin:0;">For active retail shops and restaurants needing control.</p>
+
+          <div class="pricing-price-wrap">
+            <span class="pricing-amount" id="corePriceAmount">KES 999</span>
+            <span class="pricing-period" id="corePricePeriod">/ month</span>
+          </div>
+
+          <ul class="pricing-features">
+            <li><i class="fa-solid fa-circle-check"></i> <strong>Unlimited products</strong></li>
+            <li><i class="fa-solid fa-circle-check"></i> M-Pesa STK Push integration</li>
+            <li><i class="fa-solid fa-circle-check"></i> Shift &amp; float reconciliation</li>
+            <li><i class="fa-solid fa-circle-check"></i> Restaurant tables &amp; kitchen tickets</li>
+            <li><i class="fa-solid fa-circle-check"></i> Profit &amp; cost reporting</li>
+            <li><i class="fa-solid fa-circle-check"></i> Staff &amp; teller accounts</li>
+          </ul>
+        </div>
+
+        <button class="hero-btn-primary" style="width:100%; border-radius:999px;" onclick="openAuthModal('signup')">
+          Start 7-day free trial
+        </button>
+      </div>
+
+      <!-- Control POS Plan -->
+      <div class="pricing-card">
+        <div class="pricing-badge" style="background:#0b2117; color:#fff;">Pro store</div>
+        <div>
+          <div class="pricing-eyebrow">Established teams</div>
+          <h3 class="pricing-plan-name">Control POS</h3>
+          <p style="font-size:13px; color:var(--text-secondary); margin:0;">For growing supermarkets and tax-compliant merchants.</p>
+
+          <div class="pricing-price-wrap">
+            <span class="pricing-amount" id="controlPriceAmount">KES 1,999</span>
+            <span class="pricing-period" id="controlPricePeriod">/ month</span>
+          </div>
+
+          <ul class="pricing-features">
+            <li><i class="fa-solid fa-circle-check"></i> Everything in Core POS</li>
+            <li><i class="fa-solid fa-circle-check"></i> <strong>KRA eTIMS tax fiscalization</strong></li>
+            <li><i class="fa-solid fa-circle-check"></i> Advanced reorder stock alerts</li>
+            <li><i class="fa-solid fa-circle-check"></i> Multi-branch dashboard visibility</li>
+            <li><i class="fa-solid fa-circle-check"></i> Priority 24/7 WhatsApp support</li>
+          </ul>
+        </div>
+
+        <button class="hero-btn-secondary" style="width:100%; border-radius:999px;" onclick="openAuthModal('signup')">
+          Start 7-day free trial
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQs Accordion -->
+  <section class="posfiti-section" id="faqs">
+    <div style="text-align:center;">
+      <div class="section-eyebrow" style="display:inline-block;">Common Questions</div>
+      <h2 class="section-title">Frequently Asked Questions</h2>
+      <p class="section-sub" style="margin:0 auto 32px;">Everything you need to know about setting up and using Dogo POS.</p>
+    </div>
+
+    <div class="faqs-container">
+      <div class="faq-accordion-item open">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span>Which businesses can use Dogo POS?</span>
+          <i class="fa-solid fa-chevron-down faq-icon"></i>
+        </button>
+        <div class="faq-content">
+          Retail shops, supermarkets, wholesalers, restaurants, cafes, agrovets, pharmacies, bars, boutiques, and hardware stores. Any business that sells products, services, or dining orders can start in under 2 minutes.
+        </div>
+      </div>
+
+      <div class="faq-accordion-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span>Does it support M-Pesa STK Push and KRA eTIMS?</span>
+          <i class="fa-solid fa-chevron-down faq-icon"></i>
+        </button>
+        <div class="faq-content">
+          Yes! You can connect your Safaricom Daraja credentials for instant customer STK push prompts, and configure your KRA PIN and Branch ID for automated eTIMS fiscalization payloads on every checkout.
+        </div>
+      </div>
+
+      <div class="faq-accordion-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span>Can I sell offline when the internet goes down?</span>
+          <i class="fa-solid fa-chevron-down faq-icon"></i>
+        </button>
+        <div class="faq-content">
+          Yes. Dogo POS includes an automatic offline queue. All sales and shift movements made without internet are stored safely in local browser storage and sync seamlessly with the cloud database the moment connection returns.
+        </div>
+      </div>
+
+      <div class="faq-accordion-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span>How does restaurant table &amp; kitchen management work?</span>
+          <i class="fa-solid fa-chevron-down faq-icon"></i>
+        </button>
+        <div class="faq-content">
+          When configured for Hotel/Restaurant, you get an interactive Tables tab. Tellers can tap a table, pick menu items using fast category chips, send an instant Kitchen Order Ticket (KOT) to print, and settle the bill upon payment.
+        </div>
+      </div>
+
+      <div class="faq-accordion-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span>Can I test it before subscribing?</span>
+          <i class="fa-solid fa-chevron-down faq-icon"></i>
+        </button>
+        <div class="faq-content">
+          Yes. You can explore the interactive demo above without signing in, start on our permanent Free plan (up to 5 products), or start a 7-day free trial on Core or Control POS with zero payment card required.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Embedded Auth Section -->
+  <section class="auth-section-wrap" id="authSection">
+    <div class="auth-card" id="authCardAnchor">
+      <div style="text-align:center; margin-bottom:18px;">
+        <div class="posfiti-brand-icon" style="margin:0 auto 10px; width:44px; height:44px; font-size:20px;">
+          <i class="fa-solid fa-receipt"></i>
+        </div>
+        <div style="font-weight:900; font-size:22px; letter-spacing:-0.03em;">Dogo POS</div>
+        <div style="font-size:12.5px; color:var(--text-secondary); margin-top:2px;">Modern point of sale &amp; restaurant platform</div>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLoginBtn" onclick="showAuthTab('login')">Sign In</button>
+        <button class="auth-tab" id="tabSignupBtn" onclick="showAuthTab('signup')">Create Business</button>
+      </div>
+
+      <!-- LOGIN PANEL -->
+      <div class="auth-panel active" id="authPanelLogin">
+        <h2>Welcome Back</h2>
+        <div class="sub">Sign in to your business account</div>
+
+        <label>Email or Phone</label>
+        <input type="text" id="loginIdentifier" placeholder="you@business.com">
+
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="loginPassword" placeholder="Your password">
+          <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Toggle password"><i class="fa-solid fa-eye"></i></button>
+        </div>
+
+        <button class="auth-btn" onclick="handleLogin()">Sign In</button>
+        <div class="auth-error" id="loginError"></div>
+        <div class="auth-info" id="loginInfo"></div>
+        <div class="auth-link">Don't have a business account? <a href="#authSection" onclick="showAuthTab('signup'); return false;" style="color:#15803d; font-weight:700;">Create one free</a></div>
+      </div>
+
+      <!-- SIGNUP PANEL -->
+      <div class="auth-panel" id="authPanelSignup">
+        <h2>Create Your Business</h2>
+        <div class="sub">You'll be the Admin of this account</div>
+
+        <label>Business Name</label>
+        <input type="text" id="suBizName" placeholder="e.g. Greenleaf Supermarket">
+
+        <label>Business Type</label>
+        <select id="suBizType">
+          <option value="Retail">Retail Shop</option>
+          <option value="Wholesale">Wholesale</option>
+          <option value="Supermarket">Supermarket</option>
+          <option value="SME">SME / General Business</option>
+          <option value="Hotel">Hotel / Restaurant</option>
+          <option value="Hardware">Hardware Store</option>
+          <option value="Kiosk">Kiosk / Kibanda</option>
+        </select>
+
+        <label>Your Full Name</label>
+        <input type="text" id="suFullName" placeholder="e.g. Jane Wanjiru">
+
+        <label>Sign up with</label>
+        <div class="method-toggle">
+          <button type="button" class="active" id="suMethodEmailBtn" onclick="setSignupMethod('email')">Email</button>
+          <button type="button" id="suMethodPhoneBtn" onclick="setSignupMethod('phone')">Phone</button>
+        </div>
+
+        <div id="suEmailField">
+          <label>Email</label>
+          <input type="text" id="suEmail" placeholder="you@business.com">
+        </div>
+        <div id="suPhoneField" style="display:none;">
+          <label>Phone (with country code)</label>
+          <input type="text" id="suPhone" placeholder="+2547XXXXXXXX">
+          <div style="font-size:11px; color:#dc2626; margin:-2px 0 4px;">
+            Phone sign-up is in preview — use Email for instant access.
+          </div>
+        </div>
+
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="suPassword" placeholder="Create a strong password" oninput="checkPasswordRules()">
+          <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('suPassword', this)" aria-label="Toggle password"><i class="fa-solid fa-eye"></i></button>
+        </div>
+        <ul class="pw-rules" id="pwRules">
+          <li id="ruleLen">At least 8 characters</li>
+          <li id="ruleUpper">One uppercase letter</li>
+          <li id="ruleLower">One lowercase letter</li>
+          <li id="ruleNum">One number</li>
+        </ul>
+
+        <label>Confirm Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="suPasswordConfirm" placeholder="Re-enter your password" oninput="checkPasswordMatch()">
+          <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('suPasswordConfirm', this)" aria-label="Toggle password"><i class="fa-solid fa-eye"></i></button>
+        </div>
+        <div id="pwMatchMsg" style="font-size:12px; margin:-4px 0 6px;"></div>
+
+        <button class="auth-btn" id="signupBtn" onclick="handleSignup()">Create Business Account</button>
+        <div class="auth-error" id="signupError"></div>
+        <div class="auth-info" id="signupInfo"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Landing Footer -->
+  <footer class="landing-footer">
+    <div class="landing-footer-inner">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="posfiti-brand-icon" style="width:30px; height:30px; font-size:13px;"><i class="fa-solid fa-receipt"></i></div>
+        <span style="font-weight:800; font-size:16px;">Dogo POS</span>
+        <span style="font-size:12px; color:var(--text-secondary);">· Multi-tenant point of sale</span>
+      </div>
+
+      <div style="display:flex; gap:18px; font-size:13px; font-weight:600; color:var(--text-secondary);">
+        <a href="#hero" style="color:inherit; text-decoration:none;">Home</a>
+        <a href="#demo" style="color:inherit; text-decoration:none;">Demo</a>
+        <a href="#capabilities" style="color:inherit; text-decoration:none;">Features</a>
+        <a href="#pricing" style="color:inherit; text-decoration:none;">Pricing</a>
+        <a href="admin/index.html" style="color:inherit; text-decoration:none;">Console</a>
+      </div>
+
+      <div style="font-size:12px; color:var(--text-secondary);">
+        © 2026 Dogo POS · Hot-T Ventures. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Quick Floating Auth Modal Dialog (Callable from any button) -->
+  <div class="auth-modal-overlay" id="authModalOverlay" onclick="if(event.target===this) closeAuthModal();">
+    <div class="auth-modal-content">
+      <button class="auth-modal-close" onclick="closeAuthModal()" aria-label="Close dialog"><i class="fa-solid fa-xmark"></i></button>
+      <div class="auth-card" style="box-shadow:none;">
+        <div style="text-align:center; margin-bottom:14px;">
+          <div class="posfiti-brand-icon" style="margin:0 auto 8px; width:40px; height:40px; font-size:18px;"><i class="fa-solid fa-receipt"></i></div>
+          <div style="font-weight:900; font-size:20px;">Dogo POS Access</div>
+        </div>
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="modalTabLoginBtn" onclick="showAuthTab('login'); updateModalTabs('login');">Sign In</button>
+          <button class="auth-tab" id="modalTabSignupBtn" onclick="showAuthTab('signup'); updateModalTabs('signup');">Create Business</button>
+        </div>
+        <div id="modalAuthTarget">
+          <p style="text-align:center; font-size:13px; color:var(--text-secondary);">Please use the form below to proceed.</p>
+          <button class="auth-btn" onclick="closeAuthModal(); document.getElementById('authSection').scrollIntoView({behavior:'smooth'});">
+            Open Full Account Form
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div style="text-align:center; font-size:11px; color:#6a89a3; margin-top:16px;">
-    Dogo POS · Multi-business point of sale
-  </div>
-</div>
+</div><!-- /authScreen -->
 
-<!-- ================================================================
-     APP SHELL (shown after successful login)
-================================================================= -->
 <div id="appShell">
-  <header id="appHeader">
-    <button class="theme-toggle" id="appThemeToggle" onclick="toggleTheme()" title="Switch theme"><i class="fa-solid fa-moon"></i></button>
-    <div id="headerLogoWrap"></div>
-    <h1 id="appTitle"><i class="fa-solid fa-receipt"></i> Dogo POS</h1>
-    <p id="appTagline">Signed in</p>
-    <div style="margin-top:6px; font-size:11px; display:flex; justify-content:center; gap:10px; align-items:center;">
-      <span id="userBadge"></span>
-      <button onclick="handleLogout()" style="background:transparent; border:1px solid #fff; color:#fff; border-radius:12px; padding:2px 10px; font-size:11px; cursor:pointer;">Log out</button>
+  <header id="appHeader" class="app-header-posfiti">
+    <div class="app-header-container">
+      <div class="app-header-left">
+        <div class="app-header-logo-badge">
+          <i class="fa-solid fa-receipt"></i>
+        </div>
+        <div class="app-header-titles">
+          <div id="headerLogoWrap"></div>
+          <h1 id="appTitle">Dogo POS</h1>
+          <p id="appTagline">Signed in</p>
+        </div>
+      </div>
+      <div class="app-header-right">
+        <span id="userBadge" class="app-user-pill"></span>
+        <button class="theme-toggle" id="appThemeToggle" onclick="toggleTheme()" title="Switch theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+        <button onclick="handleLogout()" class="app-logout-btn">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> <span>Log out</span>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -554,7 +2406,7 @@
   <div class="banner banner-lowstock" id="lowStockBanner" onclick="switchTab('dash')" style="cursor:pointer;">
     <i class="fa-solid fa-triangle-exclamation"></i> <span id="lowStockBannerText"></span>
   </div>
-  <div class="banner" id="pendingSyncBanner" style="background:#020024; color:#cfe0ee;" onclick="syncOfflineSales()">
+  <div class="banner" id="pendingSyncBanner" style="background:#0b2117; color:#a3e635; border:1px solid rgba(163,230,53,0.3);" onclick="syncOfflineSales()">
     <i class="fa-solid fa-arrows-rotate"></i> <span id="pendingSyncText"></span> — tap to sync now
   </div>
 
@@ -1000,12 +2852,12 @@
       <div class="theme-row">
         <span class="trow-label">Theme</span>
         <div class="theme-switch-pill" id="settingsThemeSwitch">
-          <button id="themeBtnNeon" onclick="setTheme('neon')">Neon Dusk</button>
-          <button id="themeBtnPaper" onclick="setTheme('paper')">Till Paper</button>
+          <button id="themeBtnLight" onclick="setTheme('light')"><i class="fa-solid fa-sun"></i> Posfiti Light</button>
+          <button id="themeBtnDark" onclick="setTheme('dark')"><i class="fa-solid fa-moon"></i> Posfiti Dark</button>
         </div>
       </div>
-      <p class="catalog-note" style="color:#888; text-align:left; padding:0; font-size:11px;">
-        Till Paper is a high-contrast, daylight-readable look with squared buttons — handy in bright shops. Neon Dusk is the default dark theme. Your choice is saved on this device.
+      <p class="catalog-note" style="color:var(--text-secondary); text-align:left; padding:0; font-size:11px;">
+        Posfiti Light offers an ivory &amp; forest green aesthetic for bright daylight retail. Posfiti Dark offers high-contrast deep emerald tones. Your choice is saved on this device.
       </p>
     </div>
 
@@ -1081,7 +2933,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: false }
 });
 
-const THEME_COLORS = ["#020024", "#00d4ff", "#306c5f", "#a5333f", "#3a0ca3", "#6a0dad"];
+const THEME_COLORS = ["#0b2117", "#133827", "#16a34a", "#a3e635", "#0284c7", "#7c3aed"];
 const LOCAL_QUEUE_KEY = "dogopos_offline_queue_v1";
 const LOCAL_SHIFT_QUEUE_KEY = "dogopos_offline_shift_queue_v1";
 const LOCAL_CACHE_KEY = "dogopos_cache_v1"; // last-known full app state for offline selling
@@ -1089,36 +2941,247 @@ const LOCAL_CACHE_KEY = "dogopos_cache_v1"; // last-known full app state for off
 let session = null;
 let profile = null;   // { id, business_id, role, full_name, active }
 
+
 /* =====================================================================
-   THEME (Neon Dusk / Till Paper)
+   POSFITI THEME (Light / Dark)
 ===================================================================== */
 function getTheme() {
-  return document.documentElement.getAttribute('data-theme') === 'paper' ? 'paper' : 'neon';
+  const t = document.documentElement.getAttribute('data-theme');
+  return (t === 'dark' || t === 'neon') ? 'dark' : 'light';
 }
 function setTheme(theme) {
-  if (theme === 'paper') document.documentElement.setAttribute('data-theme', 'paper');
-  else document.documentElement.removeAttribute('data-theme');
-  localStorage.setItem('dogopos_theme', theme);
+  if (theme === 'neon') theme = 'dark';
+  if (theme === 'paper') theme = 'light';
+  const finalTheme = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', finalTheme);
+  try { localStorage.setItem('dogopos_theme', finalTheme); } catch(e){}
   updateThemeToggleUI();
 }
 function toggleTheme() {
-  setTheme(getTheme() === 'paper' ? 'neon' : 'paper');
+  setTheme(getTheme() === 'dark' ? 'light' : 'dark');
 }
 function updateThemeToggleUI() {
-  const isPaper = getTheme() === 'paper';
-  const icon = isPaper ? 'fa-sun' : 'fa-moon';
+  const isDark = getTheme() === 'dark';
+  const icon = isDark ? 'fa-sun' : 'fa-moon';
   const appBtn = document.getElementById('appThemeToggle');
   if (appBtn) appBtn.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+  const navBtn = document.getElementById('navThemeToggle');
+  if (navBtn) navBtn.innerHTML = `<i class="fa-solid ${icon}"></i>`;
   const authBtn = document.getElementById('authThemeToggle');
   if (authBtn) authBtn.innerHTML = `<i class="fa-solid ${icon}"></i> Theme`;
-  const neonBtn = document.getElementById('themeBtnNeon');
-  const paperBtn = document.getElementById('themeBtnPaper');
-  if (neonBtn && paperBtn) {
-    neonBtn.classList.toggle('active', !isPaper);
-    paperBtn.classList.toggle('active', isPaper);
+
+  const lightBtn = document.getElementById('themeBtnLight') || document.getElementById('themeBtnPaper');
+  const darkBtn = document.getElementById('themeBtnDark') || document.getElementById('themeBtnNeon');
+  if (lightBtn && darkBtn) {
+    lightBtn.classList.toggle('active', !isDark);
+    darkBtn.classList.toggle('active', isDark);
   }
 }
-updateThemeToggleUI(); // sync icon/pill state with whatever the anti-flash script already applied
+updateThemeToggleUI();
+
+/* =====================================================================
+   POSFITI LANDING PAGE INTERACTIVITY (Live Demo & Modals)
+===================================================================== */
+const DEMO_PRODUCTS = [
+  { id: 'rice', name: 'Rice (2kg)', price: 145, icon: '🌾' },
+  { id: 'detergent', name: 'Detergent (1kg)', price: 310, icon: '🧼' },
+  { id: 'coffee', name: 'Coffee (250g)', price: 120, icon: '☕' },
+  { id: 'oil', name: 'Cooking Oil (1L)', price: 280, icon: '🫒' },
+  { id: 'milk', name: 'Fresh Milk (500ml)', price: 70, icon: '🥛' },
+  { id: 'flour', name: 'Wheat Flour (2kg)', price: 160, icon: '🍞' }
+];
+let demoCart = {};
+
+function renderDemoProducts(filterText = '') {
+  const grid = document.getElementById('demoProdsGrid');
+  if (!grid) return;
+  const q = filterText.toLowerCase().trim();
+  const filtered = DEMO_PRODUCTS.filter(p => p.name.toLowerCase().includes(q));
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1; padding:20px 0; color:var(--text-secondary); text-align:center;">No products found matching your search.</div>';
+    return;
+  }
+  grid.innerHTML = filtered.map(p => `
+    <div class="demo-prod-item" onclick="demoAddToCart('${p.id}')">
+      <div class="demo-prod-icon">${p.icon}</div>
+      <div>
+        <div class="demo-prod-name">${p.name}</div>
+        <div class="demo-prod-price">KES ${p.price.toLocaleString()}</div>
+      </div>
+      <div class="demo-prod-add">+ Add</div>
+    </div>
+  `).join('');
+}
+
+function demoAddToCart(id) {
+  demoCart[id] = (demoCart[id] || 0) + 1;
+  const alert = document.getElementById('demoSuccessAlert');
+  if (alert) alert.style.display = 'none';
+  renderDemoCart();
+}
+
+function demoUpdateQty(id, delta) {
+  if (!demoCart[id]) return;
+  demoCart[id] += delta;
+  if (demoCart[id] <= 0) delete demoCart[id];
+  const alert = document.getElementById('demoSuccessAlert');
+  if (alert) alert.style.display = 'none';
+  renderDemoCart();
+}
+
+function demoClearCart() {
+  demoCart = {};
+  const alert = document.getElementById('demoSuccessAlert');
+  if (alert) alert.style.display = 'none';
+  renderDemoCart();
+}
+
+function renderDemoCart() {
+  const container = document.getElementById('demoCartItemsList');
+  const countBadge = document.getElementById('demoCartCountBadge');
+  const totalEl = document.getElementById('demoCartTotal');
+  const checkoutBtn = document.getElementById('demoCheckoutBtn');
+  const clearBtn = document.getElementById('demoClearBtn');
+  if (!container) return;
+
+  const entries = Object.entries(demoCart);
+  const totalItems = entries.reduce((acc, [_, qty]) => acc + qty, 0);
+
+  if (countBadge) countBadge.textContent = `${totalItems} ${totalItems === 1 ? 'item' : 'items'}`;
+  if (clearBtn) clearBtn.style.display = totalItems > 0 ? 'inline-block' : 'none';
+  if (checkoutBtn) checkoutBtn.disabled = totalItems === 0;
+
+  if (entries.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; color:var(--text-secondary); padding:36px 0; font-size:13px;">
+        Your cart is empty.<br>Add a product to get started.
+      </div>
+    `;
+    if (totalEl) totalEl.textContent = 'KES 0';
+    return;
+  }
+
+  let grandTotal = 0;
+  container.innerHTML = entries.map(([id, qty]) => {
+    const prod = DEMO_PRODUCTS.find(p => p.id === id);
+    if (!prod) return '';
+    const lineTotal = prod.price * qty;
+    grandTotal += lineTotal;
+    return `
+      <div class="demo-cart-item-row">
+        <div>
+          <div style="font-weight:700;">${prod.name}</div>
+          <div style="font-size:11.5px; color:var(--text-secondary);">${qty} × KES ${prod.price}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-weight:800; font-size:13px;" class="tabular">KES ${lineTotal.toLocaleString()}</div>
+          <button class="demo-qty-btn" onclick="demoUpdateQty('${id}', -1)">−</button>
+          <span style="font-weight:700; min-width:14px; text-align:center;">${qty}</span>
+          <button class="demo-qty-btn" onclick="demoUpdateQty('${id}', 1)">+</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (totalEl) totalEl.textContent = `KES ${grandTotal.toLocaleString()}`;
+}
+
+function demoCheckout() {
+  const entries = Object.entries(demoCart);
+  const totalItems = entries.reduce((acc, [_, qty]) => acc + qty, 0);
+  if (totalItems === 0) return;
+
+  let grandTotal = 0;
+  entries.forEach(([id, qty]) => {
+    const prod = DEMO_PRODUCTS.find(p => p.id === id);
+    if (prod) grandTotal += prod.price * qty;
+  });
+
+  const alert = document.getElementById('demoSuccessAlert');
+  if (alert) {
+    alert.innerHTML = `🎉 <strong>Demo checkout complete!</strong> Simulated sale of ${totalItems} items totaling KES ${grandTotal.toLocaleString()}. No payment taken or real database record created.`;
+    alert.style.display = 'block';
+  }
+  demoCart = {};
+  renderDemoCart();
+}
+
+function demoSearch(query) {
+  renderDemoProducts(query);
+}
+
+// Initial demo products load
+renderDemoProducts();
+renderDemoCart();
+
+/* Pricing Toggle */
+function setBillingCycle(cycle) {
+  const isYearly = cycle === 'yearly';
+  const mBtn = document.getElementById('priceCycleMonthly');
+  const yBtn = document.getElementById('priceCycleYearly');
+  if (mBtn && yBtn) {
+    mBtn.classList.toggle('active', !isYearly);
+    yBtn.classList.toggle('active', isYearly);
+  }
+  const coreEl = document.getElementById('corePriceAmount');
+  const corePeriod = document.getElementById('corePricePeriod');
+  const controlEl = document.getElementById('controlPriceAmount');
+  const controlPeriod = document.getElementById('controlPricePeriod');
+
+  if (isYearly) {
+    if (coreEl) coreEl.textContent = 'KES 9,999';
+    if (corePeriod) corePeriod.textContent = '/ year (Save KES 1,989)';
+    if (controlEl) controlEl.textContent = 'KES 19,999';
+    if (controlPeriod) controlPeriod.textContent = '/ year (Save KES 3,989)';
+  } else {
+    if (coreEl) coreEl.textContent = 'KES 999';
+    if (corePeriod) corePeriod.textContent = '/ month';
+    if (controlEl) controlEl.textContent = 'KES 1,999';
+    if (controlPeriod) controlPeriod.textContent = '/ month';
+  }
+}
+
+/* FAQ Accordion Toggle */
+function toggleFaq(btn) {
+  const item = btn.closest('.faq-accordion-item');
+  if (!item) return;
+  const wasOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-accordion-item').forEach(el => el.classList.remove('open'));
+  if (!wasOpen) item.classList.add('open');
+}
+
+/* Mobile Nav Toggle */
+function toggleMobileNav() {
+  const menu = document.getElementById('posfitiMobileMenu');
+  const icon = document.getElementById('navMenuIcon');
+  if (!menu) return;
+  const isShow = menu.classList.toggle('show');
+  if (icon) {
+    icon.className = isShow ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+  }
+}
+
+/* Auth Modal Helpers */
+function openAuthModal(tab) {
+  if (tab) showAuthTab(tab);
+  const target = document.getElementById('authSection');
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+function closeAuthModal() {
+  const modal = document.getElementById('authModalOverlay');
+  if (modal) modal.classList.remove('show');
+}
+function updateModalTabs(tab) {
+  const l = document.getElementById('modalTabLoginBtn');
+  const s = document.getElementById('modalTabSignupBtn');
+  if (l && s) {
+    l.classList.toggle('active', tab === 'login');
+    s.classList.toggle('active', tab === 'signup');
+  }
+}
+
 let business = null;  // { id, name, business_type, theme_color, logo_url, kra_pin, location }
 let activeBusinessId = null;  // profile.business_id normally; overridden while a platform admin is testing another business
 let isPlatformAdmin = false;
