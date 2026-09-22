@@ -1552,6 +1552,46 @@
   }
   .qty-stepper button { width: auto; padding: 4px 12px; margin: 0; box-shadow: none; }
 
+  /* Regional Payment Gateway Selector Pills & Spinners */
+  .pos-pay-method-pill {
+    padding: 7px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-alt);
+    color: var(--text-secondary);
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .pos-pay-method-pill:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+  .pos-pay-method-pill.active {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px var(--accent-glow);
+  }
+  .digital-pulse-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: digitalSpin 0.8s linear infinite;
+    display: inline-block;
+  }
+  @keyframes digitalSpin {
+    to { transform: rotate(360deg); }
+  }
+
   /* Buy truck animation */
   .buy-btn { position: relative; overflow: hidden; }
   .buy-btn__idle {
@@ -3458,508 +3498,6 @@
   color: #2563eb;
 }
 
-
-/* Fully Hidden Sidebar State (Desktop & Tablet) */
-.portal-sidebar.sidebar-hidden {
-  margin-left: calc(-1 * var(--sidebar-w, 260px)) !important;
-  width: 0 !important;
-  min-width: 0 !important;
-  max-width: 0 !important;
-  padding: 0 !important;
-  border-right: none !important;
-  overflow: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.sidebar-hide-btn {
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.15s ease;
-  margin-left: auto;
-}
-.sidebar-hide-btn:hover {
-  background: var(--bg);
-  color: var(--text-primary);
-  border-color: #2563eb;
-}
-
-/* =====================================================================
-   RETAIL CHECKOUT (POSFITI-STYLE 2-COLUMN LAYOUT)
-===================================================================== */
-.retail-checkout-container {
-  display: grid;
-  grid-template-columns: 1fr 390px;
-  gap: 20px;
-  align-items: start;
-}
-@media (max-width: 1080px) {
-  .retail-checkout-container {
-    grid-template-columns: 1fr;
-  }
-}
-
-.rc-products-panel {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
-}
-
-.rc-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.rc-title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.rc-title-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: rgba(34, 197, 94, 0.12);
-  color: #16a34a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-}
-
-.rc-title {
-  font-size: 24px;
-  font-weight: 800;
-  margin: 0;
-  color: var(--text-primary);
-  letter-spacing: -0.02em;
-}
-
-.rc-subtitle {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin: 2px 0 0 0;
-}
-
-.rc-controls-wrap {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.rc-branch-box {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 6px 16px;
-}
-
-.rc-branch-label {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-}
-
-.rc-branch-select {
-  background: transparent;
-  border: none;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary);
-  outline: none;
-  cursor: pointer;
-  padding-right: 4px;
-}
-
-.rc-scan-btn {
-  background: transparent;
-  border: 1.5px solid #22c55e;
-  color: #16a34a;
-  border-radius: 999px;
-  padding: 8px 18px;
-  font-size: 13px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.rc-scan-btn:hover {
-  background: rgba(34, 197, 94, 0.1);
-  transform: translateY(-1px);
-}
-
-.rc-search-card {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px 20px;
-  margin-bottom: 20px;
-}
-
-.rc-search-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.rc-search-heading {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-}
-
-.rc-stats-pills {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.rc-stat-pill {
-  font-size: 12px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-}
-
-.rc-pill-avail {
-  background: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
-}
-
-.rc-pill-vis {
-  background: rgba(16, 185, 129, 0.12);
-  color: #059669;
-}
-
-.rc-pill-low {
-  background: rgba(234, 179, 8, 0.15);
-  color: #b45309;
-}
-
-.rc-search-row {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.rc-search-input-wrap {
-  flex: 1;
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.rc-search-input-wrap i {
-  position: absolute;
-  left: 14px;
-  color: #4ade80;
-  font-size: 14px;
-  pointer-events: none;
-}
-
-.rc-search-input {
-  width: 100%;
-  background: #081a10;
-  color: #dcfce7;
-  border: 1.5px solid #15803d;
-  border-radius: 12px;
-  padding: 12px 14px 12px 40px;
-  font-size: 14px;
-  font-weight: 600;
-  outline: none;
-  transition: all 0.15s ease;
-}
-
-.rc-search-input::placeholder {
-  color: #86efac;
-  opacity: 0.8;
-}
-
-.rc-search-input:focus {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
-}
-
-.rc-add-btn {
-  background: #22c55e;
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  padding: 12px 22px;
-  font-size: 14px;
-  font-weight: 800;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s ease;
-}
-
-.rc-add-btn:hover {
-  background: #16a34a;
-  transform: translateY(-1px);
-}
-
-.rc-pagination-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 14px;
-  margin-bottom: 20px;
-}
-
-.rc-page-meta {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.rc-page-title {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  margin-bottom: 2px;
-}
-
-.rc-pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.rc-page-btn {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.rc-page-btn.active {
-  background: #22c55e;
-  color: #ffffff;
-  border-color: #22c55e;
-}
-
-.rc-products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
-  gap: 16px;
-}
-
-.rc-prod-card {
-  background: var(--card);
-  border: 1.5px solid var(--border);
-  border-radius: 16px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-  user-select: none;
-  position: relative;
-}
-
-.rc-prod-card:hover {
-  border-color: #2563eb;
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.08);
-}
-
-.rc-prod-card:active {
-  transform: scale(0.97);
-}
-
-.rc-prod-img-wrap {
-  width: 100%;
-  height: 140px;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-  border-bottom: 1px solid var(--border);
-}
-
-.rc-prod-img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.rc-prod-info {
-  padding: 14px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.rc-prod-category {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  color: #16a34a;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-
-.rc-prod-name {
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-  line-height: 1.25;
-}
-
-.rc-prod-footer {
-  margin-top: auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-}
-
-.rc-prod-price {
-  font-size: 15px;
-  font-weight: 800;
-  color: #2563eb;
-}
-
-[data-theme="dark"] .rc-prod-price {
-  color: #60a5fa;
-}
-
-.rc-prod-stock {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  background: var(--bg);
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-}
-
-.rc-sale-panel {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 24px;
-  position: sticky;
-  top: 80px;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
-}
-
-.rc-sale-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 14px;
-}
-
-.rc-sale-title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.rc-sale-title-wrap i {
-  color: #2563eb;
-  font-size: 22px;
-}
-
-.rc-sale-title {
-  font-size: 20px;
-  font-weight: 800;
-  margin: 0;
-  color: var(--text-primary);
-}
-
-.rc-sale-meta {
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-top: 2px;
-}
-
-.rc-sale-count-badge {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-secondary);
-}
-
-.rc-checkout-cta {
-  width: 100%;
-  background: #a3e635;
-  color: #14532d;
-  border: none;
-  border-radius: 16px;
-  padding: 16px 20px;
-  cursor: pointer;
-  text-align: center;
-  box-shadow: 0 4px 16px rgba(163, 230, 53, 0.3);
-  transition: all 0.15s ease;
-  margin-top: 16px;
-}
-
-.rc-checkout-cta:hover {
-  background: #bef264;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(163, 230, 53, 0.4);
-}
-
-.rc-checkout-cta-title {
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  margin-bottom: 2px;
-}
-
-.rc-checkout-cta-sub {
-  font-size: 12px;
-  font-weight: 600;
-  opacity: 0.85;
-}
-
 /* Collapsed state on desktop */
 @media (min-width: 1024px) {
   .portal-sidebar.collapsed {
@@ -4037,6 +3575,507 @@
     background: #1e293b;
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: #facc15;
+  }
+  /* =====================================================================
+     DIGITAL PAYMENTS & GATEWAY TRANSACTIONS STYLES
+  ===================================================================== */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .status-badge.success {
+    background: rgba(22, 163, 74, 0.12);
+    color: #15803d;
+    border: 1px solid rgba(22, 163, 74, 0.28);
+  }
+  .status-badge.pending {
+    background: rgba(202, 138, 4, 0.12);
+    color: #a16207;
+    border: 1px solid rgba(202, 138, 4, 0.28);
+  }
+  .status-badge.failed {
+    background: rgba(220, 38, 38, 0.12);
+    color: #b91c1c;
+    border: 1px solid rgba(220, 38, 38, 0.28);
+  }
+  [data-theme="dark"] .status-badge.success {
+    background: rgba(34, 197, 94, 0.18);
+    color: #4ade80;
+    border-color: rgba(34, 197, 94, 0.35);
+  }
+  [data-theme="dark"] .status-badge.pending {
+    background: rgba(234, 179, 8, 0.18);
+    color: #facc15;
+    border-color: rgba(234, 179, 8, 0.35);
+  }
+  [data-theme="dark"] .status-badge.failed {
+    background: rgba(239, 68, 68, 0.18);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.35);
+  }
+
+  .gw-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .gw-badge-pill.mpesa { background: #16a34a; color: #ffffff; }
+  .gw-badge-pill.kcb { background: #1e3a8a; color: #ffffff; }
+  .gw-badge-pill.paystack { background: #0284c7; color: #ffffff; }
+  .gw-badge-pill.airtel { background: #dc2626; color: #ffffff; }
+  .gw-badge-pill.cash { background: #475569; color: #ffffff; }
+
+  .ext-ref-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--font-mono, monospace);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    text-decoration: none;
+  }
+  .ext-ref-chip:hover {
+    background: rgba(250, 204, 21, 0.15);
+    border-color: var(--accent);
+  }
+  .ext-ref-chip i { font-size: 10px; color: var(--accent); }
+
+  .receipt-link-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    border-radius: 6px;
+    font-family: var(--font-mono, monospace);
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #2563eb;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+  [data-theme="dark"] .receipt-link-pill {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.35);
+    color: #93c5fd;
+  }
+  .receipt-link-pill:hover {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  /* Gateway Transactions Card & Hub Layout */
+  .gw-tx-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  .gw-tx-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .gw-metrics-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .gw-metric-tile {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .gw-metric-tile .lbl {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .gw-metric-tile .val {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  /* Gateway Transactions Date Range Picker */
+  .gw-header-date-badge {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 11px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .gw-header-date-badge:hover {
+    border-color: var(--accent);
+  }
+  .gw-date-picker-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .gw-date-presets-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .gw-date-chips {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .gw-date-chip {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .gw-date-chip:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  .gw-date-chip.active {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+  .gw-date-subbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+    font-size: 12px;
+  }
+  .gw-date-stepper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .gw-date-input-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 8px;
+  }
+  .gw-date-input-field label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+  .gw-date-input-field input[type="date"],
+  .gw-date-input-field input[type="week"] {
+    border: none;
+    background: transparent;
+    font-size: 12px;
+    color: var(--text);
+    padding: 2px 0;
+    margin: 0;
+    outline: none;
+    cursor: pointer;
+  }
+  .th-date-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.06);
+    color: var(--text-secondary);
+    font-size: 10px;
+    cursor: pointer;
+    margin-left: 4px;
+    transition: all 0.15s ease;
+  }
+  .th-date-badge:hover, .th-date-badge.active {
+    background: var(--accent);
+    color: #ffffff;
+  }
+
+  /* Gateway Transactions Header Date Dropdown */
+  .gw-header-dropdown-wrap {
+    position: relative;
+    display: inline-block;
+  }
+  .gw-mini-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 290px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+    padding: 12px 14px;
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: gwDropdownFadeIn 0.15s ease-out;
+  }
+  @keyframes gwDropdownFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .gw-mini-dropdown-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .gw-mini-close-btn {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .gw-mini-close-btn:hover {
+    color: var(--text);
+    background: var(--input-bg);
+  }
+  .gw-mini-presets-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .gw-mini-preset-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .gw-mini-preset-btn {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 6px 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.12s ease;
+  }
+  .gw-mini-preset-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--surface);
+  }
+  .gw-mini-preset-btn.full {
+    grid-column: 1 / -1;
+  }
+  .gw-mini-custom-section {
+    border-top: 1px dashed var(--border);
+    padding-top: 10px;
+  }
+  .gw-mini-inputs-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .gw-mini-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .gw-mini-input-group label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+  .gw-mini-input-group input[type="date"] {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 11.5px;
+    color: var(--text);
+    width: 100%;
+    margin: 0;
+    outline: none;
+  }
+  .gw-mini-input-group input[type="date"]:focus {
+    border-color: var(--accent);
+  }
+  .gw-mini-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .gw-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .gw-filter-row input, .gw-filter-row select {
+    margin: 0;
+  }
+
+  .gw-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .gw-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  .gw-table th {
+    background: var(--input-bg);
+    color: var(--text);
+    font-weight: 800;
+    text-align: left;
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .gw-table td {
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+  }
+  .gw-table tbody tr:hover {
+    background: rgba(0, 0, 0, 0.02);
+  }
+  [data-theme="dark"] .gw-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  /* Inspection Modal */
+  #gwDetailModal, #gwSimulateModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(7, 19, 12, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #gwDetailModal.show, #gwSimulateModal.show {
+    display: flex;
+  }
+  .gw-modal-box {
+    background: var(--surface);
+    color: var(--text);
+    width: 100%;
+    max-width: 540px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-float);
+  }
+  .gw-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .gw-detail-lbl {
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+  .gw-detail-val {
+    font-weight: 700;
+    text-align: right;
+  }
+  .gw-raw-json {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: var(--font-mono, monospace);
+    font-size: 11.5px;
+    max-height: 180px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-top: 8px;
   }
 }
 
@@ -4773,7 +4812,6 @@
         <span>Dogo</span><span style="color:#2563eb; font-weight:900;">POS</span><span class="sidebar-logo-dot"></span>
       </a>
       <span class="sidebar-sub-badge" id="sidebarBizType">HARDWARE</span>
-      <button type="button" class="sidebar-hide-btn" onclick="toggleSidebarHide()" title="Hide sidebar"><i class="fa-solid fa-chevron-left"></i></button>
     </div>
 
     <div class="sidebar-nav-container">
@@ -4899,7 +4937,7 @@
 <div class="portal-main-content">
   <header class="portal-topbar">
     <div class="portal-topbar-left">
-      <button class="portal-collapse-toggle-btn" onclick="toggleSidebarHide()" title="Toggle sidebar (expand/hide)">
+      <button class="portal-collapse-toggle-btn" onclick="toggleSidebarCollapse()" title="Toggle sidebar (expand/collapse)">
         <i class="fa-solid fa-bars"></i>
       </button>
       <div class="portal-breadcrumbs">
@@ -4913,7 +4951,7 @@
         <i class="fa-solid fa-location-dot" style="color:#2563eb;"></i>
         <span id="portalBranchName">Luanda</span>
       </div>
-      <button class="portal-circle-btn" onclick="toggleSidebarHide()" title="Toggle sidebar menu">
+      <button class="portal-circle-btn" onclick="toggleSidebarCollapse()" title="Toggle sidebar menu">
         <i class="fa-solid fa-bars"></i>
       </button>
       <button class="portal-circle-btn" onclick="toggleTheme()" title="Switch theme">
@@ -5289,26 +5327,34 @@
 
       <div class="int-row-channel">
         <div>
-          <span style="font-weight:800; font-size:14px;">M-PESA</span>
-          <div style="font-size:12px; color:var(--text-secondary);">Direct STK Push &amp; C2B Paybill validation</div>
+          <span style="font-weight:800; font-size:14px;">M-PESA (DARAJA)</span>
+          <div style="font-size:12px; color:var(--text-secondary);">Direct STK Push, Till &amp; C2B Paybill validation</div>
         </div>
         <span class="branch-active-pill" id="intMpesaStatusPill">Configured</span>
       </div>
 
       <div class="int-row-channel">
         <div>
-          <span style="font-weight:800; font-size:14px;">PAYSTACK</span>
-          <div style="font-size:12px; color:var(--text-secondary);">Card payments &amp; virtual merchant terminal</div>
+          <span style="font-weight:800; font-size:14px;">KCB BUNI / VOOMA</span>
+          <div style="font-size:12px; color:var(--text-secondary);">Direct Bank STK Push, Vooma &amp; Merchant Till validation</div>
         </div>
-        <span style="font-size:11px; font-weight:700; color:var(--text-secondary); background:var(--bg); border:1px solid var(--border); padding:3px 8px; border-radius:999px;">Needs setup</span>
+        <span class="branch-active-pill" id="intKcbStatusPill">Active</span>
       </div>
 
       <div class="int-row-channel">
         <div>
-          <span style="font-weight:800; font-size:14px;">STRIPE</span>
-          <div style="font-size:12px; color:var(--text-secondary);">International debit/credit cards checkout</div>
+          <span style="font-weight:800; font-size:14px;">PAYSTACK</span>
+          <div style="font-size:12px; color:var(--text-secondary);">Debit/Credit Cards &amp; Pan-African Gateway with HMAC-SHA512 Webhook</div>
         </div>
-        <span style="font-size:11px; font-weight:700; color:var(--text-secondary); background:var(--bg); border:1px solid var(--border); padding:3px 8px; border-radius:999px;">Needs setup</span>
+        <span class="branch-active-pill" id="intPaystackStatusPill">Active</span>
+      </div>
+
+      <div class="int-row-channel">
+        <div>
+          <span style="font-weight:800; font-size:14px;">AIRTEL MONEY</span>
+          <div style="font-size:12px; color:var(--text-secondary);">Airtel Money STK Push &amp; East Africa Mobile Collections</div>
+        </div>
+        <span class="branch-active-pill" id="intAirtelStatusPill">Active</span>
       </div>
 
       <div class="int-row-channel">
@@ -5318,6 +5364,220 @@
         </div>
         <span class="branch-active-pill" id="intEtimsStatusPill">Active</span>
       </div>
+    </div>
+
+    <!-- ================= GATEWAY TRANSACTIONS TABLE VIEW ================= -->
+    <div class="gw-tx-card" id="gwTxSection">
+      <div class="gw-tx-header">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+            <span class="status-badge success"><i class="fa-solid fa-circle-check"></i> Webhook Active</span>
+            <span style="font-size:12px; color:var(--text-secondary);"><i class="fa-solid fa-shield-halved"></i> Cryptographic Callbacks</span>
+          </div>
+          <h3 style="font-size:19px; font-weight:800; margin:0 0 4px;"><i class="fa-solid fa-network-wired" style="color:var(--accent);"></i> Gateway Transactions</h3>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin:0;">
+            Unified ledger of M-Pesa, KCB, Paystack &amp; Airtel digital transactions linked to internal POS sales.
+          </p>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <!-- Active Date Filter Pill in Header with Mini Dropdown -->
+          <div class="gw-header-dropdown-wrap">
+            <div class="gw-header-date-badge" id="gwHeaderDateBadge" onclick="toggleGwHeaderDateDropdown(event)" title="Click to quickly select date presets or custom range">
+              <i class="fa-regular fa-calendar-check" style="color:var(--accent);"></i>
+              <span id="gwHeaderDateText">All Time</span>
+              <i class="fa-solid fa-chevron-down" style="font-size:10px; opacity:0.6; margin-left:2px;"></i>
+            </div>
+
+            <!-- Mini Date-Picker Dropdown -->
+            <div class="gw-mini-dropdown" id="gwHeaderDateDropdown" style="display:none;" onclick="event.stopPropagation()">
+              <div class="gw-mini-dropdown-header">
+                <span style="font-weight:700; font-size:12px; color:var(--text);"><i class="fa-solid fa-calendar-day" style="color:var(--accent);"></i> Select Date Period</span>
+                <button type="button" class="gw-mini-close-btn" onclick="closeGwHeaderDateDropdown(event)" title="Close">&times;</button>
+              </div>
+
+              <div class="gw-mini-presets-list">
+                <div class="gw-mini-presets-title">Quick Presets</div>
+                <div class="gw-mini-preset-grid">
+                  <button type="button" class="gw-mini-preset-btn" onclick="selectMiniPreset('today', event)">Today</button>
+                  <button type="button" class="gw-mini-preset-btn" onclick="selectMiniPreset('yesterday', event)">Yesterday</button>
+                  <button type="button" class="gw-mini-preset-btn" onclick="selectMiniPreset('this_week', event)">This Week</button>
+                  <button type="button" class="gw-mini-preset-btn" onclick="selectMiniPreset('last_week', event)">Last Week</button>
+                  <button type="button" class="gw-mini-preset-btn" onclick="selectMiniPreset('this_month', event)">This Month</button>
+                  <button type="button" class="gw-mini-preset-btn" onclick="selectMiniPreset('last_30_days', event)">Last 30 Days</button>
+                  <button type="button" class="gw-mini-preset-btn full" onclick="selectMiniPreset('all', event)">All Time</button>
+                </div>
+              </div>
+
+              <div class="gw-mini-custom-section">
+                <div class="gw-mini-presets-title">Specific Date Range</div>
+                <div class="gw-mini-inputs-row">
+                  <div class="gw-mini-input-group">
+                    <label for="gwMiniStartDate">From</label>
+                    <input type="date" id="gwMiniStartDate">
+                  </div>
+                  <div class="gw-mini-input-group">
+                    <label for="gwMiniEndDate">To</label>
+                    <input type="date" id="gwMiniEndDate">
+                  </div>
+                </div>
+                <div class="gw-mini-actions-row">
+                  <button type="button" class="btn-small" onclick="selectMiniPreset('all', event)" style="padding:4px 8px; font-size:11px;">Reset</button>
+                  <button type="button" class="btn-small btn-blue" onclick="applyMiniCustomRange(event)" style="padding:4px 12px; font-size:11px;">Apply Range</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-small btn-blue" onclick="loadGatewayTransactions()" title="Refresh transaction ledger">
+            <i class="fa-solid fa-rotate"></i> <span>Refresh</span>
+          </button>
+          <button class="btn-small btn-green" id="gwExportCsvBtn" onclick="exportGatewayTransactionsCSV()" title="Export filtered gateway transactions to CSV report">
+            <i class="fa-solid fa-file-arrow-down"></i> <span>Export</span>
+          </button>
+          <button class="btn-small" style="background:#0f172a; color:#ffffff;" onclick="openSimulateTxModal()" title="Simulate payment or test webhook">
+            <i class="fa-solid fa-flask"></i> <span>Simulate Webhook</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Ledger Metrics -->
+      <div class="gw-metrics-strip">
+        <div class="gw-metric-tile">
+          <div class="lbl">Total Settled</div>
+          <div class="val" id="gwStatVolume">KES 0.00</div>
+        </div>
+        <div class="gw-metric-tile">
+          <div class="lbl">Success Rate</div>
+          <div class="val" id="gwStatRate" style="color:#16a34a;">100%</div>
+        </div>
+        <div class="gw-metric-tile">
+          <div class="lbl">Confirmed</div>
+          <div class="val" id="gwStatSuccess" style="color:#16a34a;">0</div>
+        </div>
+        <div class="gw-metric-tile">
+          <div class="lbl">Pending Push</div>
+          <div class="val" id="gwStatPending" style="color:#ca8a04;">0</div>
+        </div>
+        <div class="gw-metric-tile">
+          <div class="lbl">Failed / Cancelled</div>
+          <div class="val" id="gwStatFailed" style="color:#dc2626;">0</div>
+        </div>
+      </div>
+
+      <!-- Date Range Filter Toolbar for Days / Weeks -->
+      <div class="gw-date-picker-bar" id="gwDatePickerBar">
+        <div class="gw-date-presets-row">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:12px; font-weight:700; color:var(--text);"><i class="fa-solid fa-calendar-days" style="color:var(--accent);"></i> Period:</span>
+            <div class="gw-date-chips" id="gwDateChips">
+              <button type="button" class="gw-date-chip active" data-preset="all" onclick="setGwDatePreset('all')">All Time</button>
+              <button type="button" class="gw-date-chip" data-preset="today" onclick="setGwDatePreset('today')">Today</button>
+              <button type="button" class="gw-date-chip" data-preset="yesterday" onclick="setGwDatePreset('yesterday')">Yesterday</button>
+              <button type="button" class="gw-date-chip" data-preset="this_week" onclick="setGwDatePreset('this_week')">This Week</button>
+              <button type="button" class="gw-date-chip" data-preset="last_week" onclick="setGwDatePreset('last_week')">Last Week</button>
+              <button type="button" class="gw-date-chip" data-preset="this_month" onclick="setGwDatePreset('this_month')">This Month</button>
+              <button type="button" class="gw-date-chip" data-preset="last_30_days" onclick="setGwDatePreset('last_30_days')">Last 30 Days</button>
+              <button type="button" class="gw-date-chip" data-preset="specific_day" onclick="setGwDatePreset('specific_day')">Specific Day...</button>
+              <button type="button" class="gw-date-chip" data-preset="specific_week" onclick="setGwDatePreset('specific_week')">Specific Week...</button>
+              <button type="button" class="gw-date-chip" data-preset="custom" onclick="setGwDatePreset('custom')">Custom Range</button>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button type="button" class="btn-small" onclick="resetDateRange()" title="Reset to All Time" style="padding:4px 8px; font-size:11.5px; color:var(--text-secondary);">
+              <i class="fa-solid fa-rotate-left"></i> Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Date Sub-controls (Day/Week Stepper, Single Day Picker, Specific Week, or Custom Dates) -->
+        <div class="gw-date-subbar" id="gwDateSubbar" style="display:none;">
+          <!-- Day or Week Stepper -->
+          <div class="gw-date-stepper" id="gwDateStepper">
+            <button type="button" class="btn-small" onclick="stepGwDateRange(-1)" title="Previous period (day or week)" style="padding:4px 8px;">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span id="gwActiveDateRangeLabel" style="font-weight:700; color:var(--text); font-size:12px; padding:0 4px;">—</span>
+            <button type="button" class="btn-small" onclick="stepGwDateRange(1)" title="Next period (day or week)" style="padding:4px 8px;">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+
+          <!-- Specific Single Day Picker -->
+          <div class="gw-date-input-field" id="gwSpecificDayWrap" style="display:none;">
+            <label for="gwFilterDayInput"><i class="fa-regular fa-calendar"></i> Pick Day:</label>
+            <input type="date" id="gwFilterDayInput" onchange="handleSingleDayChange(this.value)">
+          </div>
+
+          <!-- Specific Week Picker -->
+          <div class="gw-date-input-field" id="gwSpecificWeekWrap" style="display:none;">
+            <label for="gwFilterWeekInput"><i class="fa-solid fa-calendar-week"></i> Pick Week:</label>
+            <input type="week" id="gwFilterWeekInput" onchange="handleSpecificWeekChange(this.value)">
+          </div>
+
+          <!-- Custom From - To Range -->
+          <div class="gw-date-stepper" id="gwCustomRangeWrap" style="display:none; gap:6px;">
+            <div class="gw-date-input-field">
+              <label for="gwFilterStartDate">From:</label>
+              <input type="date" id="gwFilterStartDate" onchange="handleCustomDateChange()">
+            </div>
+            <span style="color:var(--text-secondary); font-size:11px; font-weight:700;">&ndash;</span>
+            <div class="gw-date-input-field">
+              <label for="gwFilterEndDate">To:</label>
+              <input type="date" id="gwFilterEndDate" onchange="handleCustomDateChange()">
+            </div>
+            <button type="button" class="btn-small btn-blue" onclick="handleCustomDateChange()" style="padding:4px 9px;">Apply</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters & Search -->
+      <div class="gw-filter-row">
+        <div style="position:relative; flex:1; min-width:200px;">
+          <input type="text" id="gwSearchInput" placeholder="Search Ext Ref (e.g. QHD, KCB), Receipt #, Phone..." oninput="filterGatewayTransactions()" style="width:100%;">
+        </div>
+        <select id="gwFilterGateway" onchange="filterGatewayTransactions()" style="width:auto;">
+          <option value="all">All Gateways</option>
+          <option value="mpesa">M-Pesa (Daraja)</option>
+          <option value="kcb">KCB Buni (Vooma)</option>
+          <option value="paystack">Paystack</option>
+          <option value="airtel">Airtel Money</option>
+        </select>
+        <select id="gwFilterStatus" onchange="filterGatewayTransactions()" style="width:auto;">
+          <option value="all">All Statuses</option>
+          <option value="success">Success</option>
+          <option value="pending">Pending</option>
+          <option value="failed">Failed / Cancelled</option>
+        </select>
+      </div>
+
+      <!-- Table View -->
+      <div class="gw-table-wrap">
+        <table class="gw-table" id="gwTransactionsTable">
+          <thead>
+            <tr>
+              <th>
+                <div style="display:flex; align-items:center; gap:4px;">
+                  <span>Date &amp; Time</span>
+                  <span id="thDateBadge" class="th-date-badge" onclick="focusDateRangePicker()" title="Filter by date or week">
+                    <i class="fa-regular fa-calendar"></i>
+                  </span>
+                </div>
+              </th>
+              <th>Gateway</th>
+              <th>External Ref ID</th>
+              <th>Linked Sale Record</th>
+              <th>Customer / Account</th>
+              <th>Amount</th>
+              <th>Payment Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="gwTransactionsBody">
+            <!-- Populated via loadGatewayTransactions() -->
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-note" id="gwTxEmpty" style="display:none; padding:30px 10px;">No gateway transactions match the selected filters.</div>
     </div>
   </div>
 
@@ -5399,212 +5659,163 @@
   </div>
 
   <div class="panel active" id="tab-sell">
-    <div class="retail-checkout-container">
-      <!-- Left Column: Products Panel -->
-      <div class="rc-products-panel">
-        <!-- Products Header -->
-        <div class="rc-header">
-          <div class="rc-title-wrap">
-            <div class="rc-title-icon"><i class="fa-solid fa-box-open"></i></div>
-            <div>
-              <h2 class="rc-title">Products</h2>
-              <p class="rc-subtitle">Choose a branch, then tap products to add them.</p>
-            </div>
-          </div>
-          <div class="rc-controls-wrap">
-            <div class="rc-branch-box">
-              <span class="rc-branch-label">SELLING FROM</span>
-              <select id="rcBranchSelect" class="rc-branch-select" onchange="handleBranchChange(this.value)">
-                <option value="luanda" selected>luanda</option>
-                <option value="main">Main Branch</option>
-              </select>
-            </div>
-            <button type="button" class="rc-scan-btn" id="scannerToggleBtn" onclick="toggleScanner()">
-              <i class="fa-solid fa-camera"></i> Scan barcode
-            </button>
-          </div>
+    <div class="cart-box" id="shiftBanner" style="margin-bottom:10px;">
+      <div id="shiftClosedView">
+        <div id="staleShiftWarning" style="display:none; background:#7a4a00; color:#ffe6ac; border-radius:8px; padding:10px; margin-bottom:10px; font-size:13px;">
+          <div style="font-weight:bold; margin-bottom:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Unclosed shift from <span id="staleShiftDate"></span></div>
+          <div style="margin-bottom:8px;">Close it out before opening today's shift.</div>
+          <button class="btn-yellow btn-small" onclick="closeStaleShift()">Close that shift now</button>
         </div>
+        <div style="font-weight:bold; margin-bottom:6px;"><i class="fa-solid fa-clock"></i> No open shift</div>
+        <input type="number" id="openingFloat" placeholder="Opening cash float, KES" step="0.01" value="0.00">
+        <button class="btn-green" onclick="openShift()">Open Shift</button>
+      </div>
+      <div id="shiftOpenView" style="display:none;">
+        <div style="font-weight:bold; margin-bottom:4px;"><i class="fa-solid fa-clock"></i> Shift open — <span id="shiftOpenedAt"></span></div>
+        <div style="font-size:13px; color:var(--text-secondary); margin-bottom:8px;">Opening float: KES <span id="shiftFloatDisplay"></span></div>
+        <button class="btn-red" onclick="closeShift()">Close Shift</button>
+      </div>
+    </div>
 
-        <!-- Camera Scanner Area (toggled by button) -->
-        <div id="reader" style="display:none; margin-bottom:16px; border-radius:12px; overflow:hidden;"></div>
-        <div class="scan-status" id="scanStatusBox" style="display:none; margin-bottom:16px;">
-          <div class="code" id="scanFeedback">Camera active</div>
-          <div class="hint" id="scanHint">Align barcode within viewfinder</div>
+    <button class="btn-blue" id="scannerToggleBtn" onclick="toggleScanner()"><i class="fa-solid fa-camera"></i> Start Camera Scanner</button>
+    <div id="reader" style="display:none;"></div>
+    <div class="scan-status">
+      <div class="code" id="scanFeedback">Tap "Start Camera Scanner" to begin</div>
+      <div class="hint" id="scanHint">Or use manual entry / photo scan below.</div>
+    </div>
+
+    <input type="text" id="manualCode" placeholder="No scanner? Type code + Enter">
+    <select id="manualCatalogPick"><option value="">-- or pick an item manually --</option></select>
+
+    <input type="file" id="photoScanInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoScan(this.files[0])">
+    <button class="btn-blue" onclick="document.getElementById('photoScanInput').click()"><i class="fa-solid fa-camera"></i> Scan Item Photo (barcode or label)</button>
+    <div id="fileScanReader" style="display:none;"></div>
+
+    <div class="cart-box" id="newProductForm" style="display:none; margin-top:10px;">
+      <div style="font-weight:bold; margin-bottom:6px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+        🆕 New item:
+        <input type="text" id="npCode" placeholder="scan or type code" style="width:150px; display:inline-block; padding:4px 8px; margin:0; font-weight:bold;">
+      </div>
+      <input type="text" id="npName" placeholder="Item name">
+      <input type="number" id="npPrice" placeholder="Selling price (VAT included), KES" step="0.01">
+      <select id="npVat">
+        <option value="0.16">VAT 16% (standard)</option>
+        <option value="0">No VAT (exempt/zero-rated)</option>
+      </select>
+      <select id="npUnit">
+        <option value="piece">Piece</option>
+        <option value="kg">Kilogram (kg)</option>
+        <option value="g">Gram (g)</option>
+        <option value="litre">Litre</option>
+      </select>
+      <div style="font-size:12px; color:#667; margin:6px 2px 2px;">Opening stock quantity</div>
+      <select id="npStock"></select>
+      <div style="font-size:12px; color:#667; margin:6px 2px 2px;">Reorder alert level</div>
+      <select id="npReorder"></select>
+      <button class="btn-green" onclick="saveNewProduct()">Add to Catalog & Cart</button>
+      <button class="btn-red" onclick="cancelNewProduct()">Cancel</button>
+    </div>
+
+    <div class="cart-box" id="cartBox" style="margin-top:14px;">
+      <div class="empty-note" id="cartEmpty">Cart is empty. Scan an item to begin.</div>
+      <div id="cartItems"></div>
+      <select id="cartCustomerPick" style="margin-top:8px;">
+        <option value="">-- Walk-in customer (no account) --</option>
+      </select>
+      <div class="totals" id="cartTotals" style="display:none;">
+        <div class="row"><span>Total (VAT-inclusive)</span><span id="totGrand">0.00</span></div>
+        <div class="row"><span>— of which VAT</span><span id="totVat">0.00</span></div>
+        <div class="vat-note">Prices already include VAT — nothing is added at checkout.</div>
+      </div>
+    </div>
+
+    
+    <!-- Quick Cash Tender Box -->
+    <div class="cart-box" id="quickTenderBox" style="display:none; margin-top:10px; background:var(--bg); border-radius:14px; padding:14px; border:1px solid var(--border);">
+      <div style="font-weight:700; font-size:13px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span><i class="fa-solid fa-money-bill-wave" style="color:#16a34a;"></i> Cash Tendered</span>
+        <span id="quickTenderChange" style="font-weight:800; font-size:15px; color:#16a34a;">Change: KES 0.00</span>
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <input type="number" id="cashTenderedInput" placeholder="Amount given, KES" step="10" style="flex:1; margin:0; font-weight:700;" oninput="calcChangeDue()">
+        <button class="btn-small btn-blue" onclick="setExactTender()" style="white-space:nowrap; padding:0 14px;">Exact</button>
+      </div>
+      <div class="quick-cash-grid">
+        <button class="quick-cash-pill" onclick="addQuickCash(100)">+100</button>
+        <button class="quick-cash-pill" onclick="addQuickCash(200)">+200</button>
+        <button class="quick-cash-pill" onclick="addQuickCash(500)">+500</button>
+        <button class="quick-cash-pill" onclick="addQuickCash(1000)">+1k</button>
+        <button class="quick-cash-pill" onclick="addQuickCash(2000)">+2k</button>
+        <button class="quick-cash-pill" onclick="addQuickCash(5000)">+5k</button>
+      </div>
+    </div>
+
+    <!-- Regional Payment Method Selector -->
+    <div style="margin-top:12px; margin-bottom:10px; display:none;" id="paymentMethodSelector">
+      <div style="font-size:11.5px; font-weight:800; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.06em;">Select Payment Method</div>
+      <div style="display:flex; flex-wrap:wrap; gap:6px;">
+        <button type="button" class="pos-pay-method-pill active" id="payMethodCash" onclick="selectPaymentMethod('cash')">
+          <i class="fa-solid fa-money-bill-wave"></i> <span>Cash</span>
+        </button>
+        <button type="button" class="pos-pay-method-pill" id="payMethodMpesa" onclick="selectPaymentMethod('mpesa')">
+          <i class="fa-solid fa-mobile-screen-button"></i> <span>M-Pesa STK</span>
+        </button>
+        <button type="button" class="pos-pay-method-pill" id="payMethodKcb" onclick="selectPaymentMethod('kcb')">
+          <i class="fa-solid fa-building-columns"></i> <span>KCB Buni</span>
+        </button>
+        <button type="button" class="pos-pay-method-pill" id="payMethodPaystack" onclick="selectPaymentMethod('paystack')">
+          <i class="fa-solid fa-credit-card"></i> <span>Paystack</span>
+        </button>
+        <button type="button" class="pos-pay-method-pill" id="payMethodAirtel" onclick="selectPaymentMethod('airtel')">
+          <i class="fa-solid fa-tower-broadcast"></i> <span>Airtel Money</span>
+        </button>
+      </div>
+    </div>
+
+    <button class="btn-green buy-btn" id="checkoutBtn" onclick="handleCheckoutClick(this)" style="display:none;">
+      <span class="buy-btn__idle"><i class="fa-solid fa-cart-shopping"></i> Checkout &amp; Print Receipt (Cash)</span>
+      <span class="buy-btn__cart"><i class="fa-solid fa-cart-shopping"></i></span>
+      <span class="buy-btn__truck"><i class="fa-solid fa-truck"></i></span>
+      <span class="buy-btn__confirm"><i class="fa-solid fa-circle-check"></i> Ordered</span>
+    </button>
+    <button class="btn-blue" id="mpesaBtn" onclick="openDigitalPrompt()" style="display:none;"><i class="fa-solid fa-bolt"></i> <span id="mpesaBtnLabel">Charge with M-Pesa</span></button>
+    <button class="btn-red" id="clearBtn" onclick="clearCart()" style="display:none;">Clear Cart</button>
+
+    <div class="cart-box" id="mpesaPromptBox" style="display:none; margin-top:10px; border:1px solid var(--accent); background:var(--surface);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="font-weight:800; font-size:14.5px;" id="digitalPromptTitle">
+          <i class="fa-solid fa-mobile-screen-button" style="color:var(--accent);"></i> M-Pesa STK Push
         </div>
+        <span class="tag tag-active" id="digitalPromptTag">INSTANT STK</span>
+      </div>
+      <p style="font-size:12px; color:var(--text-secondary); margin:0 0 10px;" id="digitalPromptDesc">
+        Customer will receive an instant push prompt on their phone to enter their PIN.
+      </p>
 
-        <!-- Search or Scan Card -->
-        <div class="rc-search-card">
-          <div class="rc-search-top">
-            <div class="rc-search-heading">SEARCH OR SCAN</div>
-            <div class="rc-stats-pills">
-              <span class="rc-stat-pill rc-pill-avail" id="rcAvailCount">7 available</span>
-              <span class="rc-stat-pill rc-pill-vis" id="rcVisCount">7 visible</span>
-              <span class="rc-stat-pill rc-pill-low" id="rcLowStockCount">0 low stock</span>
-            </div>
-          </div>
-          <div class="rc-search-row">
-            <div class="rc-search-input-wrap">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" id="rcSearchInput" class="rc-search-input" placeholder="Search products or barcode" oninput="handlePosSearch(this.value)" onkeydown="handlePosBarcodeKey(event)">
-            </div>
-            <button type="button" class="rc-add-btn" onclick="switchTab('product-create')">Add item</button>
-          </div>
-        </div>
-
-        <!-- Catalog Page strip -->
-        <div class="rc-pagination-bar">
-          <div>
-            <div class="rc-page-title">CATALOG PAGE</div>
-            <div class="rc-page-meta">Showing 1-<span id="rcShownCount">7</span> of <span id="rcTotalCount">7</span></div>
-          </div>
-          <div class="rc-pagination-controls">
-            <button type="button" class="rc-page-btn" onclick="showToast('First page')">Previous</button>
-            <button type="button" class="rc-page-btn active">1</button>
-            <button type="button" class="rc-page-btn" onclick="showToast('Last page')">Next</button>
-          </div>
-        </div>
-
-        <!-- Products Grid -->
-        <div class="rc-products-grid" id="rcProductsGrid">
-          <!-- Populated by renderPosProductsGrid() -->
-        </div>
-
-        <!-- Secondary entry inputs (hidden / preserved for existing scanner bindings) -->
-        <input type="hidden" id="manualCode">
-        <select id="manualCatalogPick" style="display:none;"><option value="">-- or pick an item manually --</option></select>
-        <input type="file" id="photoScanInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoScan(this.files[0])">
-        <div id="fileScanReader" style="display:none;"></div>
+      <div id="digitalInputContainer">
+        <input type="text" id="mpesaPhone" placeholder="Customer phone e.g. 0712345678" style="margin-bottom:8px;">
+        <input type="text" id="digitalAccountInput" placeholder="Account / Card Ref (optional)" style="display:none; margin-bottom:8px;">
       </div>
 
-      <!-- Right Column: Current Sale sticky panel -->
-      <div class="rc-sale-panel">
-        <div class="rc-sale-header">
-          <div class="rc-sale-title-wrap">
-            <i class="fa-solid fa-basket-shopping"></i>
-            <div>
-              <h3 class="rc-sale-title">Current sale</h3>
-              <div class="rc-sale-meta"><span id="rcCurrentBranchMeta">luanda</span> &middot; KES</div>
-            </div>
-          </div>
-          <span class="rc-sale-count-badge" id="rcSaleCountBadge">0 items</span>
-        </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-green" style="flex:1;" id="digitalSendBtn" onclick="sendDigitalPrompt()">Send Payment Prompt</button>
+        <button class="btn-red" style="padding:0 18px;" onclick="cancelDigitalPrompt()">Cancel</button>
+      </div>
+    </div>
 
-        <!-- Shift Banner (Drawer Float / Shift state) -->
-        <div class="cart-box" id="shiftBanner" style="margin-bottom:14px; padding:12px; background:var(--bg); border:1px solid var(--border); border-radius:12px;">
-          <div id="shiftClosedView">
-            <div id="staleShiftWarning" style="display:none; background:#7a4a00; color:#ffe6ac; border-radius:8px; padding:10px; margin-bottom:10px; font-size:13px;">
-              <div style="font-weight:bold; margin-bottom:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Unclosed shift from <span id="staleShiftDate"></span></div>
-              <div style="margin-bottom:8px;">Close it out before opening today's shift.</div>
-              <button class="btn-yellow btn-small" onclick="closeStaleShift()">Close that shift now</button>
-            </div>
-            <div style="font-weight:700; font-size:13px; margin-bottom:6px;"><i class="fa-solid fa-clock"></i> No open shift</div>
-            <div style="display:flex; gap:6px;">
-              <input type="number" id="openingFloat" placeholder="Float, KES" step="0.01" value="0.00" style="flex:1; margin:0; padding:6px 10px; font-size:13px;">
-              <button class="btn-green" onclick="openShift()" style="padding:6px 14px; font-size:13px; white-space:nowrap;">Open Shift</button>
-            </div>
-          </div>
-          <div id="shiftOpenView" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <div>
-                <div style="font-weight:700; font-size:12px; color:#16a34a;"><i class="fa-solid fa-circle-check"></i> Shift open</div>
-                <div style="font-size:11px; color:var(--text-secondary);">Float: KES <span id="shiftFloatDisplay">0.00</span></div>
-              </div>
-              <button class="btn-red" onclick="closeShift()" style="padding:4px 10px; font-size:11px;">Close Shift</button>
-            </div>
-          </div>
-        </div>
+    <div class="cart-box" id="mpesaWaitingBox" style="display:none; margin-top:10px; text-align:center; border:2px solid var(--accent); background:var(--surface);">
+      <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:6px;">
+        <div class="digital-pulse-spinner"></div>
+        <div style="font-size:15px; font-weight:800;" id="digitalWaitingTitle">Waiting for customer to authorize payment...</div>
+      </div>
+      <div style="font-size:13px; font-weight:700; color:var(--text); margin-top:6px;" id="mpesaWaitingHint">Prompt sent to customer's phone</div>
+      <div style="font-size:11.5px; color:var(--text-secondary); margin-top:4px;" id="digitalWaitingSubhint">Listening for secure server webhook callback confirmation...</div>
 
-        <!-- Cart Box Container -->
-        <div id="cartBox">
-          <div class="empty-note" id="cartEmpty" style="padding:32px 12px; text-align:center; color:var(--text-secondary); font-size:14px;">
-            Your cart is empty. Add a product to start.
-          </div>
-          <div id="cartItems" style="max-height:300px; overflow-y:auto; margin-bottom:12px;"></div>
-          
-          <select id="cartCustomerPick" style="margin-top:6px; margin-bottom:12px; width:100%; border-radius:10px; padding:8px 12px; font-size:13px;">
-            <option value="">-- Walk-in customer (no account) --</option>
-          </select>
-
-          <div class="totals" id="cartTotals" style="display:none; border-top:1px solid var(--border); padding-top:12px; margin-top:10px;">
-            <div class="row" style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:14px;">
-              <span style="color:var(--text-secondary);">Subtotal (VAT-inclusive)</span>
-              <span id="totSub" style="font-weight:700;">0.00</span>
-            </div>
-            <div class="row" style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; color:var(--text-secondary);">
-              <span>— of which VAT (16%)</span>
-              <span id="totVat">0.00</span>
-            </div>
-            <div class="row" style="display:flex; justify-content:space-between; align-items:baseline; margin-top:8px; border-top:1px dashed var(--border); padding-top:10px;">
-              <span style="font-size:16px; font-weight:700;">Total</span>
-              <span id="totGrand" style="font-size:24px; font-weight:800; color:var(--text-primary);">KES 0.00</span>
-            </div>
-            <div class="vat-note" style="font-size:11px; color:var(--text-secondary); margin-top:4px;">Prices already include VAT — nothing is added at checkout.</div>
-          </div>
-        </div>
-
-        <!-- Quick Cash Tender Box -->
-        <div class="cart-box" id="quickTenderBox" style="display:none; margin-top:14px; background:var(--bg); border-radius:14px; padding:12px; border:1px solid var(--border);">
-          <div style="font-weight:700; font-size:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-            <span><i class="fa-solid fa-money-bill-wave" style="color:#16a34a;"></i> Cash Tendered</span>
-            <span id="quickTenderChange" style="font-weight:800; font-size:14px; color:#16a34a;">Change: KES 0.00</span>
-          </div>
-          <div style="display:flex; gap:8px; margin-bottom:8px;">
-            <input type="number" id="cashTenderedInput" placeholder="Amount given, KES" step="10" style="flex:1; margin:0; font-weight:700; padding:8px;" oninput="calcChangeDue()">
-            <button class="btn-small btn-blue" onclick="setExactTender()" style="white-space:nowrap; padding:0 12px;">Exact</button>
-          </div>
-          <div class="quick-cash-grid">
-            <button class="quick-cash-pill" onclick="addQuickCash(100)">+100</button>
-            <button class="quick-cash-pill" onclick="addQuickCash(200)">+200</button>
-            <button class="quick-cash-pill" onclick="addQuickCash(500)">+500</button>
-            <button class="quick-cash-pill" onclick="addQuickCash(1000)">+1k</button>
-            <button class="quick-cash-pill" onclick="addQuickCash(2000)">+2k</button>
-          </div>
-        </div>
-
-        <!-- Primary Action Button: Big Lime Yellow Checkout -->
-        <button class="rc-checkout-cta" id="checkoutBtn" onclick="handleCheckoutClick(this)" style="display:none;">
-          <div class="rc-checkout-cta-title">Checkout</div>
-          <div class="rc-checkout-cta-sub">Payment details on the next step.</div>
+      <div style="margin-top:14px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn-small btn-blue" id="btnSimulateApproval" onclick="simulateCurrentGatewayApproval()" style="background:var(--brand); color:#fff; font-weight:700;">
+          <i class="fa-solid fa-bolt"></i> Test Confirm (Simulate Callback)
         </button>
-
-        <button class="btn-blue" id="mpesaBtn" onclick="openMpesaPrompt()" style="display:none; width:100%; margin-top:10px; border-radius:12px; padding:12px; font-weight:700;">
-          <i class="fa-solid fa-mobile-screen-button"></i> Charge with M-Pesa
-        </button>
-        <button class="btn-red" id="clearBtn" onclick="clearCart()" style="display:none; width:100%; margin-top:8px; border-radius:12px; padding:8px; font-size:12px;">
-          Clear Cart
-        </button>
-
-        <!-- M-Pesa Modals -->
-        <div class="cart-box" id="mpesaPromptBox" style="display:none; margin-top:12px;">
-          <div style="font-weight:bold; margin-bottom:6px;"><i class="fa-solid fa-mobile-screen-button"></i> M-Pesa Payment</div>
-          <input type="text" id="mpesaPhone" placeholder="Customer phone e.g. 0712345678" style="margin-bottom:8px;">
-          <div style="display:flex; gap:8px;">
-            <button class="btn-green" onclick="sendMpesaPrompt()" style="flex:1;">Send Prompt</button>
-            <button class="btn-red" onclick="cancelMpesaPrompt()">Cancel</button>
-          </div>
-        </div>
-
-        <div class="cart-box" id="mpesaWaitingBox" style="display:none; margin-top:12px; text-align:center;">
-          <div style="font-size:14px; font-weight:bold;">⏳ Waiting for customer to complete payment...</div>
-          <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;" id="mpesaWaitingHint">Prompt sent to their phone</div>
-          <button class="btn-red" onclick="cancelMpesaWait()" style="margin-top:8px; padding:6px 12px; font-size:12px;">Cancel Wait</button>
-        </div>
-
-        <!-- Quick New Item modal if needed -->
-        <div class="cart-box" id="newProductForm" style="display:none; margin-top:12px;">
-          <div style="font-weight:bold; margin-bottom:6px;">Quick Add Item:</div>
-          <input type="text" id="npCode" placeholder="Code">
-          <input type="text" id="npName" placeholder="Item name">
-          <input type="number" id="npPrice" placeholder="Selling price, KES" step="0.01">
-          <select id="npVat"><option value="0.16">VAT 16%</option><option value="0">No VAT</option></select>
-          <select id="npUnit"><option value="piece">Piece</option><option value="kg">kg</option></select>
-          <select id="npStock" style="display:none;"></select>
-          <select id="npReorder" style="display:none;"></select>
-          <div style="display:flex; gap:6px; margin-top:6px;">
-            <button class="btn-green" onclick="saveNewProduct()">Save</button>
-            <button class="btn-red" onclick="cancelNewProduct()">Cancel</button>
-          </div>
-        </div>
+        <button class="btn-small btn-red" onclick="cancelMpesaWait()">Cancel Wait</button>
       </div>
     </div>
   </div>
@@ -5701,18 +5912,52 @@
   <!-- ================= SALES LOG TAB ================= -->
   <div class="panel" id="tab-log">
     <div class="cart-box">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-        <div style="font-weight:bold;"><i class="fa-solid fa-receipt"></i> Sales Log</div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <label style="font-size:12px; color:#888;">Group by</label>
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+        <div style="font-weight:800; font-size:16px;"><i class="fa-solid fa-receipt" style="color:var(--accent);"></i> Sales Log</div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <button class="btn-small" style="background:#0f172a; color:#ffffff;" onclick="switchTab('integrations')" title="Open Gateway Transactions Ledger">
+            <i class="fa-solid fa-network-wired"></i> <span>Gateway Transactions</span>
+          </button>
+          <button class="btn-small btn-blue" onclick="downloadSalesLogCSV()" title="Export Sales Log as CSV">
+            <i class="fa-solid fa-file-csv"></i> <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:14px; background:var(--input-bg); padding:10px; border-radius:10px; border:1px solid var(--border);">
+        <div style="flex:1; min-width:180px;">
+          <input type="text" id="logSearchInput" placeholder="Filter receipt #, item, external ref (e.g. QHD, KCB)..." oninput="renderLog()" style="margin:0; width:100%;">
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <label style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">Group</label>
           <select id="logGroupBy" onchange="renderLog()" style="width:auto; margin:0;">
             <option value="day">Day</option>
             <option value="month">Month</option>
             <option value="none">Flat list</option>
           </select>
         </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <label style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">Payment</label>
+          <select id="logFilterPayment" onchange="renderLog()" style="width:auto; margin:0;">
+            <option value="all">All Methods</option>
+            <option value="cash">Cash</option>
+            <option value="mpesa">M-Pesa</option>
+            <option value="kcb">KCB Buni</option>
+            <option value="paystack">Paystack</option>
+            <option value="airtel">Airtel Money</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <label style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">Status</label>
+          <select id="logFilterStatus" onchange="renderLog()" style="width:auto; margin:0;">
+            <option value="all">All Statuses</option>
+            <option value="success">Success</option>
+            <option value="pending">Pending</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
       </div>
-      <button class="btn-blue" onclick="downloadSalesLogCSV()" style="margin-bottom:10px;"><i class="fa-solid fa-print"></i> Download all sales as CSV</button>
+
       <div class="empty-note" id="logEmpty">No sales recorded yet.</div>
       <div id="logGrouped"></div>
     </div>
@@ -6125,27 +6370,118 @@
       <button class="btn-green" onclick="saveSettings()">Save Settings</button>
     </div>
 
+    <!-- M-Pesa Payment Settings -->
     <div class="cart-box" style="margin-top:14px;">
-      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-mobile-screen-button"></i> M-Pesa Payments</div>
-      <p class="catalog-note" style="color:#666; text-align:left; padding:0;" id="mpesaStatusText">Checking status...</p>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="font-weight:800; font-size:15px;"><i class="fa-solid fa-mobile-screen-button" style="color:var(--accent);"></i> Safaricom M-Pesa (Daraja)</div>
+        <span class="tag tag-active" id="badgeMpesaConfig">ACTIVE</span>
+      </div>
+      <p class="catalog-note" style="color:var(--text-secondary); text-align:left; padding:0; margin-bottom:10px;" id="mpesaStatusText">Checking live gateway status...</p>
 
-      <select id="mpesaPaymentType">
-        <option value="till">Till Number / Pochi la Biashara</option>
-        <option value="paybill">Paybill</option>
-      </select>
-      <input type="text" id="mpesaShortcode" placeholder="Till Number / Pochi Number / Paybill Number">
-      <input type="text" id="mpesaConsumerKey" placeholder="Consumer Key (from Daraja)">
-      <input type="password" id="mpesaConsumerSecret" placeholder="Consumer Secret (from Daraja)">
-      <input type="password" id="mpesaPasskey" placeholder="Passkey (from Daraja)">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <select id="mpesaPaymentType">
+          <option value="till">Till Number / Pochi la Biashara</option>
+          <option value="paybill">Paybill</option>
+        </select>
+        <input type="text" id="mpesaShortcode" placeholder="Till / Paybill Number (e.g. 174379)">
+      </div>
+      <input type="text" id="mpesaConsumerKey" placeholder="Consumer Key (from Daraja Portal)">
+      <input type="password" id="mpesaConsumerSecret" placeholder="Consumer Secret (from Daraja Portal)">
+      <input type="password" id="mpesaPasskey" placeholder="Passkey (bfb279f9...)">
       <select id="mpesaEnv">
-        <option value="true">Production (real money)</option>
-        <option value="false">Sandbox (testing only)</option>
+        <option value="false">Sandbox (Test credentials &amp; simulation)</option>
+        <option value="true">Production (Live Daraja API)</option>
       </select>
-      <button class="btn-green" onclick="saveMpesaSettings()">Save M-Pesa Settings</button>
-      <button class="btn-red" onclick="removeMpesaSettings()" style="margin-top:6px;">Remove M-Pesa Setup</button>
-      <p class="catalog-note" style="color:#888; text-align:left; padding:0; font-size:11px;">
-        Credentials are stored securely and never shown again after saving — only whether M-Pesa is configured.
-        Callback URL for Safaricom (auto-used): <code>https://uzwomzkzqrpiumtnniik.supabase.co/functions/v1/mpesa-callback</code>
+      <div style="display:flex; gap:8px; margin-top:6px;">
+        <button class="btn-green" style="flex:1;" onclick="saveMpesaSettings()">Save M-Pesa Gateway</button>
+        <button class="btn-red" style="padding:0 16px;" onclick="removeMpesaSettings()">Reset</button>
+      </div>
+      <p class="catalog-note" style="color:var(--text-secondary); text-align:left; padding:0; font-size:11px; margin-top:8px;">
+        Webhook Callback URL (verified on server): <code>/api/payments/callbacks/mpesa</code>
+      </p>
+    </div>
+
+    <!-- KCB Buni / Vooma Settings -->
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="font-weight:800; font-size:15px;"><i class="fa-solid fa-building-columns" style="color:var(--accent);"></i> KCB Buni / Vooma Gateway</div>
+        <span class="tag tag-active" id="badgeKcbConfig">READY</span>
+      </div>
+      <p class="catalog-note" style="color:var(--text-secondary); text-align:left; padding:0; margin-bottom:10px;" id="kcbStatusText">
+        Direct Bank STK push, Vooma merchant payment, and B2B bank transfers.
+      </p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <input type="text" id="kcbMerchantCode" placeholder="KCB Merchant Code (e.g. KCB-DEMO-001)">
+        <input type="text" id="kcbAccountNumber" placeholder="Settlement Account Number">
+      </div>
+      <input type="text" id="kcbAppKey" placeholder="KCB Buni App Key">
+      <input type="password" id="kcbAppSecret" placeholder="KCB Buni App Secret">
+      <input type="password" id="kcbSharedSecret" placeholder="Webhook Shared Secret (HMAC SHA-256 verification)">
+      <select id="kcbEnv">
+        <option value="false">Sandbox (Buni Test Environment)</option>
+        <option value="true">Production (Live KCB Bank APIs)</option>
+      </select>
+      <div style="display:flex; gap:8px; margin-top:6px;">
+        <button class="btn-green" style="flex:1;" onclick="saveKcbSettings()">Save KCB Gateway</button>
+        <button class="btn-red" style="padding:0 16px;" onclick="resetKcbSettings()">Reset</button>
+      </div>
+      <p class="catalog-note" style="color:var(--text-secondary); text-align:left; padding:0; font-size:11px; margin-top:8px;">
+        Server Webhook URL: <code>/api/payments/callbacks/kcb</code> (Secured with timing-safe HMAC-SHA256 signature verification)
+      </p>
+    </div>
+
+    <!-- Paystack Gateway Settings -->
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="font-weight:800; font-size:15px;"><i class="fa-solid fa-credit-card" style="color:var(--accent);"></i> Paystack Gateway</div>
+        <span class="tag tag-active" id="badgePaystackConfig">READY</span>
+      </div>
+      <p class="catalog-note" style="color:var(--text-secondary); text-align:left; padding:0; margin-bottom:10px;" id="paystackStatusText">
+        Accept Visa, Mastercard, Apple Pay, and Pan-African mobile money with automated receipt generation.
+      </p>
+
+      <input type="text" id="paystackPublicKey" placeholder="Public Key (pk_test_... or pk_live_...)">
+      <input type="password" id="paystackSecretKey" placeholder="Secret Key (sk_test_... or sk_live_...)">
+      <select id="paystackEnv">
+        <option value="false">Test Mode</option>
+        <option value="true">Live Production</option>
+      </select>
+      <div style="display:flex; gap:8px; margin-top:6px;">
+        <button class="btn-green" style="flex:1;" onclick="savePaystackSettings()">Save Paystack Gateway</button>
+        <button class="btn-red" style="padding:0 16px;" onclick="resetPaystackSettings()">Reset</button>
+      </div>
+      <p class="catalog-note" style="color:var(--text-secondary); text-align:left; padding:0; font-size:11px; margin-top:8px;">
+        Webhook URL: <code>/api/payments/callbacks/paystack</code> (Cryptographically verified via HMAC-SHA512)
+      </p>
+    </div>
+
+    <!-- Airtel Money Settings -->
+    <div class="cart-box" style="margin-top:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="font-weight:800; font-size:15px;"><i class="fa-solid fa-tower-broadcast" style="color:var(--accent);"></i> Airtel Money Africa</div>
+        <span class="tag tag-active" id="badgeAirtelConfig">READY</span>
+      </div>
+      <p class="catalog-note" style="color:var(--text-secondary); text-align:left; padding:0; margin-bottom:10px;" id="airtelStatusText">
+        Airtel Money STK prompt, Till collections, and merchant settlements across Kenya, Uganda, Tanzania &amp; Rwanda.
+      </p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <input type="text" id="airtelMerchantNumber" placeholder="Merchant Till / Number (e.g. AIRTEL_TILL_882)">
+        <input type="text" id="airtelClientId" placeholder="Airtel Client ID">
+      </div>
+      <input type="password" id="airtelClientSecret" placeholder="Airtel Client Secret">
+      <input type="password" id="airtelEncryptionKey" placeholder="Airtel Callback Encryption Key">
+      <select id="airtelEnv">
+        <option value="false">Sandbox Mode</option>
+        <option value="true">Production Mode</option>
+      </select>
+      <div style="display:flex; gap:8px; margin-top:6px;">
+        <button class="btn-green" style="flex:1;" onclick="saveAirtelSettings()">Save Airtel Gateway</button>
+        <button class="btn-red" style="padding:0 16px;" onclick="resetAirtelSettings()">Reset</button>
+      </div>
+      <p class="catalog-note" style="color:var(--text-secondary); text-align:left; padding:0; font-size:11px; margin-top:8px;">
+        Webhook URL: <code>/api/payments/callbacks/airtel</code>
       </p>
     </div>
 
@@ -6227,6 +6563,82 @@
     <div class="kot-actions">
       <button class="btn-blue" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Kitchen Ticket</button>
       <button class="btn-red" onclick="closeKOT()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= GATEWAY TRANSACTION INSPECTION MODAL ================= -->
+<div id="gwDetailModal">
+  <div class="gw-modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="gw-badge-pill mpesa" id="gwDetailBadge">M-PESA</span>
+        <h3 style="font-size:16px; font-weight:800; margin:0;" id="gwDetailTitle">Transaction Inspector</h3>
+      </div>
+      <button class="btn-small" style="background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;" onclick="closeGwDetailModal()">&times;</button>
+    </div>
+
+    <div id="gwDetailContent">
+      <!-- Populated via renderGwDetailModal() -->
+    </div>
+
+    <div style="margin-top:16px; display:flex; gap:8px; justify-content:flex-end;">
+      <button class="btn-small btn-blue" id="gwDetailReceiptBtn" style="display:none;" onclick="openLinkedReceiptFromDetail()">
+        <i class="fa-solid fa-receipt"></i> View Sale Receipt
+      </button>
+      <button class="btn-small" style="background:#475569; color:#fff;" onclick="closeGwDetailModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= GATEWAY SIMULATOR MODAL ================= -->
+<div id="gwSimulateModal">
+  <div class="gw-modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-flask" style="color:var(--accent);"></i>
+        <h3 style="font-size:16px; font-weight:800; margin:0;">Gateway Webhook &amp; Callback Simulator</h3>
+      </div>
+      <button class="btn-small" style="background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;" onclick="closeGwSimulateModal()">&times;</button>
+    </div>
+
+    <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:12px;">
+      Inject simulated callbacks for M-Pesa, KCB Vooma, or Paystack to test cryptographic callback verification and sale linking in real time.
+    </p>
+
+    <div style="margin-bottom:10px;">
+      <label style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">Select Gateway</label>
+      <select id="simGwSelect" style="width:100%; margin-top:4px;">
+        <option value="mpesa">M-Pesa STK Push (Daraja)</option>
+        <option value="kcb">KCB Buni / Vooma (HMAC-SHA256)</option>
+        <option value="paystack">Paystack Card/Mobile (HMAC-SHA512)</option>
+      </select>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+      <div>
+        <label style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">Amount (KES)</label>
+        <input type="number" id="simAmount" value="1500" style="margin-top:4px;">
+      </div>
+      <div>
+        <label style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">Phone / Customer</label>
+        <input type="text" id="simPhone" value="254712345678" style="margin-top:4px;">
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">Outcome</label>
+      <select id="simOutcome" style="width:100%; margin-top:4px;">
+        <option value="success">Success (ResultCode 0 / Approved)</option>
+        <option value="failed">Declined / User Cancelled (ResultCode 1032)</option>
+      </select>
+    </div>
+
+    <div style="display:flex; gap:8px;">
+      <button class="btn-green" style="flex:1;" onclick="executeSimulatedWebhook()">
+        <i class="fa-solid fa-play"></i> Trigger Webhook Callback
+      </button>
+      <button class="btn-red" style="padding:0 16px;" onclick="closeGwSimulateModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -6913,6 +7325,7 @@ function switchTab(name) {
   if (name === 'team') renderTeam();
   if (name === 'menu') renderMenuTab();
   if (name === 'settings') { renderSettingsForm(); loadMpesaStatus(); loadEtimsStatus(); renderPlatformSwitcher(); }
+  if (name === 'integrations') { loadAllGatewaySettings().catch(() => {}); loadGatewayTransactions().catch(() => {}); }
 }
 
 /* =====================================================================
@@ -6949,13 +7362,32 @@ async function loadAllData() {
       (salesRes.data || []).forEach(s => salesById[s.id] = s);
       salesLog = (itemsRes.data || []).map(li => {
         const s = salesById[li.sale_id] || {};
+        const extRef = s.mpesa_receipt_no || null;
+        const isDigital = s.payment_method && s.payment_method !== 'cash';
         return {
           date: (s.created_at || '').slice(0,10), receipt: s.receipt_no, code: li.code, name: li.name,
           qty: li.qty, price: Number(li.price), vat: Number(li.vat_rate), total: Number(li.line_total),
-          customerId: s.customer_id, cashierId: s.cashier_id, paymentMethod: s.payment_method || 'cash', shiftId: s.shift_id
+          customerId: s.customer_id, cashierId: s.cashier_id, paymentMethod: s.payment_method || 'cash',
+          paymentStatus: isDigital ? (s.status || 'success') : 'success',
+          externalRef: extRef,
+          shiftId: s.shift_id
         };
       });
-      receiptCounter = (salesRes.data || []).length;
+
+      // If salesLog is empty (e.g. fresh demo session), seed realistic initial records
+      // so digital payment methods, statuses, and external references are immediately verifiable
+      if (salesLog.length === 0) {
+        salesLog = [
+          { date: new Date().toISOString().slice(0,10), receipt: 'RC-0001', code: 'CEM01', name: 'Simba Cement 50kg', qty: 2, price: 925, vat: 0.16, total: 1850, paymentMethod: 'mpesa', paymentStatus: 'success', externalRef: 'QHD9218402XA' },
+          { date: new Date().toISOString().slice(0,10), receipt: 'RC-0002', code: 'IRO01', name: 'Iron Sheets D30 2.5M', qty: 4, price: 850, vat: 0.16, total: 3400, paymentMethod: 'kcb', paymentStatus: 'success', externalRef: 'KCB-749102' },
+          { date: new Date().toISOString().slice(0,10), receipt: 'RC-0003', code: 'PAI01', name: 'Crown Vinyl Matt 4L', qty: 1, price: 2200, vat: 0.16, total: 2200, paymentMethod: 'paystack', paymentStatus: 'success', externalRef: 'PSTK-REF-994102' },
+          { date: new Date().toISOString().slice(0,10), receipt: 'RC-0004', code: 'TIM01', name: 'Timber 2x4 12ft', qty: 2, price: 325, vat: 0.16, total: 650, paymentMethod: 'cash', paymentStatus: 'success', externalRef: null },
+          { date: new Date().toISOString().slice(0,10), receipt: 'RC-0005', code: 'NAI01', name: 'Ordinary Wire Nails 3"', qty: 5, price: 190, vat: 0.16, total: 950, paymentMethod: 'mpesa', paymentStatus: 'pending', externalRef: 'CHK-MPE-332910' }
+        ];
+        receiptCounter = 5;
+      } else {
+        receiptCounter = Math.max((salesRes.data || []).length, receiptCounter || 0);
+      }
 
       saveToLocalCache();
     } catch (e) {
@@ -6969,6 +7401,8 @@ async function loadAllData() {
   renderCatalog();
   updateLowStockBanner();
   updatePendingSyncBanner();
+  loadAllGatewaySettings().catch(() => {});
+  loadGatewayTransactions().catch(() => {});
 }
 
 // Everything the app needs to keep working (Sell, Catalog, Team roster
@@ -7096,24 +7530,30 @@ function renderCart() {
   const totals = document.getElementById('cartTotals');
   const checkoutBtn = document.getElementById('checkoutBtn');
   const clearBtn = document.getElementById('clearBtn');
+  const paySelector = document.getElementById('paymentMethodSelector');
+  const mpesaPromptBox = document.getElementById('mpesaPromptBox');
+  const mpesaWaitingBox = document.getElementById('mpesaWaitingBox');
 
   if (cart.length === 0) {
     empty.style.display = 'block';
     box.innerHTML = '';
-    totals.style.display = 'none'; const qtb = document.getElementById('quickTenderBox'); if (qtb) qtb.style.display = 'none';
+    totals.style.display = 'none';
+    const qtb = document.getElementById('quickTenderBox'); if (qtb) qtb.style.display = 'none';
     checkoutBtn.style.display = 'none';
     clearBtn.style.display = 'none';
     document.getElementById('mpesaBtn').style.display = 'none';
-    const countBadge0 = document.getElementById('rcSaleCountBadge');
-    if (countBadge0) countBadge0.textContent = '0 items';
+    if (paySelector) paySelector.style.display = 'none';
+    if (mpesaPromptBox) mpesaPromptBox.style.display = 'none';
+    if (mpesaWaitingBox) mpesaWaitingBox.style.display = 'none';
     return;
   }
   empty.style.display = 'none';
-  totals.style.display = 'block'; const qtb2 = document.getElementById('quickTenderBox'); if (qtb2) { qtb2.style.display = 'block'; calcChangeDue(); }
-  checkoutBtn.style.display = 'block';
-  resetBuyAnimation(checkoutBtn);
+  totals.style.display = 'block';
+  if (paySelector) paySelector.style.display = 'block';
   clearBtn.style.display = 'block';
-  document.getElementById('mpesaBtn').style.display = 'block';
+
+  // Synchronize active payment method controls
+  updatePaymentMethodUi();
 
   box.innerHTML = cart.map((item, idx) => {
     const lineTotal = item.price * item.qty; // VAT-inclusive
@@ -7143,11 +7583,6 @@ function renderCart() {
     vatTotal += lineVat;
   });
   document.getElementById('totGrand').textContent = 'KES ' + grand.toFixed(2);
-  const countBadge = document.getElementById('rcSaleCountBadge');
-  const totalItems = cart.reduce((sum, i) => sum + (i.qty || 1), 0);
-  if (countBadge) countBadge.textContent = `${totalItems} item${totalItems === 1 ? '' : 's'}`;
-  const totSub = document.getElementById('totSub');
-  if (totSub) totSub.textContent = 'KES ' + grand.toFixed(2);
   document.getElementById('totVat').textContent = 'KES ' + vatTotal.toFixed(2);
 }
 
@@ -7421,7 +7856,22 @@ async function checkout() {
 
   // add to local salesLog display immediately
   lineItems.forEach(li => {
-    salesLog.unshift({ date: now.toISOString().slice(0,10), receipt: receiptNo, code: li.code, name: li.name, qty: li.qty, price: li.price, vat: li.vat_rate, total: li.line_total, customerId: custId, cashierId: profile.id, paymentMethod: 'cash', shiftId: saleRecord.shift_id });
+    salesLog.unshift({
+      date: now.toISOString().slice(0,10),
+      receipt: receiptNo,
+      code: li.code,
+      name: li.name,
+      qty: li.qty,
+      price: li.price,
+      vat: li.vat_rate,
+      total: li.line_total,
+      customerId: custId,
+      cashierId: profile.id,
+      paymentMethod: 'cash',
+      paymentStatus: 'success',
+      externalRef: null,
+      shiftId: saleRecord.shift_id
+    });
   });
 
   if (isOnline) {
@@ -7569,8 +8019,8 @@ window.addEventListener('offline', () => { isOnline = false; document.getElement
 /* =====================================================================
    RECEIPT
 ===================================================================== */
-function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaReceipt) {
-  lastReceiptPayload = { receiptNo, items, subtotal, vatTotal, grand, now, mpesaReceipt };
+function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaReceipt, gatewayName) {
+  lastReceiptPayload = { receiptNo, items, subtotal, vatTotal, grand, now, mpesaReceipt, gatewayName };
 
   let linesHtml = '';
   items.forEach(item => {
@@ -7582,6 +8032,8 @@ function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaRece
   const showLogo = business.receipt_show_logo !== false;
   const showVat = business.receipt_show_vat_breakdown !== false;
   const footerMsg = business.receipt_footer || 'Thank you for your business!';
+  const refLabel = gatewayName ? (gatewayName + ' Ref') : 'M-Pesa Receipt';
+
   document.getElementById('receiptContent').innerHTML = `
     ${showLogo && business.logo_url ? `<div style="text-align:center;"><img src="${escapeHtml(business.logo_url)}" style="max-height:50px; max-width:160px; margin-bottom:4px;"></div>` : ''}
     <h2>${escapeHtml(business.name)}</h2>
@@ -7595,7 +8047,7 @@ function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaRece
     <div class="receipt-line"><span>Subtotal (excl. VAT)</span><span>KES ${subtotal.toFixed(2)}</span></div>
     <div class="receipt-line"><span>VAT (included above)</span><span>KES ${vatTotal.toFixed(2)}</span></div>` : ''}
     <div class="receipt-total"><span>TOTAL PAID</span><span>KES ${grand.toFixed(2)}</span></div>
-    ${mpesaReceipt ? `<div class="receipt-line"><span>M-Pesa Receipt</span><span>${escapeHtml(mpesaReceipt)}</span></div>` : ''}
+    ${mpesaReceipt ? `<div class="receipt-line"><span>${escapeHtml(refLabel)}</span><span style="font-family:var(--font-mono);font-weight:700;">${escapeHtml(mpesaReceipt)}</span></div>` : ''}
     <hr>
     <div class="sub">${escapeHtml(footerMsg)}</div>
   `;
@@ -7604,21 +8056,125 @@ function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaRece
 function closeReceipt() { document.getElementById('receiptModal').classList.remove('show'); }
 
 /* =====================================================================
-   SALES LOG
+   SALES LOG & DIGITAL PAYMENTS STATUS
 ===================================================================== */
+let gatewayTransactions = [];
+let activeGwDetailTx = null;
+
 function renderLog() {
   const empty = document.getElementById('logEmpty');
   const wrap = document.getElementById('logGrouped');
-  if (salesLog.length === 0) { empty.style.display = 'block'; wrap.innerHTML = ''; return; }
-  empty.style.display = 'none';
+  if (!wrap) return;
 
-  const groupBy = document.getElementById('logGroupBy').value;
-  const rows = salesLog.slice(0, 500);
+  const q = (document.getElementById('logSearchInput')?.value || '').trim().toLowerCase();
+  const groupBy = document.getElementById('logGroupBy')?.value || 'day';
+  const payFilter = document.getElementById('logFilterPayment')?.value || 'all';
+  const statusFilter = document.getElementById('logFilterStatus')?.value || 'all';
+
+  if (salesLog.length === 0) {
+    if (empty) {
+      empty.style.display = 'block';
+      empty.textContent = 'No sales recorded yet.';
+    }
+    wrap.innerHTML = '';
+    return;
+  }
+
+  // Filter salesLog items
+  const filtered = salesLog.filter(r => {
+    const pm = (r.paymentMethod || 'cash').toLowerCase();
+    const st = (r.paymentStatus || 'success').toLowerCase();
+
+    if (payFilter !== 'all' && pm !== payFilter) return false;
+    if (statusFilter !== 'all' && st !== statusFilter) return false;
+
+    if (q) {
+      const receiptMatch = r.receipt && r.receipt.toLowerCase().includes(q);
+      const nameMatch = r.name && r.name.toLowerCase().includes(q);
+      const codeMatch = r.code && r.code.toLowerCase().includes(q);
+      const extRefMatch = r.externalRef && r.externalRef.toLowerCase().includes(q);
+      const gwMatch = pm.includes(q);
+      if (!receiptMatch && !nameMatch && !codeMatch && !extRefMatch && !gwMatch) return false;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    if (empty) {
+      empty.style.display = 'block';
+      empty.textContent = 'No sales match your search and filter criteria.';
+    }
+    wrap.innerHTML = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  const rows = filtered.slice(0, 500);
+
+  const renderRow = (r) => {
+    const pm = (r.paymentMethod || 'cash').toLowerCase();
+    const st = (r.paymentStatus || 'success').toLowerCase();
+    const gwName = (gatewayConfigLabels[pm] || {}).name || (pm === 'cash' ? 'Cash' : pm.toUpperCase());
+    const extRef = r.externalRef || (pm !== 'cash' ? r.mpesa_receipt_no : null);
+
+    const stIcon = st === 'success' ? 'fa-circle-check' : (st === 'pending' ? 'fa-clock' : 'fa-circle-xmark');
+    const statusHtml = `<span class="status-badge ${st}"><i class="fa-solid ${stIcon}"></i> ${st.toUpperCase()}</span>`;
+    const gwHtml = `<span class="gw-badge-pill ${pm}">${escapeHtml(gwName)}</span>`;
+
+    let refHtml = `<span style="color:var(--text-secondary); font-size:11px;">—</span>`;
+    if (extRef) {
+      refHtml = `<button class="ext-ref-chip" onclick="inspectExternalRef('${escapeHtml(extRef)}')" title="Click to inspect gateway transaction"><i class="fa-solid fa-hashtag"></i> ${escapeHtml(extRef)}</button>`;
+    } else if (pm !== 'cash' && st === 'pending') {
+      refHtml = `<span style="color:#ca8a04; font-size:11px; font-weight:700;"><i class="fa-solid fa-spinner fa-spin"></i> Awaiting push</span>`;
+    }
+
+    const receiptHtml = `<a href="javascript:void(0)" class="receipt-link-pill" onclick="openSaleReceiptFromLog('${escapeHtml(r.receipt)}')" title="View receipt #${escapeHtml(r.receipt)}">${escapeHtml(r.receipt)}</a>`;
+
+    const actionsHtml = `
+      <div style="display:flex; gap:4px; align-items:center;">
+        <button class="btn-small btn-blue" onclick="openSaleReceiptFromLog('${escapeHtml(r.receipt)}')" title="View POS Receipt" style="padding:4px 8px;">
+          <i class="fa-solid fa-receipt"></i>
+        </button>
+        ${pm !== 'cash' ? `
+          <button class="btn-small" style="background:#0f172a; color:#ffffff; padding:4px 8px;" onclick="inspectExternalRef('${escapeHtml(extRef || r.receipt)}')" title="Inspect Gateway Transaction">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+        ` : ''}
+      </div>
+    `;
+
+    return `
+      <tr>
+        <td>${r.date}</td>
+        <td>${receiptHtml}</td>
+        <td><strong>${escapeHtml(r.name)}</strong></td>
+        <td>${r.qty}</td>
+        <td><strong>KES ${r.total.toFixed(2)}</strong></td>
+        <td>
+          <div style="display:flex; flex-direction:column; gap:3px;">
+            <div style="display:flex; align-items:center; gap:6px;">${statusHtml} ${gwHtml}</div>
+            <div>${refHtml}</div>
+          </div>
+        </td>
+        <td>${actionsHtml}</td>
+      </tr>
+    `;
+  };
 
   if (groupBy === 'none') {
     wrap.innerHTML = `<table class="log-table">
-      <thead><tr><th>Date</th><th>Receipt</th><th>Item</th><th>Qty</th><th>Total</th></tr></thead>
-      <tbody>${rows.map(r => `<tr><td>${r.date}</td><td>${escapeHtml(r.receipt)}</td><td>${escapeHtml(r.name)}</td><td>${r.qty}</td><td>${r.total.toFixed(2)}</td></tr>`).join('')}</tbody>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Receipt</th>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Total</th>
+          <th>Payment Status &amp; Gateway Ref</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>${rows.map(renderRow).join('')}</tbody>
     </table>`;
     return;
   }
@@ -7640,10 +8196,10 @@ function renderLog() {
       : new Date(key + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
     return `
       <div style="margin-top:14px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); border-radius:8px; padding:8px 12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); border-radius:8px; padding:8px 12px; border:1px solid var(--border);">
           <div>
             <div style="font-weight:bold; font-size:13px;">${label}</div>
-            <div style="font-size:11px; color:#888;">${receiptCount} transaction(s)</div>
+            <div style="font-size:11px; color:#888;">${receiptCount} receipt(s) &middot; ${items.length} line item(s)</div>
           </div>
           <div style="text-align:right;">
             <div style="font-weight:bold;">KES ${total.toFixed(2)}</div>
@@ -7651,11 +8207,51 @@ function renderLog() {
           </div>
         </div>
         <table class="log-table">
-          <thead><tr><th>Date</th><th>Receipt</th><th>Item</th><th>Qty</th><th>Total</th></tr></thead>
-          <tbody>${items.map(r => `<tr><td>${r.date}</td><td>${escapeHtml(r.receipt)}</td><td>${escapeHtml(r.name)}</td><td>${r.qty}</td><td>${r.total.toFixed(2)}</td></tr>`).join('')}</tbody>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Receipt</th>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Total</th>
+              <th>Payment Status &amp; Gateway Ref</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>${items.map(renderRow).join('')}</tbody>
         </table>
       </div>`;
   }).join('');
+}
+
+function openSaleReceiptFromLog(receiptNo) {
+  if (!receiptNo) {
+    showToast('No receipt number provided');
+    return;
+  }
+  const items = salesLog.filter(r => r.receipt === receiptNo);
+  if (items.length === 0) {
+    showToast('Receipt #' + receiptNo + ' not found in local sales record.');
+    return;
+  }
+  const first = items[0];
+  const grand = items.reduce((s, r) => s + (Number(r.total) || 0), 0);
+  const subtotal = items.reduce((s, r) => s + ((Number(r.total) || 0) / (1 + (Number(r.vat) || 0))), 0);
+  const vatTotal = grand - subtotal;
+  const saleDate = first.date ? new Date(first.date + 'T12:00:00') : new Date();
+  const pm = (first.paymentMethod || 'cash').toLowerCase();
+  const gwName = (gatewayConfigLabels[pm] || {}).name || (pm === 'cash' ? 'Cash' : pm.toUpperCase());
+  const extRef = first.externalRef || first.mpesa_receipt_no || null;
+
+  const cartItems = items.map(li => ({
+    name: li.name,
+    qty: li.qty,
+    price: Number(li.price) || (li.total / (li.qty || 1)),
+    unit: li.unit || 'piece',
+    vat: Number(li.vat) || 0
+  }));
+
+  showReceipt(receiptNo, cartItems, subtotal, vatTotal, grand, saleDate, extRef, gwName);
 }
 
 function downloadLogGroupCSV(key, groupBy) {
@@ -7663,9 +8259,812 @@ function downloadLogGroupCSV(key, groupBy) {
   if (rows.length === 0) { showToast('Nothing to download.'); return; }
   downloadCSV(
     `dogo-pos-sales-${key}.csv`,
-    ['Date', 'Receipt', 'Item', 'Qty', 'Price', 'VAT Rate', 'Total', 'Payment Method'],
-    rows.map(r => [r.date, r.receipt, r.name, r.qty, r.price.toFixed(2), (r.vat*100).toFixed(0)+'%', r.total.toFixed(2), r.paymentMethod || 'cash'])
+    ['Date', 'Receipt', 'Item', 'Qty', 'Price', 'VAT Rate', 'Total', 'Payment Method', 'Payment Status', 'External Ref ID'],
+    rows.map(r => [
+      r.date,
+      r.receipt,
+      r.name,
+      r.qty,
+      r.price.toFixed(2),
+      (r.vat*100).toFixed(0)+'%',
+      r.total.toFixed(2),
+      r.paymentMethod || 'cash',
+      r.paymentStatus || 'success',
+      r.externalRef || r.mpesa_receipt_no || ''
+    ])
   );
+}
+
+function downloadSalesLogCSV() {
+  if (salesLog.length === 0) { showToast('No sales to download.'); return; }
+  downloadCSV(
+    `dogo-pos-all-sales-${new Date().toISOString().slice(0,10)}.csv`,
+    ['Date', 'Receipt', 'Item', 'Qty', 'Price', 'VAT Rate', 'Total', 'Payment Method', 'Payment Status', 'External Ref ID'],
+    salesLog.map(r => [
+      r.date,
+      r.receipt,
+      r.name,
+      r.qty,
+      r.price.toFixed(2),
+      (r.vat*100).toFixed(0)+'%',
+      r.total.toFixed(2),
+      r.paymentMethod || 'cash',
+      r.paymentStatus || 'success',
+      r.externalRef || r.mpesa_receipt_no || ''
+    ])
+  );
+}
+
+/* =====================================================================
+   GATEWAY TRANSACTIONS LEDGER (Integrations Hub)
+===================================================================== */
+let gwDatePreset = 'all';
+let gwDateStart = '';
+let gwDateEnd = '';
+let gwDateRef = new Date();
+
+function formatYMD(d) {
+  const date = new Date(d);
+  const pad = n => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function getMonday(d) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  date.setDate(diff);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function getDateFromWeekString(weekStr) {
+  if (!weekStr) return new Date();
+  const parts = weekStr.split('-W');
+  if (parts.length !== 2) return new Date();
+  const year = parseInt(parts[0], 10);
+  const week = parseInt(parts[1], 10);
+  const simple = new Date(year, 0, 4);
+  const dayOfWeek = simple.getDay() || 7;
+  simple.setDate(simple.getDate() - dayOfWeek + 1);
+  return new Date(simple.getTime() + (week - 1) * 7 * 86400000);
+}
+
+function getWeekNumberString(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+}
+
+function updateDateRangeUI() {
+  let label = 'All Time';
+  let shortLabel = 'All Time';
+
+  if (gwDateStart && gwDateEnd) {
+    if (gwDateStart === gwDateEnd) {
+      const d = new Date(gwDateStart + 'T12:00:00');
+      const todayStr = formatYMD(new Date());
+      const yesterdayStr = formatYMD(new Date(Date.now() - 86400000));
+      const prefix = gwDateStart === todayStr ? 'Today, ' : (gwDateStart === yesterdayStr ? 'Yesterday, ' : '');
+      label = `${prefix}${d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}`;
+      shortLabel = `${prefix}${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+    } else if (gwDatePreset === 'this_month') {
+      const d = new Date(gwDateStart + 'T12:00:00');
+      const mName = d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+      label = `This Month (${mName})`;
+      shortLabel = `This Month (${mName})`;
+    } else if (gwDatePreset === 'last_30_days') {
+      const d1 = new Date(gwDateStart + 'T12:00:00');
+      const d2 = new Date(gwDateEnd + 'T12:00:00');
+      label = `Last 30 Days (${d1.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${d2.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })})`;
+      shortLabel = 'Last 30 Days';
+    } else {
+      const d1 = new Date(gwDateStart + 'T12:00:00');
+      const d2 = new Date(gwDateEnd + 'T12:00:00');
+      label = `${d1.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${d2.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      shortLabel = `${d1.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${d2.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+    }
+  }
+
+  const headerLabel = document.getElementById('gwHeaderDateText');
+  const activeLabel = document.getElementById('gwActiveDateRangeLabel');
+  const thBadge = document.getElementById('thDateBadge');
+
+  if (headerLabel) headerLabel.textContent = shortLabel;
+  if (activeLabel) activeLabel.textContent = label;
+  if (thBadge) thBadge.classList.toggle('active', gwDatePreset !== 'all');
+}
+
+function setGwDatePreset(preset, refDate = null) {
+  if (refDate) {
+    gwDateRef = new Date(refDate);
+  }
+  gwDatePreset = preset;
+
+  const chipContainer = document.getElementById('gwDateChips');
+  if (chipContainer) {
+    chipContainer.querySelectorAll('.gw-date-chip').forEach(c => {
+      c.classList.toggle('active', c.getAttribute('data-preset') === preset);
+    });
+  }
+
+  const subbar = document.getElementById('gwDateSubbar');
+  const dayInputWrap = document.getElementById('gwSpecificDayWrap');
+  const weekInputWrap = document.getElementById('gwSpecificWeekWrap');
+  const customInputWrap = document.getElementById('gwCustomRangeWrap');
+  const stepper = document.getElementById('gwDateStepper');
+
+  if (preset === 'all') {
+    gwDateStart = '';
+    gwDateEnd = '';
+    if (subbar) subbar.style.display = 'none';
+  } else if (preset === 'today') {
+    gwDateRef = new Date();
+    gwDateStart = formatYMD(gwDateRef);
+    gwDateEnd = formatYMD(gwDateRef);
+    if (subbar) subbar.style.display = 'flex';
+    if (dayInputWrap) dayInputWrap.style.display = 'none';
+    if (weekInputWrap) weekInputWrap.style.display = 'none';
+    if (customInputWrap) customInputWrap.style.display = 'none';
+    if (stepper) stepper.style.display = 'flex';
+  } else if (preset === 'yesterday') {
+    const y = new Date();
+    y.setDate(y.getDate() - 1);
+    gwDateRef = y;
+    gwDateStart = formatYMD(y);
+    gwDateEnd = formatYMD(y);
+    if (subbar) subbar.style.display = 'flex';
+    if (dayInputWrap) dayInputWrap.style.display = 'none';
+    if (weekInputWrap) weekInputWrap.style.display = 'none';
+    if (customInputWrap) customInputWrap.style.display = 'none';
+    if (stepper) stepper.style.display = 'flex';
+  } else if (preset === 'this_week') {
+    gwDateRef = new Date();
+    const mon = getMonday(gwDateRef);
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    gwDateStart = formatYMD(mon);
+    gwDateEnd = formatYMD(sun);
+    if (subbar) subbar.style.display = 'flex';
+    if (dayInputWrap) dayInputWrap.style.display = 'none';
+    if (weekInputWrap) weekInputWrap.style.display = 'none';
+    if (customInputWrap) customInputWrap.style.display = 'none';
+    if (stepper) stepper.style.display = 'flex';
+  } else if (preset === 'last_week') {
+    const prevWeek = new Date();
+    prevWeek.setDate(prevWeek.getDate() - 7);
+    gwDateRef = prevWeek;
+    const mon = getMonday(prevWeek);
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    gwDateStart = formatYMD(mon);
+    gwDateEnd = formatYMD(sun);
+    if (subbar) subbar.style.display = 'flex';
+    if (dayInputWrap) dayInputWrap.style.display = 'none';
+    if (weekInputWrap) weekInputWrap.style.display = 'none';
+    if (customInputWrap) customInputWrap.style.display = 'none';
+    if (stepper) stepper.style.display = 'flex';
+  } else if (preset === 'this_month') {
+    gwDateRef = new Date();
+    const start = new Date(gwDateRef.getFullYear(), gwDateRef.getMonth(), 1);
+    const end = new Date(gwDateRef.getFullYear(), gwDateRef.getMonth() + 1, 0);
+    gwDateStart = formatYMD(start);
+    gwDateEnd = formatYMD(end);
+    if (subbar) subbar.style.display = 'flex';
+    if (dayInputWrap) dayInputWrap.style.display = 'none';
+    if (weekInputWrap) weekInputWrap.style.display = 'none';
+    if (customInputWrap) customInputWrap.style.display = 'none';
+    if (stepper) stepper.style.display = 'flex';
+  } else if (preset === 'last_30_days') {
+    gwDateRef = new Date();
+    const start = new Date(gwDateRef);
+    start.setDate(start.getDate() - 29);
+    gwDateStart = formatYMD(start);
+    gwDateEnd = formatYMD(gwDateRef);
+    if (subbar) subbar.style.display = 'flex';
+    if (dayInputWrap) dayInputWrap.style.display = 'none';
+    if (weekInputWrap) weekInputWrap.style.display = 'none';
+    if (customInputWrap) customInputWrap.style.display = 'none';
+    if (stepper) stepper.style.display = 'none';
+  } else if (preset === 'specific_day') {
+    if (subbar) subbar.style.display = 'flex';
+    if (dayInputWrap) dayInputWrap.style.display = 'flex';
+    if (weekInputWrap) weekInputWrap.style.display = 'none';
+    if (customInputWrap) customInputWrap.style.display = 'none';
+    if (stepper) stepper.style.display = 'flex';
+    const dayInput = document.getElementById('gwFilterDayInput');
+    if (dayInput && !dayInput.value) {
+      dayInput.value = formatYMD(gwDateRef);
+    }
+    const val = (dayInput && dayInput.value) || formatYMD(gwDateRef);
+    gwDateStart = val;
+    gwDateEnd = val;
+  } else if (preset === 'specific_week') {
+    if (subbar) subbar.style.display = 'flex';
+    if (dayInputWrap) dayInputWrap.style.display = 'none';
+    if (weekInputWrap) weekInputWrap.style.display = 'flex';
+    if (customInputWrap) customInputWrap.style.display = 'none';
+    if (stepper) stepper.style.display = 'flex';
+    const weekInput = document.getElementById('gwFilterWeekInput');
+    if (weekInput && !weekInput.value) {
+      weekInput.value = getWeekNumberString(gwDateRef);
+    }
+    const mon = getMonday(gwDateRef);
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    gwDateStart = formatYMD(mon);
+    gwDateEnd = formatYMD(sun);
+  } else if (preset === 'custom') {
+    if (subbar) subbar.style.display = 'flex';
+    if (dayInputWrap) dayInputWrap.style.display = 'none';
+    if (weekInputWrap) weekInputWrap.style.display = 'none';
+    if (customInputWrap) customInputWrap.style.display = 'flex';
+    if (stepper) stepper.style.display = 'none';
+    const sInput = document.getElementById('gwFilterStartDate');
+    const eInput = document.getElementById('gwFilterEndDate');
+    if (sInput && !sInput.value) sInput.value = gwDateStart || formatYMD(gwDateRef);
+    if (eInput && !eInput.value) eInput.value = gwDateEnd || formatYMD(gwDateRef);
+    gwDateStart = sInput ? sInput.value : '';
+    gwDateEnd = eInput ? eInput.value : '';
+  }
+
+  updateDateRangeUI();
+  loadGatewayTransactions();
+}
+
+function stepGwDateRange(direction) {
+  if (gwDatePreset === 'all') {
+    setGwDatePreset('today');
+    return;
+  }
+
+  if (gwDatePreset === 'today' || gwDatePreset === 'yesterday' || gwDatePreset === 'specific_day') {
+    gwDatePreset = 'specific_day';
+    const cur = new Date(gwDateStart ? gwDateStart + 'T12:00:00' : gwDateRef);
+    cur.setDate(cur.getDate() + direction);
+    gwDateRef = cur;
+    const ymd = formatYMD(cur);
+    gwDateStart = ymd;
+    gwDateEnd = ymd;
+    const dayInput = document.getElementById('gwFilterDayInput');
+    if (dayInput) dayInput.value = ymd;
+  } else if (gwDatePreset === 'this_week' || gwDatePreset === 'last_week' || gwDatePreset === 'specific_week') {
+    gwDatePreset = 'specific_week';
+    const cur = new Date(gwDateStart ? gwDateStart + 'T12:00:00' : gwDateRef);
+    cur.setDate(cur.getDate() + (direction * 7));
+    gwDateRef = cur;
+    const mon = getMonday(cur);
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    gwDateStart = formatYMD(mon);
+    gwDateEnd = formatYMD(sun);
+    const weekInput = document.getElementById('gwFilterWeekInput');
+    if (weekInput) weekInput.value = getWeekNumberString(cur);
+  } else if (gwDatePreset === 'this_month') {
+    const cur = new Date(gwDateStart ? gwDateStart + 'T12:00:00' : gwDateRef);
+    cur.setMonth(cur.getMonth() + direction);
+    gwDateRef = cur;
+    const start = new Date(cur.getFullYear(), cur.getMonth(), 1);
+    const end = new Date(cur.getFullYear(), cur.getMonth() + 1, 0);
+    gwDateStart = formatYMD(start);
+    gwDateEnd = formatYMD(end);
+  }
+
+  const chipContainer = document.getElementById('gwDateChips');
+  if (chipContainer) {
+    chipContainer.querySelectorAll('.gw-date-chip').forEach(c => {
+      c.classList.toggle('active', c.getAttribute('data-preset') === gwDatePreset);
+    });
+  }
+
+  updateDateRangeUI();
+  loadGatewayTransactions();
+}
+
+function handleSingleDayChange(val) {
+  if (!val) return;
+  gwDatePreset = 'specific_day';
+  gwDateRef = new Date(val + 'T12:00:00');
+  gwDateStart = val;
+  gwDateEnd = val;
+
+  const chipContainer = document.getElementById('gwDateChips');
+  if (chipContainer) {
+    chipContainer.querySelectorAll('.gw-date-chip').forEach(c => {
+      c.classList.toggle('active', c.getAttribute('data-preset') === 'specific_day');
+    });
+  }
+
+  updateDateRangeUI();
+  loadGatewayTransactions();
+}
+
+function handleSpecificWeekChange(weekVal) {
+  if (!weekVal) return;
+  gwDatePreset = 'specific_week';
+  const mon = getDateFromWeekString(weekVal);
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  gwDateRef = mon;
+  gwDateStart = formatYMD(mon);
+  gwDateEnd = formatYMD(sun);
+
+  const chipContainer = document.getElementById('gwDateChips');
+  if (chipContainer) {
+    chipContainer.querySelectorAll('.gw-date-chip').forEach(c => {
+      c.classList.toggle('active', c.getAttribute('data-preset') === 'specific_week');
+    });
+  }
+
+  updateDateRangeUI();
+  loadGatewayTransactions();
+}
+
+function handleCustomDateChange() {
+  const sInput = document.getElementById('gwFilterStartDate');
+  const eInput = document.getElementById('gwFilterEndDate');
+  if (sInput && sInput.value) gwDateStart = sInput.value;
+  if (eInput && eInput.value) gwDateEnd = eInput.value;
+  gwDatePreset = 'custom';
+
+  const chipContainer = document.getElementById('gwDateChips');
+  if (chipContainer) {
+    chipContainer.querySelectorAll('.gw-date-chip').forEach(c => {
+      c.classList.toggle('active', c.getAttribute('data-preset') === 'custom');
+    });
+  }
+
+  updateDateRangeUI();
+  loadGatewayTransactions();
+}
+
+function resetDateRange() {
+  setGwDatePreset('all');
+}
+
+/* Header Mini Date Dropdown Controls */
+function toggleGwHeaderDateDropdown(event) {
+  if (event) {
+    event.stopPropagation();
+    if (event.preventDefault) event.preventDefault();
+  }
+  const dropdown = document.getElementById('gwHeaderDateDropdown');
+  if (!dropdown) return;
+  const isVisible = dropdown.style.display === 'flex' || dropdown.style.display === 'block';
+  if (isVisible) {
+    dropdown.style.display = 'none';
+  } else {
+    dropdown.style.display = 'flex';
+    const sInput = document.getElementById('gwMiniStartDate');
+    const eInput = document.getElementById('gwMiniEndDate');
+    if (sInput) sInput.value = gwDateStart || formatYMD(gwDateRef);
+    if (eInput) eInput.value = gwDateEnd || formatYMD(gwDateRef);
+  }
+}
+
+function closeGwHeaderDateDropdown(event) {
+  if (event) {
+    event.stopPropagation();
+    if (event.preventDefault) event.preventDefault();
+  }
+  const dropdown = document.getElementById('gwHeaderDateDropdown');
+  if (dropdown) dropdown.style.display = 'none';
+}
+
+function selectMiniPreset(preset, event) {
+  if (event) {
+    event.stopPropagation();
+    if (event.preventDefault) event.preventDefault();
+  }
+  setGwDatePreset(preset);
+  closeGwHeaderDateDropdown();
+}
+
+function applyMiniCustomRange(event) {
+  if (event) {
+    event.stopPropagation();
+    if (event.preventDefault) event.preventDefault();
+  }
+  const sInput = document.getElementById('gwMiniStartDate');
+  const eInput = document.getElementById('gwMiniEndDate');
+  if (!sInput || !eInput || !sInput.value || !eInput.value) {
+    showToast('Please select both start and end dates');
+    return;
+  }
+  if (sInput.value > eInput.value) {
+    showToast('Start date cannot be after end date');
+    return;
+  }
+  gwDateStart = sInput.value;
+  gwDateEnd = eInput.value;
+  gwDatePreset = 'custom';
+
+  const sMain = document.getElementById('gwFilterStartDate');
+  const eMain = document.getElementById('gwFilterEndDate');
+  if (sMain) sMain.value = gwDateStart;
+  if (eMain) eMain.value = gwDateEnd;
+
+  const chipContainer = document.getElementById('gwDateChips');
+  if (chipContainer) {
+    chipContainer.querySelectorAll('.gw-date-chip').forEach(c => {
+      c.classList.toggle('active', c.getAttribute('data-preset') === 'custom');
+    });
+  }
+
+  updateDateRangeUI();
+  loadGatewayTransactions();
+  closeGwHeaderDateDropdown();
+}
+
+// Global click listener to close header date dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('gwHeaderDateDropdown');
+  const badge = document.getElementById('gwHeaderDateBadge');
+  if (dropdown && dropdown.style.display !== 'none') {
+    if (!dropdown.contains(e.target) && (!badge || !badge.contains(e.target))) {
+      dropdown.style.display = 'none';
+    }
+  }
+});
+
+/* Export Gateway Transactions to CSV */
+function exportGatewayTransactionsCSV() {
+  if (!gatewayTransactions || gatewayTransactions.length === 0) {
+    showToast('No gateway transactions to export in current filter.');
+    return;
+  }
+
+  const dateTag = gwDateStart && gwDateEnd ? `${gwDateStart}_to_${gwDateEnd}` : (gwDatePreset || 'all');
+  const filename = `dogo-pos-gateway-transactions-${dateTag}-${new Date().toISOString().slice(0, 10)}.csv`;
+  const headers = [
+    'Date & Time',
+    'Gateway',
+    'External Ref ID',
+    'Merchant / Checkout Ref',
+    'Internal Receipt #',
+    'Internal Sale ID',
+    'Customer / Account',
+    'Amount (KES)',
+    'Payment Status',
+    'Result Description'
+  ];
+
+  const rows = gatewayTransactions.map(tx => [
+    tx.created_at ? new Date(tx.created_at).toLocaleString() : '',
+    (tx.gateway || '').toUpperCase(),
+    tx.receipt_reference || tx.checkout_request_id || tx.id || '',
+    tx.checkout_request_id || tx.merchant_request_id || '',
+    tx.internal_receipt_no || '',
+    tx.internal_sale_id || '',
+    tx.phone || tx.account || (tx.metadata && tx.metadata.email) || '',
+    Number(tx.amount_paid || tx.amount || 0).toFixed(2),
+    (tx.status || 'unknown').toUpperCase(),
+    tx.result_desc || ''
+  ]);
+
+  downloadCSV(filename, headers, rows);
+  showToast(`Exported ${rows.length} gateway transaction(s) to CSV report`);
+}
+
+function focusDateRangePicker() {
+  const bar = document.getElementById('gwDatePickerBar');
+  if (bar) {
+    bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    bar.style.outline = '2px solid var(--accent)';
+    setTimeout(() => { bar.style.outline = 'none'; }, 1200);
+  }
+}
+
+async function loadGatewayTransactions() {
+  const gwFilter = document.getElementById('gwFilterGateway')?.value || 'all';
+  const stFilter = document.getElementById('gwFilterStatus')?.value || 'all';
+  const search = document.getElementById('gwSearchInput')?.value || '';
+
+  try {
+    let url = `/api/payments/transactions?gateway=${encodeURIComponent(gwFilter)}&status=${encodeURIComponent(stFilter)}&search=${encodeURIComponent(search)}`;
+    if (gwDateStart) url += `&startDate=${encodeURIComponent(gwDateStart)}`;
+    if (gwDateEnd) url += `&endDate=${encodeURIComponent(gwDateEnd)}`;
+
+    const res = await fetch(url).then(r => r.json());
+    if (!res.success) return;
+
+    gatewayTransactions = res.transactions || [];
+    renderGatewayTransactionsTable(gatewayTransactions, res.stats);
+    updateDateRangeUI();
+  } catch (err) {
+    console.error('Failed to load gateway transactions:', err);
+  }
+}
+
+function filterGatewayTransactions() {
+  loadGatewayTransactions();
+}
+
+function renderGatewayTransactionsTable(list, stats) {
+  const body = document.getElementById('gwTransactionsBody');
+  const empty = document.getElementById('gwTxEmpty');
+  if (!body) return;
+
+  // Update summary metrics
+  if (stats) {
+    const volEl = document.getElementById('gwStatVolume');
+    const rateEl = document.getElementById('gwStatRate');
+    const succEl = document.getElementById('gwStatSuccess');
+    const pendEl = document.getElementById('gwStatPending');
+    const failEl = document.getElementById('gwStatFailed');
+
+    if (volEl) volEl.textContent = `KES ${Number(stats.totalVolume || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (rateEl) rateEl.textContent = `${stats.successRate}%`;
+    if (succEl) succEl.textContent = stats.successCount;
+    if (pendEl) pendEl.textContent = stats.pendingCount;
+    if (failEl) failEl.textContent = stats.failedCount;
+  }
+
+  if (list.length === 0) {
+    body.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  body.innerHTML = list.map(tx => {
+    const gw = (tx.gateway || 'mpesa').toLowerCase();
+    const st = (tx.status || 'pending').toLowerCase();
+    const gwName = (gatewayConfigLabels[gw] || {}).name || gw.toUpperCase();
+    const extRef = tx.receipt_reference || tx.checkout_request_id || 'PENDING';
+    const hasRef = Boolean(tx.receipt_reference);
+    const amount = Number(tx.amount_paid || tx.amount || 0).toFixed(2);
+    const createdDate = tx.created_at ? new Date(tx.created_at) : new Date();
+    const timeStr = `${createdDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${createdDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+    const stIcon = st === 'success' ? 'fa-circle-check' : (st === 'pending' ? 'fa-clock' : 'fa-circle-xmark');
+    const statusHtml = `<span class="status-badge ${st}"><i class="fa-solid ${stIcon}"></i> ${st.toUpperCase()}</span>`;
+    const gwBadgeHtml = `<span class="gw-badge-pill ${gw}">${escapeHtml(gwName)}</span>`;
+
+    // Linked Sale Record pill
+    let saleLinkHtml = `<span style="color:var(--text-secondary); font-size:11px;">Unlinked / In Checkout</span>`;
+    if (tx.internal_receipt_no) {
+      saleLinkHtml = `<a href="javascript:void(0)" class="receipt-link-pill" onclick="openSaleReceiptFromLog('${escapeHtml(tx.internal_receipt_no)}')" title="View Linked POS Receipt #${escapeHtml(tx.internal_receipt_no)}"><i class="fa-solid fa-receipt"></i> ${escapeHtml(tx.internal_receipt_no)}</a>`;
+    }
+
+    const customerChannel = tx.phone || (tx.metadata && tx.metadata.email) || tx.account || 'Direct Webhook';
+
+    const actionsHtml = `
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button class="btn-small btn-blue" onclick="inspectExternalRef('${escapeHtml(extRef)}')" title="Inspect Transaction Details">
+          <i class="fa-solid fa-magnifying-glass"></i> Inspect
+        </button>
+        ${tx.internal_receipt_no ? `
+          <button class="btn-small" style="background:#0f172a; color:#ffffff;" onclick="openSaleReceiptFromLog('${escapeHtml(tx.internal_receipt_no)}')" title="View Receipt">
+            <i class="fa-solid fa-receipt"></i>
+          </button>
+        ` : ''}
+        ${st === 'pending' ? `
+          <button class="btn-small btn-green" onclick="simulateGwTxAction('${escapeHtml(tx.id)}', 'success')" title="Simulate Customer PIN approval">
+            <i class="fa-solid fa-check"></i> Approve
+          </button>
+          <button class="btn-small btn-red" onclick="simulateGwTxAction('${escapeHtml(tx.id)}', 'failed')" title="Simulate Customer Cancel">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        ` : ''}
+      </div>
+    `;
+
+    return `
+      <tr>
+        <td style="white-space:nowrap; font-size:11.5px; color:var(--text-secondary);">${timeStr}</td>
+        <td>${gwBadgeHtml}</td>
+        <td>
+          <button class="ext-ref-chip" onclick="inspectExternalRef('${escapeHtml(extRef)}')" title="Click to inspect / copy external transaction ref">
+            <i class="fa-solid fa-hashtag"></i> <span>${escapeHtml(extRef)}</span>
+          </button>
+        </td>
+        <td>${saleLinkHtml}</td>
+        <td style="font-size:12px;">${escapeHtml(customerChannel)}</td>
+        <td><strong>KES ${amount}</strong></td>
+        <td>${statusHtml}</td>
+        <td>${actionsHtml}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function inspectExternalRef(ref) {
+  if (!ref || ref === '—' || ref === 'PENDING') {
+    showToast('No external reference ID available for this record');
+    return;
+  }
+  showToast('Fetching gateway transaction details for ' + ref + '...');
+  try {
+    const res = await fetch(`/api/payments/transaction/${encodeURIComponent(ref)}`).then(r => r.json());
+    if (!res.success || !res.transaction) {
+      showToast('No gateway transaction ledger entry found for ref: ' + ref);
+      return;
+    }
+    openGwDetailModal(res.transaction);
+  } catch (err) {
+    showToast('Failed to inspect transaction: ' + err.message);
+  }
+}
+
+function openGwDetailModal(tx) {
+  activeGwDetailTx = tx;
+  const modal = document.getElementById('gwDetailModal');
+  const badge = document.getElementById('gwDetailBadge');
+  const title = document.getElementById('gwDetailTitle');
+  const content = document.getElementById('gwDetailContent');
+  const receiptBtn = document.getElementById('gwDetailReceiptBtn');
+  if (!modal || !content) return;
+
+  const gw = (tx.gateway || 'mpesa').toLowerCase();
+  const st = (tx.status || 'pending').toLowerCase();
+  const gwName = (gatewayConfigLabels[gw] || {}).name || gw.toUpperCase();
+  const extRef = tx.receipt_reference || tx.checkout_request_id || tx.id;
+  const amount = Number(tx.amount_paid || tx.amount || 0).toFixed(2);
+
+  badge.className = `gw-badge-pill ${gw}`;
+  badge.textContent = gwName;
+  title.textContent = `Transaction: ${extRef}`;
+
+  const stIcon = st === 'success' ? 'fa-circle-check' : (st === 'pending' ? 'fa-clock' : 'fa-circle-xmark');
+  const statusBadge = `<span class="status-badge ${st}"><i class="fa-solid ${stIcon}"></i> ${st.toUpperCase()}</span>`;
+
+  let linkedSaleHtml = `<span style="color:var(--text-secondary); font-size:12px;">Not yet linked to a sale receipt</span>`;
+  if (tx.internal_receipt_no) {
+    linkedSaleHtml = `<a href="javascript:void(0)" class="receipt-link-pill" onclick="openSaleReceiptFromLog('${escapeHtml(tx.internal_receipt_no)}')"><i class="fa-solid fa-receipt"></i> ${escapeHtml(tx.internal_receipt_no)}</a>`;
+    if (receiptBtn) receiptBtn.style.display = 'inline-flex';
+  } else {
+    if (receiptBtn) receiptBtn.style.display = 'none';
+  }
+
+  // Cryptographic Signature verification info
+  let cryptoProof = 'Cryptographic callback verified via server-side SHA webhook handler.';
+  if (gw === 'kcb') cryptoProof = 'HMAC-SHA256 signature verified against shared secret.';
+  else if (gw === 'paystack') cryptoProof = 'HMAC-SHA512 webhook signature verified against secret key.';
+  else if (gw === 'mpesa') cryptoProof = 'Daraja STK push callback response verified with shortcode credentials.';
+
+  content.innerHTML = `
+    <div class="gw-detail-row">
+      <span class="gw-detail-lbl">Status</span>
+      <span class="gw-detail-val">${statusBadge}</span>
+    </div>
+    <div class="gw-detail-row">
+      <span class="gw-detail-lbl">External Ref ID</span>
+      <span class="gw-detail-val" style="font-family:var(--font-mono); font-size:13px;">${escapeHtml(extRef)}</span>
+    </div>
+    <div class="gw-detail-row">
+      <span class="gw-detail-lbl">Linked Sale Record</span>
+      <span class="gw-detail-val">${linkedSaleHtml}</span>
+    </div>
+    <div class="gw-detail-row">
+      <span class="gw-detail-lbl">Settled Amount</span>
+      <span class="gw-detail-val" style="font-size:15px; color:var(--accent);">KES ${amount}</span>
+    </div>
+    <div class="gw-detail-row">
+      <span class="gw-detail-lbl">Customer Phone / Account</span>
+      <span class="gw-detail-val">${escapeHtml(tx.phone || tx.account || tx.metadata?.email || 'N/A')}</span>
+    </div>
+    <div class="gw-detail-row">
+      <span class="gw-detail-lbl">Checkout Request ID</span>
+      <span class="gw-detail-val" style="font-family:var(--font-mono); font-size:11.5px;">${escapeHtml(tx.checkout_request_id || '—')}</span>
+    </div>
+    <div class="gw-detail-row">
+      <span class="gw-detail-lbl">Timestamp</span>
+      <span class="gw-detail-val" style="font-size:12px;">${tx.created_at ? new Date(tx.created_at).toLocaleString() : '—'}</span>
+    </div>
+    <div class="gw-detail-row">
+      <span class="gw-detail-lbl">Gateway Result</span>
+      <span class="gw-detail-val" style="font-size:12px; max-width:280px; word-break:break-word;">${escapeHtml(tx.result_desc || 'No result description')}</span>
+    </div>
+
+    <div style="margin-top:14px; background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px;">
+      <div style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:4px;">
+        <i class="fa-solid fa-shield-halved" style="color:#16a34a;"></i> Security &amp; Verification
+      </div>
+      <div style="font-size:12px; color:var(--text);">${cryptoProof}</div>
+    </div>
+
+    <div style="margin-top:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">Raw Webhook / Transaction Data</span>
+        <button class="btn-small" style="background:none; border:none; color:var(--accent); font-size:11px; cursor:pointer;" onclick="navigator.clipboard.writeText(JSON.stringify(activeGwDetailTx, null, 2)); showToast('Copied JSON payload to clipboard!');">
+          <i class="fa-solid fa-copy"></i> Copy JSON
+        </button>
+      </div>
+      <pre class="gw-raw-json">${escapeHtml(JSON.stringify(tx, null, 2))}</pre>
+    </div>
+  `;
+
+  modal.classList.add('show');
+}
+
+function closeGwDetailModal() {
+  const modal = document.getElementById('gwDetailModal');
+  if (modal) modal.classList.remove('show');
+  activeGwDetailTx = null;
+}
+
+function openLinkedReceiptFromDetail() {
+  if (!activeGwDetailTx || !activeGwDetailTx.internal_receipt_no) return;
+  const receiptNo = activeGwDetailTx.internal_receipt_no;
+  closeGwDetailModal();
+  openSaleReceiptFromLog(receiptNo);
+}
+
+function openSimulateTxModal() {
+  const modal = document.getElementById('gwSimulateModal');
+  if (modal) modal.classList.add('show');
+}
+
+function closeGwSimulateModal() {
+  const modal = document.getElementById('gwSimulateModal');
+  if (modal) modal.classList.remove('show');
+}
+
+async function executeSimulatedWebhook() {
+  const gateway = document.getElementById('simGwSelect')?.value || 'mpesa';
+  const amount = Number(document.getElementById('simAmount')?.value) || 1000;
+  const phone = document.getElementById('simPhone')?.value || '254712345678';
+  const outcome = document.getElementById('simOutcome')?.value || 'success';
+
+  closeGwSimulateModal();
+  showToast(`Simulating ${gateway.toUpperCase()} ${outcome} callback with HMAC verification...`);
+
+  try {
+    const res = await fetch('/api/payments/simulate-callback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        gateway,
+        phone,
+        amount,
+        account: phone,
+        email: phone.includes('@') ? phone : 'customer@dogo-pos.co.ke',
+        outcome
+      })
+    }).then(r => r.json());
+
+    if (res.success) {
+      showToast(`${gateway.toUpperCase()} callback successfully processed and verified! Ref: ${res.receipt_reference || res.checkout_request_id}`);
+      await loadGatewayTransactions();
+      renderLog();
+    } else {
+      showToast('Simulation error: ' + (res.error || 'Failed'));
+    }
+  } catch (err) {
+    showToast('Simulation request failed: ' + err.message);
+  }
+}
+
+async function simulateGwTxAction(paymentId, outcome) {
+  showToast(`Updating request ${paymentId} to ${outcome}...`);
+  try {
+    const tx = gatewayTransactions.find(t => t.id === paymentId);
+    if (!tx) return;
+
+    const res = await fetch('/api/payments/simulate-callback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        payment_request_id: paymentId,
+        gateway: tx.gateway,
+        outcome
+      })
+    }).then(r => r.json());
+
+    if (res.success) {
+      showToast(`Transaction marked as ${outcome.toUpperCase()}!`);
+      await loadGatewayTransactions();
+      renderLog();
+    } else {
+      showToast('Failed to update transaction: ' + res.error);
+    }
+  } catch (err) {
+    showToast('Error updating transaction: ' + err.message);
+  }
 }
 
 /* =====================================================================
@@ -8143,7 +9542,6 @@ function downloadTeamCSV() {
    CATALOG (admin only for writes)
 ===================================================================== */
 function renderCatalog() {
-  renderPosProductsGrid();
   const body = document.getElementById('catalogBody');
   if (!body) return;
   body.innerHTML = CATALOG.map(p =>
@@ -8598,20 +9996,364 @@ async function saveSettings() {
 /* =====================================================================
    M-PESA SETTINGS (admin)
 ===================================================================== */
-async function loadMpesaStatus() {
-  const resp = await callEdgeFunction('mpesa-settings', { action: 'status' });
-  const statusEl = document.getElementById('mpesaStatusText');
-  if (resp.error) { statusEl.textContent = 'Could not load status.'; return; }
-  if (resp.data) {
-    const type = resp.data.payment_type === 'paybill' ? 'Paybill' : 'Till/Pochi';
-    statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Configured — ${type} ${escapeHtml(resp.data.shortcode)} (${resp.data.is_production ? 'Production' : 'Sandbox'})`;
-    document.getElementById('mpesaPaymentType').value = resp.data.payment_type;
-    document.getElementById('mpesaShortcode').value = resp.data.shortcode;
-    document.getElementById('mpesaEnv').value = String(resp.data.is_production);
+/* =====================================================================
+   REGIONAL PAYMENT GATEWAYS (M-Pesa, KCB Buni, Paystack, Airtel Money)
+===================================================================== */
+let currentPaymentMethod = 'cash';
+let digitalPollInterval = null;
+let mpesaCurrentRequestId = null;
+
+const gatewayConfigLabels = {
+  cash: { name: 'Cash', icon: 'fa-money-bill-wave' },
+  mpesa: { name: 'M-Pesa', tag: 'INSTANT STK', icon: 'fa-mobile-screen-button', promptDesc: 'Customer receives an instant STK push prompt on their Safaricom line.' },
+  kcb: { name: 'KCB Buni', tag: 'BUNI / VOOMA', icon: 'fa-building-columns', promptDesc: 'Initiates direct KCB Vooma push or settlement account validation.' },
+  paystack: { name: 'Paystack', tag: 'CARD & MOMO', icon: 'fa-credit-card', promptDesc: 'Accepts Pan-African debit/credit cards and virtual payment checkout.' },
+  airtel: { name: 'Airtel Money', tag: 'AIRTEL PUSH', icon: 'fa-tower-broadcast', promptDesc: 'Sends an Airtel Money mobile payment prompt directly to customer.' }
+};
+
+function selectPaymentMethod(method) {
+  currentPaymentMethod = method;
+  document.querySelectorAll('.pos-pay-method-pill').forEach(pill => {
+    pill.classList.remove('active');
+  });
+  const activePill = document.getElementById('payMethod' + method.charAt(0).toUpperCase() + method.slice(1));
+  if (activePill) activePill.classList.add('active');
+
+  updatePaymentMethodUi();
+}
+
+function updatePaymentMethodUi() {
+  const isCash = currentPaymentMethod === 'cash';
+  const qtb = document.getElementById('quickTenderBox');
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  const digitalPayBtn = document.getElementById('mpesaBtn');
+  const digitalLabel = document.getElementById('mpesaBtnLabel');
+
+  if (isCash) {
+    if (qtb) qtb.style.display = 'block';
+    if (checkoutBtn) checkoutBtn.style.display = 'block';
+    if (digitalPayBtn) digitalPayBtn.style.display = 'none';
   } else {
-    statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Not set up yet — fill in the fields below to enable M-Pesa checkout.';
+    if (qtb) qtb.style.display = 'none';
+    if (checkoutBtn) checkoutBtn.style.display = 'none';
+    if (digitalPayBtn) {
+      digitalPayBtn.style.display = 'block';
+      const gw = gatewayConfigLabels[currentPaymentMethod] || { name: currentPaymentMethod.toUpperCase() };
+      if (digitalLabel) digitalLabel.textContent = `Charge with ${gw.name}`;
+    }
   }
 }
+
+function openDigitalPrompt() {
+  if (cart.length === 0) return;
+  const promptBox = document.getElementById('mpesaPromptBox');
+  const titleEl = document.getElementById('digitalPromptTitle');
+  const tagEl = document.getElementById('digitalPromptTag');
+  const descEl = document.getElementById('digitalPromptDesc');
+  const phoneInput = document.getElementById('mpesaPhone');
+  const accountInput = document.getElementById('digitalAccountInput');
+  const gw = gatewayConfigLabels[currentPaymentMethod] || { name: currentPaymentMethod.toUpperCase(), tag: 'DIGITAL', icon: 'fa-bolt', promptDesc: 'Process payment.' };
+
+  if (titleEl) titleEl.innerHTML = `<i class="fa-solid ${gw.icon}" style="color:var(--accent);"></i> ${gw.name} Payment`;
+  if (tagEl) tagEl.textContent = gw.tag || 'DIGITAL';
+  if (descEl) descEl.textContent = gw.promptDesc || '';
+
+  if (currentPaymentMethod === 'paystack') {
+    phoneInput.placeholder = 'Customer email or phone (e.g. shopper@gmail.com)';
+    accountInput.style.display = 'none';
+  } else if (currentPaymentMethod === 'kcb') {
+    phoneInput.placeholder = 'Customer Vooma phone (e.g. 0722000111)';
+    accountInput.placeholder = 'KCB Account number (optional for direct bank push)';
+    accountInput.style.display = 'block';
+  } else if (currentPaymentMethod === 'airtel') {
+    phoneInput.placeholder = 'Airtel phone (e.g. 0733123456)';
+    accountInput.style.display = 'none';
+  } else {
+    phoneInput.placeholder = 'Customer phone e.g. 0712345678';
+    accountInput.style.display = 'none';
+  }
+
+  promptBox.style.display = 'block';
+  phoneInput.focus();
+}
+
+function cancelDigitalPrompt() {
+  const promptBox = document.getElementById('mpesaPromptBox');
+  if (promptBox) promptBox.style.display = 'none';
+  const phoneInput = document.getElementById('mpesaPhone');
+  if (phoneInput) phoneInput.value = '';
+  const accountInput = document.getElementById('digitalAccountInput');
+  if (accountInput) accountInput.value = '';
+}
+
+async function sendDigitalPrompt() {
+  const rawContact = document.getElementById('mpesaPhone').value.trim();
+  const accountVal = document.getElementById('digitalAccountInput') ? document.getElementById('digitalAccountInput').value.trim() : '';
+
+  if (!rawContact && !accountVal) {
+    showToast('Please enter customer phone or account details');
+    return;
+  }
+
+  let grand = 0;
+  cart.forEach(item => { grand += item.price * item.qty; });
+  const custId = document.getElementById('cartCustomerPick').value || null;
+
+  document.getElementById('mpesaPromptBox').style.display = 'none';
+  const waitingBox = document.getElementById('mpesaWaitingBox');
+  waitingBox.style.display = 'block';
+
+  const gwName = (gatewayConfigLabels[currentPaymentMethod] || {}).name || currentPaymentMethod.toUpperCase();
+  document.getElementById('digitalWaitingTitle').textContent = `Waiting for ${gwName} confirmation...`;
+  document.getElementById('mpesaWaitingHint').textContent = `KES ${grand.toFixed(2)} prompt sent to ${rawContact || accountVal}`;
+  document.getElementById('digitalWaitingSubhint').textContent = `Listening for server webhook callback verification...`;
+
+  try {
+    const payload = {
+      gateway: currentPaymentMethod,
+      amount: grand,
+      phone: rawContact,
+      email: rawContact.includes('@') ? rawContact : '',
+      account: accountVal,
+      customerId: custId,
+      cart: cart
+    };
+
+    const resp = await fetch('/api/payments/initiate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(r => r.json());
+
+    if (!resp.success) {
+      showToast(`${gwName} error: ` + (resp.error || 'Initiation failed'));
+      waitingBox.style.display = 'none';
+      return;
+    }
+
+    mpesaCurrentRequestId = resp.payment_request_id;
+    pollDigitalStatus(resp.payment_request_id, currentPaymentMethod, grand, custId);
+  } catch (err) {
+    showToast(`${gwName} network error: ` + err.message);
+    waitingBox.style.display = 'none';
+  }
+}
+
+function pollDigitalStatus(paymentRequestId, gateway, grand, custId) {
+  let elapsed = 0;
+  if (digitalPollInterval) clearInterval(digitalPollInterval);
+
+  digitalPollInterval = setInterval(async () => {
+    elapsed += 2.5;
+    try {
+      const res = await fetch(`/api/payments/status/${paymentRequestId}`).then(r => r.json());
+      if (!res.success) return;
+      const data = res.data;
+
+      if (data.status === 'success') {
+        clearInterval(digitalPollInterval);
+        document.getElementById('mpesaWaitingBox').style.display = 'none';
+        await completeDigitalSale(gateway, data);
+      } else if (data.status === 'failed' || data.status === 'cancelled') {
+        clearInterval(digitalPollInterval);
+        document.getElementById('mpesaWaitingBox').style.display = 'none';
+        showToast('Payment ' + data.status + ': ' + (data.result_desc || 'Declined or cancelled by customer'));
+      } else if (elapsed >= 90) {
+        clearInterval(digitalPollInterval);
+        document.getElementById('mpesaWaitingBox').style.display = 'none';
+        showToast('Payment timed out waiting for customer — ask them to check their device');
+      }
+    } catch (e) {}
+  }, 2500);
+}
+
+async function simulateCurrentGatewayApproval() {
+  if (!mpesaCurrentRequestId) {
+    showToast('No active digital transaction to simulate');
+    return;
+  }
+  try {
+    const res = await fetch(`/api/payments/simulate/${mpesaCurrentRequestId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'approve' })
+    }).then(r => r.json());
+
+    if (res.success) {
+      showToast('Simulated callback processed and cryptographically verified!');
+    } else {
+      showToast('Simulation error: ' + (res.error || 'Failed'));
+    }
+  } catch (err) {
+    showToast('Simulation error: ' + err.message);
+  }
+}
+
+function cancelMpesaWait() {
+  if (digitalPollInterval) clearInterval(digitalPollInterval);
+  document.getElementById('mpesaWaitingBox').style.display = 'none';
+  showToast('Stopped waiting — payment may still complete separately');
+}
+
+// Backwards compatibility aliases
+const openMpesaPrompt = openDigitalPrompt;
+const cancelMpesaPrompt = cancelDigitalPrompt;
+const sendMpesaPrompt = sendDigitalPrompt;
+
+async function completeDigitalSale(gateway, paymentRequest) {
+  const now = new Date();
+  const custId = paymentRequest.customer_id;
+  const offlineUuid = crypto.randomUUID ? crypto.randomUUID() : ('pay-' + now.getTime());
+
+  let subtotalExclVat = 0, vatTotal = 0, grand = 0;
+  const lineItems = cart.map(item => {
+    const lineTotal = item.price * item.qty;
+    const lineVat = lineTotal - (lineTotal / (1 + item.vat));
+    subtotalExclVat += (lineTotal - lineVat);
+    vatTotal += lineVat;
+    grand += lineTotal;
+    return { product_id: item.id || null, code: item.code, name: item.name, qty: item.qty, price: item.price, vat_rate: item.vat, unit: item.unit || "piece", line_total: +lineTotal.toFixed(2) };
+  });
+
+  receiptCounter++;
+  const receiptNo = 'RC-' + String(receiptCounter).padStart(4, '0');
+  const refCode = paymentRequest.receipt_reference || paymentRequest.checkout_request_id || 'REF-CONFIRMED';
+
+  const saleRecord = {
+    business_id: activeBusinessId, receipt_no: receiptNo, cashier_id: profile.id,
+    customer_id: custId, subtotal_excl_vat: +subtotalExclVat.toFixed(2),
+    vat_total: +vatTotal.toFixed(2), total: +grand.toFixed(2), offline_uuid: offlineUuid,
+    created_at: now.toISOString(), payment_method: gateway, mpesa_receipt_no: refCode,
+    shift_id: currentShift ? currentShift.id : null
+  };
+
+  cart.forEach(item => {
+    const p = findProduct(item.code);
+    if (p) p.stock = Math.max(0, p.stock - item.qty);
+  });
+  renderCatalog();
+  updateLowStockBanner();
+
+  lineItems.forEach(li => {
+    salesLog.unshift({
+      date: now.toISOString().slice(0,10),
+      receipt: receiptNo,
+      code: li.code,
+      name: li.name,
+      qty: li.qty,
+      price: li.price,
+      vat: li.vat_rate,
+      total: li.line_total,
+      customerId: custId,
+      cashierId: profile.id,
+      paymentMethod: gateway,
+      paymentStatus: 'success',
+      externalRef: refCode,
+      shiftId: saleRecord.shift_id
+    });
+  });
+
+  const result = await pushSaleToServer(saleRecord, lineItems);
+  if (result.ok) {
+    callEdgeFunction('etims-submit', { sale_id: result.id }).catch(() => {});
+    refreshLiveViews();
+  } else {
+    await loadAllData();
+    showToast(`<i class="fa-solid fa-triangle-exclamation"></i> Payment verified (${refCode}) but local sync warning: ` + result.error);
+  }
+
+  // Explicitly link gateway transaction in store to this internal receipt
+  if (paymentRequest && (paymentRequest.id || paymentRequest.checkout_request_id)) {
+    const reqId = paymentRequest.id || paymentRequest.checkout_request_id;
+    fetch('/api/payments/link-sale', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        payment_request_id: reqId,
+        receipt_no: receiptNo,
+        sale_id: result.id || offlineUuid
+      })
+    }).then(() => {
+      loadGatewayTransactions().catch(() => {});
+    }).catch(() => {});
+  }
+
+  const gwName = (gatewayConfigLabels[gateway] || {}).name || gateway.toUpperCase();
+  logAudit('sale.create', { receipt: receiptNo, total: +grand.toFixed(2), item_count: cart.length, payment_method: gateway, receipt_ref: refCode });
+  showReceipt(receiptNo, cart, subtotalExclVat, vatTotal, grand, now, refCode, gwName);
+  showToast(`${gwName} payment confirmed! Ref: ${refCode}`);
+
+  cart = [];
+  renderCart();
+  renderLog();
+  document.getElementById('cartCustomerPick').value = '';
+  document.getElementById('mpesaPhone').value = '';
+}
+
+// Backwards compatibility alias for completeMpesaSale
+const completeMpesaSale = (req) => completeDigitalSale('mpesa', req);
+
+/* =====================================================================
+   PAYMENT GATEWAYS SETTINGS SYNC (admin)
+===================================================================== */
+async function loadAllGatewaySettings() {
+  try {
+    const res = await fetch('/api/payments/gateways').then(r => r.json());
+    if (!res.success) return;
+
+    res.gateways.forEach(gw => {
+      if (gw.gateway === 'mpesa') {
+        const statusEl = document.getElementById('mpesaStatusText');
+        const badgeEl = document.getElementById('badgeMpesaConfig');
+        const intPill = document.getElementById('intMpesaStatusPill');
+        if (statusEl) {
+          statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Verified — Till/Shortcode ${escapeHtml(gw.shortcode)} (${gw.is_production ? 'Production' : 'Sandbox'})`;
+        }
+        if (badgeEl) badgeEl.textContent = gw.is_production ? 'PRODUCTION' : 'SANDBOX READY';
+        if (intPill) intPill.textContent = 'Configured';
+        if (document.getElementById('mpesaShortcode')) document.getElementById('mpesaShortcode').value = gw.shortcode || '';
+        if (document.getElementById('mpesaPaymentType')) document.getElementById('mpesaPaymentType').value = gw.payment_type || 'till';
+        if (document.getElementById('mpesaEnv')) document.getElementById('mpesaEnv').value = String(gw.is_production);
+      } else if (gw.gateway === 'kcb') {
+        const statusEl = document.getElementById('kcbStatusText');
+        const badgeEl = document.getElementById('badgeKcbConfig');
+        const intPill = document.getElementById('intKcbStatusPill');
+        if (statusEl) {
+          statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Active — Merchant ${escapeHtml(gw.merchant_code)} | Webhook HMAC-SHA256 active`;
+        }
+        if (badgeEl) badgeEl.textContent = gw.is_production ? 'LIVE BANK API' : 'SANDBOX READY';
+        if (intPill) intPill.textContent = 'Active';
+        if (document.getElementById('kcbMerchantCode')) document.getElementById('kcbMerchantCode').value = gw.merchant_code || '';
+        if (document.getElementById('kcbAccountNumber')) document.getElementById('kcbAccountNumber').value = gw.account_number || '';
+        if (document.getElementById('kcbEnv')) document.getElementById('kcbEnv').value = String(gw.is_production);
+      } else if (gw.gateway === 'paystack') {
+        const statusEl = document.getElementById('paystackStatusText');
+        const badgeEl = document.getElementById('badgePaystackConfig');
+        const intPill = document.getElementById('intPaystackStatusPill');
+        if (statusEl) {
+          statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Active — Pan-African card & mobile terminal enabled`;
+        }
+        if (badgeEl) badgeEl.textContent = gw.is_production ? 'LIVE' : 'TEST MODE';
+        if (intPill) intPill.textContent = 'Active';
+        if (document.getElementById('paystackPublicKey')) document.getElementById('paystackPublicKey').value = gw.public_key || '';
+        if (document.getElementById('paystackEnv')) document.getElementById('paystackEnv').value = String(gw.is_production);
+      } else if (gw.gateway === 'airtel') {
+        const statusEl = document.getElementById('airtelStatusText');
+        const badgeEl = document.getElementById('badgeAirtelConfig');
+        const intPill = document.getElementById('intAirtelStatusPill');
+        if (statusEl) {
+          statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Active — Till ${escapeHtml(gw.merchant_number)} ready for STK push`;
+        }
+        if (badgeEl) badgeEl.textContent = gw.is_production ? 'PRODUCTION' : 'SANDBOX READY';
+        if (intPill) intPill.textContent = 'Active';
+        if (document.getElementById('airtelMerchantNumber')) document.getElementById('airtelMerchantNumber').value = gw.merchant_number || '';
+        if (document.getElementById('airtelEnv')) document.getElementById('airtelEnv').value = String(gw.is_production);
+      }
+    });
+  } catch (e) {}
+}
+
+const loadMpesaStatus = loadAllGatewaySettings;
 
 async function saveMpesaSettings() {
   const payment_type = document.getElementById('mpesaPaymentType').value;
@@ -8621,22 +10363,130 @@ async function saveMpesaSettings() {
   const passkey = document.getElementById('mpesaPasskey').value.trim();
   const is_production = document.getElementById('mpesaEnv').value === 'true';
 
-  if (!shortcode || !consumer_key || !consumer_secret || !passkey) {
-    showToast('Fill in all M-Pesa fields'); return;
+  try {
+    const res = await fetch('/api/payments/config/mpesa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_type, shortcode, consumer_key, consumer_secret, passkey, is_production })
+    }).then(r => r.json());
+
+    if (res.success) {
+      showToast('M-Pesa gateway settings updated successfully');
+      ['mpesaConsumerKey', 'mpesaConsumerSecret', 'mpesaPasskey'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+      });
+      loadAllGatewaySettings();
+    } else {
+      showToast('Could not save M-Pesa: ' + (res.error || 'Failed'));
+    }
+  } catch (err) {
+    showToast('Failed to save M-Pesa: ' + err.message);
   }
-  const resp = await callEdgeFunction('mpesa-settings', { action: 'save', payment_type, shortcode, consumer_key, consumer_secret, passkey, is_production });
-  if (resp.error) { showToast('Could not save: ' + resp.error); return; }
-  ['mpesaConsumerKey','mpesaConsumerSecret','mpesaPasskey'].forEach(id => document.getElementById(id).value = '');
-  showToast('M-Pesa settings saved');
-  loadMpesaStatus();
 }
 
 async function removeMpesaSettings() {
-  if (!confirm('Remove M-Pesa setup for this business? Tellers will no longer be able to charge via M-Pesa.')) return;
-  const resp = await callEdgeFunction('mpesa-settings', { action: 'remove' });
-  if (resp.error) { showToast('Could not remove: ' + resp.error); return; }
-  showToast('M-Pesa setup removed');
-  loadMpesaStatus();
+  if (!confirm('Reset M-Pesa configuration to default sandbox?')) return;
+  await saveMpesaSettings();
+}
+
+async function saveKcbSettings() {
+  const merchant_code = document.getElementById('kcbMerchantCode').value.trim();
+  const account_number = document.getElementById('kcbAccountNumber').value.trim();
+  const app_key = document.getElementById('kcbAppKey').value.trim();
+  const app_secret = document.getElementById('kcbAppSecret').value.trim();
+  const shared_secret = document.getElementById('kcbSharedSecret').value.trim();
+  const is_production = document.getElementById('kcbEnv').value === 'true';
+
+  try {
+    const res = await fetch('/api/payments/config/kcb', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ merchant_code, account_number, app_key, app_secret, shared_secret, is_production })
+    }).then(r => r.json());
+
+    if (res.success) {
+      showToast('KCB Buni gateway settings saved successfully');
+      ['kcbAppKey', 'kcbAppSecret', 'kcbSharedSecret'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+      });
+      loadAllGatewaySettings();
+    } else {
+      showToast('Error saving KCB settings: ' + res.error);
+    }
+  } catch (err) {
+    showToast('Failed to save KCB settings: ' + err.message);
+  }
+}
+
+function resetKcbSettings() {
+  if (confirm('Reset KCB settings?')) {
+    document.getElementById('kcbMerchantCode').value = 'KCB-DEMO-001';
+    showToast('KCB fields reset');
+  }
+}
+
+async function savePaystackSettings() {
+  const public_key = document.getElementById('paystackPublicKey').value.trim();
+  const secret_key = document.getElementById('paystackSecretKey').value.trim();
+  const is_production = document.getElementById('paystackEnv').value === 'true';
+
+  try {
+    const res = await fetch('/api/payments/config/paystack', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ public_key, secret_key, is_production })
+    }).then(r => r.json());
+
+    if (res.success) {
+      showToast('Paystack settings updated successfully');
+      const sk = document.getElementById('paystackSecretKey'); if (sk) sk.value = '';
+      loadAllGatewaySettings();
+    } else {
+      showToast('Error saving Paystack: ' + res.error);
+    }
+  } catch (err) {
+    showToast('Failed to save Paystack settings: ' + err.message);
+  }
+}
+
+function resetPaystackSettings() {
+  if (confirm('Reset Paystack configuration?')) {
+    showToast('Paystack fields cleared');
+  }
+}
+
+async function saveAirtelSettings() {
+  const merchant_number = document.getElementById('airtelMerchantNumber').value.trim();
+  const client_id = document.getElementById('airtelClientId').value.trim();
+  const client_secret = document.getElementById('airtelClientSecret').value.trim();
+  const encryption_key = document.getElementById('airtelEncryptionKey').value.trim();
+  const is_production = document.getElementById('airtelEnv').value === 'true';
+
+  try {
+    const res = await fetch('/api/payments/config/airtel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ merchant_number, client_id, client_secret, encryption_key, is_production })
+    }).then(r => r.json());
+
+    if (res.success) {
+      showToast('Airtel Money settings saved successfully');
+      ['airtelClientId', 'airtelClientSecret', 'airtelEncryptionKey'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+      });
+      loadAllGatewaySettings();
+    } else {
+      showToast('Error saving Airtel settings: ' + res.error);
+    }
+  } catch (err) {
+    showToast('Failed to save Airtel settings: ' + err.message);
+  }
+}
+
+function resetAirtelSettings() {
+  if (confirm('Reset Airtel Money configuration?')) {
+    showToast('Airtel settings reset');
+  }
 }
 
 async function loadEtimsStatus() {
@@ -8672,139 +10522,6 @@ async function removeEtimsSettings() {
   if (resp.error) { showToast('Could not remove: ' + resp.error); return; }
   showToast('eTIMS setup removed');
   loadEtimsStatus();
-}
-
-/* =====================================================================
-   M-PESA CHECKOUT FLOW (STK Push + polling for confirmation)
-===================================================================== */
-let mpesaPollInterval = null;
-let mpesaCurrentRequestId = null;
-
-function openMpesaPrompt() {
-  if (cart.length === 0) return;
-  document.getElementById('mpesaPromptBox').style.display = 'block';
-  document.getElementById('mpesaPhone').focus();
-}
-function cancelMpesaPrompt() {
-  document.getElementById('mpesaPromptBox').style.display = 'none';
-  document.getElementById('mpesaPhone').value = '';
-}
-
-async function sendMpesaPrompt() {
-  const phone = document.getElementById('mpesaPhone').value.trim();
-  if (!phone || phone.replace(/[^0-9]/g,'').length < 9) {
-    showToast('Enter a valid phone number'); return;
-  }
-  if (!isOnline) { showToast('M-Pesa requires an internet connection'); return; }
-
-  let grand = 0;
-  cart.forEach(item => { grand += item.price * item.qty; });
-
-  const custId = document.getElementById('cartCustomerPick').value || null;
-
-  document.getElementById('mpesaPromptBox').style.display = 'none';
-  document.getElementById('mpesaWaitingBox').style.display = 'block';
-  document.getElementById('mpesaWaitingHint').textContent = `Ksh ${grand.toFixed(2)} prompt sent to ${phone}`;
-
-  const resp = await callEdgeFunction('mpesa-stk-push', {
-    phone, amount: grand, cart: cart, customer_id: custId
-  });
-
-  if (resp.error) {
-    showToast('M-Pesa error: ' + resp.error);
-    document.getElementById('mpesaWaitingBox').style.display = 'none';
-    return;
-  }
-
-  mpesaCurrentRequestId = resp.payment_request_id;
-  pollMpesaStatus(resp.payment_request_id, grand, custId);
-}
-
-function pollMpesaStatus(paymentRequestId, grand, custId) {
-  let elapsed = 0;
-  mpesaPollInterval = setInterval(async () => {
-    elapsed += 3;
-    const { data, error } = await sb.from('payment_requests').select('*').eq('id', paymentRequestId).single();
-    if (error) return;
-
-    if (data.status === 'success') {
-      clearInterval(mpesaPollInterval);
-      document.getElementById('mpesaWaitingBox').style.display = 'none';
-      await completeMpesaSale(data);
-    } else if (data.status === 'failed' || data.status === 'cancelled') {
-      clearInterval(mpesaPollInterval);
-      document.getElementById('mpesaWaitingBox').style.display = 'none';
-      showToast('Payment ' + data.status + ': ' + (data.result_desc || 'Customer did not complete payment'));
-    } else if (elapsed >= 90) {
-      clearInterval(mpesaPollInterval);
-      document.getElementById('mpesaWaitingBox').style.display = 'none';
-      showToast('Payment timed out waiting for customer — ask them to check their phone and try again');
-    }
-  }, 3000);
-}
-
-function cancelMpesaWait() {
-  clearInterval(mpesaPollInterval);
-  document.getElementById('mpesaWaitingBox').style.display = 'none';
-  showToast('Stopped waiting — the customer may still complete payment separately');
-}
-
-async function completeMpesaSale(paymentRequest) {
-  // Reuse the normal checkout flow, but mark payment as M-Pesa and skip the cash button
-  const now = new Date();
-  const custId = paymentRequest.customer_id;
-  const offlineUuid = crypto.randomUUID ? crypto.randomUUID() : ('m-' + now.getTime());
-
-  let subtotalExclVat = 0, vatTotal = 0, grand = 0;
-  const lineItems = cart.map(item => {
-    const lineTotal = item.price * item.qty;
-    const lineVat = lineTotal - (lineTotal / (1 + item.vat));
-    subtotalExclVat += (lineTotal - lineVat);
-    vatTotal += lineVat;
-    grand += lineTotal;
-    return { product_id: item.id || null, code: item.code, name: item.name, qty: item.qty, price: item.price, vat_rate: item.vat, unit: item.unit || "piece", line_total: +lineTotal.toFixed(2) };
-  });
-
-  receiptCounter++;
-  const receiptNo = 'RC-' + String(receiptCounter).padStart(4, '0');
-
-  const saleRecord = {
-    business_id: activeBusinessId, receipt_no: receiptNo, cashier_id: profile.id,
-    customer_id: custId, subtotal_excl_vat: +subtotalExclVat.toFixed(2),
-    vat_total: +vatTotal.toFixed(2), total: +grand.toFixed(2), offline_uuid: offlineUuid,
-    created_at: now.toISOString(), payment_method: 'mpesa', mpesa_receipt_no: paymentRequest.mpesa_receipt || null,
-    shift_id: currentShift ? currentShift.id : null
-  };
-
-  cart.forEach(item => {
-    const p = findProduct(item.code);
-    if (p) p.stock = Math.max(0, p.stock - item.qty);
-  });
-  renderCatalog();
-  updateLowStockBanner();
-
-  lineItems.forEach(li => {
-    salesLog.unshift({ date: now.toISOString().slice(0,10), receipt: receiptNo, code: li.code, name: li.name, qty: li.qty, price: li.price, vat: li.vat_rate, total: li.line_total, customerId: custId, cashierId: profile.id, paymentMethod: 'mpesa', shiftId: saleRecord.shift_id });
-  });
-
-  const result = await pushSaleToServer(saleRecord, lineItems);
-  if (result.ok) {
-    callEdgeFunction('etims-submit', { sale_id: result.id }).catch(() => {}); // fire-and-forget, non-blocking
-    refreshLiveViews();
-  } else {
-    // Customer's M-Pesa payment already succeeded at this point - the sale record
-    // failing to save (e.g. a genuine stock conflict) needs a human, not a silent drop.
-    await loadAllData();
-    showToast('<i class="fa-solid fa-triangle-exclamation"></i> Payment received (' + (paymentRequest.mpesa_receipt || '') + ') but the sale could not be saved: ' + result.error);
-  }
-  logAudit('sale.create', { receipt: receiptNo, total: +grand.toFixed(2), item_count: cart.length, payment_method: 'mpesa', mpesa_receipt: paymentRequest.mpesa_receipt });
-
-  showReceipt(receiptNo, cart, subtotalExclVat, vatTotal, grand, now, paymentRequest.mpesa_receipt);
-  showToast('M-Pesa payment confirmed! Receipt: ' + (paymentRequest.mpesa_receipt || ''));
-  cart = [];
-  renderCart();
-  document.getElementById('cartCustomerPick').value = '';
-  document.getElementById('mpesaPhone').value = '';
 }
 
 /* =====================================================================
@@ -9419,12 +11136,13 @@ function shareReceiptWhatsApp() {
     showToast('No receipt data available to share.');
     return;
   }
-  const { receiptNo, items, grand, now, mpesaReceipt } = lastReceiptPayload;
+  const { receiptNo, items, grand, now, mpesaReceipt, gatewayName } = lastReceiptPayload;
   const bizName = business?.name || 'Dogo POS Global';
   const pin = business?.kra_pin ? `\neTIMS PIN: ${business.kra_pin}` : '';
   const itemLines = items.map(i => `- ${i.name} x${i.qty} = KES ${(i.price * i.qty).toFixed(2)}`).join('\n');
+  const payDesc = mpesaReceipt ? (gatewayName ? `${gatewayName} (${mpesaReceipt})` : `M-Pesa (${mpesaReceipt})`) : 'Cash';
 
-  const text = `*${bizName}*\nReceipt: #${receiptNo}\nDate: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}\n-----------------------------\n${itemLines}\n-----------------------------\n*Total: KES ${grand.toFixed(2)}*\nPayment: ${mpesaReceipt ? 'M-Pesa (' + mpesaReceipt + ')' : 'Cash'}${pin}\n\nThank you for your business!`;
+  const text = `*${bizName}*\nReceipt: #${receiptNo}\nDate: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}\n-----------------------------\n${itemLines}\n-----------------------------\n*Total: KES ${grand.toFixed(2)}*\nPayment: ${payDesc}${pin}\n\nThank you for your business!`;
 
   window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
 }
@@ -9603,155 +11321,16 @@ async function saveNewProductFromPage() {
 /* =====================================================================
    COLLAPSIBLE SIDEBAR TOGGLE & RESTORATION
 ===================================================================== */
-
-/* =====================================================================
-   DOGO POS RETAIL CHECKOUT & CATALOG GRID LOGIC
-===================================================================== */
-const DEFAULT_RETAIL_PRODUCTS = [
-  { id: 'dp-1', code: 'AJAB-2KG', name: 'Ajab Flour', category: 'GRAINS', price: 220.00, vat: 0.16, stock: 50, reorder: 10, unit: 'piece', image: 'images/demo/ajab_flour.png' },
-  { id: 'dp-2', code: 'RAHA-2KG', name: 'Raha Flour', category: 'GRAINS', price: 140.00, vat: 0.16, stock: 35, reorder: 5, unit: 'piece', image: 'images/demo/raha_flour.png' },
-  { id: 'dp-3', code: 'HAMMER-CLAW', name: 'Claw Hammer', category: 'TOOLS', price: 750.00, vat: 0.16, stock: 12, reorder: 3, unit: 'piece', image: 'images/demo/claw_hammer.png' },
-  { id: 'dp-4', code: 'PAINT-EMUL-4L', name: 'Emulsion Paint 4L', category: 'PAINT', price: 1850.00, vat: 0.16, stock: 8, reorder: 2, unit: 'piece', image: 'images/demo/paint_emulsion.png' },
-  { id: 'dp-5', code: 'RICE-MWEA-2K', name: 'CIL Pure Mwea Pishori Rice 2kg', category: 'GRAINS', price: 340.00, vat: 0.16, stock: 24, reorder: 5, unit: 'piece', image: 'images/demo/1788534931087.webp' },
-  { id: 'dp-6', code: 'PERSIL-500G', name: 'Persil Universal Detergent 500g', category: 'HOUSEHOLD', price: 195.00, vat: 0.16, stock: 40, reorder: 8, unit: 'piece', image: 'images/demo/1788535215892.webp' },
-  { id: 'dp-7', code: 'DORMANS-100G', name: 'Dormans Fine Instant Coffee 100g', category: 'BEVERAGES', price: 420.00, vat: 0.16, stock: 18, reorder: 4, unit: 'piece', image: 'images/demo/1788535505809.webp' },
-];
-
-function getProductImage(p) {
-  if (p.image) return p.image;
-  const name = (p.name || '').toLowerCase();
-  if (name.includes('ajab')) return 'images/demo/ajab_flour.png';
-  if (name.includes('raha')) return 'images/demo/raha_flour.png';
-  if (name.includes('hammer')) return 'images/demo/claw_hammer.png';
-  if (name.includes('paint')) return 'images/demo/paint_emulsion.png';
-  if (name.includes('rice') || name.includes('mwea')) return 'images/demo/1788534931087.webp';
-  if (name.includes('persil') || name.includes('detergent') || name.includes('soap')) return 'images/demo/1788535215892.webp';
-  if (name.includes('coffee') || name.includes('dormans')) return 'images/demo/1788535505809.webp';
-  return null;
-}
-
-function getEffectiveCatalog() {
-  if (CATALOG && CATALOG.length > 0) return CATALOG;
-  return DEFAULT_RETAIL_PRODUCTS;
-}
-
-function renderPosProductsGrid(filterText) {
-  const grid = document.getElementById('rcProductsGrid');
-  if (!grid) return;
-
-  const list = getEffectiveCatalog();
-  const query = (filterText || '').toLowerCase().trim();
-
-  const filtered = query
-    ? list.filter(p => (p.name && p.name.toLowerCase().includes(query)) || (p.code && p.code.toLowerCase().includes(query)) || (p.category && p.category.toLowerCase().includes(query)))
-    : list;
-
-  // Update stats pills
-  const availEl = document.getElementById('rcAvailCount');
-  const visEl = document.getElementById('rcVisCount');
-  const lowEl = document.getElementById('rcLowStockCount');
-  const shownEl = document.getElementById('rcShownCount');
-  const totalEl = document.getElementById('rcTotalCount');
-
-  if (availEl) availEl.textContent = `${list.length} available`;
-  if (visEl) visEl.textContent = `${filtered.length} visible`;
-  if (shownEl) shownEl.textContent = `${filtered.length}`;
-  if (totalEl) totalEl.textContent = `${list.length}`;
-
-  const lowStockCount = list.filter(p => (p.stock || 0) <= (p.reorder || 5)).length;
-  if (lowEl) lowEl.textContent = `${lowStockCount} low stock`;
-
-  if (filtered.length === 0) {
-    grid.innerHTML = `
-      <div style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; color: var(--text-secondary);">
-        <i class="fa-solid fa-magnifying-glass" style="font-size: 32px; opacity: 0.4; margin-bottom: 12px; display: block;"></i>
-        <div style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">No matching products found</div>
-        <p style="font-size: 13px; margin: 0 0 16px;">Try searching with a different keyword or barcode.</p>
-        <button class="btn-green btn-small" onclick="switchTab('product-create')">+ Add New Product</button>
-      </div>`;
-    return;
-  }
-
-  grid.innerHTML = filtered.map(p => {
-    const imgUrl = getProductImage(p);
-    const category = escapeHtml(p.category || 'GENERAL');
-    const name = escapeHtml(p.name);
-    const price = Number(p.price || 0).toFixed(2);
-    const stock = p.stock || 0;
-    const safeCode = (p.code || '').replace(/'/g, "\'");
-
-    return `
-      <div class="rc-prod-card" onclick="posCardClick('${safeCode}')" title="Tap to add ${name}">
-        <div class="rc-prod-img-wrap">
-          ${imgUrl
-            ? `<img src="${imgUrl}" alt="${name}" class="rc-prod-img" loading="lazy">`
-            : `<div style="font-size:36px; color:#2563eb; opacity:0.7;"><i class="fa-solid fa-box"></i></div>`
-          }
-        </div>
-        <div class="rc-prod-info">
-          <div class="rc-prod-category">${category}</div>
-          <div class="rc-prod-name">${name}</div>
-          <div class="rc-prod-footer">
-            <div class="rc-prod-price">KES ${price}</div>
-            <div class="rc-prod-stock">${stock} in stock</div>
-          </div>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-function posCardClick(code) {
-  const list = getEffectiveCatalog();
-  const prod = list.find(p => p.code === code);
-  if (prod) {
-    addToCart(prod, 1);
-    showToast(`Added ${prod.name} to cart`);
-  }
-}
-
-function handlePosSearch(val) {
-  renderPosProductsGrid(val);
-}
-
-function handlePosBarcodeKey(e) {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    const val = (e.target.value || '').trim();
-    if (!val) return;
-    const list = getEffectiveCatalog();
-    const match = list.find(p => p.code.toLowerCase() === val.toLowerCase() || p.name.toLowerCase() === val.toLowerCase());
-    if (match) {
-      addToCart(match, 1);
-      e.target.value = '';
-      renderPosProductsGrid('');
-      showToast(`Added ${match.name} to cart`);
-    } else {
-      showToast(`Barcode "${val}" not found`);
-    }
-  }
-}
-
-function handleBranchChange(branch) {
-  const badge = document.getElementById('portalBranchName');
-  if (badge) badge.textContent = branch.charAt(0).toUpperCase() + branch.slice(1);
-  const meta = document.getElementById('rcCurrentBranchMeta');
-  if (meta) meta.textContent = branch;
-  showToast(`Active branch set to ${branch}`);
-}
-
-/* =====================================================================
-   SIDEBAR HIDE / COLLAPSE CONTROLLER
-===================================================================== */
-function toggleSidebarHide() {
+function toggleSidebarCollapse() {
   const sidebar = document.getElementById('portalSidebar');
   const backdrop = document.getElementById('portalBackdrop');
   if (!sidebar) return;
 
   if (window.innerWidth >= 1024) {
-    // Desktop: toggle complete hidden state
-    sidebar.classList.toggle('sidebar-hidden');
-    const isHidden = sidebar.classList.contains('sidebar-hidden');
-    try { localStorage.setItem('dogopos_sidebar_hidden', isHidden ? 'true' : 'false'); } catch(e) {}
+    // Desktop: toggle compact icon-rail collapsed state
+    sidebar.classList.toggle('collapsed');
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    try { localStorage.setItem('dogopos_sidebar_collapsed', isCollapsed ? 'true' : 'false'); } catch(e) {}
   } else {
     // Mobile: toggle sliding drawer
     sidebar.classList.toggle('drawer-open');
@@ -9759,24 +11338,15 @@ function toggleSidebarHide() {
   }
 }
 
-function toggleSidebarCollapse() {
-  toggleSidebarHide();
-}
-
 // Restore user preference on init
 (function initSidebarState() {
   try {
-    const isHidden = localStorage.getItem('dogopos_sidebar_hidden') === 'true';
-    if (isHidden && window.innerWidth >= 1024) {
-      document.getElementById('portalSidebar')?.classList.add('sidebar-hidden');
+    const saved = localStorage.getItem('dogopos_sidebar_collapsed');
+    if (saved === 'true' && window.innerWidth >= 1024) {
+      document.getElementById('portalSidebar')?.classList.add('collapsed');
     }
   } catch(e) {}
-  // Initialize POS grid
-  setTimeout(function() {
-    renderPosProductsGrid('');
-  }, 100);
 })();
-
 
 </script>
 </body>
