@@ -3499,6 +3499,209 @@
 }
 
 
+
+/* =====================================================================
+   RETAIL CHECKOUT COMPONENT ISOLATION & BUTTON BALANCE FIXES
+===================================================================== */
+.retail-checkout-container button {
+  width: auto;
+  margin: 0;
+  letter-spacing: normal;
+}
+.retail-checkout-container input,
+.retail-checkout-container select {
+  margin: 0;
+}
+
+/* Header & Branch controls balance */
+.rc-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 16px !important;
+  margin-bottom: 20px !important;
+}
+
+.rc-controls-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: nowrap !important;
+}
+
+.rc-branch-box {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: var(--bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 999px !important;
+  padding: 4px 14px !important;
+  margin: 0 !important;
+  height: 40px !important;
+}
+
+.rc-branch-select,
+.panel .rc-branch-select {
+  width: auto !important;
+  height: auto !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
+  outline: none !important;
+  cursor: pointer !important;
+}
+
+.rc-scan-btn,
+.panel .rc-scan-btn {
+  width: auto !important;
+  height: 40px !important;
+  background: transparent !important;
+  border: 1.5px solid #22c55e !important;
+  color: #16a34a !important;
+  border-radius: 999px !important;
+  padding: 0 18px !important;
+  margin: 0 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.15s ease !important;
+}
+.rc-scan-btn:hover,
+.panel .rc-scan-btn:hover {
+  background: rgba(34, 197, 94, 0.1) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Search or Scan Row Balance */
+.rc-search-row {
+  display: flex !important;
+  gap: 12px !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.rc-search-input-wrap {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.rc-search-input-wrap i {
+  position: absolute !important;
+  left: 14px !important;
+  color: #16a34a !important;
+  font-size: 15px !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+.rc-search-input,
+.panel .rc-search-input[type="text"],
+.panel .rc-search-input {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 46px !important;
+  background: #081a10 !important;
+  color: #dcfce7 !important;
+  border: 1.5px solid #166534 !important;
+  border-radius: 12px !important;
+  padding: 0 14px 0 42px !important;
+  margin: 0 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  transition: all 0.15s ease !important;
+}
+
+[data-theme="light"] .rc-search-input,
+[data-theme="light"] .panel .rc-search-input[type="text"],
+[data-theme="light"] .panel .rc-search-input {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .rc-search-input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.rc-search-input:focus,
+.panel .rc-search-input[type="text"]:focus,
+.panel .rc-search-input:focus {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2) !important;
+}
+
+.rc-add-btn,
+.panel .rc-add-btn {
+  width: auto !important;
+  flex: 0 0 auto !important;
+  height: 46px !important;
+  background: #22c55e !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 0 24px !important;
+  margin: 0 !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25) !important;
+  transition: all 0.15s ease !important;
+}
+
+.rc-add-btn:hover,
+.panel .rc-add-btn:hover {
+  background: #16a34a !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35) !important;
+}
+
+/* Pagination pills balance */
+.rc-page-btn,
+.panel .rc-page-btn {
+  width: auto !important;
+  height: 32px !important;
+  padding: 0 14px !important;
+  margin: 0 !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Quick cash pills balance */
+.quick-cash-grid button,
+.panel .quick-cash-pill,
+.quick-cash-pill {
+  width: auto !important;
+  height: 34px !important;
+  padding: 0 12px !important;
+  margin: 0 !important;
+  border-radius: 8px !important;
+  font-size: 12.5px !important;
+}
+
 /* Auth vs Portal Display Handling */
 #authScreen.hidden {
   display: none !important;
@@ -6300,7 +6503,7 @@
               <i class="fa-solid fa-magnifying-glass"></i>
               <input type="text" id="rcSearchInput" class="rc-search-input" placeholder="Search products or barcode" oninput="handlePosSearch(this.value)" onkeydown="handlePosBarcodeKey(event)">
             </div>
-            <button type="button" class="rc-add-btn" onclick="switchTab('product-create')">Add item</button>
+            <button type="button" class="rc-add-btn" onclick="switchTab('product-create')"><i class="fa-solid fa-plus"></i> <span>Add item</span></button>
           </div>
         </div>
 
@@ -6357,12 +6560,16 @@
             </div>
           </div>
           <div id="shiftOpenView" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
               <div>
-                <div style="font-weight:700; font-size:12px; color:#16a34a;"><i class="fa-solid fa-circle-check"></i> Shift open</div>
-                <div style="font-size:11px; color:var(--text-secondary);">Float: KES <span id="shiftFloatDisplay">0.00</span></div>
+                <div style="font-weight:700; font-size:13px; color:#16a34a; display:flex; align-items:center; gap:6px;">
+                  <i class="fa-solid fa-circle-check"></i> Shift open
+                </div>
+                <div style="font-size:11.5px; color:var(--text-secondary); margin-top:2px;">Float: KES <span id="shiftFloatDisplay">0.00</span></div>
               </div>
-              <button class="btn-red" onclick="closeShift()" style="padding:4px 10px; font-size:11px;">Close Shift</button>
+              <button class="btn-red" onclick="closeShift()" style="width:auto !important; padding:6px 16px !important; margin:0 !important; font-size:12px !important; border-radius:8px !important; font-weight:700 !important; white-space:nowrap !important;">
+                Close Shift
+              </button>
             </div>
           </div>
         </div>
