@@ -4163,27 +4163,10 @@
     </div>
 
     <div class="sidebar-nav-container">
-      <!-- Checkout Group -->
-      <div class="nav-group open" id="group-checkout">
-        <button class="nav-item-btn active" onclick="toggleNavGroup('group-checkout')">
-          <div class="nav-item-left"><i class="fa-solid fa-cash-register"></i> <span>Checkout</span></div>
-          <i class="fa-solid fa-chevron-down nav-chevron"></i>
-        </button>
-        <div class="nav-sub-list">
-          <button class="nav-sub-btn active" data-tab="sell" onclick="switchTab('sell')">
-            <i class="fa-solid fa-calculator"></i> <span>Till Register</span>
-          </button>
-          <button class="nav-sub-btn" data-tab="restaurant-order" onclick="switchTab('restaurant-order')">
-            <i class="fa-solid fa-plus-circle"></i> <span>Take Order</span>
-          </button>
-          <button class="nav-sub-btn" data-tab="kitchen" onclick="switchTab('kitchen')">
-            <i class="fa-solid fa-kitchen-set"></i> <span>Kitchen Board</span>
-          </button>
-          <button class="nav-sub-btn" data-tab="menu" data-admin-only="1" onclick="switchTab('menu')">
-            <i class="fa-solid fa-table-cells"></i> <span>Floor Tables</span>
-          </button>
-        </div>
-      </div>
+      <!-- Checkout -->
+      <button class="nav-item-btn active" data-tab="sell" onclick="switchTab('sell')">
+        <div class="nav-item-left"><i class="fa-solid fa-cash-register"></i> <span>Checkout</span></div>
+      </button>
 
       <!-- Dashboard -->
       <button class="nav-item-btn" data-tab="dash" onclick="switchTab('dash')">
@@ -4219,10 +4202,27 @@
         </div>
       </div>
 
-      <!-- Restaurant POS (Module Hub) -->
-      <button class="nav-item-btn" data-tab="restaurant-module" onclick="switchTab('restaurant-module')">
-        <div class="nav-item-left"><i class="fa-solid fa-utensils"></i> <span>Restaurant POS</span></div>
-      </button>
+      <!-- Restaurant POS Group -->
+      <div class="nav-group" id="group-restaurant">
+        <button class="nav-item-btn" onclick="toggleNavGroup('group-restaurant')">
+          <div class="nav-item-left"><i class="fa-solid fa-utensils"></i> <span>Restaurant POS</span></div>
+          <i class="fa-solid fa-chevron-down nav-chevron"></i>
+        </button>
+        <div class="nav-sub-list">
+          <button class="nav-sub-btn" data-tab="restaurant-module" onclick="switchTab('restaurant-module')">
+            <i class="fa-solid fa-compass"></i> <span>Overview Flow</span>
+          </button>
+          <button class="nav-sub-btn" data-tab="restaurant-order" onclick="switchTab('restaurant-order')">
+            <i class="fa-solid fa-plus-circle"></i> <span>Take Order</span>
+          </button>
+          <button class="nav-sub-btn" data-tab="kitchen" onclick="switchTab('kitchen')">
+            <i class="fa-solid fa-kitchen-set"></i> <span>Kitchen Board</span>
+          </button>
+          <button class="nav-sub-btn" data-tab="menu" data-admin-only="1" onclick="switchTab('menu')">
+            <i class="fa-solid fa-table-cells"></i> <span>Floor Tables</span>
+          </button>
+        </div>
+      </div>
 
       <!-- Business Group -->
       <div class="nav-group" id="group-business">
@@ -5090,9 +5090,220 @@
   </div>
 
   <!-- ================= CATALOG TAB (admin only) ================= -->
+  
+  <!-- ================= VIEW: ADD PRODUCT (/products/create) ================= -->
+  <div class="panel" id="tab-product-create">
+    <div style="margin-bottom:20px;">
+      <button type="button" onclick="switchTab('catalog')" style="background:var(--card); border:1px solid var(--border); color:var(--text-primary); border-radius:999px; padding:8px 18px; font-weight:700; margin-bottom:14px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-arrow-left"></i> <span>Back to products</span>
+      </button>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2 style="font-size:28px; font-weight:800; margin:0 0 6px;">Add product</h2>
+          <p style="color:var(--text-secondary); margin:0; font-size:14px;">Scan the barcode, capture the product image, and save price and quantity quickly.</p>
+        </div>
+        <div class="portal-branch-badge">
+          <span id="prodCreateBranchText">luanda</span> &middot; <span id="prodImgCountBadge">0 images</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 380px; gap:24px; align-items:start;" id="prodCreateLayout">
+      <!-- Left Column: Inventory details Card -->
+      <div style="padding:28px; border-radius:20px; background:var(--card); border:1px solid var(--border);">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:16px;">
+          <div style="width:40px; height:40px; border-radius:12px; background:rgba(250, 204, 21, 0.2); color:#b45309; display:flex; align-items:center; justify-content:center; font-size:18px;">
+            <i class="fa-solid fa-box-open"></i>
+          </div>
+          <div>
+            <h3 style="font-size:18px; font-weight:800; margin:0 0 2px;">Inventory details</h3>
+            <p style="color:var(--text-secondary); margin:0; font-size:13px;">Simple, POS-friendly product information.</p>
+          </div>
+        </div>
+
+        <!-- Location row -->
+        <div style="margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label style="font-size:12px; font-weight:700;">Location <span style="color:#ef4444;">*</span></label>
+            <a href="#" onclick="switchTab('branches'); return false;" style="font-size:12px; font-weight:700; color:#2563eb; text-decoration:none;">Create branch</a>
+          </div>
+          <select id="pcLocation" style="width:100%; margin:0;">
+            <option value="luanda">luanda</option>
+            <option value="main">Main Branch</option>
+          </select>
+        </div>
+
+        <!-- Product Name & Barcode Row -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">Product name <span style="color:#ef4444;">*</span></label>
+            <input type="text" id="pcName" placeholder="Premium rice 2kg" style="width:100%; margin:0; font-weight:600;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">Barcode / SKU</label>
+            <div style="display:flex; gap:6px; margin-bottom:6px;">
+              <input type="text" id="pcBarcode" placeholder="Scan or enter barcode" style="flex:1; margin:0; font-weight:600;">
+              <button type="button" class="btn-small btn-blue" onclick="toggleScanner(); switchTab('sell');" style="border-radius:12px; padding:0 14px; white-space:nowrap; background:#e0f2fe; color:#0284c7; border:none; font-weight:700;">
+                <i class="fa-solid fa-barcode"></i> Scan
+              </button>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; color:var(--text-secondary);">USB scanner or pasted</span>
+              <button type="button" onclick="generateAutoBarcode()" style="background:#facc15; color:#0f172a; font-weight:800; border:none; border-radius:999px; padding:4px 12px; font-size:11px; cursor:pointer;">
+                Use code
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category & Status Row -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">Category <span style="color:#ef4444;">*</span></label>
+            <select id="pcCategory" style="width:100%; margin:0;">
+              <option value="General">General</option>
+              <option value="CEMENT & BUILDING">CEMENT &amp; BUILDING</option>
+              <option value="ELECTRICAL">ELECTRICAL</option>
+              <option value="PAINT">PAINT</option>
+              <option value="PLUMBING">PLUMBING</option>
+              <option value="FOOD & BEVERAGES">FOOD &amp; BEVERAGES</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">Status</label>
+            <select id="pcStatus" style="width:100%; margin:0;">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Show on public website checkbox -->
+        <div style="background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:12px 16px; display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <input type="checkbox" id="pcShowWebsite" checked style="width:18px; height:18px; accent-color:#16a34a; margin:0; cursor:pointer;">
+          <div>
+            <div style="font-size:13px; font-weight:700; color:var(--text-primary);">Show on public website</div>
+            <div style="font-size:11.5px; color:var(--text-secondary);">POS and inventory still work if hidden.</div>
+          </div>
+        </div>
+
+        <!-- Pricing: Selling price & Cost Price -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">Selling price (KES) <span style="color:#ef4444;">*</span></label>
+            <input type="number" id="pcPrice" placeholder="0.00" step="0.01" style="width:100%; margin:0; font-weight:700;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">Cost price (optional)</label>
+            <input type="number" id="pcCostPrice" placeholder="What you paid" step="0.01" style="width:100%; margin:0;">
+          </div>
+        </div>
+
+        <!-- Wholesale Price & Min Wholesale Qty -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">Wholesale price (optional)</label>
+            <input type="number" id="pcWholesalePrice" placeholder="Bulk price per unit" step="0.01" style="width:100%; margin:0;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">Minimum wholesale quantity</label>
+            <input type="number" id="pcMinWholesaleQty" placeholder="e.g. 12 units" style="width:100%; margin:0;">
+          </div>
+        </div>
+
+        <!-- Stock & Unit & Low Stock -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">Opening stock <span style="color:#ef4444;">*</span></label>
+            <input type="number" id="pcStock" placeholder="0" value="0" style="width:100%; margin:0; font-weight:700;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">Stock unit</label>
+            <select id="pcUnit" style="width:100%; margin:0;">
+              <option value="piece">unit (piece)</option>
+              <option value="kg">kg (kilogram)</option>
+              <option value="g">g (gram)</option>
+              <option value="litre">litre</option>
+              <option value="box">box / carton</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">Low stock alert</label>
+            <input type="number" id="pcLowStock" placeholder="5" value="5" style="width:100%; margin:0;">
+          </div>
+        </div>
+
+        <!-- Expiry Date & Supplier -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">Expiry date (optional)</label>
+            <input type="date" id="pcExpiryDate" style="width:100%; margin:0;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">Supplier (optional)</label>
+            <input type="text" id="pcSupplier" placeholder="Supplier name" style="width:100%; margin:0;">
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div style="margin-bottom:24px;">
+          <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">Description</label>
+          <textarea id="pcDescription" rows="3" placeholder="Optional shelf notes, pack size, or cashier guidance." style="width:100%; margin:0; border-radius:12px;"></textarea>
+        </div>
+
+        <!-- Bottom Action Buttons -->
+        <div style="display:flex; justify-content:flex-end; gap:12px;">
+          <button type="button" class="btn-grey" onclick="switchTab('catalog')" style="border-radius:999px; padding:12px 24px; cursor:pointer;">Cancel</button>
+          <button type="button" onclick="saveNewProductFromPage()" style="border-radius:999px; padding:12px 32px; font-weight:800; background:#0f172a; color:#ffffff; border:none; cursor:pointer;">Save product</button>
+        </div>
+      </div>
+
+      <!-- Right Column: Product Image Card -->
+      <div style="padding:28px; border-radius:20px; background:var(--card); border:1px solid var(--border); position:sticky; top:84px;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:16px;">
+          <div style="width:40px; height:40px; border-radius:12px; background:rgba(37, 99, 235, 0.15); color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:18px;">
+            <i class="fa-solid fa-image"></i>
+          </div>
+          <div>
+            <h3 style="font-size:18px; font-weight:800; margin:0 0 2px;">Product image</h3>
+            <p style="color:var(--text-secondary); margin:0; font-size:13px;">Capture or upload one or more photos.</p>
+          </div>
+        </div>
+
+        <input type="file" id="pcImageInput" accept="image/*" capture="environment" style="display:none;" onchange="handleProductImageSelected(this.files)">
+
+        <div onclick="document.getElementById('pcImageInput').click()" style="border:2px dashed var(--border); border-radius:18px; padding:40px 20px; text-align:center; cursor:pointer; transition:all 0.2s; background:var(--bg);">
+          <div style="width:60px; height:60px; border-radius:50%; background:rgba(37, 99, 235, 0.12); color:#2563eb; font-size:24px; display:flex; align-items:center; justify-content:center; margin:0 auto 14px;">
+            <i class="fa-solid fa-camera"></i>
+          </div>
+          <div style="font-size:15px; font-weight:800; color:var(--text-primary); margin-bottom:4px;">Take photo or upload</div>
+          <div style="font-size:12px; color:var(--text-secondary);">Phones can open the camera directly.</div>
+        </div>
+
+        <div id="pcImagePreviewWrap" style="display:none; margin-top:16px; text-align:center;">
+          <img id="pcImagePreview" src="" style="max-height:160px; max-width:100%; border-radius:12px; border:1px solid var(--border); margin-bottom:8px;">
+          <div><button type="button" class="btn-small btn-red" onclick="removeProductImage()" style="border-radius:999px;">Remove photo</button></div>
+        </div>
+
+        <div style="margin-top:14px; font-size:12px; color:var(--text-secondary); text-align:center;" id="pcImgSelectedText">
+          0 images selected
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="panel" id="tab-catalog">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div>
+        <h2 style="font-size:24px; font-weight:800; margin:0 0 4px;">Products &amp; Inventory</h2>
+        <p style="color:var(--text-secondary); margin:0; font-size:13px;">Manage prices, stock levels, barcodes, and inventory.</p>
+      </div>
+      <button class="btn-blue" onclick="switchTab('product-create')" style="border-radius:999px; padding:10px 22px; font-weight:800; display:inline-flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-plus"></i> <span>Add product</span>
+      </button>
+    </div>
     <div class="cart-box">
-      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-plus"></i> Add a product</div>
+      <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-plus"></i> Quick Add Product</div>
       <input type="text" id="capCode" placeholder="Code / barcode">
       <input type="text" id="capName" placeholder="Item name">
       <input type="text" id="capCategory" placeholder="Category (e.g. Retail, Restaurant)">
@@ -8107,6 +8318,7 @@ function updatePortalHeaderState(tabName) {
     'sell': 'Checkout',
     'dash': 'Dashboard',
     'catalog': 'Products',
+    'product-create': 'Products > Create',
     'reports': 'Reports',
     'log': 'Sales Log',
     'expenses': 'Expenses',
@@ -8525,6 +8737,137 @@ function openManageApisModal() {
 function openUpgradePlanModal() {
   showToast('Opening Subscription plans...');
   alert('DOGO POS PLANS:\n- Free: KES 0/mo\n- Core POS: KES 999/mo (Recommended)\n- Control POS + eTIMS: KES 1,999/mo\n\nContact admin to upgrade your branch.');
+}
+
+
+/* =====================================================================
+   PRODUCT CREATION PAGE LOGIC (/products/create)
+===================================================================== */
+let selectedProductImageBase64 = null;
+
+function generateAutoBarcode() {
+  const code = Math.floor(100000000000 + Math.random() * 900000000000).toString();
+  const input = document.getElementById('pcBarcode');
+  if (input) {
+    input.value = code;
+    showToast('Generated SKU: ' + code);
+  }
+}
+
+function handleProductImageSelected(files) {
+  if (!files || files.length === 0) return;
+  const file = files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    selectedProductImageBase64 = e.target.result;
+    const preview = document.getElementById('pcImagePreview');
+    const wrap = document.getElementById('pcImagePreviewWrap');
+    const badge = document.getElementById('prodImgCountBadge');
+    const text = document.getElementById('pcImgSelectedText');
+    if (preview) preview.src = selectedProductImageBase64;
+    if (wrap) wrap.style.display = 'block';
+    if (badge) badge.textContent = '1 images';
+    if (text) text.textContent = '1 image selected (' + file.name + ')';
+    showToast('Photo captured!');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeProductImage() {
+  selectedProductImageBase64 = null;
+  const input = document.getElementById('pcImageInput');
+  const wrap = document.getElementById('pcImagePreviewWrap');
+  const badge = document.getElementById('prodImgCountBadge');
+  const text = document.getElementById('pcImgSelectedText');
+  if (input) input.value = '';
+  if (wrap) wrap.style.display = 'none';
+  if (badge) badge.textContent = '0 images';
+  if (text) text.textContent = '0 images selected';
+}
+
+async function saveNewProductFromPage() {
+  const name = document.getElementById('pcName')?.value.trim();
+  const price = parseFloat(document.getElementById('pcPrice')?.value || '0');
+  const barcode = document.getElementById('pcBarcode')?.value.trim() || Math.floor(100000000000 + Math.random() * 900000000000).toString();
+  const category = document.getElementById('pcCategory')?.value || 'General';
+  const unit = document.getElementById('pcUnit')?.value || 'piece';
+  const stock = parseInt(document.getElementById('pcStock')?.value || '0', 10);
+  const reorder = parseInt(document.getElementById('pcLowStock')?.value || '5', 10);
+  const costPrice = parseFloat(document.getElementById('pcCostPrice')?.value || '0') || null;
+  const wholesalePrice = parseFloat(document.getElementById('pcWholesalePrice')?.value || '0') || null;
+  const supplier = document.getElementById('pcSupplier')?.value.trim() || null;
+  const description = document.getElementById('pcDescription')?.value.trim() || null;
+
+  if (!name) {
+    showToast('Please enter a product name.');
+    document.getElementById('pcName')?.focus();
+    return;
+  }
+  if (!price || price <= 0) {
+    showToast('Please enter a valid selling price.');
+    document.getElementById('pcPrice')?.focus();
+    return;
+  }
+
+  // Insert into Supabase
+  try {
+    const newProdPayload = {
+      business_id: activeBusinessId,
+      barcode: barcode,
+      name: name,
+      category: category,
+      price: price,
+      vat_rate: 0.16,
+      unit: unit,
+      stock: stock,
+      reorder_level: reorder,
+      image_url: selectedProductImageBase64
+    };
+
+    const { data, error } = await sb.from('products').insert([newProdPayload]).select().single();
+    if (error) throw error;
+
+    if (!products) products = [];
+    products.push(data);
+
+    // Also update local cache
+    saveLocalCatalog(products);
+
+    showToast(`"${name}" successfully added to inventory!`);
+
+    // Reset form
+    document.getElementById('pcName').value = '';
+    document.getElementById('pcPrice').value = '';
+    document.getElementById('pcBarcode').value = '';
+    document.getElementById('pcStock').value = '0';
+    removeProductImage();
+
+    // Switch back to catalog and refresh
+    switchTab('catalog');
+    renderCatalog();
+  } catch(e) {
+    // Fallback: save to local catalog if offline or schema difference
+    console.warn('DB insert fallback to local:', e.message);
+    const localProd = {
+      id: 'local_' + Date.now(),
+      business_id: activeBusinessId,
+      barcode: barcode,
+      name: name,
+      category: category,
+      price: price,
+      vat_rate: 0.16,
+      unit: unit,
+      stock: stock,
+      reorder_level: reorder,
+      image_url: selectedProductImageBase64
+    };
+    if (!products) products = [];
+    products.push(localProd);
+    saveLocalCatalog(products);
+    showToast(`"${name}" saved to local catalog!`);
+    switchTab('catalog');
+    renderCatalog();
+  }
 }
 
 </script>
