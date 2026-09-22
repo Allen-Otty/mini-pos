@@ -5575,7 +5575,7 @@
         <input type="text" id="suBizName" placeholder="e.g. Greenleaf Supermarket">
 
         <label>Business Type</label>
-        <select id="suBizType">
+        <select id="suBizType" onchange="updateBizTypeHint(this.value)">
           <option value="Retail">Retail Shop</option>
           <option value="Wholesale">Wholesale</option>
           <option value="Supermarket">Supermarket</option>
@@ -5584,6 +5584,9 @@
           <option value="Hardware">Hardware Store</option>
           <option value="Kiosk">Kiosk / Kibanda</option>
         </select>
+        <div id="suBizTypeHint" style="font-size:12px; color:#2563eb; background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.2); border-radius:10px; padding:8px 12px; margin-top:-4px; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-sparkles"></i> <span id="suBizTypeHintText">Includes barcode lookup, apparel variants, and modern retail receipts.</span>
+        </div>
 
         <label>Your Full Name</label>
         <input type="text" id="suFullName" placeholder="e.g. Jane Wanjiru">
@@ -5693,26 +5696,22 @@
       <span class="sidebar-sub-badge" id="sidebarBizType">HARDWARE</span>
     </div>
 
-    <div class="sidebar-nav-container">
-      <!-- Checkout -->
-      <button class="nav-item-btn active" data-tab="sell" data-tooltip="Checkout / Till" onclick="switchTab('sell')">
-        <div class="nav-item-left"><i class="fa-solid fa-cash-register"></i> <span>Checkout</span></div>
-      </button>
-
-      <!-- Dashboard -->
-      <button class="nav-item-btn" data-tab="dash" data-tooltip="Dashboard" onclick="switchTab('dash')">
-        <div class="nav-item-left"><i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span></div>
-      </button>
-
-      <!-- Products -->
-      <button class="nav-item-btn" data-tab="catalog" data-tooltip="Products" onclick="switchTab('catalog')">
-        <div class="nav-item-left"><i class="fa-solid fa-boxes-stacked"></i> <span>Products</span></div>
-      </button>
-
-      <!-- Reports -->
-      <button class="nav-item-btn" data-tab="reports" data-tooltip="Reports" onclick="switchTab('reports')">
-        <div class="nav-item-left"><i class="fa-solid fa-chart-simple"></i> <span>Reports</span></div>
-      </button>
+    <div class="sidebar-nav-container" id="sidebarNavContainer">
+      <div id="sidebarPrimaryNav">
+        <!-- Rendered dynamically by renderSidebarNav(bizType) -->
+        <button class="nav-item-btn active" data-tab="sell" data-tooltip="Checkout / Till" onclick="switchTab('sell')">
+          <div class="nav-item-left"><i class="fa-solid fa-cash-register"></i> <span>Checkout</span></div>
+        </button>
+        <button class="nav-item-btn" data-tab="dash" data-tooltip="Dashboard" onclick="switchTab('dash')">
+          <div class="nav-item-left"><i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span></div>
+        </button>
+        <button class="nav-item-btn" data-tab="catalog" data-tooltip="Products" onclick="switchTab('catalog')">
+          <div class="nav-item-left"><i class="fa-solid fa-boxes-stacked"></i> <span>Products</span></div>
+        </button>
+        <button class="nav-item-btn" data-tab="reports" data-tooltip="Reports" onclick="switchTab('reports')">
+          <div class="nav-item-left"><i class="fa-solid fa-chart-simple"></i> <span>Reports</span></div>
+        </button>
+      </div>
 
       <!-- Sales Group -->
       <div class="nav-group" id="group-sales">
@@ -5959,11 +5958,12 @@
 
         <div class="rest-category-strip" id="restCategoryStrip">
           <button class="rest-cat-pill active" onclick="filterRestCat('ALL', this)">ALL</button>
-          <button class="rest-cat-pill" onclick="filterRestCat('CEMENT & BUILDING', this)">CEMENT &amp; BUILDING</button>
-          <button class="rest-cat-pill" onclick="filterRestCat('ELECTRICAL', this)">ELECTRICAL</button>
-          <button class="rest-cat-pill" onclick="filterRestCat('PAINT', this)">PAINT</button>
-          <button class="rest-cat-pill" onclick="filterRestCat('PLUMBING', this)">PLUMBING</button>
+          <button class="rest-cat-pill" onclick="filterRestCat('GRILL', this)">GRILL &amp; BBQ</button>
+          <button class="rest-cat-pill" onclick="filterRestCat('MAINS', this)">MAINS</button>
+          <button class="rest-cat-pill" onclick="filterRestCat('FISH', this)">FISH</button>
+          <button class="rest-cat-pill" onclick="filterRestCat('SIDES', this)">SIDES</button>
           <button class="rest-cat-pill" onclick="filterRestCat('BEVERAGES', this)">BEVERAGES</button>
+          <button class="rest-cat-pill" onclick="filterRestCat('ALCOHOL', this)">ALCOHOL</button>
         </div>
 
         <div class="rest-product-grid" id="restProductGrid">
@@ -6523,10 +6523,10 @@
         <!-- Products Header -->
         <div class="rc-header">
           <div class="rc-title-wrap">
-            <div class="rc-title-icon"><i class="fa-solid fa-box-open"></i></div>
+            <div class="rc-title-icon" id="rcTitleIcon"><i class="fa-solid fa-box-open"></i></div>
             <div>
-              <h2 class="rc-title">Products</h2>
-              <p class="rc-subtitle">Choose a branch, then tap products to add them.</p>
+              <h2 class="rc-title" id="rcTitleText">Products</h2>
+              <p class="rc-subtitle" id="rcSubtitleText">Choose a branch, then tap products to add them.</p>
             </div>
           </div>
           <div class="rc-controls-wrap">
@@ -7206,8 +7206,8 @@
   <div class="panel" id="tab-catalog">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
       <div>
-        <h2 style="font-size:24px; font-weight:800; margin:0 0 4px;">Products &amp; Inventory</h2>
-        <p style="color:var(--text-secondary); margin:0; font-size:13px;">Manage prices, stock levels, barcodes, and inventory.</p>
+        <h2 id="catalogTitleHeading" style="font-size:24px; font-weight:800; margin:0 0 4px;">Products &amp; Inventory</h2>
+        <p id="catalogTitleSub" style="color:var(--text-secondary); margin:0; font-size:13px;">Manage prices, stock levels, barcodes, and inventory.</p>
       </div>
       <button class="btn-blue" onclick="switchTab('product-create')" style="border-radius:999px; padding:10px 22px; font-weight:800; display:inline-flex; align-items:center; gap:8px;">
         <i class="fa-solid fa-plus"></i> <span>Add product</span>
@@ -7279,7 +7279,7 @@
       <input type="text" id="setBizName" placeholder="Business name">
       <input type="text" id="setBizSub" placeholder="Location / phone / PIN (shown on receipt)">
       <input type="text" id="setKraPin" placeholder="KRA PIN">
-      <select id="setBizType">
+      <select id="setBizType" onchange="previewBusinessTypeChange(this.value)">
         <option value="Retail">Retail Shop</option>
         <option value="Wholesale">Wholesale</option>
         <option value="Supermarket">Supermarket</option>
@@ -7288,6 +7288,9 @@
         <option value="Hardware">Hardware Store</option>
         <option value="Kiosk">Kiosk / Kibanda</option>
       </select>
+      <div id="setBizTypeHint" style="font-size:12px; color:#2563eb; background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.2); border-radius:10px; padding:8px 12px; margin-top:6px; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-sparkles"></i> <span id="setBizTypeHintText">Select an industry to configure tailored pages, navigation, and catalog.</span>
+      </div>
 
       <div style="font-weight:bold; margin:14px 0 8px;"><i class="fa-solid fa-palette"></i> Theme Color</div>
       <div id="colorSwatches" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;"></div>
@@ -7720,9 +7723,349 @@ function getProductImage(p) {
   return null;
 }
 
+
+/* =====================================================================
+   INDUSTRY & BUSINESS TYPE CONFIGURATION MATRIX
+   Provides tailored pages, navigation, catalog, and branding for 7 types:
+   Retail, Wholesale, Supermarket, SME, Hotel, Hardware, Kiosk.
+===================================================================== */
+const INDUSTRY_CONFIG = {
+  'Hotel': {
+    badge: 'HOTEL & RESTAURANT',
+    badgeIcon: 'fa-utensils',
+    posTitle: 'Restaurant Till & Cashier',
+    posSub: 'Select table or tap food dishes and drinks to settle bill.',
+    defaultTab: 'restaurant-module',
+    searchPlaceholder: 'Search dishes, drinks, or table orders...',
+    catalogTitle: 'Menu & Recipes',
+    catalogSub: 'Food and drink offerings, kitchen prep items, and pricing.',
+    customersTitle: 'Guests & Accounts',
+    hintText: 'Includes Restaurant Orders, Dining Tables floor plan, Kitchen Display Board (KDS), and cashier billing.',
+    navLinks: [
+      { tab: 'restaurant-module', icon: 'fa-solid fa-utensils', label: 'Restaurant POS' },
+      { tab: 'restaurant-order', icon: 'fa-solid fa-bowl-food', label: 'Take Orders' },
+      { tab: 'kitchen', icon: 'fa-solid fa-kitchen-set', label: 'Kitchen Board' },
+      { tab: 'menu', icon: 'fa-solid fa-chair', label: 'Floor Tables' },
+      { tab: 'sell', icon: 'fa-solid fa-cash-register', label: 'Settle Bills' },
+      { tab: 'dash', icon: 'fa-solid fa-chart-pie', label: 'Dashboard' },
+      { tab: 'catalog', icon: 'fa-solid fa-book-open', label: 'Menu Items' },
+      { tab: 'reports', icon: 'fa-solid fa-chart-simple', label: 'Reports' }
+    ],
+    products: [
+      { id: 'ht-1', code: 'FOOD-NYAMA-1KG', name: 'Nyama Choma (1kg Goat)', category: 'GRILL', price: 900.00, vat: 0.16, stock: 25, reorder: 5, unit: 'kg', image: null },
+      { id: 'ht-2', code: 'FOOD-BEEF-STEW', name: 'Beef Stew with Ugali & Greens', category: 'MAINS', price: 350.00, vat: 0.16, stock: 40, reorder: 10, unit: 'plate', image: null },
+      { id: 'ht-3', code: 'FOOD-CHICKEN-BIRYANI', name: 'Chicken Biryani Swahili Style', category: 'MAINS', price: 550.00, vat: 0.16, stock: 30, reorder: 8, unit: 'plate', image: null },
+      { id: 'ht-4', code: 'FOOD-TILAPIA-WET', name: 'Whole Tilapia Fry & Sukuma', category: 'FISH', price: 650.00, vat: 0.16, stock: 20, reorder: 5, unit: 'piece', image: null },
+      { id: 'ht-5', code: 'FOOD-CHIPS-FRIES', name: 'Crispy French Fries', category: 'SIDES', price: 180.00, vat: 0.16, stock: 60, reorder: 15, unit: 'plate', image: null },
+      { id: 'ht-6', code: 'FOOD-CHAPATI-PAIR', name: 'Soft Layered Chapati (Pair)', category: 'SIDES', price: 80.00, vat: 0.16, stock: 80, reorder: 20, unit: 'pair', image: null },
+      { id: 'ht-7', code: 'BEV-PASSION-500ML', name: 'Fresh Passion Juice 500ml', category: 'BEVERAGES', price: 120.00, vat: 0.16, stock: 45, reorder: 10, unit: 'bottle', image: null },
+      { id: 'ht-8', code: 'BEV-KENYAN-CHAI', name: 'Kenyan Spiced Chai Dawa', category: 'BEVERAGES', price: 90.00, vat: 0.16, stock: 100, reorder: 20, unit: 'cup', image: null },
+      { id: 'ht-9', code: 'BEV-TUSKER-LAGER', name: 'Tusker Lager 500ml Bottle', category: 'ALCOHOL', price: 280.00, vat: 0.16, stock: 72, reorder: 24, unit: 'bottle', image: null }
+    ]
+  },
+  'Supermarket': {
+    badge: 'SUPERMARKET',
+    badgeIcon: 'fa-barcode',
+    posTitle: 'Supermarket POS — Express Lane',
+    posSub: 'Fast barcode scanner lane, produce lookup, and express till.',
+    defaultTab: 'sell',
+    searchPlaceholder: 'Scan barcode or search FMCG products...',
+    catalogTitle: 'Products & Aisles',
+    catalogSub: 'FMCG packaged foods, household goods, dairy, and stock.',
+    customersTitle: 'Loyalty Club Customers',
+    hintText: 'Optimized for high-speed barcode scanning lanes, fast FMCG checkouts, and cashier shifts.',
+    navLinks: [
+      { tab: 'sell', icon: 'fa-solid fa-barcode', label: 'Express Till' },
+      { tab: 'dash', icon: 'fa-solid fa-chart-pie', label: 'Dashboard' },
+      { tab: 'catalog', icon: 'fa-solid fa-boxes-stacked', label: 'Products & Aisles' },
+      { tab: 'reports', icon: 'fa-solid fa-chart-simple', label: 'Reports' }
+    ],
+    products: [
+      { id: 'sm-1', code: 'AJAB-2KG', name: 'Ajab All-Purpose Wheat Flour 2kg', category: 'GRAINS', price: 210.00, vat: 0.16, stock: 65, reorder: 15, unit: 'piece', image: 'images/demo/ajab_flour.png' },
+      { id: 'sm-2', code: 'RAHA-2KG', name: 'Raha Premium Maize Meal 2kg', category: 'GRAINS', price: 175.00, vat: 0.16, stock: 80, reorder: 20, unit: 'piece', image: 'images/demo/raha_flour.png' },
+      { id: 'sm-3', code: 'MILK-BROOK-500', name: 'Brookside Homogenized Fresh Milk 500ml', category: 'DAIRY', price: 65.00, vat: 0.16, stock: 110, reorder: 25, unit: 'packet', image: null },
+      { id: 'sm-4', code: 'SUGAR-MUM-1KG', name: 'Mumias Pure White Sugar 1kg', category: 'PANTRY', price: 160.00, vat: 0.16, stock: 90, reorder: 20, unit: 'kg', image: null },
+      { id: 'sm-5', code: 'OIL-RINA-1L', name: 'Rina Pure Vegetable Cooking Oil 1L', category: 'OILS', price: 245.00, vat: 0.16, stock: 45, reorder: 10, unit: 'bottle', image: null },
+      { id: 'sm-6', code: 'RICE-MWEA-2K', name: 'CIL Pure Mwea Pishori Rice 2kg', category: 'GRAINS', price: 340.00, vat: 0.16, stock: 35, reorder: 10, unit: 'piece', image: 'images/demo/1788534931087.webp' },
+      { id: 'sm-7', code: 'SOAP-GEISHA-225', name: 'Geisha Herbal Beauty Soap 225g', category: 'PERSONAL CARE', price: 95.00, vat: 0.16, stock: 75, reorder: 15, unit: 'piece', image: null },
+      { id: 'sm-8', code: 'INDOMIE-CHICK-120', name: 'Indomie Instant Chicken Noodles 120g', category: 'SNACKS', price: 50.00, vat: 0.16, stock: 150, reorder: 30, unit: 'packet', image: null },
+      { id: 'sm-9', code: 'COCA-COLA-125L', name: 'Coca-Cola 1.25L PET Bottle', category: 'BEVERAGES', price: 130.00, vat: 0.16, stock: 60, reorder: 12, unit: 'bottle', image: null },
+      { id: 'sm-10', code: 'PERSIL-500G', name: 'Persil Universal Detergent 500g', category: 'HOUSEHOLD', price: 195.00, vat: 0.16, stock: 40, reorder: 8, unit: 'piece', image: 'images/demo/1788535215892.webp' }
+    ]
+  },
+  'Wholesale': {
+    badge: 'WHOLESALE DEPOT',
+    badgeIcon: 'fa-boxes-packing',
+    posTitle: 'Wholesale Bulk Orders',
+    posSub: 'Carton, bale, and crate quantity billing with trade accounts.',
+    defaultTab: 'sell',
+    searchPlaceholder: 'Search bulk packs, bales, or carton codes...',
+    catalogTitle: 'Bulk Inventory & Cases',
+    catalogSub: 'Cartons, jerrycans, sacks, bales, and wholesale pallet stock.',
+    customersTitle: 'Trade Accounts & Retailers',
+    hintText: 'Optimized for bulk distribution, cartons/bales/sacks, trade buyer credit, and bulk invoices.',
+    navLinks: [
+      { tab: 'sell', icon: 'fa-solid fa-boxes-packing', label: 'Wholesale Orders' },
+      { tab: 'dash', icon: 'fa-solid fa-chart-pie', label: 'Dashboard' },
+      { tab: 'catalog', icon: 'fa-solid fa-cubes-stacked', label: 'Bulk Inventory' },
+      { tab: 'customers', icon: 'fa-solid fa-users', label: 'Trade Accounts' },
+      { tab: 'reports', icon: 'fa-solid fa-chart-simple', label: 'Reports' }
+    ],
+    products: [
+      { id: 'ws-1', code: 'BALE-MAIZE-12X2K', name: 'Maize Flour Bale (12 x 2kg Packets)', category: 'BULK GRAINS', price: 2050.00, vat: 0.16, stock: 120, reorder: 25, unit: 'bale', image: null },
+      { id: 'ws-2', code: 'SACK-SUGAR-50KG', name: 'Pure White Sugar 50kg Sack', category: 'BULK PANTRY', price: 7200.00, vat: 0.16, stock: 45, reorder: 10, unit: 'sack', image: null },
+      { id: 'ws-3', code: 'JERRY-OIL-20L', name: 'Vegetable Cooking Oil 20L Jerrycan', category: 'BULK OILS', price: 4600.00, vat: 0.16, stock: 35, reorder: 8, unit: 'jerrycan', image: null },
+      { id: 'ws-4', code: 'CTN-SOAP-10X800', name: 'Menengai Bar Soap Carton (10 x 800g)', category: 'BULK SOAP', price: 1350.00, vat: 0.16, stock: 60, reorder: 15, unit: 'carton', image: null },
+      { id: 'ws-5', code: 'BALE-WHEAT-12X2K', name: 'Wheat Flour Bale (12 x 2kg Packets)', category: 'BULK GRAINS', price: 2350.00, vat: 0.16, stock: 85, reorder: 20, unit: 'bale', image: null },
+      { id: 'ws-6', code: 'BAG-RICE-25KG', name: 'Mwea Pishori Rice 25kg Woven Bag', category: 'BULK GRAINS', price: 4200.00, vat: 0.16, stock: 40, reorder: 10, unit: 'bag', image: null },
+      { id: 'ws-7', code: 'CRATE-SODA-24X300', name: 'Assorted Soda Crate (24 x 300ml Bottles)', category: 'BULK DRINKS', price: 1200.00, vat: 0.16, stock: 90, reorder: 20, unit: 'crate', image: null },
+      { id: 'ws-8', code: 'BALE-SALT-20X1K', name: 'Kensalt Iodized Salt Bale (20 x 1kg)', category: 'BULK PANTRY', price: 680.00, vat: 0.16, stock: 70, reorder: 15, unit: 'bale', image: null }
+    ]
+  },
+  'Hardware': {
+    badge: 'HARDWARE STORES',
+    badgeIcon: 'fa-screwdriver-wrench',
+    posTitle: 'Trade Counter POS',
+    posSub: 'Cement, timber, paint, plumbing, tools, and contractor billing.',
+    defaultTab: 'sell',
+    searchPlaceholder: 'Search hardware items, SKU, or specs...',
+    catalogTitle: 'Materials & Tools',
+    catalogSub: 'Building materials, plumbing, electrical, and hardware stock.',
+    customersTitle: 'Contractors & Builders',
+    hintText: 'Optimized for construction materials, cement, timber, paint, tools, and contractor accounts.',
+    navLinks: [
+      { tab: 'sell', icon: 'fa-solid fa-screwdriver-wrench', label: 'Trade Counter' },
+      { tab: 'dash', icon: 'fa-solid fa-chart-pie', label: 'Dashboard' },
+      { tab: 'catalog', icon: 'fa-solid fa-trowel-bricks', label: 'Materials & Tools' },
+      { tab: 'customers', icon: 'fa-solid fa-helmet-safety', label: 'Contractors' },
+      { tab: 'reports', icon: 'fa-solid fa-chart-simple', label: 'Reports' }
+    ],
+    products: [
+      { id: 'hw-1', code: 'BAMBURI-CEM-50KG', name: 'Bamburi Portland Cement 50kg (32.5R)', category: 'CEMENT & MASONRY', price: 920.00, vat: 0.16, stock: 150, reorder: 40, unit: 'bag', image: null },
+      { id: 'hw-2', code: 'IRON-SHEET-30G-3M', name: 'Corrugated Iron Sheet 30G (3.0 Metres)', category: 'ROOFING', price: 1150.00, vat: 0.16, stock: 80, reorder: 20, unit: 'sheet', image: null },
+      { id: 'hw-3', code: 'HAMMER-CLAW', name: 'Claw Hammer 16oz Steel Tubular', category: 'TOOLS', price: 750.00, vat: 0.16, stock: 15, reorder: 3, unit: 'piece', image: 'images/demo/claw_hammer.png' },
+      { id: 'hw-4', code: 'PAINT-EMUL-4L', name: 'Emulsion Paint Brilliant White 4L', category: 'PAINT', price: 1850.00, vat: 0.16, stock: 12, reorder: 4, unit: 'tin', image: 'images/demo/paint_emulsion.png' },
+      { id: 'hw-5', code: 'CROWN-EMUL-20L', name: 'Crown Super Clean White Paint 20L', category: 'PAINT', price: 3850.00, vat: 0.16, stock: 18, reorder: 5, unit: 'bucket', image: null },
+      { id: 'hw-6', code: 'PVC-PIPE-4INCH', name: 'PVC Waste Pipe 4-inch Heavy Gauge (6m)', category: 'PLUMBING', price: 680.00, vat: 0.16, stock: 35, reorder: 10, unit: 'length', image: null },
+      { id: 'hw-7', code: 'REBAR-D10-12M', name: 'D10 High Tensile Steel Rebar (12m)', category: 'STEEL & REBAR', price: 1420.00, vat: 0.16, stock: 65, reorder: 15, unit: 'bar', image: null },
+      { id: 'hw-8', code: 'LED-FLOOD-50W', name: 'LED Outdoor Floodlight 50W IP66', category: 'ELECTRICAL', price: 1250.00, vat: 0.16, stock: 24, reorder: 6, unit: 'piece', image: null }
+    ]
+  },
+  'Kiosk': {
+    badge: 'KIOSK / KIBANDA',
+    badgeIcon: 'fa-shop',
+    posTitle: 'Kiosk Quick Till — Tap & Sell',
+    posSub: 'Fast touch till for milk, bread, airtime, soda, and daily staples.',
+    defaultTab: 'sell',
+    searchPlaceholder: 'Search fast selling items...',
+    catalogTitle: 'Daily Kiosk Stock',
+    catalogSub: 'Everyday household micro-items, airtime, and fresh staples.',
+    customersTitle: 'Regular Neighbors',
+    hintText: 'Ultra-fast touch micro-till for milk, airtime, bread, snacks, and instant M-Pesa sales.',
+    navLinks: [
+      { tab: 'sell', icon: 'fa-solid fa-shop', label: 'Quick Till' },
+      { tab: 'dash', icon: 'fa-solid fa-chart-pie', label: 'Dashboard' },
+      { tab: 'catalog', icon: 'fa-solid fa-basket-shopping', label: 'Daily Stock' },
+      { tab: 'log', icon: 'fa-solid fa-list-check', label: 'Daily Sales' },
+      { tab: 'expenses', icon: 'fa-solid fa-money-bill-transfer', label: 'Expenses' }
+    ],
+    products: [
+      { id: 'ks-1', code: 'BREAD-WHITE-400G', name: 'Supaloaf White Bread 400g', category: 'BAKERY', price: 65.00, vat: 0.16, stock: 30, reorder: 8, unit: 'loaf', image: null },
+      { id: 'ks-2', code: 'MILK-POUCH-500ML', name: 'Brookside Fresh Milk 500ml Pouch', category: 'DAIRY', price: 60.00, vat: 0.16, stock: 45, reorder: 10, unit: 'packet', image: null },
+      { id: 'ks-3', code: 'AIRTIME-SAF-50', name: 'Safaricom Airtime KES 50 Scratch Card', category: 'AIRTIME', price: 50.00, vat: 0.16, stock: 80, reorder: 20, unit: 'voucher', image: null },
+      { id: 'ks-4', code: 'AIRTIME-SAF-100', name: 'Safaricom Airtime KES 100 Scratch Card', category: 'AIRTIME', price: 100.00, vat: 0.16, stock: 50, reorder: 15, unit: 'voucher', image: null },
+      { id: 'ks-5', code: 'SODA-GLASS-300ML', name: 'Coca-Cola 300ml Returnable Glass', category: 'DRINKS', price: 40.00, vat: 0.16, stock: 72, reorder: 24, unit: 'bottle', image: null },
+      { id: 'ks-6', code: 'MANDAZI-PIECE', name: 'Fresh Fried Mandazi (1 piece)', category: 'SNACKS', price: 10.00, vat: 0.16, stock: 60, reorder: 15, unit: 'piece', image: null },
+      { id: 'ks-7', code: 'EGG-SINGLE-PIECE', name: 'Farm Fresh Egg (1 piece)', category: 'POULTRY', price: 15.00, vat: 0.16, stock: 90, reorder: 30, unit: 'piece', image: null },
+      { id: 'ks-8', code: 'OIL-REFILL-250ML', name: 'Cooking Oil Scoop/Refill 250ml', category: 'OILS', price: 65.00, vat: 0.16, stock: 40, reorder: 10, unit: 'cup', image: null },
+      { id: 'ks-9', code: 'SUGAR-PACK-500G', name: 'Repacked Sugar 500g Polythene', category: 'PANTRY', price: 80.00, vat: 0.16, stock: 35, reorder: 10, unit: 'pack', image: null },
+      { id: 'ks-10', code: 'SUKUMA-BUNCH', name: 'Sukuma Wiki Fresh Greens (1 Bunch)', category: 'VEGGIES', price: 20.00, vat: 0.16, stock: 25, reorder: 5, unit: 'bunch', image: null }
+    ]
+  },
+  'Retail': {
+    badge: 'RETAIL STORE',
+    badgeIcon: 'fa-bag-shopping',
+    posTitle: 'Retail Checkout',
+    posSub: 'Apparel, footwear, electronics, and boutique merchandise.',
+    defaultTab: 'sell',
+    searchPlaceholder: 'Search retail items, variants, or barcode...',
+    catalogTitle: 'Products & Variants',
+    catalogSub: 'Garments, shoes, accessories, stock variations, and pricing.',
+    customersTitle: 'Shoppers & Loyalty',
+    hintText: 'Includes barcode lookup, apparel variants, and modern retail receipts.',
+    navLinks: [
+      { tab: 'sell', icon: 'fa-solid fa-cash-register', label: 'Checkout' },
+      { tab: 'dash', icon: 'fa-solid fa-chart-pie', label: 'Dashboard' },
+      { tab: 'catalog', icon: 'fa-solid fa-shirt', label: 'Products' },
+      { tab: 'customers', icon: 'fa-solid fa-users', label: 'Customers' },
+      { tab: 'reports', icon: 'fa-solid fa-chart-simple', label: 'Reports' }
+    ],
+    products: [
+      { id: 'rt-1', code: 'CHINO-SLIM-M', name: 'Men’s Slim Fit Chino Pant (Khaki / 32)', category: 'APPAREL', price: 1800.00, vat: 0.16, stock: 22, reorder: 5, unit: 'piece', image: null },
+      { id: 'rt-2', code: 'TSHIRT-COTTON-L', name: '100% Combed Cotton Graphic T-Shirt', category: 'APPAREL', price: 850.00, vat: 0.16, stock: 40, reorder: 8, unit: 'piece', image: null },
+      { id: 'rt-3', code: 'BELT-LEATHER-BRN', name: 'Full-Grain Brown Leather Belt', category: 'ACCESSORIES', price: 950.00, vat: 0.16, stock: 18, reorder: 4, unit: 'piece', image: null },
+      { id: 'rt-4', code: 'EARBUDS-TWS-PRO', name: 'Wireless Bluetooth Earbuds with Charging Case', category: 'ELECTRONICS', price: 1450.00, vat: 0.16, stock: 15, reorder: 3, unit: 'piece', image: null },
+      { id: 'rt-5', code: 'SNEAKERS-RUN-42', name: 'Lightweight Breathable Running Sneakers (42)', category: 'FOOTWEAR', price: 3200.00, vat: 0.16, stock: 12, reorder: 3, unit: 'pair', image: null },
+      { id: 'rt-6', code: 'DENIM-JACKET-W', name: 'Classic Washed Denim Jacket', category: 'APPAREL', price: 2400.00, vat: 0.16, stock: 14, reorder: 4, unit: 'piece', image: null },
+      { id: 'rt-7', code: 'SUNGLASS-UV400', name: 'Polarized Sunglasses Classic Wayfarer', category: 'ACCESSORIES', price: 650.00, vat: 0.16, stock: 25, reorder: 6, unit: 'piece', image: null },
+      { id: 'rt-8', code: 'CABLE-USBC-65W', name: 'Braided USB-C to USB-C Fast Charger Cable (1.5m)', category: 'ELECTRONICS', price: 400.00, vat: 0.16, stock: 35, reorder: 8, unit: 'piece', image: null }
+    ]
+  },
+  'SME': {
+    badge: 'SME & SERVICES',
+    badgeIcon: 'fa-briefcase',
+    posTitle: 'Business Invoicing & Sales',
+    posSub: 'Professional billing, services, client projects, and deliverables.',
+    defaultTab: 'sell',
+    searchPlaceholder: 'Search service codes, consultation, or items...',
+    catalogTitle: 'Services & Products',
+    catalogSub: 'Hourly rates, diagnostic fees, deliverables, and service items.',
+    customersTitle: 'Clients & Accounts',
+    hintText: 'Optimized for professional services, invoicing, repairs, consulting, and client billing.',
+    navLinks: [
+      { tab: 'sell', icon: 'fa-solid fa-file-invoice-dollar', label: 'Billing & POS' },
+      { tab: 'dash', icon: 'fa-solid fa-chart-pie', label: 'Dashboard' },
+      { tab: 'catalog', icon: 'fa-solid fa-briefcase', label: 'Services & Goods' },
+      { tab: 'customers', icon: 'fa-solid fa-users', label: 'Clients' },
+      { tab: 'reports', icon: 'fa-solid fa-chart-simple', label: 'Reports' }
+    ],
+    products: [
+      { id: 'sm-1', code: 'SRV-CONSULT-1HR', name: 'Professional Consultation Fee (1 Hour)', category: 'PROFESSIONAL', price: 2500.00, vat: 0.16, stock: 999, reorder: 0, unit: 'hour', image: null },
+      { id: 'sm-2', code: 'SRV-DIAGNOSTIC', name: 'Equipment Diagnostic & Inspection Fee', category: 'TECHNICAL', price: 1500.00, vat: 0.16, stock: 999, reorder: 0, unit: 'session', image: null },
+      { id: 'sm-3', code: 'SRV-MAINT-STD', name: 'Standard Routine Maintenance Service', category: 'TECHNICAL', price: 4500.00, vat: 0.16, stock: 999, reorder: 0, unit: 'service', image: null },
+      { id: 'sm-4', code: 'SRV-TECH-HALFDAY', name: 'On-site Technical Support (Half Day)', category: 'SUPPORT', price: 6000.00, vat: 0.16, stock: 999, reorder: 0, unit: 'day', image: null },
+      { id: 'sm-5', code: 'PART-REPLACE-GEN', name: 'General Replacement Spare Part (OEM)', category: 'PARTS', price: 1200.00, vat: 0.16, stock: 20, reorder: 5, unit: 'piece', image: null },
+      { id: 'sm-6', code: 'DOC-OFFICIAL-CERT', name: 'Official Inspection Report & Certification', category: 'DOCUMENTATION', price: 3000.00, vat: 0.16, stock: 999, reorder: 0, unit: 'document', image: null }
+    ]
+  }
+};
+
+function normalizeBizType(raw) {
+  if (!raw) return 'Retail';
+  const s = raw.toLowerCase().trim();
+  if (s.includes('hotel') || s.includes('restaurant')) return 'Hotel';
+  if (s.includes('supermarket')) return 'Supermarket';
+  if (s.includes('wholesale')) return 'Wholesale';
+  if (s.includes('hardware')) return 'Hardware';
+  if (s.includes('kiosk') || s.includes('kibanda')) return 'Kiosk';
+  if (s.includes('sme') || s.includes('general') || s.includes('service')) return 'SME';
+  return 'Retail';
+}
+
+function updateBizTypeHint(typeVal) {
+  const norm = normalizeBizType(typeVal);
+  const cfg = INDUSTRY_CONFIG[norm] || INDUSTRY_CONFIG['Retail'];
+  const hintEl = document.getElementById('suBizTypeHintText');
+  if (hintEl) hintEl.textContent = cfg.hintText;
+}
+
+function handleSettingsBizTypeChange(typeVal) {
+  previewBusinessTypeChange(typeVal);
+}
+
+function previewBusinessTypeChange(typeVal) {
+  const norm = normalizeBizType(typeVal);
+  const cfg = INDUSTRY_CONFIG[norm] || INDUSTRY_CONFIG['Retail'];
+  const hintEl = document.getElementById('setBizTypeHintText');
+  if (hintEl) hintEl.textContent = cfg.hintText;
+
+  if (business) {
+    business.business_type = norm;
+    applyIndustryCustomizations(norm);
+    showToast(`Industry preview updated to ${cfg.badge}! Click "Save Settings" to make permanent.`);
+  }
+}
+
+function renderSidebarNav(bizType) {
+  const norm = normalizeBizType(bizType);
+  const cfg = INDUSTRY_CONFIG[norm] || INDUSTRY_CONFIG['Retail'];
+  const navContainer = document.getElementById('sidebarPrimaryNav');
+  if (!navContainer) return;
+
+  const currentActiveTab = document.querySelector('.panel.active')?.id?.replace('tab-', '') || cfg.defaultTab || 'sell';
+
+  navContainer.innerHTML = cfg.navLinks.map(link => {
+    const isActive = link.tab === currentActiveTab ? 'active' : '';
+    return `
+      <button class="nav-item-btn ${isActive}" data-tab="${link.tab}" data-tooltip="${escapeHtml(link.label)}" onclick="switchTab('${link.tab}')">
+        <div class="nav-item-left"><i class="${link.icon}"></i> <span>${escapeHtml(link.label)}</span></div>
+      </button>
+    `;
+  }).join('');
+}
+
+function applyIndustryCustomizations(bizType) {
+  const norm = normalizeBizType(bizType);
+  const cfg = INDUSTRY_CONFIG[norm] || INDUSTRY_CONFIG['Retail'];
+
+  // 1. Sidebar Header Sub-Badge
+  const sBadge = document.getElementById('sidebarBizType');
+  if (sBadge) {
+    sBadge.innerHTML = `<i class="fa-solid ${cfg.badgeIcon}"></i> <span>${cfg.badge}</span>`;
+  }
+
+  // 2. Branch Cards & App Tagline
+  const bSec = document.getElementById('branchCardSector');
+  if (bSec) bSec.textContent = cfg.badge;
+  const sSec = document.getElementById('subBranchSector');
+  if (sSec) sSec.textContent = cfg.badge;
+  const appTagline = document.getElementById('appTagline');
+  if (appTagline) appTagline.textContent = cfg.badge + ' · Dogo POS';
+
+  // 3. Checkout Header (tab-sell)
+  const rcIcon = document.getElementById('rcTitleIcon');
+  if (rcIcon) rcIcon.innerHTML = `<i class="fa-solid ${cfg.badgeIcon}"></i>`;
+  const rcTitle = document.getElementById('rcTitleText');
+  if (rcTitle) rcTitle.textContent = cfg.posTitle;
+  const rcSub = document.getElementById('rcSubtitleText');
+  if (rcSub) rcSub.textContent = cfg.posSub;
+  const rcSearch = document.getElementById('rcSearchInput');
+  if (rcSearch) rcSearch.placeholder = cfg.searchPlaceholder;
+
+  // 4. Catalog Header (tab-catalog)
+  const catHead = document.getElementById('catalogTitleHeading');
+  if (catHead) catHead.textContent = cfg.catalogTitle;
+  const catSub = document.getElementById('catalogTitleSub');
+  if (catSub) catSub.textContent = cfg.catalogSub;
+
+  // 4b. Update Add Product Category dropdown
+  const pcCatSelect = document.getElementById('pcCategory');
+  if (pcCatSelect) {
+    const indCats = {
+      'Hotel': ['Food & Dishes', 'Grill & BBQ', 'Mains & Stews', 'Fish & Seafood', 'Sides & Snacks', 'Beverages', 'Alcohol & Beers', 'Desserts'],
+      'Supermarket': ['Groceries', 'Beverages', 'Dairy & Eggs', 'Bakery', 'Personal Care', 'Household & Cleaning', 'Snacks & Confectionery'],
+      'Wholesale': ['Bulk Grains', 'Bulk Pantry', 'Bulk Oils & Fats', 'Bulk Soaps & Detergents', 'Bulk Beverages', 'Sacks & Bales'],
+      'Hardware': ['Cement & Masonry', 'Roofing & Iron Sheets', 'Paint & Finishes', 'Plumbing & Pipes', 'Steel & Rebar', 'Tools & Hardware', 'Electrical'],
+      'Kiosk': ['Bakery & Breads', 'Dairy & Milk', 'Airtime & Vouchers', 'Soft Drinks', 'Snacks & Confectionery', 'Daily Pantry', 'Fresh Produce'],
+      'Retail': ['Men’s Apparel', 'Women’s Apparel', 'Footwear & Shoes', 'Bags & Accessories', 'Electronics & Gadgets', 'Beauty & Cosmetics'],
+      'SME': ['Professional Services', 'Technical & Diagnostic', 'Maintenance Contracts', 'Support Services', 'Parts & Consumables', 'Documentation']
+    }[norm] || ['General', 'Retail', 'Wholesale', 'Beverages', 'Pantry'];
+
+    const curVal = pcCatSelect.value;
+    pcCatSelect.innerHTML = indCats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    if (indCats.includes(curVal)) pcCatSelect.value = curVal;
+  }
+
+  // 5. Update primary navigation in sidebar
+  renderSidebarNav(norm);
+
+  // 6. Update Hotel-specific elements
+  const isAdmin = profile && profile.role === 'admin';
+  document.querySelectorAll('[data-hotel-only]').forEach(el => {
+    el.style.display = (isAdmin && norm === 'Hotel') ? '' : 'none';
+  });
+
+  // 7. Refresh POS products grid if on fallback items
+  if (!CATALOG || CATALOG.length === 0) {
+    renderPosProductsGrid();
+  }
+}
+
 function getEffectiveCatalog() {
   if (CATALOG && CATALOG.length > 0) return CATALOG;
-  return DEFAULT_RETAIL_PRODUCTS;
+  const bType = normalizeBizType(business ? business.business_type : 'Retail');
+  const cfg = INDUSTRY_CONFIG[bType] || INDUSTRY_CONFIG['Retail'];
+  return cfg.products || DEFAULT_RETAIL_PRODUCTS;
 }
 
 function renderPosProductsGrid(filterText) {
@@ -8532,7 +8875,8 @@ async function afterLogin() {
   applyBusinessTheme();
   renderPlatformSwitcher();
   await loadAllData();
-  switchTab('sell');
+  const initTab = (business && normalizeBizType(business.business_type) === 'Hotel') ? 'restaurant-module' : 'sell';
+  switchTab(initTab);
   resetInactivityTimer();
   showToast(`Welcome, ${profile.full_name || 'Admin'}!`);
 }
@@ -8564,8 +8908,11 @@ function applyBusinessTheme() {
   // reset [data-admin-only] elements to visible - re-apply the business-type gate on top.
   const isAdmin = profile.role === 'admin';
   document.querySelectorAll('[data-hotel-only]').forEach(el => {
-    el.style.display = (isAdmin && business.business_type === 'Hotel') ? '' : 'none';
+    el.style.display = (isAdmin && normalizeBizType(business.business_type) === 'Hotel') ? '' : 'none';
   });
+
+  // Apply complete industry tailoring (badges, navigation, titles, and starter catalog)
+  applyIndustryCustomizations(business.business_type);
 }
 
 /* =====================================================================
@@ -12021,13 +12368,31 @@ function getKitchenTickets() {
     {
       id: 'POS-9SCVWG97O9',
       shortId: '#3993',
-      orderType: 'TAKEAWAY',
+      orderType: 'DINE IN · TABLE 3',
       priority: 'MEDIUM PRIORITY',
       location: 'luanda',
       status: 'pending',
-      timeMin: 0,
-      paymentStatus: 'Unpaid KES 750.00',
-      items: [{ name: 'Claw Hammer', qty: 1, price: 750 }]
+      timeMin: 4,
+      paymentStatus: 'Unpaid KES 1,200.00',
+      items: [
+        { name: 'Nyama Choma 1kg', qty: 1, price: 900 },
+        { name: 'Ugali & Greens', qty: 2, price: 100 },
+        { name: 'Passion Juice 500ml', qty: 2, price: 100 }
+      ]
+    },
+    {
+      id: 'POS-8KD34Z21A4',
+      shortId: '#3994',
+      orderType: 'TAKEAWAY',
+      priority: 'HIGH PRIORITY',
+      location: 'luanda',
+      status: 'preparing',
+      timeMin: 12,
+      paymentStatus: 'Paid KES 850.00',
+      items: [
+        { name: 'Chicken Biryani', qty: 1, price: 650 },
+        { name: 'French Fries', qty: 1, price: 200 }
+      ]
     }
   ];
 }
@@ -12048,8 +12413,14 @@ function togglePortalSidebar() {
 }
 
 function updatePortalHeaderState(tabName) {
+  const bType = normalizeBizType(business ? business.business_type : 'Retail');
+  const indCfg = INDUSTRY_CONFIG[bType] || INDUSTRY_CONFIG['Retail'];
+  const sellBreadcrumb = indCfg.navLinks.find(l => l.tab === 'sell')?.label || 'Checkout';
+  const catBreadcrumb = indCfg.navLinks.find(l => l.tab === 'catalog')?.label || 'Products';
+
   const bcMap = {
-    'sell': 'Checkout',
+    'sell': sellBreadcrumb,
+    'catalog': catBreadcrumb,
     'dash': 'Dashboard',
     'catalog': 'Products',
     'product-create': 'Products > Create',
@@ -12123,13 +12494,18 @@ function updatePortalHeaderState(tabName) {
 function renderRestProducts() {
   const grid = document.getElementById('restProductGrid');
   if (!grid) return;
-  const list = (products && products.length > 0) ? products : [
-    { id: 'p1', name: 'Claw Hammer', price: 750, stock: 10, category: 'CEMENT & BUILDING' },
-    { id: 'p2', name: 'Emulsion Paint 4L', price: 1850, stock: 13, category: 'PAINT' },
-    { id: 'p3', name: 'LED Bulb 12W', price: 250, stock: 41, category: 'ELECTRICAL' },
-    { id: 'p4', name: 'Portland Cement 50kg', price: 950, stock: 37, category: 'CEMENT & BUILDING' },
-    { id: 'p5', name: 'PVC Pipe 1 inch', price: 420, stock: 22, category: 'PLUMBING' }
-  ];
+  const list = (products && products.length > 0) ? products : (INDUSTRY_CONFIG['Hotel']?.products || []);
+
+  // Dynamically synchronize category strip with available food categories
+  const catStrip = document.getElementById('restCategoryStrip');
+  if (catStrip && list.length > 0) {
+    const uniqueCats = ['ALL', ...Array.from(new Set(list.map(p => (p.category || 'General').toUpperCase()).filter(Boolean)))];
+    catStrip.innerHTML = uniqueCats.map((cat, idx) => `
+      <button class="rest-cat-pill ${idx === 0 ? 'active' : ''}" onclick="filterRestCat('${escapeHtml(cat)}', this)">
+        ${escapeHtml(cat)}
+      </button>
+    `).join('');
+  }
 
   grid.innerHTML = list.map(p => `
     <div class="rest-prod-card" data-name="${escapeHtml(p.name).toLowerCase()}" data-cat="${escapeHtml(p.category || 'ALL')}">
