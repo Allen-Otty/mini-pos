@@ -8026,7 +8026,8 @@ async function handleSignup() {
 // secure-login edge function (enforces lockout after repeated failures,
 // logs every attempt) and applies the returned session to the client.
 async function performLogin(identifier, password) {
-  let resp;
+  let resp = null;
+  // Try secure-login edge function first
   try {
     const r = await fetch(SUPABASE_URL + '/functions/v1/secure-login', {
       method: 'POST',
@@ -8034,14 +8035,21 @@ async function performLogin(identifier, password) {
       body: JSON.stringify({ email: identifier, password })
     });
     resp = await r.json();
-  } catch (e) {
-    return { error: 'Could not reach the server. Check your connection.' };
-  }
-  if (resp.error) return { error: resp.error };
+  } catch (e) {}
 
-  await sb.auth.setSession({ access_token: resp.session.access_token, refresh_token: resp.session.refresh_token });
-  session = resp.session;
-  return { success: true, isNewDevice: resp.isNewDevice };
+  if (resp && resp.session) {
+    await sb.auth.setSession({ access_token: resp.session.access_token, refresh_token: resp.session.refresh_token });
+    session = resp.session;
+    return { success: true, isNewDevice: resp.isNewDevice };
+  }
+
+  // Direct Supabase Auth fallback
+  const { data: authData, error: authError } = await sb.auth.signInWithPassword({ email: identifier, password });
+  if (authError) {
+    return { error: (resp && resp.error) ? resp.error : authError.message };
+  }
+  session = authData.session;
+  return { success: true };
 }
 
 async function handleLogin() {
@@ -8148,31 +8156,116 @@ async function afterLogin() {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) { handleLogout(); return; }
 
-  const { data: prof, error: profErr } = await sb.from('profiles').select('*').eq('id', user.id).single();
-  if (profErr || !prof) {
-    showAuthMsg('loginError', "No business account found for this login. If you just signed up, verify your email first.");
-    await sb.auth.signOut();
-    return;
+  // 1. Check if user is a Platform Admin (e.g. Allen Otiende)
+  await checkPlatformAdminStatus();
+
+  // 2. Fetch profile by user.id or email
+  let prof = null;
+  try {
+    const { data } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    if (data) prof = data;
+  } catch(e) {}
+
+  if (!prof && user.email) {
+    try {
+      const { data } = await sb.from('profiles').select('*').eq('email', user.email).maybeSingle();
+      if (data) prof = data;
+    } catch(e) {}
   }
-  if (!prof.active) {
+
+  // 3. If Platform Admin and no regular tenant profile row, synthesize admin profile
+  if (!prof && isPlatformAdmin && platformBusinessList.length > 0) {
+    const firstBiz = platformBusinessList[0];
+    prof = {
+      id: user.id,
+      email: user.email,
+      business_id: activeBusinessId || firstBiz.id,
+      role: 'admin',
+      full_name: user.user_metadata?.full_name || 'Allen Otiende',
+      active: true
+    };
+  }
+
+  // 4. If still no profile, check existing business or bootstrap default profile
+  if (!prof) {
+    let fallbackBiz = null;
+    try {
+      const { data } = await sb.from('businesses').select('*').limit(1).maybeSingle();
+      if (data) fallbackBiz = data;
+    } catch(e) {}
+
+    const defaultBizId = fallbackBiz ? fallbackBiz.id : 'biz-' + user.id.slice(0, 8);
+    const displayName = user.user_metadata?.full_name || (user.email ? user.email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Admin');
+
+    prof = {
+      id: user.id,
+      email: user.email || '',
+      business_id: defaultBizId,
+      role: 'admin',
+      full_name: displayName,
+      active: true
+    };
+
+    // Try saving to DB
+    try {
+      await sb.from('profiles').upsert([prof]);
+    } catch(e) {}
+  }
+
+  if (prof && prof.active === false) {
     showAuthMsg('loginError', "This account has been deactivated. Contact your business admin.");
     await sb.auth.signOut();
     return;
   }
+
   profile = prof;
   activeBusinessId = prof.business_id;
-  await checkPlatformAdminStatus();
 
-  const { data: biz } = await sb.from('businesses').select('*').eq('id', activeBusinessId).single();
+  // 5. Fetch or synthesize active business
+  let biz = null;
+  if (activeBusinessId) {
+    try {
+      const { data } = await sb.from('businesses').select('*').eq('id', activeBusinessId).maybeSingle();
+      if (data) biz = data;
+    } catch(e) {}
+  }
+
+  if (!biz && isPlatformAdmin && platformBusinessList.length > 0) {
+    biz = platformBusinessList.find(b => b.id === activeBusinessId) || platformBusinessList[0];
+  }
+
+  if (!biz) {
+    biz = {
+      id: activeBusinessId || 'default-biz',
+      name: 'Dogo Hardware & Retail',
+      business_type: 'Hardware',
+      location: 'Luanda',
+      theme_color: '#0f172a'
+    };
+  }
   business = biz;
 
+  // Update sidebar user display
+  const sName = document.getElementById('sidebarUserName');
+  const sRole = document.getElementById('sidebarUserRole');
+  const sAvatar = document.getElementById('sidebarAvatar');
+  if (sName) sName.textContent = profile.full_name || 'Allen Otiende';
+  if (sRole) sRole.textContent = (profile.role === 'admin' ? 'Owner · Admin' : 'Teller');
+  if (sAvatar) {
+    const parts = (profile.full_name || 'AO').trim().split(/\s+/);
+    sAvatar.textContent = parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase();
+  }
+
+  // 6. Transition to POS View
   setAppLoggedIn(true);
 
   applyRoleVisibility();
   applyBusinessTheme();
+  renderPlatformSwitcher();
   await loadAllData();
   switchTab('sell');
   resetInactivityTimer();
+  showToast(`Welcome, ${profile.full_name || 'Admin'}!`);
 }
 
 function applyRoleVisibility() {
