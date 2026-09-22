@@ -41,7 +41,7 @@
 
 /* =====================================================================
      DOGO POS DESIGN SYSTEM TOKENS
-     Colors & typography inspired directly by posfiti.com:
+     Colors & typography inspired directly by dogopos.com:
      - Signature Deep Forest Green: #0f172a / #0b1329
      - Vibrant Electric Lime: #facc15 (hover: #fde047, text: #0f172a)
      - Clean warm ivory background: #f8fafc / #ffffff (Light)
@@ -170,9 +170,9 @@
   .tabular { font-variant-numeric: tabular-nums; }
 
   /* =====================================================================
-     FLOATING PILL NAVBAR (Posfiti Style)
+     FLOATING PILL NAVBAR (Dogo POS Style)
   ===================================================================== */
-  .posfiti-nav {
+  .dogo-nav {
     position: fixed;
     top: 14px;
     left: 0;
@@ -181,7 +181,7 @@
     padding: 0 16px;
     pointer-events: none;
   }
-  .posfiti-nav-inner {
+  .dogo-nav-inner {
     pointer-events: auto;
     max-width: 1140px;
     margin: 0 auto;
@@ -196,7 +196,7 @@
     -webkit-backdrop-filter: blur(20px);
     box-shadow: var(--shadow-float);
   }
-  .posfiti-brand {
+  .dogo-brand {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -206,7 +206,7 @@
     font-size: 17px;
     letter-spacing: -0.02em;
   }
-  .posfiti-brand-icon {
+  .dogo-brand-icon {
     width: 34px;
     height: 34px;
     border-radius: 10px;
@@ -217,7 +217,7 @@
     font-size: 15px;
     box-shadow: 0 2px 8px var(--accent-glow);
   }
-  .posfiti-brand-badge {
+  .dogo-brand-badge {
     font-size: 10px;
     font-weight: 800;
     padding: 2px 7px;
@@ -227,9 +227,9 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
-  [data-theme="dark"] .posfiti-brand-badge { color: var(--accent); }
+  [data-theme="dark"] .dogo-brand-badge { color: var(--accent); }
 
-  .posfiti-links {
+  .dogo-links {
     display: none;
     align-items: center;
     gap: 24px;
@@ -238,18 +238,18 @@
     padding: 0;
   }
   @media (min-width: 860px) {
-    .posfiti-links { display: flex; }
+    .dogo-links { display: flex; }
   }
-  .posfiti-links a {
+  .dogo-links a {
     text-decoration: none;
     color: var(--text-secondary);
     font-size: 13.5px;
     font-weight: 600;
     transition: color .15s;
   }
-  .posfiti-links a:hover { color: var(--text); }
+  .dogo-links a:hover { color: var(--text); }
 
-  .posfiti-nav-actions {
+  .dogo-nav-actions {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -331,7 +331,7 @@
   }
 
   /* Mobile Dropdown */
-  .posfiti-mobile-menu {
+  .dogo-mobile-menu {
     display: none;
     position: fixed;
     top: 76px;
@@ -345,8 +345,8 @@
     box-shadow: var(--shadow-float);
     backdrop-filter: blur(20px);
   }
-  .posfiti-mobile-menu.show { display: block; }
-  .posfiti-mobile-menu a {
+  .dogo-mobile-menu.show { display: block; }
+  .dogo-mobile-menu a {
     display: block;
     padding: 10px 14px;
     color: var(--text);
@@ -355,8 +355,8 @@
     font-size: 15px;
     border-radius: 12px;
   }
-  .posfiti-mobile-menu a:hover { background: var(--tab-inactive-bg); }
-  .posfiti-mobile-menu .m-actions {
+  .dogo-mobile-menu a:hover { background: var(--tab-inactive-bg); }
+  .dogo-mobile-menu .m-actions {
     margin-top: 14px;
     padding-top: 14px;
     border-top: 1px solid var(--border);
@@ -365,9 +365,9 @@
   }
 
   /* =====================================================================
-     HERO SECTION (Posfiti Style)
+     HERO SECTION (Dogo POS Style)
   ===================================================================== */
-  .posfiti-hero {
+  .dogo-hero {
     padding: 120px 20px 48px;
     text-align: center;
     max-width: 1080px;
@@ -500,7 +500,7 @@
   [data-theme="dark"] .hero-perk i { color: var(--accent); }
 
   /* =====================================================================
-     INTERACTIVE LIVE DEMO WIDGET (Posfiti Feature)
+     INTERACTIVE LIVE DEMO WIDGET (Dogo POS Feature)
   ===================================================================== */
   .demo-widget-container {
     max-width: 1040px;
@@ -698,9 +698,9 @@
   [data-theme="dark"] .demo-success-alert { color: #fde047; }
 
   /* =====================================================================
-     INTEGRATIONS SECTION (Deep Forest Green Posfiti Banner)
+     INTEGRATIONS SECTION (Deep Forest Green Dogo POS Banner)
   ===================================================================== */
-  .posfiti-section {
+  .dogo-section {
     padding: 70px 20px;
     max-width: 1140px;
     margin: 0 auto;
@@ -1319,7 +1319,7 @@
   #appShell { display: none; }
 
   /* App Header Pill */
-  .app-header-posfiti {
+  .app-header-dogo {
     background: var(--header-bg);
     padding: 12px 16px;
     position: sticky;
@@ -3554,21 +3554,23 @@
 
 
 <!-- ================================================================
-     PUBLIC LANDING & AUTH SCREEN (Posfiti Style)
+     PUBLIC LANDING & AUTH SCREEN (Dogo POS Style)
      Shown when user is not logged in.
 ================================================================= -->
 <div id="authScreen">
 
   <!-- Floating Pill Navbar -->
-  <header class="posfiti-nav" id="posfitiNav">
-    <div class="posfiti-nav-inner">
-      <a href="#hero" class="posfiti-brand">
-        <img src="images/dogo-pos-light.png" alt="Logo" style="height:32px; width:auto; border-radius:6px;">
-        <span>Dogo POS</span>
+  <header class="dogo-nav" id="dogoNav">
+    <div class="dogo-nav-inner">
+      <a href="#hero" class="dogo-brand" style="display:flex; align-items:center; gap:10px; text-decoration:none;">
+        <div style="background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color:#facc15; width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; box-shadow:0 3px 8px rgba(37,99,235,0.35);">
+          <i class="fa-solid fa-receipt"></i>
+        </div>
+        <span style="font-size:20px; font-weight:800; letter-spacing:-0.03em; color:var(--text);"><span style="color:#2563eb;">Dogo</span> POS</span>
         <span class="dogo-brand-badge" style="background:#facc15; color:#0f172a; font-weight:800; padding:2px 8px; border-radius:999px; font-size:11px;">Global</span>
       </a>
 
-      <ul class="posfiti-links">
+      <ul class="dogo-links">
         <li><a href="#demo">Live Demo</a></li>
         <li><a href="#capabilities">Features</a></li>
         <li><a href="#restaurant-pos">Restaurant POS</a></li>
@@ -3577,7 +3579,7 @@
         <li><a href="#faqs">FAQs</a></li>
       </ul>
 
-      <div class="posfiti-nav-actions">
+      <div class="dogo-nav-actions">
         <button class="nav-theme-btn" id="navThemeToggle" onclick="toggleTheme()" aria-label="Toggle theme" title="Toggle Light / Dark">
           <i class="fa-solid fa-moon"></i>
         </button>
@@ -3593,7 +3595,7 @@
   </header>
 
   <!-- Mobile Dropdown Menu -->
-  <div class="posfiti-mobile-menu" id="dogoMobileMenu">
+  <div class="dogo-mobile-menu" id="dogoMobileMenu">
     <a href="#demo" onclick="toggleMobileNav()">Live Demo</a>
     <a href="#capabilities" onclick="toggleMobileNav()">Features</a>
     <a href="#restaurant-pos" onclick="toggleMobileNav()">Restaurant POS</a>
@@ -3607,7 +3609,7 @@
   </div>
 
   <!-- Hero Section -->
-  <section class="posfiti-hero" id="hero">
+  <section class="dogo-hero" id="hero">
     <div class="hero-pill-badge">
       <span class="ping-dot"></span>
       <span>Built for businesses everywhere</span>
@@ -3638,7 +3640,7 @@
       <div class="hero-perk"><i class="fa-solid fa-circle-check"></i> Multi-currency ready</div>
     </div>
 
-    <!-- Posfiti Platform Laptop Mockup Showcase -->
+    <!-- Dogo POS Platform Laptop Mockup Showcase -->
     <div class="hero-laptop-wrap">
       <img src="images/laptop.png" alt="POS Platform Showcase" class="hero-laptop-img" loading="eager">
     </div>
@@ -3707,8 +3709,8 @@
     </div>
   </section>
 
-  <!-- Integrations Section (Posfiti Green Card) -->
-  <section class="posfiti-section" id="integrations">
+  <!-- Integrations Section (Dogo POS Green Card) -->
+  <section class="dogo-section" id="integrations">
     <div class="integrations-card-forest">
       <div class="integrations-header">
         <div>
@@ -3770,7 +3772,7 @@
   </section>
 
   <!-- Capabilities / Features Grid -->
-  <section class="posfiti-section" id="capabilities">
+  <section class="dogo-section" id="capabilities">
     <div class="section-eyebrow">Point of sale for growing businesses</div>
     <h2 class="section-title">From the first sale to the daily report.</h2>
     <p class="section-sub">The tools to sell faster, track real stock, manage tellers, and keep profits clear.</p>
@@ -3875,7 +3877,7 @@
   </section>
 
   <!-- Industries & Sectors -->
-  <section class="posfiti-section" id="industries">
+  <section class="dogo-section" id="industries">
     <div class="section-eyebrow">Built for your business</div>
     <h2 class="section-title">Different businesses. One simple POS.</h2>
     <p class="section-sub">Tailored to the exact workflows of retail, wholesale, food service, and trade.</p>
@@ -3949,7 +3951,7 @@
   </section>
 
   <!-- Pricing Section -->
-  <section class="posfiti-section" id="pricing">
+  <section class="dogo-section" id="pricing">
     <div style="text-align:center;">
       <div class="section-eyebrow" style="display:inline-block;">Transparent pricing</div>
       <h2 class="section-title">Simple plans that grow with your shop.</h2>
@@ -4048,7 +4050,7 @@
   </section>
 
   <!-- FAQs Accordion -->
-  <section class="posfiti-section" id="faqs">
+  <section class="dogo-section" id="faqs">
     <div style="text-align:center;">
       <div class="section-eyebrow" style="display:inline-block;">Common Questions</div>
       <h2 class="section-title">Frequently Asked Questions</h2>
@@ -4112,7 +4114,7 @@
   <section class="auth-section-wrap" id="authSection">
     <div class="auth-card" id="authCardAnchor">
       <div style="text-align:center; margin-bottom:18px;">
-        <div class="posfiti-brand-icon" style="margin:0 auto 10px; width:44px; height:44px; font-size:20px;">
+        <div class="dogo-brand-icon" style="margin:0 auto 10px; width:44px; height:44px; font-size:20px;">
           <i class="fa-solid fa-receipt"></i>
         </div>
         <div style="font-weight:900; font-size:22px; letter-spacing:-0.03em;">Dogo POS</div>
@@ -4214,7 +4216,7 @@
   <footer class="landing-footer">
     <div class="landing-footer-inner">
       <div style="display:flex; align-items:center; gap:10px;">
-        <div class="posfiti-brand-icon" style="width:30px; height:30px; font-size:13px;"><i class="fa-solid fa-receipt"></i></div>
+        <div class="dogo-brand-icon" style="width:30px; height:30px; font-size:13px;"><i class="fa-solid fa-receipt"></i></div>
         <span style="font-weight:800; font-size:16px;">Dogo POS</span>
         <span style="font-size:12px; color:var(--text-secondary);">· Multi-tenant point of sale</span>
       </div>
@@ -4239,7 +4241,7 @@
       <button class="auth-modal-close" onclick="closeAuthModal()" aria-label="Close dialog"><i class="fa-solid fa-xmark"></i></button>
       <div class="auth-card" style="box-shadow:none;">
         <div style="text-align:center; margin-bottom:14px;">
-          <div class="posfiti-brand-icon" style="margin:0 auto 8px; width:40px; height:40px; font-size:18px;"><i class="fa-solid fa-receipt"></i></div>
+          <div class="dogo-brand-icon" style="margin:0 auto 8px; width:40px; height:40px; font-size:18px;"><i class="fa-solid fa-receipt"></i></div>
           <div style="font-weight:900; font-size:20px;">Dogo POS Access</div>
         </div>
         <div class="auth-tabs">
@@ -4419,7 +4421,7 @@
   </header>
   <div class="portal-panels-container">
 
-  <header id="appHeader" class="app-header-posfiti">
+  <header id="appHeader" class="app-header-dogo">
     <div class="app-header-container">
       <div class="app-header-left">
         <div class="app-header-logo-badge">
