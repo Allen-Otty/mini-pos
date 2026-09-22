@@ -19,7 +19,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Dogo POS">
-<meta name="theme-color" content="#0b2117">
+<meta name="theme-color" content="#0f172a">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>Dogo POS — Modern POS &amp; Restaurant Platform</title>
@@ -40,75 +40,81 @@
 }
 
 /* =====================================================================
-     POSFITI DESIGN SYSTEM TOKENS
+     DOGO POS DESIGN SYSTEM TOKENS
      Colors & typography inspired directly by posfiti.com:
-     - Signature Deep Forest Green: #0b2117 / #07130c
-     - Vibrant Electric Lime: #a3e635 (hover: #bef264, text: #052e16)
-     - Clean warm ivory background: #f4f1ea / #fafbf8 (Light)
-     - High-contrast deep emerald canvas: #07130c / #0f2419 (Dark)
+     - Signature Deep Forest Green: #0f172a / #0b1329
+     - Vibrant Electric Lime: #facc15 (hover: #fde047, text: #0f172a)
+     - Clean warm ivory background: #f8fafc / #ffffff (Light)
+     - High-contrast deep emerald canvas: #0b1329 / #1e293b (Dark)
      - Instrument Sans typography with tight tracking and bold display weights
      - Pill-shaped buttons and navigation bars (rounded-full)
   ===================================================================== */
   :root, [data-theme="light"] {
-    --bg: #f4f1ea;
-    --bg-alt: #eae5da;
+    --bg: #f8fafc;
+    --bg-alt: #f1f5f9;
     --surface: #ffffff;
-    --surface-alt: #fafbf8;
-    --surface-text: #0b2117;
-    --text: #0b2117;
-    --text-secondary: #526057;
-    --text-muted: #788a80;
-    --brand: #0b2117;
-    --brand-dark: #05180f;
-    --brand-light: #133827;
-    --accent: #a3e635;
-    --accent-hover: #bef264;
-    --accent-text: #052e16;
-    --accent-minus: rgba(163, 230, 53, 0.15);
-    --accent-pill: rgba(163, 230, 53, 0.20);
-    --accent-glow: rgba(163, 230, 53, 0.35);
-    --border: rgba(11, 33, 23, 0.10);
-    --border-strong: rgba(11, 33, 23, 0.20);
+    --surface-alt: #ffffff;
+    --surface-text: #0f172a;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --brand: #1e3a8a;
+    --brand-dark: #0f172a;
+    --brand-light: #2563eb;
+    --accent: #facc15;
+    --accent-hover: #fde047;
+    --accent-text: #0f172a;
+    --accent-minus: rgba(250, 204, 21, 0.16);
+    --accent-pill: rgba(250, 204, 21, 0.22);
+    --accent-glow: rgba(250, 204, 21, 0.40);
+    --blue-accent: #2563eb;
+    --blue-hover: #1d4ed8;
+    --blue-text: #ffffff;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
     --input-bg: #ffffff;
-    --input-border: rgba(11, 33, 23, 0.16);
-    --header-bg: rgba(255, 255, 255, 0.82);
-    --nav-bg: rgba(255, 255, 255, 0.88);
-    --tab-inactive-bg: rgba(11, 33, 23, 0.05);
+    --input-border: #cbd5e1;
+    --header-bg: rgba(255, 255, 255, 0.94);
+    --nav-bg: rgba(255, 255, 255, 0.96);
+    --tab-inactive-bg: #f1f5f9;
     --btn-radius: 999px;
     --card-radius: 20px;
     --success: #16a34a;
-    --danger: #dc2626;
-    --warning: #d97706;
-    --shadow-sm: 0 2px 8px rgba(11, 33, 23, 0.05);
-    --shadow-md: 0 10px 30px rgba(11, 33, 23, 0.08);
-    --shadow-float: 0 18px 50px -10px rgba(15, 23, 42, 0.14);
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 10px 30px rgba(15, 23, 42, 0.08);
+    --shadow-float: 0 18px 50px -10px rgba(15, 23, 42, 0.12);
   }
 
   [data-theme="dark"] {
-    --bg: #07130c;
-    --bg-alt: #0b1c13;
-    --surface: #0f2419;
-    --surface-alt: #132b1f;
-    --surface-text: #f4f1ea;
-    --text: #f4f1ea;
-    --text-secondary: #94a39b;
-    --text-muted: #6b7c73;
-    --brand: #0b2117;
-    --brand-dark: #05180f;
-    --brand-light: #164230;
-    --accent: #a3e635;
-    --accent-hover: #bef264;
-    --accent-text: #052e16;
-    --accent-minus: rgba(163, 230, 53, 0.12);
-    --accent-pill: rgba(163, 230, 53, 0.15);
-    --accent-glow: rgba(163, 230, 53, 0.25);
-    --border: rgba(255, 255, 255, 0.10);
-    --border-strong: rgba(255, 255, 255, 0.20);
-    --input-bg: rgba(255, 255, 255, 0.06);
-    --input-border: rgba(255, 255, 255, 0.16);
-    --header-bg: rgba(11, 28, 19, 0.85);
-    --nav-bg: rgba(15, 36, 25, 0.88);
-    --tab-inactive-bg: rgba(255, 255, 255, 0.06);
+    --bg: #0b1329;
+    --bg-alt: #0f172a;
+    --surface: #1e293b;
+    --surface-alt: #172554;
+    --surface-text: #ffffff;
+    --text: #ffffff;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --brand: #1e3a8a;
+    --brand-dark: #0f172a;
+    --brand-light: #2563eb;
+    --accent: #facc15;
+    --accent-hover: #fde047;
+    --accent-text: #0f172a;
+    --accent-minus: rgba(250, 204, 21, 0.14);
+    --accent-pill: rgba(250, 204, 21, 0.20);
+    --accent-glow: rgba(250, 204, 21, 0.35);
+    --blue-accent: #38bdf8;
+    --blue-hover: #60a5fa;
+    --blue-text: #0f172a;
+    --border: rgba(255, 255, 255, 0.12);
+    --border-strong: rgba(255, 255, 255, 0.22);
+    --input-bg: rgba(255, 255, 255, 0.07);
+    --input-border: rgba(255, 255, 255, 0.18);
+    --header-bg: rgba(15, 23, 42, 0.90);
+    --nav-bg: rgba(15, 23, 42, 0.95);
+    --tab-inactive-bg: rgba(255, 255, 255, 0.07);
     --btn-radius: 999px;
     --card-radius: 20px;
     --success: #22c55e;
@@ -121,14 +127,14 @@
 
   /* Compatibility alias for existing [data-theme="paper"] */
   [data-theme="paper"] {
-    --bg: #f4f1ea;
+    --bg: #f8fafc;
     --surface: #ffffff;
-    --surface-text: #0b2117;
-    --text: #0b2117;
+    --surface-text: #0f172a;
+    --text: #0f172a;
     --text-secondary: #526057;
-    --accent: #a3e635;
-    --accent-text: #052e16;
-    --accent-minus: rgba(163, 230, 53, 0.15);
+    --accent: #facc15;
+    --accent-text: #0f172a;
+    --accent-minus: rgba(250, 204, 21, 0.15);
     --border: rgba(11, 33, 23, 0.10);
     --input-bg: #ffffff;
     --input-border: rgba(11, 33, 23, 0.16);
@@ -216,7 +222,7 @@
     font-weight: 800;
     padding: 2px 7px;
     border-radius: 999px;
-    background: rgba(163, 230, 53, 0.2);
+    background: rgba(250, 204, 21, 0.2);
     color: #15803d;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -374,8 +380,8 @@
     gap: 8px;
     padding: 6px 16px;
     border-radius: 999px;
-    background: rgba(163, 230, 53, 0.18);
-    border: 1px solid rgba(163, 230, 53, 0.45);
+    background: rgba(250, 204, 21, 0.18);
+    border: 1px solid rgba(250, 204, 21, 0.45);
     color: #14532d;
     font-size: 11px;
     font-weight: 800;
@@ -385,8 +391,8 @@
   }
   [data-theme="dark"] .hero-pill-badge {
     color: var(--accent);
-    background: rgba(163, 230, 53, 0.10);
-    border-color: rgba(163, 230, 53, 0.25);
+    background: rgba(250, 204, 21, 0.10);
+    border-color: rgba(250, 204, 21, 0.25);
   }
   .ping-dot {
     position: relative;
@@ -532,7 +538,7 @@
   .demo-badge-pill {
     padding: 5px 12px;
     border-radius: 999px;
-    background: rgba(163, 230, 53, 0.2);
+    background: rgba(250, 204, 21, 0.2);
     color: #14532d;
     font-size: 11px;
     font-weight: 800;
@@ -683,13 +689,13 @@
     margin-top: 12px;
     padding: 10px 14px;
     border-radius: 12px;
-    background: rgba(163, 230, 53, 0.25);
+    background: rgba(250, 204, 21, 0.25);
     color: #14532d;
     font-size: 12px;
     font-weight: 700;
     line-height: 1.4;
   }
-  [data-theme="dark"] .demo-success-alert { color: #bef264; }
+  [data-theme="dark"] .demo-success-alert { color: #fde047; }
 
   /* =====================================================================
      INTEGRATIONS SECTION (Deep Forest Green Posfiti Banner)
@@ -700,13 +706,13 @@
     margin: 0 auto;
   }
   .integrations-card-forest {
-    background: #0b2117;
+    background: #0f172a;
     color: #ffffff;
     border-radius: 28px;
     padding: 40px 24px;
     position: relative;
     overflow: hidden;
-    border: 1px solid rgba(163, 230, 53, 0.25);
+    border: 1px solid rgba(250, 204, 21, 0.25);
     box-shadow: var(--shadow-float);
   }
   @media (min-width: 640px) {
@@ -731,7 +737,7 @@
     gap: 8px;
     padding: 4px 14px;
     border-radius: 999px;
-    background: rgba(163, 230, 53, 0.18);
+    background: rgba(250, 204, 21, 0.18);
     color: var(--accent);
     font-size: 11px;
     font-weight: 800;
@@ -746,7 +752,7 @@
   }
   .integration-item {
     background: #ffffff;
-    color: #0b2117;
+    color: #0f172a;
     border-radius: 18px;
     padding: 18px 14px;
     text-align: center;
@@ -824,7 +830,7 @@
     color: var(--accent-text);
   }
   .cap-icon-wrap.forest {
-    background: #0b2117;
+    background: #0f172a;
     color: var(--accent);
   }
   .cap-title {
@@ -843,7 +849,7 @@
   /* Restaurant POS Banner */
   .restaurant-pos-banner {
     margin-top: 24px;
-    background: #0b2117;
+    background: #0f172a;
     color: #ffffff;
     border-radius: 20px;
     padding: 22px 26px;
@@ -852,7 +858,7 @@
     gap: 14px;
     align-items: flex-start;
     justify-content: space-between;
-    border: 1px solid rgba(163, 230, 53, 0.25);
+    border: 1px solid rgba(250, 204, 21, 0.25);
   }
   @media (min-width: 680px) {
     .restaurant-pos-banner {
@@ -934,7 +940,7 @@
     box-shadow: none;
   }
   .pricing-switch-pill button.active {
-    background: #0b2117;
+    background: #0f172a;
     color: #ffffff;
   }
   [data-theme="dark"] .pricing-switch-pill button.active {
@@ -1115,7 +1121,7 @@
     box-shadow: none;
   }
   .auth-tab.active {
-    background: #0b2117;
+    background: #0f172a;
     color: #ffffff;
   }
   [data-theme="dark"] .auth-tab.active {
@@ -1205,7 +1211,7 @@
     display: none;
   }
   .auth-info {
-    background: rgba(163, 230, 53, 0.2);
+    background: rgba(250, 204, 21, 0.2);
     color: #14532d;
     padding: 10px 14px;
     border-radius: 12px;
@@ -1214,7 +1220,7 @@
     margin-top: 12px;
     display: none;
   }
-  [data-theme="dark"] .auth-info { color: #bef264; }
+  [data-theme="dark"] .auth-info { color: #fde047; }
   .pw-wrap { position: relative; }
   .pw-wrap input { padding-right: 42px !important; width: 100%; box-sizing: border-box; }
   .pw-toggle {
@@ -1517,9 +1523,9 @@
   .btn-green:hover { background: var(--accent-hover); }
 
   .btn-blue {
-    background: #0b2117;
+    background: #0f172a;
     color: var(--accent);
-    border: 1px solid rgba(163, 230, 53, 0.35);
+    border: 1px solid rgba(250, 204, 21, 0.35);
   }
   [data-theme="dark"] .btn-blue {
     background: #143324;
@@ -1527,7 +1533,7 @@
   }
 
   .btn-yellow {
-    background: #0b2117;
+    background: #0f172a;
     color: #ffffff;
   }
   .btn-red {
@@ -1633,10 +1639,10 @@
 
   .toast {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: #0b2117; color: #a3e635; padding: 11px 22px; border-radius: 999px;
+    background: #0f172a; color: #facc15; padding: 11px 22px; border-radius: 999px;
     font-size: 13px; font-weight: 700; opacity: 0; transition: opacity .3s, bottom .2s;
     pointer-events: none; z-index: 9999; max-width: 90%; text-align: center;
-    border: 1px solid rgba(163, 230, 53, 0.3); box-shadow: var(--shadow-float);
+    border: 1px solid rgba(250, 204, 21, 0.3); box-shadow: var(--shadow-float);
   }
   .toast.show { opacity: 1; }
 
@@ -1680,7 +1686,7 @@
 
   .table-tile { border-radius: 14px; padding: 14px 8px; text-align: center; cursor: pointer; min-width: 78px; transition: transform .15s; }
   .table-tile:hover { transform: translateY(-2px); }
-  .table-tile.free { background: rgba(163, 230, 53, 0.2); border: 1px solid var(--accent); color: var(--text); }
+  .table-tile.free { background: rgba(250, 204, 21, 0.2); border: 1px solid var(--accent); color: var(--text); }
   .table-tile.occupied { background: rgba(220, 38, 38, 0.15); border: 1px solid var(--danger); color: var(--text); }
   .table-tile .t-name { font-weight: 800; font-size: 14px; }
   .table-tile .t-status { font-size: 11px; margin-top: 2px; }
@@ -1717,7 +1723,7 @@
   /* Install Banner */
   #installBanner {
     display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 900;
-    background: #0b2117; border-top: 1px solid rgba(163, 230, 53, 0.25);
+    background: #0f172a; border-top: 1px solid rgba(250, 204, 21, 0.25);
     padding: 12px 16px; align-items: center; gap: 12px; color: #fff;
     box-shadow: 0 -4px 14px rgba(0,0,0,.35);
   }
@@ -1811,7 +1817,7 @@
   .rst-workflow-card:hover { transform: translateY(-3px); }
   .rst-workflow-img-wrap {
     height: 180px;
-    background: #0b2117;
+    background: #0f172a;
     overflow: hidden;
     display: grid;
     place-items: center;
@@ -1829,7 +1835,7 @@
 
 
 /* =====================================================================
-   POSFITI IN-APP PORTAL LAYOUT & VIEWS (Desktop & Mobile)
+   DOGO POS IN-APP PORTAL LAYOUT & VIEWS (Desktop & Mobile)
 ===================================================================== */
 :root {
   --sidebar-w: 260px;
@@ -1887,34 +1893,39 @@
   color: #16a34a;
 }
 [data-theme="dark"] .sidebar-logo .fiti {
-  color: #a3e635;
+  color: #facc15;
 }
 
 .sidebar-logo-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #16a34a;
+  background: #facc15;
   margin-left: 2px;
   margin-top: 2px;
 }
 [data-theme="dark"] .sidebar-logo-dot {
-  background: #a3e635;
+  background: #facc15;
 }
 
 .sidebar-sub-badge {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  background: rgba(163, 230, 53, 0.15);
-  color: #166534;
-  padding: 3px 7px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+  padding: 3px 8px;
   border-radius: 999px;
-  border: 1px solid rgba(163, 230, 53, 0.3);
+  border: 1px solid rgba(37, 99, 235, 0.25);
 }
 [data-theme="dark"] .sidebar-sub-badge {
-  color: #bef264;
+  background: rgba(250, 204, 21, 0.18);
+  color: #facc15;
+  border-color: rgba(250, 204, 21, 0.35);
+}
+[data-theme="dark"] .sidebar-sub-badge {
+  color: #fde047;
 }
 
 .sidebar-nav-container {
@@ -1944,12 +1955,12 @@
 }
 
 .nav-item-btn:hover {
-  background: rgba(163, 230, 53, 0.1);
+  background: rgba(250, 204, 21, 0.1);
   color: var(--text-primary);
 }
 
 .nav-item-btn.active {
-  background: rgba(163, 230, 53, 0.16);
+  background: rgba(250, 204, 21, 0.16);
   color: var(--text-primary);
   font-weight: 700;
 }
@@ -1968,10 +1979,13 @@
 }
 
 .nav-item-btn.active .nav-item-left i {
-  color: #16a34a;
+  color: #2563eb;
 }
 [data-theme="dark"] .nav-item-btn.active .nav-item-left i {
-  color: #a3e635;
+  color: #facc15;
+}
+[data-theme="dark"] .nav-item-btn.active .nav-item-left i {
+  color: #facc15;
 }
 
 .nav-chevron {
@@ -2013,17 +2027,21 @@
 }
 
 .nav-sub-btn:hover {
-  background: rgba(163, 230, 53, 0.08);
+  background: rgba(250, 204, 21, 0.08);
   color: var(--text-primary);
 }
 
 .nav-sub-btn.active {
-  background: rgba(163, 230, 53, 0.18);
-  color: #166534;
-  font-weight: 700;
+  background: rgba(37, 99, 235, 0.15);
+  color: #2563eb;
+  font-weight: 800;
 }
 [data-theme="dark"] .nav-sub-btn.active {
-  color: #bef264;
+  background: rgba(250, 204, 21, 0.18);
+  color: #facc15;
+}
+[data-theme="dark"] .nav-sub-btn.active {
+  color: #fde047;
 }
 
 .nav-sub-btn i {
@@ -2053,15 +2071,15 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #0b2117;
-  color: #a3e635;
-  font-weight: 700;
+  background: #1e3a8a;
+  color: #facc15;
+  font-weight: 800;
   font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 1px solid rgba(163, 230, 53, 0.3);
+  border: 2px solid #facc15;
 }
 
 .user-text-meta {
@@ -2200,8 +2218,8 @@
 }
 
 .portal-circle-btn:hover {
-  background: rgba(163, 230, 53, 0.1);
-  border-color: rgba(163, 230, 53, 0.4);
+  background: rgba(250, 204, 21, 0.1);
+  border-color: rgba(250, 204, 21, 0.4);
 }
 
 .notif-bubble {
@@ -2260,7 +2278,7 @@
    VIEW: RESTAURANT OVERVIEW HUB (/restaurant/module)
 ===================================================================== */
 .rest-hub-banner {
-  background: #0b2117;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
   border-radius: 24px;
   padding: 36px 40px;
   color: #ffffff;
@@ -2269,7 +2287,7 @@
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 24px;
-  border: 1px solid rgba(163, 230, 53, 0.2);
+  border: 1px solid rgba(250, 204, 21, 0.3);
 }
 
 .rest-hub-banner-content {
@@ -2282,8 +2300,8 @@
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #a3e635;
-  background: rgba(163, 230, 53, 0.12);
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.12);
   padding: 4px 12px;
   border-radius: 999px;
   margin-bottom: 14px;
@@ -2305,8 +2323,8 @@
 }
 
 .rest-hub-cta-btn {
-  background: #a3e635;
-  color: #052e16;
+  background: #facc15;
+  color: #0f172a;
   font-weight: 700;
   font-size: 15px;
   padding: 14px 28px;
@@ -2321,9 +2339,9 @@
 }
 
 .rest-hub-cta-btn:hover {
-  background: #bef264;
+  background: #fde047;
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(163, 230, 53, 0.35);
+  box-shadow: 0 8px 20px rgba(250, 204, 21, 0.35);
 }
 
 .rest-steps-grid {
@@ -2365,8 +2383,8 @@
   background: #f0fdf4;
 }
 [data-theme="dark"] .rest-step-1 {
-  background: #062b19;
-  border-color: rgba(163, 230, 53, 0.2);
+  background: #0f2744;
+  border-color: rgba(250, 204, 21, 0.2);
 }
 
 .rest-step-2 {
@@ -2479,13 +2497,13 @@
 .rest-item-count-bubble {
   font-size: 12px;
   font-weight: 700;
-  background: rgba(163, 230, 53, 0.2);
+  background: rgba(250, 204, 21, 0.2);
   color: #15803d;
   padding: 4px 10px;
   border-radius: 999px;
 }
 [data-theme="dark"] .rest-item-count-bubble {
-  color: #bef264;
+  color: #fde047;
 }
 
 .rest-order-controls {
@@ -2529,9 +2547,9 @@
 }
 
 .rest-cat-pill.active {
-  background: #0b2117;
-  color: #a3e635;
-  border-color: #0b2117;
+  background: #0f172a;
+  color: #facc15;
+  border-color: #0f172a;
 }
 
 .rest-product-grid {
@@ -2553,7 +2571,7 @@
 }
 
 .rest-prod-card:hover {
-  border-color: rgba(163, 230, 53, 0.4);
+  border-color: rgba(250, 204, 21, 0.4);
   transform: translateY(-2px);
 }
 
@@ -2584,7 +2602,7 @@
   color: #16a34a;
 }
 [data-theme="dark"] .rest-prod-price {
-  color: #a3e635;
+  color: #facc15;
 }
 
 .rest-prod-footer {
@@ -2614,9 +2632,9 @@
 }
 
 .rest-add-btn:hover {
-  background: #a3e635;
-  color: #052e16;
-  border-color: #a3e635;
+  background: #facc15;
+  color: #0f172a;
+  border-color: #facc15;
 }
 
 /* Right Panel: Ready for Kitchen */
@@ -2764,8 +2782,8 @@
   width: 100%;
   padding: 14px;
   border-radius: 999px;
-  background: #a3e635;
-  color: #052e16;
+  background: #facc15;
+  color: #0f172a;
   font-weight: 800;
   font-size: 15px;
   border: none;
@@ -2778,7 +2796,7 @@
 }
 
 .rest-send-btn:hover {
-  background: #bef264;
+  background: #fde047;
   transform: translateY(-1px);
 }
 
@@ -2856,9 +2874,9 @@
 }
 
 .kds-btn-dark {
-  background: #0b2117;
-  color: #a3e635;
-  border: 1px solid rgba(163, 230, 53, 0.3);
+  background: #0f172a;
+  color: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.3);
   padding: 9px 18px;
   border-radius: 999px;
   font-size: 13px;
@@ -2894,8 +2912,8 @@
 }
 
 .kds-apply-btn {
-  background: #a3e635;
-  color: #052e16;
+  background: #facc15;
+  color: #0f172a;
   border: none;
   font-weight: 800;
   font-size: 13.5px;
@@ -2947,7 +2965,7 @@
   color: #ffffff;
 }
 
-.badge-pending { background: #0b2117; color: #a3e635; }
+.badge-pending { background: #0f172a; color: #facc15; }
 .badge-preparing { background: #f97316; }
 .badge-ready { background: #16a34a; }
 
@@ -3052,8 +3070,8 @@
 
 .kds-btn-start {
   flex: 1;
-  background: #a3e635;
-  color: #052e16;
+  background: #facc15;
+  color: #0f172a;
   font-weight: 800;
   padding: 10px;
   border-radius: 999px;
@@ -3252,8 +3270,8 @@
 }
 
 .int-manage-btn {
-  background: #a3e635;
-  color: #052e16;
+  background: #facc15;
+  color: #0f172a;
   font-weight: 800;
   padding: 10px 20px;
   border-radius: 999px;
@@ -3314,8 +3332,8 @@
 
 .sub-upgrade-btn {
   width: 100%;
-  background: #a3e635;
-  color: #052e16;
+  background: #facc15;
+  color: #0f172a;
   font-weight: 800;
   padding: 14px;
   border-radius: 999px;
@@ -3332,7 +3350,7 @@
    VIEW: REFER & EARN (/referrals)
 ===================================================================== */
 .referral-hero-banner {
-  background: #0b2117;
+  background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
   border-radius: 24px;
   padding: 36px 40px;
   color: #ffffff;
@@ -3341,12 +3359,12 @@
   justify-content: space-between;
   gap: 30px;
   margin-bottom: 24px;
-  border: 1px solid rgba(163, 230, 53, 0.2);
+  border: 1px solid rgba(250, 204, 21, 0.3);
 }
 
 .referral-rate-card {
-  background: #a3e635;
-  color: #052e16;
+  background: #facc15;
+  color: #0f172a;
   border-radius: 20px;
   padding: 24px 30px;
   text-align: center;
@@ -3406,9 +3424,9 @@
 }
 
 .quick-cash-pill:hover {
-  background: #a3e635;
-  color: #052e16;
-  border-color: #a3e635;
+  background: #facc15;
+  color: #0f172a;
+  border-color: #facc15;
 }
 
 </style>
@@ -3436,9 +3454,9 @@
   <header class="posfiti-nav" id="posfitiNav">
     <div class="posfiti-nav-inner">
       <a href="#hero" class="posfiti-brand">
-        <img src="images/pos-fiti-light.png" alt="Logo" style="height:32px; width:auto; border-radius:6px;">
+        <img src="images/dogo-pos-light.png" alt="Logo" style="height:32px; width:auto; border-radius:6px;">
         <span>Dogo POS</span>
-        <span class="posfiti-brand-badge">Global</span>
+        <span class="dogo-brand-badge" style="background:#facc15; color:#0f172a; font-weight:800; padding:2px 8px; border-radius:999px; font-size:11px;">Global</span>
       </a>
 
       <ul class="posfiti-links">
@@ -3466,7 +3484,7 @@
   </header>
 
   <!-- Mobile Dropdown Menu -->
-  <div class="posfiti-mobile-menu" id="posfitiMobileMenu">
+  <div class="posfiti-mobile-menu" id="dogoMobileMenu">
     <a href="#demo" onclick="toggleMobileNav()">Live Demo</a>
     <a href="#capabilities" onclick="toggleMobileNav()">Features</a>
     <a href="#restaurant-pos" onclick="toggleMobileNav()">Restaurant POS</a>
@@ -3893,7 +3911,7 @@
 
       <!-- Control POS Plan -->
       <div class="pricing-card">
-        <div class="pricing-badge" style="background:#0b2117; color:#fff;">Pro store</div>
+        <div class="pricing-badge" style="background:#0f172a; color:#fff;">Pro store</div>
         <div>
           <div class="pricing-eyebrow">Established teams</div>
           <h3 class="pricing-plan-name">Control POS</h3>
@@ -4139,7 +4157,7 @@
   <div>
     <div class="sidebar-header">
       <a href="#dashboard" class="sidebar-logo" onclick="switchTab('dash'); return false;">
-        <span>pos</span><span class="fiti">fiti</span><span class="sidebar-logo-dot"></span>
+        <span>Dogo</span><span style="color:#2563eb; font-weight:900;">POS</span><span class="sidebar-logo-dot"></span>
       </a>
       <span class="sidebar-sub-badge" id="sidebarBizType">HARDWARE</span>
     </div>
@@ -4319,7 +4337,7 @@
   <div class="banner banner-lowstock" id="lowStockBanner" onclick="switchTab('dash')" style="cursor:pointer;">
     <i class="fa-solid fa-triangle-exclamation"></i> <span id="lowStockBannerText"></span>
   </div>
-  <div class="banner" id="pendingSyncBanner" style="background:#0b2117; color:#a3e635; border:1px solid rgba(163,230,53,0.3);" onclick="syncOfflineSales()">
+  <div class="banner" id="pendingSyncBanner" style="background:#0f172a; color:#facc15; border:1px solid rgba(250,204,21,0.3);" onclick="syncOfflineSales()">
     <i class="fa-solid fa-arrows-rotate"></i> <span id="pendingSyncText"></span> — tap to sync now
   </div>
 
@@ -4583,7 +4601,7 @@
               </div>
             </td>
             <td>
-              <span style="font-weight:700; background:rgba(163,230,53,0.15); color:#15803d; padding:4px 10px; border-radius:8px;">Free</span>
+              <span style="font-weight:700; background:rgba(250,204,21,0.15); color:#15803d; padding:4px 10px; border-radius:8px;">Free</span>
             </td>
             <td>
               <div class="pos-access-box">
@@ -4732,7 +4750,7 @@
   <div class="panel" id="tab-referrals">
     <div class="referral-hero-banner">
       <div style="max-width:580px;">
-        <span class="rest-hub-badge">POS FITI PARTNER PROGRAMME</span>
+        <span class="rest-hub-badge">DOGO POS PARTNER PROGRAMME</span>
         <h2 style="font-size:32px; font-weight:800; line-height:1.15; margin:8px 0 12px; color:#ffffff;">Tell a business. Earn when they subscribe.</h2>
         <p style="font-size:15px; color:rgba(255,255,255,0.85); line-height:1.5; margin:0;">Share your link. Your friend enters your code during POS subscription checkout, and you earn 20% from each successful subscription payment.</p>
       </div>
@@ -4747,7 +4765,7 @@
     <div class="referral-link-card">
       <div>
         <h3 style="font-size:20px; font-weight:800; margin:0 0 6px; color:var(--text-primary);">Create your referral link</h3>
-        <p style="font-size:14px; color:var(--text-secondary); margin:0;">Every verified Pos Fiti user can join. We generate your code instantly; add payout details after enrolling.</p>
+        <p style="font-size:14px; color:var(--text-secondary); margin:0;">Every verified Dogo POS business can join. We generate your code instantly; add payout details after enrolling.</p>
         <div id="referralCodeBox" style="margin-top:14px; display:none; align-items:center; gap:10px;">
           <input type="text" id="referralLinkInput" readonly style="width:340px; margin:0; font-weight:700; background:var(--bg);">
           <button class="btn-small btn-blue" onclick="copyReferralLink()"><i class="fa-solid fa-copy"></i> Copy</button>
@@ -5209,12 +5227,12 @@
       <div class="theme-row">
         <span class="trow-label">Theme</span>
         <div class="theme-switch-pill" id="settingsThemeSwitch">
-          <button id="themeBtnLight" onclick="setTheme('light')"><i class="fa-solid fa-sun"></i> Posfiti Light</button>
-          <button id="themeBtnDark" onclick="setTheme('dark')"><i class="fa-solid fa-moon"></i> Posfiti Dark</button>
+          <button id="themeBtnLight" onclick="setTheme('light')"><i class="fa-solid fa-sun"></i> Classic White</button>
+          <button id="themeBtnDark" onclick="setTheme('dark')"><i class="fa-solid fa-moon"></i> Midnight Blue</button>
         </div>
       </div>
       <p class="catalog-note" style="color:var(--text-secondary); text-align:left; padding:0; font-size:11px;">
-        Posfiti Light offers an ivory &amp; forest green aesthetic for bright daylight retail. Posfiti Dark offers high-contrast deep emerald tones. Your choice is saved on this device.
+        Classic White offers an ivory &amp; forest green aesthetic for bright daylight retail. Midnight Blue offers high-contrast deep emerald tones. Your choice is saved on this device.
       </p>
     </div>
 
@@ -5293,7 +5311,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: false }
 });
 
-const THEME_COLORS = ["#0b2117", "#133827", "#16a34a", "#a3e635", "#0284c7", "#7c3aed"];
+const THEME_COLORS = ["#0f172a", "#1e3a8a", "#16a34a", "#facc15", "#0284c7", "#7c3aed"];
 const LOCAL_QUEUE_KEY = "dogopos_offline_queue_v1";
 const LOCAL_SHIFT_QUEUE_KEY = "dogopos_offline_shift_queue_v1";
 const LOCAL_CACHE_KEY = "dogopos_cache_v1"; // last-known full app state for offline selling
@@ -5303,7 +5321,7 @@ let profile = null;   // { id, business_id, role, full_name, active }
 
 
 /* =====================================================================
-   POSFITI THEME (Light / Dark)
+   DOGO POS THEME (Light / Dark)
 ===================================================================== */
 function getTheme() {
   const t = document.documentElement.getAttribute('data-theme');
@@ -5340,7 +5358,7 @@ function updateThemeToggleUI() {
 updateThemeToggleUI();
 
 /* =====================================================================
-   POSFITI LANDING PAGE INTERACTIVITY (Live Demo & Modals)
+   DOGO POS LANDING PAGE INTERACTIVITY (Live Demo & Modals)
 ===================================================================== */
 const DEMO_PRODUCTS = [
   { id: 'rice', name: 'Rice (2kg)', price: 145, image: 'images/demo/1788534931087.webp', icon: '🌾' },
@@ -5512,7 +5530,7 @@ function toggleFaq(btn) {
 
 /* Mobile Nav Toggle */
 function toggleMobileNav() {
-  const menu = document.getElementById('posfitiMobileMenu');
+  const menu = document.getElementById('dogoMobileMenu');
   const icon = document.getElementById('navMenuIcon');
   if (!menu) return;
   const isShow = menu.classList.toggle('show');
@@ -8495,7 +8513,7 @@ function copyReferralLink() {
 function shareReferralWhatsApp() {
   const input = document.getElementById('referralLinkInput');
   const url = input?.value || 'https://dogo-pos-app.netlify.app';
-  const text = `Hey! Start managing your business with Posfiti/Dogo POS. Use my partner link to get started: ${url}`;
+  const text = `Hey! Start managing your business with Dogo POS. Use my partner link to get started: ${url}`;
   window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
 }
 
@@ -8506,7 +8524,7 @@ function openManageApisModal() {
 
 function openUpgradePlanModal() {
   showToast('Opening Subscription plans...');
-  alert('POS FITI / DOGO PLANS:\n- Free: KES 0/mo\n- Core POS: KES 999/mo (Recommended)\n- Control POS + eTIMS: KES 1,999/mo\n\nContact admin to upgrade your branch.');
+  alert('DOGO POS PLANS:\n- Free: KES 0/mo\n- Core POS: KES 999/mo (Recommended)\n- Control POS + eTIMS: KES 1,999/mo\n\nContact admin to upgrade your branch.');
 }
 
 </script>
