@@ -13534,6 +13534,38 @@ function applySubscriptionSuccess(planName, refCode, phone) {
     localStorage.setItem('dogo_biz_plans', JSON.stringify(plans));
   } catch(e) {}
 
+  // Instant Telegram Push Notification to Super Admin
+  try {
+    const rawCfg = localStorage.getItem('dogo_platform_settings');
+    const cfg = rawCfg ? JSON.parse(rawCfg) : {};
+    const botToken = cfg.telegram_bot_token || '8576294481:AAH_qrp0rQdXbnHqFONS1ril1yJQ_UfbQrA';
+    const chatId = cfg.alert_telegram;
+    if (botToken && chatId) {
+      const nowStr = new Date().toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' });
+      const storeName = business ? business.name : (profile?.email ? profile.email.split('@')[0] + ' Store' : 'New Merchant');
+      const storeType = business?.business_type || 'Retail';
+      const tgMsg = `🔔 <b>Dogo POS Alert: New Subscription Payment!</b>\n\n` +
+        `🏪 <b>Store:</b> ${storeName} (${storeType})\n` +
+        `📦 <b>Plan:</b> ${planName} POS\n` +
+        `💰 <b>Amount:</b> KES ${Number(currentSelectedPrice || 999).toLocaleString()}\n` +
+        `📱 <b>M-Pesa Reference:</b> <code>${refCode}</code>\n` +
+        `📞 <b>Payer Contact:</b> ${phone || profile?.phone || 'Not provided'}\n` +
+        `⏰ <b>Date & Time:</b> ${nowStr} EAT\n\n` +
+        `👉 <i>Log in to /admin to verify payment and review store till.</i>`;
+
+      fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: tgMsg,
+          parse_mode: 'HTML',
+          disable_web_page_preview: true
+        })
+      }).catch(e => console.warn('Telegram notify error:', e));
+    }
+  } catch (e) {}
+
   // Update UI in tab-subscription
   const planValEl = document.querySelector('#tab-subscription .sub-data-row:nth-child(4) .sub-data-val');
   if (planValEl) planValEl.textContent = `${planName} POS`;
