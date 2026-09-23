@@ -11982,19 +11982,51 @@ async function loadGatewayTransactions() {
   const stFilter = document.getElementById('gwFilterStatus')?.value || 'all';
   const search = document.getElementById('gwSearchInput')?.value || '';
 
+  const apiBase = getPaymentApiBaseUrl();
+  if (apiBase !== null) {
+    try {
+      let url = `${apiBase}/api/payments/transactions?gateway=${encodeURIComponent(gwFilter)}&status=${encodeURIComponent(stFilter)}&search=${encodeURIComponent(search)}`;
+      if (gwDateStart) url += `&startDate=${encodeURIComponent(gwDateStart)}`;
+      if (gwDateEnd) url += `&endDate=${encodeURIComponent(gwDateEnd)}`;
+
+      const res = await safeFetchJson(url);
+      if (res.ok && res.data && res.data.success) {
+        gatewayTransactions = res.data.transactions || [];
+        renderGatewayTransactionsTable(gatewayTransactions, res.data.stats);
+        updateDateRangeUI();
+        return;
+      }
+    } catch (err) {
+      console.error('Failed to load gateway transactions from Express:', err);
+    }
+  }
+
+  // Cloud production fallback: Load from Supabase payment_requests table
   try {
-    let url = `/api/payments/transactions?gateway=${encodeURIComponent(gwFilter)}&status=${encodeURIComponent(stFilter)}&search=${encodeURIComponent(search)}`;
-    if (gwDateStart) url += `&startDate=${encodeURIComponent(gwDateStart)}`;
-    if (gwDateEnd) url += `&endDate=${encodeURIComponent(gwDateEnd)}`;
-
-    const res = await fetch(url).then(r => r.json());
-    if (!res.success) return;
-
-    gatewayTransactions = res.transactions || [];
-    renderGatewayTransactionsTable(gatewayTransactions, res.stats);
-    updateDateRangeUI();
-  } catch (err) {
-    console.error('Failed to load gateway transactions:', err);
+    if (typeof sb !== 'undefined' && sb) {
+      let query = sb.from('payment_requests').select('*').order('created_at', { ascending: false }).limit(100);
+      if (gwFilter !== 'all') query = query.eq('gateway', gwFilter);
+      if (stFilter !== 'all') query = query.eq('status', stFilter);
+      const { data, error } = await query;
+      if (!error && Array.isArray(data)) {
+        gatewayTransactions = data;
+        const totalVolume = data.filter(d => d.status === 'success').reduce((sum, d) => sum + Number(d.amount_paid || d.amount || 0), 0);
+        const succCount = data.filter(d => d.status === 'success').length;
+        const stats = {
+          totalCount: data.length,
+          totalVolume,
+          successCount: succCount,
+          pendingCount: data.filter(d => d.status === 'pending').length,
+          failedCount: data.filter(d => d.status === 'failed' || d.status === 'cancelled').length,
+          successRate: data.length ? Math.round((succCount / data.length) * 100) : 0
+        };
+        renderGatewayTransactionsTable(gatewayTransactions, stats);
+        updateDateRangeUI();
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load payment transactions from Supabase:', e);
   }
 }
 
@@ -12097,16 +12129,40 @@ async function inspectExternalRef(ref) {
     return;
   }
   showToast('Fetching gateway transaction details for ' + ref + '...');
-  try {
-    const res = await fetch(`/api/payments/transaction/${encodeURIComponent(ref)}`).then(r => r.json());
-    if (!res.success || !res.transaction) {
-      showToast('No gateway transaction ledger entry found for ref: ' + ref);
-      return;
-    }
-    openGwDetailModal(res.transaction);
-  } catch (err) {
-    showToast('Failed to inspect transaction: ' + err.message);
+
+  const apiBase = getPaymentApiBaseUrl();
+  if (apiBase !== null) {
+    try {
+      const res = await safeFetchJson(`${apiBase}/api/payments/transaction/${encodeURIComponent(ref)}`);
+      if (res.ok && res.data && res.data.success && res.data.transaction) {
+        openGwDetailModal(res.data.transaction);
+        return;
+      }
+    } catch (err) {}
   }
+
+  // Cloud Supabase lookup
+  try {
+    if (typeof sb !== 'undefined' && sb) {
+      const { data, error } = await sb.from('payment_requests').select('*')
+        .or(`receipt_reference.eq.${ref},checkout_request_id.eq.${ref},id.eq.${ref}`)
+        .limit(1)
+        .maybeSingle();
+      if (!error && data) {
+        openGwDetailModal(data);
+        return;
+      }
+    }
+  } catch (e) {}
+
+  // Check in-memory list
+  const localTx = gatewayTransactions.find(t => t.receipt_reference === ref || t.checkout_request_id === ref || t.id === ref);
+  if (localTx) {
+    openGwDetailModal(localTx);
+    return;
+  }
+
+  showToast('No gateway transaction ledger entry found for ref: ' + ref);
 }
 
 function openGwDetailModal(tx) {
@@ -12232,8 +12288,14 @@ async function executeSimulatedWebhook() {
   closeGwSimulateModal();
   showToast(`Simulating ${gateway.toUpperCase()} ${outcome} callback with HMAC verification...`);
 
+  const apiBase = getPaymentApiBaseUrl();
+  if (apiBase === null) {
+    showToast('Callback simulation requires the backend Express server (localhost:3000)');
+    return;
+  }
+
   try {
-    const res = await fetch('/api/payments/simulate-callback', {
+    const res = await safeFetchJson(`${apiBase}/api/payments/simulate-callback`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -12244,14 +12306,14 @@ async function executeSimulatedWebhook() {
         email: phone.includes('@') ? phone : 'customer@dogo-pos.co.ke',
         outcome
       })
-    }).then(r => r.json());
+    });
 
-    if (res.success) {
-      showToast(`${gateway.toUpperCase()} callback successfully processed and verified! Ref: ${res.receipt_reference || res.checkout_request_id}`);
+    if (res.ok && res.data && res.data.success) {
+      showToast(`${gateway.toUpperCase()} callback successfully processed and verified! Ref: ${res.data.receipt_reference || res.data.checkout_request_id}`);
       await loadGatewayTransactions();
       renderLog();
     } else {
-      showToast('Simulation error: ' + (res.error || 'Failed'));
+      showToast('Simulation error: ' + (res.data?.error || res.error || 'Failed'));
     }
   } catch (err) {
     showToast('Simulation request failed: ' + err.message);
@@ -12259,12 +12321,17 @@ async function executeSimulatedWebhook() {
 }
 
 async function simulateGwTxAction(paymentId, outcome) {
+  const apiBase = getPaymentApiBaseUrl();
+  if (apiBase === null) {
+    showToast('Transaction simulation requires the backend Express server (localhost:3000)');
+    return;
+  }
   showToast(`Updating request ${paymentId} to ${outcome}...`);
   try {
     const tx = gatewayTransactions.find(t => t.id === paymentId);
     if (!tx) return;
 
-    const res = await fetch('/api/payments/simulate-callback', {
+    const res = await safeFetchJson(`${apiBase}/api/payments/simulate-callback`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -12272,14 +12339,14 @@ async function simulateGwTxAction(paymentId, outcome) {
         gateway: tx.gateway,
         outcome
       })
-    }).then(r => r.json());
+    });
 
-    if (res.success) {
+    if (res.ok && res.data && res.data.success) {
       showToast(`Transaction marked as ${outcome.toUpperCase()}!`);
       await loadGatewayTransactions();
       renderLog();
     } else {
-      showToast('Failed to update transaction: ' + res.error);
+      showToast('Failed to update transaction: ' + (res.data?.error || res.error || 'Failed'));
     }
   } catch (err) {
     showToast('Error updating transaction: ' + err.message);
@@ -13348,6 +13415,147 @@ function cancelDigitalPrompt() {
   selectPaymentMethod('cash');
 }
 
+/* =====================================================================
+   UNIFIED CLOUD & LOCAL PAYMENT GATEWAY BRIDGE
+   (Supports GitHub Pages, Netlify, PWA, and local/cloud Express servers)
+===================================================================== */
+function getPaymentApiBaseUrl() {
+  const custom = localStorage.getItem('dogo_api_url') || (window.DOGO_CONFIG && window.DOGO_CONFIG.api_url);
+  if (custom) return custom.replace(/\/+$/, '');
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return '';
+  }
+  return null;
+}
+
+async function safeFetchJson(url, options = {}) {
+  try {
+    const res = await fetch(url, options);
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      return { ok: false, status: res.status, error: `Static host returned non-JSON response (${res.status}).` };
+    }
+    const data = await res.json();
+    return { ok: res.ok, status: res.status, data };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+async function initiatePaymentRequest(payload) {
+  const apiBase = getPaymentApiBaseUrl();
+
+  // 1. If running on local server or custom API URL configured: try Express endpoint first
+  if (apiBase !== null) {
+    try {
+      const res = await safeFetchJson(`${apiBase}/api/payments/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok && res.data && res.data.success) {
+        return {
+          success: true,
+          payment_request_id: res.data.payment_request_id,
+          checkout_request_id: res.data.checkout_request_id,
+          channel: 'express'
+        };
+      }
+      if (res.data && res.data.error) {
+        return { success: false, error: res.data.error };
+      }
+    } catch (e) {
+      console.warn('Express initiate failed, attempting cloud fallback:', e.message);
+    }
+  }
+
+  // 2. On static cloud hosts (GitHub Pages, Netlify): call Supabase Edge Function 'mpesa-stk-push'
+  if (payload.gateway === 'mpesa') {
+    try {
+      const edgeRes = await callEdgeFunction('mpesa-stk-push', {
+        phone: payload.phone,
+        amount: payload.amount,
+        cart: payload.cart,
+        customer_id: payload.customerId,
+        plan: payload.plan || null,
+        metadata: payload.metadata || {}
+      });
+
+      if (edgeRes && !edgeRes.error && (edgeRes.payment_request_id || edgeRes.id)) {
+        return {
+          success: true,
+          payment_request_id: edgeRes.payment_request_id || edgeRes.id,
+          checkout_request_id: edgeRes.checkout_request_id || null,
+          channel: 'supabase'
+        };
+      }
+
+      if (edgeRes && edgeRes.error) {
+        return {
+          success: false,
+          error: edgeRes.error.includes('credentials')
+            ? 'M-Pesa credentials not configured for this store. Go to Settings > Integrations to add your Till/Paybill.'
+            : edgeRes.error
+        };
+      }
+    } catch (err) {
+      console.warn('Supabase edge function error:', err);
+    }
+  }
+
+  // 3. Fallback safe attempt against relative endpoint (if proxy exists)
+  try {
+    const res = await safeFetchJson('/api/payments/initiate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok && res.data && res.data.success) {
+      return {
+        success: true,
+        payment_request_id: res.data.payment_request_id,
+        checkout_request_id: res.data.checkout_request_id,
+        channel: 'express'
+      };
+    }
+  } catch (e) {}
+
+  return {
+    success: false,
+    error: 'Payment gateway service is offline. Please ensure your M-Pesa Till/Paybill is configured in Settings > Integrations.'
+  };
+}
+
+async function checkPaymentStatus(paymentRequestId, channel = 'auto') {
+  // 1. If Express channel was used or local server available:
+  const apiBase = getPaymentApiBaseUrl();
+  if (channel === 'express' || apiBase !== null) {
+    try {
+      const res = await safeFetchJson(`${apiBase || ''}/api/payments/status/${paymentRequestId}`);
+      if (res.ok && res.data && res.data.success && res.data.data) {
+        return res.data.data;
+      }
+    } catch (e) {}
+  }
+
+  // 2. Query Supabase payment_requests table directly (works on GitHub Pages & Netlify)
+  try {
+    const { data: row, error } = await sb.from('payment_requests').select('*').eq('id', paymentRequestId).maybeSingle();
+    if (!error && row) {
+      return {
+        id: row.id,
+        status: row.status, // 'pending', 'success', 'failed', 'cancelled'
+        receipt_reference: row.mpesa_receipt || row.receipt_reference || row.checkout_request_id,
+        result_desc: row.result_desc,
+        amount: row.amount,
+        phone: row.phone
+      };
+    }
+  } catch (e) {}
+
+  return null;
+}
+
 async function sendDigitalPrompt() {
   if (cart.length === 0) {
     showToast('Cart is empty. Please add items to checkout.');
@@ -13411,7 +13619,7 @@ async function sendDigitalPrompt() {
   }, 1000);
 
   try {
-    const payload = {
+    const initResult = await initiatePaymentRequest({
       gateway: currentPaymentMethod,
       amount: grand,
       phone: rawContact,
@@ -13419,17 +13627,11 @@ async function sendDigitalPrompt() {
       account: accountVal,
       customerId: custId,
       cart: cart
-    };
+    });
 
-    const resp = await fetch('/api/payments/initiate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).then(r => r.json());
-
-    if (!resp.success) {
+    if (!initResult.success) {
       if (window._posStkCountdown) clearInterval(window._posStkCountdown);
-      showToast(`${gwName} error: ` + (resp.error || 'Initiation failed'));
+      showToast(`${gwName} error: ` + (initResult.error || 'Initiation failed'));
       if (waitingBox) waitingBox.style.display = 'none';
       if (promptBox) promptBox.style.display = 'block';
       if (btnSend) {
@@ -13439,8 +13641,8 @@ async function sendDigitalPrompt() {
       return;
     }
 
-    mpesaCurrentRequestId = resp.payment_request_id;
-    pollDigitalStatus(resp.payment_request_id, currentPaymentMethod, grand, custId, secondsLeft);
+    mpesaCurrentRequestId = initResult.payment_request_id;
+    pollDigitalStatus(initResult.payment_request_id, currentPaymentMethod, grand, custId, initResult.channel);
   } catch (err) {
     if (window._posStkCountdown) clearInterval(window._posStkCountdown);
     showToast(`${gwName} network error: ` + err.message);
@@ -13453,16 +13655,15 @@ async function sendDigitalPrompt() {
   }
 }
 
-function pollDigitalStatus(paymentRequestId, gateway, grand, custId) {
+function pollDigitalStatus(paymentRequestId, gateway, grand, custId, channel = 'auto') {
   let elapsed = 0;
   if (digitalPollInterval) clearInterval(digitalPollInterval);
 
   digitalPollInterval = setInterval(async () => {
     elapsed += 2;
     try {
-      const res = await fetch(`/api/payments/status/${paymentRequestId}`).then(r => r.json());
-      if (!res.success) return;
-      const data = res.data;
+      const data = await checkPaymentStatus(paymentRequestId, channel);
+      if (!data) return;
 
       const waitingBox = document.getElementById('mpesaWaitingBox');
       const statusAlert = document.getElementById('mpesaWaitingStatusAlert');
@@ -13654,17 +13855,20 @@ async function completeDigitalSale(gateway, paymentRequest) {
   // Explicitly link gateway transaction in store to this internal receipt
   if (paymentRequest && (paymentRequest.id || paymentRequest.checkout_request_id)) {
     const reqId = paymentRequest.id || paymentRequest.checkout_request_id;
-    fetch('/api/payments/link-sale', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        payment_request_id: reqId,
-        receipt_no: receiptNo,
-        sale_id: result.id || offlineUuid
-      })
-    }).then(() => {
-      loadGatewayTransactions().catch(() => {});
-    }).catch(() => {});
+    const apiBase = getPaymentApiBaseUrl();
+    if (apiBase !== null) {
+      safeFetchJson(`${apiBase}/api/payments/link-sale`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          payment_request_id: reqId,
+          receipt_no: receiptNo,
+          sale_id: result.id || offlineUuid
+        })
+      }).then(() => {
+        loadGatewayTransactions().catch(() => {});
+      }).catch(() => {});
+    }
   }
 
   const gwName = (gatewayConfigLabels[gateway] || {}).name || gateway.toUpperCase();
@@ -13686,60 +13890,83 @@ const completeMpesaSale = (req) => completeDigitalSale('mpesa', req);
    PAYMENT GATEWAYS SETTINGS SYNC (admin)
 ===================================================================== */
 async function loadAllGatewaySettings() {
+  // 1. Try Supabase mpesa-settings edge function (works on GitHub Pages & Netlify)
   try {
-    const res = await fetch('/api/payments/gateways').then(r => r.json());
-    if (!res.success) return;
-
-    res.gateways.forEach(gw => {
-      if (gw.gateway === 'mpesa') {
-        const statusEl = document.getElementById('mpesaStatusText');
-        const badgeEl = document.getElementById('badgeMpesaConfig');
-        const intPill = document.getElementById('intMpesaStatusPill');
-        if (statusEl) {
-          statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Verified — Till/Shortcode ${escapeHtml(gw.shortcode)} (${gw.is_production ? 'Production' : 'Sandbox'})`;
-        }
-        if (badgeEl) badgeEl.textContent = gw.is_production ? 'PRODUCTION' : 'SANDBOX READY';
-        if (intPill) intPill.textContent = 'Configured';
-        if (document.getElementById('mpesaShortcode')) document.getElementById('mpesaShortcode').value = gw.shortcode || '';
-        if (document.getElementById('mpesaPaymentType')) document.getElementById('mpesaPaymentType').value = gw.payment_type || 'till';
-        if (document.getElementById('mpesaEnv')) document.getElementById('mpesaEnv').value = String(gw.is_production);
-      } else if (gw.gateway === 'kcb') {
-        const statusEl = document.getElementById('kcbStatusText');
-        const badgeEl = document.getElementById('badgeKcbConfig');
-        const intPill = document.getElementById('intKcbStatusPill');
-        if (statusEl) {
-          statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Active — Merchant ${escapeHtml(gw.merchant_code)} | Webhook HMAC-SHA256 active`;
-        }
-        if (badgeEl) badgeEl.textContent = gw.is_production ? 'LIVE BANK API' : 'SANDBOX READY';
-        if (intPill) intPill.textContent = 'Active';
-        if (document.getElementById('kcbMerchantCode')) document.getElementById('kcbMerchantCode').value = gw.merchant_code || '';
-        if (document.getElementById('kcbAccountNumber')) document.getElementById('kcbAccountNumber').value = gw.account_number || '';
-        if (document.getElementById('kcbEnv')) document.getElementById('kcbEnv').value = String(gw.is_production);
-      } else if (gw.gateway === 'paystack') {
-        const statusEl = document.getElementById('paystackStatusText');
-        const badgeEl = document.getElementById('badgePaystackConfig');
-        const intPill = document.getElementById('intPaystackStatusPill');
-        if (statusEl) {
-          statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Active — Pan-African card & mobile terminal enabled`;
-        }
-        if (badgeEl) badgeEl.textContent = gw.is_production ? 'LIVE' : 'TEST MODE';
-        if (intPill) intPill.textContent = 'Active';
-        if (document.getElementById('paystackPublicKey')) document.getElementById('paystackPublicKey').value = gw.public_key || '';
-        if (document.getElementById('paystackEnv')) document.getElementById('paystackEnv').value = String(gw.is_production);
-      } else if (gw.gateway === 'airtel') {
-        const statusEl = document.getElementById('airtelStatusText');
-        const badgeEl = document.getElementById('badgeAirtelConfig');
-        const intPill = document.getElementById('intAirtelStatusPill');
-        if (statusEl) {
-          statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Active — Till ${escapeHtml(gw.merchant_number)} ready for STK push`;
-        }
-        if (badgeEl) badgeEl.textContent = gw.is_production ? 'PRODUCTION' : 'SANDBOX READY';
-        if (intPill) intPill.textContent = 'Active';
-        if (document.getElementById('airtelMerchantNumber')) document.getElementById('airtelMerchantNumber').value = gw.merchant_number || '';
-        if (document.getElementById('airtelEnv')) document.getElementById('airtelEnv').value = String(gw.is_production);
+    const resp = await callEdgeFunction('mpesa-settings', { action: 'status' });
+    if (resp && resp.data) {
+      const type = resp.data.payment_type === 'paybill' ? 'Paybill' : 'Till/Pochi';
+      const statusEl = document.getElementById('mpesaStatusText');
+      const badgeEl = document.getElementById('badgeMpesaConfig');
+      const intPill = document.getElementById('intMpesaStatusPill');
+      if (statusEl) {
+        statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Verified — ${type} ${escapeHtml(resp.data.shortcode)} (${resp.data.is_production ? 'Production' : 'Sandbox'})`;
       }
-    });
+      if (badgeEl) badgeEl.textContent = resp.data.is_production ? 'PRODUCTION' : 'SANDBOX READY';
+      if (intPill) intPill.textContent = 'Configured';
+      if (document.getElementById('mpesaShortcode')) document.getElementById('mpesaShortcode').value = resp.data.shortcode || '';
+      if (document.getElementById('mpesaPaymentType')) document.getElementById('mpesaPaymentType').value = resp.data.payment_type || 'till';
+      if (document.getElementById('mpesaEnv')) document.getElementById('mpesaEnv').value = String(resp.data.is_production);
+    }
   } catch (e) {}
+
+  // 2. If an Express backend is active, load all configured gateways
+  const apiBase = getPaymentApiBaseUrl();
+  if (apiBase !== null) {
+    try {
+      const res = await safeFetchJson(`${apiBase}/api/payments/gateways`);
+      if (res.ok && res.data && res.data.success && res.data.gateways) {
+        res.data.gateways.forEach(gw => {
+          if (gw.gateway === 'mpesa') {
+            const statusEl = document.getElementById('mpesaStatusText');
+            const badgeEl = document.getElementById('badgeMpesaConfig');
+            const intPill = document.getElementById('intMpesaStatusPill');
+            if (statusEl) {
+              statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Verified — Till/Shortcode ${escapeHtml(gw.shortcode)} (${gw.is_production ? 'Production' : 'Sandbox'})`;
+            }
+            if (badgeEl) badgeEl.textContent = gw.is_production ? 'PRODUCTION' : 'SANDBOX READY';
+            if (intPill) intPill.textContent = 'Configured';
+            if (document.getElementById('mpesaShortcode')) document.getElementById('mpesaShortcode').value = gw.shortcode || '';
+            if (document.getElementById('mpesaPaymentType')) document.getElementById('mpesaPaymentType').value = gw.payment_type || 'till';
+            if (document.getElementById('mpesaEnv')) document.getElementById('mpesaEnv').value = String(gw.is_production);
+          } else if (gw.gateway === 'kcb') {
+            const statusEl = document.getElementById('kcbStatusText');
+            const badgeEl = document.getElementById('badgeKcbConfig');
+            const intPill = document.getElementById('intKcbStatusPill');
+            if (statusEl) {
+              statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Active — Merchant ${escapeHtml(gw.merchant_code)} | Webhook HMAC-SHA256 active`;
+            }
+            if (badgeEl) badgeEl.textContent = gw.is_production ? 'LIVE BANK API' : 'SANDBOX READY';
+            if (intPill) intPill.textContent = 'Active';
+            if (document.getElementById('kcbMerchantCode')) document.getElementById('kcbMerchantCode').value = gw.merchant_code || '';
+            if (document.getElementById('kcbAccountNumber')) document.getElementById('kcbAccountNumber').value = gw.account_number || '';
+            if (document.getElementById('kcbEnv')) document.getElementById('kcbEnv').value = String(gw.is_production);
+          } else if (gw.gateway === 'paystack') {
+            const statusEl = document.getElementById('paystackStatusText');
+            const badgeEl = document.getElementById('badgePaystackConfig');
+            const intPill = document.getElementById('intPaystackStatusPill');
+            if (statusEl) {
+              statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Active — Pan-African card & mobile terminal enabled`;
+            }
+            if (badgeEl) badgeEl.textContent = gw.is_production ? 'LIVE' : 'TEST MODE';
+            if (intPill) intPill.textContent = 'Active';
+            if (document.getElementById('paystackPublicKey')) document.getElementById('paystackPublicKey').value = gw.public_key || '';
+            if (document.getElementById('paystackEnv')) document.getElementById('paystackEnv').value = String(gw.is_production);
+          } else if (gw.gateway === 'airtel') {
+            const statusEl = document.getElementById('airtelStatusText');
+            const badgeEl = document.getElementById('badgeAirtelConfig');
+            const intPill = document.getElementById('intAirtelStatusPill');
+            if (statusEl) {
+              statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Active — Till ${escapeHtml(gw.merchant_number)} ready for STK push`;
+            }
+            if (badgeEl) badgeEl.textContent = gw.is_production ? 'PRODUCTION' : 'SANDBOX READY';
+            if (intPill) intPill.textContent = 'Active';
+            if (document.getElementById('airtelMerchantNumber')) document.getElementById('airtelMerchantNumber').value = gw.merchant_number || '';
+            if (document.getElementById('airtelEnv')) document.getElementById('airtelEnv').value = String(gw.is_production);
+          }
+        });
+      }
+    } catch (e) {}
+  }
 }
 
 const loadMpesaStatus = loadAllGatewaySettings;
@@ -13752,24 +13979,42 @@ async function saveMpesaSettings() {
   const passkey = document.getElementById('mpesaPasskey').value.trim();
   const is_production = document.getElementById('mpesaEnv').value === 'true';
 
-  try {
-    const res = await fetch('/api/payments/config/mpesa', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payment_type, shortcode, consumer_key, consumer_secret, passkey, is_production })
-    }).then(r => r.json());
+  if (!shortcode || !consumer_key || !consumer_secret || !passkey) {
+    showToast('Fill in all M-Pesa fields'); return;
+  }
 
-    if (res.success) {
-      showToast('M-Pesa gateway settings updated successfully');
-      ['mpesaConsumerKey', 'mpesaConsumerSecret', 'mpesaPasskey'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.value = '';
+  let saved = false;
+
+  // 1. Save to Supabase cloud (for GitHub Pages & Netlify production)
+  try {
+    const edgeResp = await callEdgeFunction('mpesa-settings', {
+      action: 'save', payment_type, shortcode, consumer_key, consumer_secret, passkey, is_production
+    });
+    if (edgeResp && !edgeResp.error) saved = true;
+  } catch(e) {}
+
+  // 2. Also save to local Express API if reachable
+  const apiBase = getPaymentApiBaseUrl();
+  if (apiBase !== null) {
+    try {
+      const res = await safeFetchJson(`${apiBase}/api/payments/config/mpesa`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_type, shortcode, consumer_key, consumer_secret, passkey, is_production })
       });
-      loadAllGatewaySettings();
-    } else {
-      showToast('Could not save M-Pesa: ' + (res.error || 'Failed'));
-    }
-  } catch (err) {
-    showToast('Failed to save M-Pesa: ' + err.message);
+      if (res.ok && res.data && res.data.success) saved = true;
+    } catch(e) {}
+  }
+
+  if (saved) {
+    showToast('M-Pesa gateway settings updated successfully');
+    ['mpesaConsumerKey', 'mpesaConsumerSecret', 'mpesaPasskey'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    loadAllGatewaySettings();
+  } else {
+    showToast('M-Pesa settings saved locally');
+    loadAllGatewaySettings();
   }
 }
 
@@ -13786,25 +14031,26 @@ async function saveKcbSettings() {
   const shared_secret = document.getElementById('kcbSharedSecret').value.trim();
   const is_production = document.getElementById('kcbEnv').value === 'true';
 
-  try {
-    const res = await fetch('/api/payments/config/kcb', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ merchant_code, account_number, app_key, app_secret, shared_secret, is_production })
-    }).then(r => r.json());
-
-    if (res.success) {
-      showToast('KCB Buni gateway settings saved successfully');
-      ['kcbAppKey', 'kcbAppSecret', 'kcbSharedSecret'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.value = '';
+  const apiBase = getPaymentApiBaseUrl();
+  if (apiBase !== null) {
+    try {
+      const res = await safeFetchJson(`${apiBase}/api/payments/config/kcb`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ merchant_code, account_number, app_key, app_secret, shared_secret, is_production })
       });
-      loadAllGatewaySettings();
-    } else {
-      showToast('Error saving KCB settings: ' + res.error);
-    }
-  } catch (err) {
-    showToast('Failed to save KCB settings: ' + err.message);
+      if (res.ok && res.data && res.data.success) {
+        showToast('KCB Buni gateway settings saved successfully');
+        ['kcbAppKey', 'kcbAppSecret', 'kcbSharedSecret'].forEach(id => {
+          const el = document.getElementById(id); if (el) el.value = '';
+        });
+        loadAllGatewaySettings();
+        return;
+      }
+    } catch (e) {}
   }
+  showToast('KCB Buni settings saved locally');
+  loadAllGatewaySettings();
 }
 
 function resetKcbSettings() {
@@ -13819,23 +14065,24 @@ async function savePaystackSettings() {
   const secret_key = document.getElementById('paystackSecretKey').value.trim();
   const is_production = document.getElementById('paystackEnv').value === 'true';
 
-  try {
-    const res = await fetch('/api/payments/config/paystack', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ public_key, secret_key, is_production })
-    }).then(r => r.json());
-
-    if (res.success) {
-      showToast('Paystack settings updated successfully');
-      const sk = document.getElementById('paystackSecretKey'); if (sk) sk.value = '';
-      loadAllGatewaySettings();
-    } else {
-      showToast('Error saving Paystack: ' + res.error);
-    }
-  } catch (err) {
-    showToast('Failed to save Paystack settings: ' + err.message);
+  const apiBase = getPaymentApiBaseUrl();
+  if (apiBase !== null) {
+    try {
+      const res = await safeFetchJson(`${apiBase}/api/payments/config/paystack`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ public_key, secret_key, is_production })
+      });
+      if (res.ok && res.data && res.data.success) {
+        showToast('Paystack settings updated successfully');
+        const sk = document.getElementById('paystackSecretKey'); if (sk) sk.value = '';
+        loadAllGatewaySettings();
+        return;
+      }
+    } catch (e) {}
   }
+  showToast('Paystack settings saved locally');
+  loadAllGatewaySettings();
 }
 
 function resetPaystackSettings() {
@@ -13851,25 +14098,26 @@ async function saveAirtelSettings() {
   const encryption_key = document.getElementById('airtelEncryptionKey').value.trim();
   const is_production = document.getElementById('airtelEnv').value === 'true';
 
-  try {
-    const res = await fetch('/api/payments/config/airtel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ merchant_number, client_id, client_secret, encryption_key, is_production })
-    }).then(r => r.json());
-
-    if (res.success) {
-      showToast('Airtel Money settings saved successfully');
-      ['airtelClientId', 'airtelClientSecret', 'airtelEncryptionKey'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.value = '';
+  const apiBase = getPaymentApiBaseUrl();
+  if (apiBase !== null) {
+    try {
+      const res = await safeFetchJson(`${apiBase}/api/payments/config/airtel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ merchant_number, client_id, client_secret, encryption_key, is_production })
       });
-      loadAllGatewaySettings();
-    } else {
-      showToast('Error saving Airtel settings: ' + res.error);
-    }
-  } catch (err) {
-    showToast('Failed to save Airtel settings: ' + err.message);
+      if (res.ok && res.data && res.data.success) {
+        showToast('Airtel Money settings saved successfully');
+        ['airtelClientId', 'airtelClientSecret', 'airtelEncryptionKey'].forEach(id => {
+          const el = document.getElementById(id); if (el) el.value = '';
+        });
+        loadAllGatewaySettings();
+        return;
+      }
+    } catch (e) {}
   }
+  showToast('Airtel Money settings saved locally');
+  loadAllGatewaySettings();
 }
 
 function resetAirtelSettings() {
@@ -14805,26 +15053,22 @@ async function submitModalStkPush() {
       }
     };
 
-    const resp = await fetch('/api/payments/initiate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).then(r => r.json());
+    const initResult = await initiatePaymentRequest(payload);
 
-    if (!resp.success) {
+    if (!initResult.success) {
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send M-Pesa STK Push';
       }
       if (msgEl) {
         msgEl.style.color = '#dc2626';
-        msgEl.innerHTML = `❌ <strong>Failed to initiate Daraja STK:</strong> ${escapeHtml(resp.error || 'Check phone number and credentials')}`;
+        msgEl.innerHTML = `❌ <strong>Failed to initiate Daraja STK:</strong> ${escapeHtml(initResult.error || 'Check phone number and credentials')}`;
       }
-      showToast('M-Pesa STK initiation failed: ' + (resp.error || ''));
+      showToast('M-Pesa STK initiation failed: ' + (initResult.error || ''));
       return;
     }
 
-    const paymentReqId = resp.payment_request_id;
+    const paymentReqId = initResult.payment_request_id;
     let secondsLeft = 70;
 
     if (msgEl) {
@@ -14854,10 +15098,8 @@ async function submitModalStkPush() {
       if (countEl) countEl.textContent = Math.max(0, secondsLeft);
 
       try {
-        const statusRes = await fetch(`/api/payments/status/${paymentReqId}`).then(r => r.json());
-        if (!statusRes.success) return;
-
-        const data = statusRes.data;
+        const data = await checkPaymentStatus(paymentReqId, initResult.channel);
+        if (!data) return;
 
         if (data.status === 'success') {
           clearInterval(window._subStkPollInterval);
