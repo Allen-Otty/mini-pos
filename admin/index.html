@@ -85,6 +85,11 @@
     border: 1px solid rgba(34, 197, 94, 0.3);
     color: #4ade80;
     cursor: pointer;
+    transition: all .15s;
+  }
+  .system-health-pill:hover {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.5);
   }
   .system-health-pill .dot {
     width: 7px;
@@ -94,66 +99,116 @@
     box-shadow: 0 0 6px #22c55e;
   }
   .admin-indicator {
-    font-size: 12px;
+    font-size: 11.5px;
     color: var(--gold);
     background: rgba(250, 204, 21, 0.1);
     border: 1px solid rgba(250, 204, 21, 0.25);
-    padding: 4px 12px;
+    padding: 4px 11px;
     border-radius: 999px;
     font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
   }
   .btn-logout {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: var(--text-muted);
     border-radius: 999px;
-    padding: 6px 14px;
+    padding: 5px 12px;
     font-weight: 700;
-    font-size: 12px;
+    font-size: 11.5px;
     cursor: pointer;
     transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
   }
   .btn-logout:hover {
-    border-color: var(--gold);
-    color: var(--gold);
+    border-color: var(--red);
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.1);
   }
 
-  /* Navigation Tabs */
+  /* Navigation Tabs - Modern Compact Pill Strip */
   .admin-nav {
-    background: #0c1630;
+    background: #081126;
     border-bottom: 1px solid var(--border);
     display: flex;
-    gap: 4px;
-    padding: 0 28px;
+    gap: 6px;
+    padding: 8px 24px;
     overflow-x: auto;
+    align-items: center;
+    scrollbar-width: thin;
+  }
+  .admin-nav::-webkit-scrollbar {
+    height: 4px;
+  }
+  .admin-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
   }
   .admin-nav-btn {
-    background: transparent;
-    border: none;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--text-muted);
-    padding: 12px 14px;
-    font-size: 13px;
+    padding: 6px 13px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all .15s;
-    display: flex;
+    border-radius: 999px;
+    transition: all .16s ease;
+    display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 6px;
     white-space: nowrap;
+    user-select: none;
+    line-height: 1.2;
   }
-  .admin-nav-btn:hover { color: var(--text); }
+  .admin-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.18);
+    transform: translateY(-1px);
+  }
   .admin-nav-btn.active {
-    color: var(--gold);
-    border-bottom-color: var(--gold);
-    background: rgba(250, 204, 21, 0.05);
+    color: #0b1329;
+    background: var(--gold);
+    border-color: var(--gold);
+    font-weight: 800;
+    box-shadow: 0 2px 10px rgba(250, 204, 21, 0.28);
+  }
+  .admin-nav-btn.active i {
+    color: #0b1329;
   }
   .admin-nav-btn .pill-count {
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
-    font-size: 10.5px;
-    padding: 1px 7px;
+    background: rgba(255, 255, 255, 0.14);
+    color: inherit;
+    font-size: 10px;
+    padding: 1px 6px;
     border-radius: 999px;
+    font-weight: 800;
+  }
+  .admin-nav-btn.active .pill-count {
+    background: rgba(11, 19, 41, 0.25);
+    color: #0b1329;
+  }
+  /* Specially styled, stylish Growth nav pill */
+  .admin-nav-btn.nav-growth {
+    border-color: rgba(250, 204, 21, 0.25);
+    background: rgba(250, 204, 21, 0.05);
+    color: #fef08a;
+  }
+  .admin-nav-btn.nav-growth:hover {
+    background: rgba(250, 204, 21, 0.14);
+    border-color: rgba(250, 204, 21, 0.45);
+    color: #fff;
+  }
+  .admin-nav-btn.nav-growth.active {
+    color: #0b1329;
+    background: var(--gold);
+    border-color: var(--gold);
+    box-shadow: 0 2px 12px rgba(250, 204, 21, 0.35);
   }
 
   main {
@@ -351,46 +406,61 @@
   .tag-plan-control { background: rgba(56, 189, 248, 0.15); color: var(--blue); border: 1px solid rgba(56, 189, 248, 0.3); }
   .tag-churn { background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
 
-  /* Buttons */
+  /* Buttons - Balanced, Sleek & Modern */
   .btn-primary {
     background: var(--gold);
     color: #0b1329;
     border: none;
     border-radius: 999px;
-    padding: 9px 20px;
-    font-size: 13px;
+    padding: 7px 16px;
+    font-size: 12px;
     font-weight: 800;
     cursor: pointer;
-    transition: all .15s;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
-  .btn-secondary {
-    background: var(--card);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 8px 16px;
-    font-size: 12.5px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all .15s;
+    transition: all .15s ease;
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    line-height: 1.2;
+    box-shadow: 0 2px 8px rgba(250, 204, 21, 0.2);
   }
-  .btn-secondary:hover { border-color: rgba(255, 255, 255, 0.3); }
+  .btn-primary:hover {
+    background: var(--gold-light);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(250, 204, 21, 0.3);
+  }
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    padding: 6.5px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.2;
+  }
+  .btn-secondary:hover {
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-1px);
+  }
   .actions button {
-    padding: 5px 11px;
+    padding: 4px 9px;
     margin-right: 4px;
     font-size: 11px;
     font-weight: 700;
     border: none;
-    border-radius: 999px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: transform .12s;
+    transition: all .12s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.2;
   }
   .actions button:hover { transform: translateY(-1px); }
   .btn-view { background: var(--card); color: var(--gold); border: 1px solid rgba(250, 204, 21, 0.3) !important; }
@@ -426,11 +496,11 @@
     gap: 8px;
   }
   .ai-prompt-chip {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 9px 12px;
-    font-size: 12.5px;
+    border-radius: 8px;
+    padding: 7px 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--text);
     cursor: pointer;
@@ -654,40 +724,40 @@
 
   <!-- Nav Tabs -->
   <nav class="admin-nav">
-    <button class="admin-nav-btn active" onclick="switchAdminTab('overview', this)">
+    <button class="admin-nav-btn active" data-tab="overview" onclick="switchAdminTab('overview', this)">
       <i class="fa-solid fa-chart-pie"></i> Overview
     </button>
-    <button class="admin-nav-btn" onclick="switchAdminTab('ai', this)">
-      <i class="fa-solid fa-robot"></i> AI Co-Pilot
+    <button class="admin-nav-btn" data-tab="ai" onclick="switchAdminTab('ai', this)">
+      <i class="fa-solid fa-robot"></i> AI Copilot
     </button>
-    <button class="admin-nav-btn" onclick="switchAdminTab('graphs', this)">
-      <i class="fa-solid fa-chart-line"></i> Growth Graphs
+    <button class="admin-nav-btn nav-growth" data-tab="graphs" id="navGrowthBtn" onclick="switchAdminTab('graphs', this)">
+      <i class="fa-solid fa-arrow-trend-up"></i> Growth
     </button>
-    <button class="admin-nav-btn" id="navHealthBtn" onclick="switchAdminTab('health', this)">
-      <i class="fa-solid fa-shield-virus"></i> Health &amp; Security
+    <button class="admin-nav-btn" data-tab="health" id="navHealthBtn" onclick="switchAdminTab('health', this)">
+      <i class="fa-solid fa-shield-virus"></i> Diagnostics
     </button>
-    <button class="admin-nav-btn" onclick="switchAdminTab('businesses', this)">
-      <i class="fa-solid fa-store"></i> Businesses <span class="pill-count" id="navBizCount">0</span>
+    <button class="admin-nav-btn" data-tab="businesses" onclick="switchAdminTab('businesses', this)">
+      <i class="fa-solid fa-store"></i> Stores <span class="pill-count" id="navBizCount">0</span>
     </button>
-    <button class="admin-nav-btn" onclick="switchAdminTab('subscriptions', this)">
-      <i class="fa-solid fa-credit-card"></i> Subscriptions
+    <button class="admin-nav-btn" data-tab="subscriptions" onclick="switchAdminTab('subscriptions', this)">
+      <i class="fa-solid fa-credit-card"></i> Billing
     </button>
-    <button class="admin-nav-btn" onclick="switchAdminTab('payouts', this)">
-      <i class="fa-solid fa-money-bill-transfer"></i> Payout &amp; Gateways
+    <button class="admin-nav-btn" data-tab="payouts" onclick="switchAdminTab('payouts', this)">
+      <i class="fa-solid fa-wallet"></i> Payouts
     </button>
-    <button class="admin-nav-btn" onclick="switchAdminTab('backup', this)">
-      <i class="fa-solid fa-database"></i> Data Backup
+    <button class="admin-nav-btn" data-tab="backup" onclick="switchAdminTab('backup', this)">
+      <i class="fa-solid fa-database"></i> Backup
     </button>
-    <button class="admin-nav-btn" onclick="switchAdminTab('analytics', this)">
-      <i class="fa-solid fa-chart-simple"></i> Google Analytics
+    <button class="admin-nav-btn" data-tab="analytics" onclick="switchAdminTab('analytics', this)">
+      <i class="fa-solid fa-chart-simple"></i> Analytics
     </button>
-    <button class="admin-nav-btn" onclick="switchAdminTab('broadcast', this)">
+    <button class="admin-nav-btn" data-tab="broadcast" onclick="switchAdminTab('broadcast', this)">
       <i class="fa-solid fa-bullhorn"></i> Broadcasts
     </button>
-    <button class="admin-nav-btn" onclick="switchAdminTab('admins', this)">
+    <button class="admin-nav-btn" data-tab="admins" onclick="switchAdminTab('admins', this)">
       <i class="fa-solid fa-users-gear"></i> Admins
     </button>
-    <button class="admin-nav-btn" onclick="switchAdminTab('audit', this)">
+    <button class="admin-nav-btn" data-tab="audit" onclick="switchAdminTab('audit', this)">
       <i class="fa-solid fa-clock-rotate-left"></i> Audit
     </button>
   </nav>
@@ -705,21 +775,21 @@
             <p class="card-sub">Quick shortcuts to vital operational tools</p>
           </div>
         </div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="btn-primary" onclick="switchAdminTab('ai', document.querySelectorAll('.admin-nav-btn')[1])">
-            <i class="fa-solid fa-robot"></i> Open AI Co-Pilot
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <button class="btn-primary" onclick="switchAdminTab('ai')">
+            <i class="fa-solid fa-robot"></i> AI Copilot
           </button>
-          <button class="btn-secondary" onclick="switchAdminTab('graphs', document.querySelectorAll('.admin-nav-btn')[2])">
-            <i class="fa-solid fa-chart-line"></i> View Revenue Trends
+          <button class="btn-secondary" onclick="switchAdminTab('graphs')">
+            <i class="fa-solid fa-arrow-trend-up" style="color:var(--gold);"></i> Growth Trends
           </button>
-          <button class="btn-secondary" onclick="switchAdminTab('health', document.getElementById('navHealthBtn'))">
-            <i class="fa-solid fa-shield-halved"></i> Run Security &amp; Health Audit
+          <button class="btn-secondary" onclick="switchAdminTab('health')">
+            <i class="fa-solid fa-shield-virus" style="color:#4ade80;"></i> Diagnostics
           </button>
-          <button class="btn-secondary" onclick="switchAdminTab('payouts', document.querySelectorAll('.admin-nav-btn')[6])">
-            <i class="fa-solid fa-wallet"></i> Payout Settings
+          <button class="btn-secondary" onclick="switchAdminTab('payouts')">
+            <i class="fa-solid fa-wallet" style="color:var(--blue);"></i> Payouts
           </button>
-          <button class="btn-secondary" onclick="switchAdminTab('backup', document.querySelectorAll('.admin-nav-btn')[7])">
-            <i class="fa-solid fa-file-export"></i> Export CSV Data
+          <button class="btn-secondary" onclick="switchAdminTab('backup')">
+            <i class="fa-solid fa-file-export" style="color:#c084fc;"></i> Export Data
           </button>
         </div>
       </div>
@@ -796,10 +866,10 @@
       <div class="admin-card">
         <div class="card-header-flex">
           <div>
-            <h3 class="card-title"><i class="fa-solid fa-chart-line"></i> Visual Analytics &amp; Growth Graphs</h3>
-            <p class="card-sub">Interactive charts showing MRR, sales volume, industry distribution, and conversion</p>
+            <h3 class="card-title"><i class="fa-solid fa-arrow-trend-up"></i> Growth &amp; Revenue Analytics</h3>
+            <p class="card-sub">Interactive charts showing MRR trajectory, platform sales volume, industry share, and funnel</p>
           </div>
-          <button class="btn-secondary" onclick="renderAllCharts()"><i class="fa-solid fa-rotate"></i> Refresh Charts</button>
+          <button class="btn-secondary" onclick="renderAllCharts()"><i class="fa-solid fa-rotate"></i> Refresh</button>
         </div>
 
         <div class="graphs-grid">
@@ -1199,7 +1269,7 @@
               <p>Download full CSV list of all stores, owner details, industry types, and active staff counts.</p>
             </div>
             <button class="btn-secondary" style="margin-top:14px;" onclick="exportBusinessesCSV()">
-              <i class="fa-solid fa-download"></i> Download Businesses CSV
+              <i class="fa-solid fa-download"></i> Export CSV
             </button>
           </div>
 
@@ -1209,7 +1279,7 @@
               <p>Download complete subscription payment records, M-Pesa reference codes, and renewal dates.</p>
             </div>
             <button class="btn-secondary" style="margin-top:14px;" onclick="exportSubscriptionsCSV()">
-              <i class="fa-solid fa-download"></i> Download Subscriptions CSV
+              <i class="fa-solid fa-download"></i> Export CSV
             </button>
           </div>
 
@@ -1219,7 +1289,7 @@
               <p>Download full administrative activity history for compliance and security records.</p>
             </div>
             <button class="btn-secondary" style="margin-top:14px;" onclick="exportAuditLogCSV()">
-              <i class="fa-solid fa-download"></i> Download Audit Log CSV
+              <i class="fa-solid fa-download"></i> Export CSV
             </button>
           </div>
 
@@ -1229,7 +1299,7 @@
               <p>Complete JSON snapshot of all platform settings, active plans, and configuration.</p>
             </div>
             <button class="btn-primary" style="margin-top:14px;" onclick="exportFullBackupJSON()">
-              <i class="fa-solid fa-download"></i> Download Full Backup JSON
+              <i class="fa-solid fa-download"></i> Export JSON Snapshot
             </button>
           </div>
         </div>
@@ -1523,7 +1593,11 @@ function switchAdminTab(tabId, btn) {
   document.querySelectorAll('.admin-nav-btn').forEach(b => b.classList.remove('active'));
   const target = document.getElementById('tab-' + tabId);
   if (target) target.classList.add('active');
-  if (btn) btn.classList.add('active');
+  
+  const activeBtn = (btn && btn.classList && btn.classList.contains('admin-nav-btn'))
+    ? btn
+    : document.querySelector(`.admin-nav-btn[data-tab="${tabId}"]`);
+  if (activeBtn) activeBtn.classList.add('active');
 
   if (tabId === 'graphs') {
     setTimeout(renderAllCharts, 100);
