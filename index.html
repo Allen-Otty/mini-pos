@@ -10243,16 +10243,27 @@ async function callEdgeFunction(name, body) {
   try {
     const { data, error } = await sb.functions.invoke(name, { body });
     if (error) {
-      let msg = error.message;
-      try {
-        const ctx = await error.context.json();
-        if (ctx && ctx.error) msg = ctx.error;
-      } catch(e) {}
+      let msg = error.message || 'Edge function error';
+      if (error.context && typeof error.context.text === 'function') {
+        try {
+          const rawText = await error.context.text();
+          try {
+            const parsed = JSON.parse(rawText);
+            if (parsed && (parsed.error || parsed.message)) {
+              msg = parsed.error || parsed.message;
+            }
+          } catch (_) {
+            if (rawText && !rawText.includes('<html') && !rawText.includes('<!DOCTYPE')) {
+              msg = rawText.slice(0, 150);
+            }
+          }
+        } catch (_) {}
+      }
       return { error: msg };
     }
     return data;
   } catch (e) {
-    return { error: String(e) };
+    return { error: e.message || String(e) };
   }
 }
 
@@ -13500,25 +13511,31 @@ async function initiatePaymentRequest(payload) {
       }
     } catch (err) {
       console.warn('Supabase edge function error:', err);
+      return {
+        success: false,
+        error: 'Payment connection error: ' + (err.message || 'Unable to connect to M-Pesa gateway')
+      };
     }
   }
 
-  // 3. Fallback safe attempt against relative endpoint (if proxy exists)
-  try {
-    const res = await safeFetchJson('/api/payments/initiate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (res.ok && res.data && res.data.success) {
-      return {
-        success: true,
-        payment_request_id: res.data.payment_request_id,
-        checkout_request_id: res.data.checkout_request_id,
-        channel: 'express'
-      };
-    }
-  } catch (e) {}
+  // 3. Fallback attempt only if a custom API is active
+  if (apiBase !== null) {
+    try {
+      const res = await safeFetchJson(`${apiBase}/api/payments/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok && res.data && res.data.success) {
+        return {
+          success: true,
+          payment_request_id: res.data.payment_request_id,
+          checkout_request_id: res.data.checkout_request_id,
+          channel: 'express'
+        };
+      }
+    } catch (e) {}
+  }
 
   return {
     success: false,
@@ -14275,11 +14292,25 @@ function toggleScanner() {
 }
 
 /* =====================================================================
-   PWA install support
+   PWA install support & Cache Management
 ===================================================================== */
+const DOGO_BUILD_VER = "2026.09.23.v3";
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  window.addEventListener('load', async () => {
+    try {
+      if (window.caches) {
+        const cacheKeys = await caches.keys();
+        for (const k of cacheKeys) {
+          if (k !== 'dogo-pos-cache-v3') {
+            await caches.delete(k);
+          }
+        }
+      }
+      const reg = await navigator.serviceWorker.register(`service-worker.js?v=${encodeURIComponent(DOGO_BUILD_VER)}`);
+      if (reg) {
+        reg.update();
+      }
+    } catch(e) {}
   });
 }
 

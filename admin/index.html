@@ -1713,7 +1713,15 @@ async function callPlatformFn(action, payload) {
     });
     if (error) {
       let msg = error.message;
-      try { const ctx = await error.context.json(); if (ctx?.error) msg = ctx.error; } catch(e) {}
+      if (error.context && typeof error.context.text === 'function') {
+        try {
+          const rawText = await error.context.text();
+          try {
+            const ctx = JSON.parse(rawText);
+            if (ctx?.error) msg = ctx.error;
+          } catch(e) {}
+        } catch(e) {}
+      }
       return { error: msg };
     }
     return data.success ? data.data : { error: data.error || 'Unknown error' };

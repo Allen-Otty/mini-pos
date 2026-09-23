@@ -1,4 +1,4 @@
-const CACHE_NAME = "dogo-pos-cache-v2";
+const CACHE_NAME = "dogo-pos-cache-v3";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
@@ -25,26 +25,26 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Network-first for the app shell (so updates load immediately when online).
-// Falls back to cache when offline - lets the app still open and let a
-// teller queue a sale locally even with no internet connection.
-// Supabase API calls are left untouched (never intercepted) so live data
-// requests always behave exactly as the app's own online/offline logic expects.
-//
-// IMPORTANT: { cache: 'no-store' } on the fetch() call below is what actually
-// makes "network-first" true - without it, this fetch() can be silently
-// satisfied by the *browser's own* HTTP cache (not this Cache Storage API)
-// if Netlify sends any caching headers on index.html, meaning a real
-// network round-trip never happens even though the code "tries" network
-// first. This was the actual cause of updates not showing up after deploy.
+// Network-first for the app shell.
+// Supabase calls and backend /api/ endpoints are never intercepted.
 self.addEventListener("fetch", (event) => {
   const url = event.request.url;
-  if (url.includes("supabase.co")) return; // let these pass straight through
+
+  // Never intercept API calls, backend routes, or external services
+  if (
+    url.includes("supabase.co") ||
+    url.includes("/api/") ||
+    url.includes("safaricom") ||
+    url.includes("telegram.org") ||
+    event.request.method !== "GET"
+  ) {
+    return;
+  }
 
   event.respondWith(
     fetch(event.request, { cache: "no-store" })
       .then((response) => {
-        if (event.request.method === "GET" && response && response.status === 200) {
+        if (response && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
