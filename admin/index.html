@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Dogo POS — Platform Console</title>
+<title>Dogo POS — Super Admin Console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
@@ -12,32 +12,78 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   * { box-sizing: border-box; }
+  :root {
+    --bg: #070d1e;
+    --panel: #0d1730;
+    --card: #111e3f;
+    --card-hover: #172750;
+    --border: rgba(255, 255, 255, 0.09);
+    --gold: #facc15;
+    --gold-light: #fef08a;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --green: #22c55e;
+    --red: #ef4444;
+    --blue: #38bdf8;
+  }
   body {
     margin: 0;
     font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #0b1329;
-    color: #f4f1ea;
+    background: var(--bg);
+    color: var(--text);
     line-height: 1.5;
+    min-height: 100vh;
   }
   header {
-    background: #0f172a;
-    padding: 16px 24px;
+    background: #091227;
+    padding: 14px 28px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(250, 204, 21, 0.25);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header .brand-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header .logo-badge {
+    background: var(--gold);
+    color: #0b1329;
+    font-weight: 900;
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    letter-spacing: -0.02em;
   }
   header h1 {
     margin: 0;
     font-size: 17px;
     font-weight: 800;
     letter-spacing: -0.02em;
-    color: #f4f1ea;
+    color: var(--text);
   }
-  header button {
+  header .top-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .admin-indicator {
+    font-size: 12px;
+    color: var(--gold);
+    background: rgba(250, 204, 21, 0.1);
+    border: 1px solid rgba(250, 204, 21, 0.25);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+  .btn-logout {
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #f4f1ea;
+    color: var(--text);
     border-radius: 999px;
     padding: 6px 16px;
     font-weight: 700;
@@ -45,81 +91,289 @@
     cursor: pointer;
     transition: all .15s;
   }
-  header button:hover {
-    border-color: #facc15;
-    color: #facc15;
+  .btn-logout:hover {
+    border-color: var(--gold);
+    color: var(--gold);
   }
-  main { max-width: 1040px; margin: 28px auto; padding: 0 16px; }
 
-  #loginBox {
-    max-width: 380px;
-    margin: 80px auto;
-    background: #0f2419;
-    color: #f4f1ea;
-    border-radius: 20px;
-    padding: 32px 26px;
-    border: 1px solid rgba(250, 204, 21, 0.2);
-    box-shadow: 0 18px 50px -10px rgba(0,0,0,0.6);
+  /* Navigation Tabs */
+  .admin-nav {
+    background: #0c1630;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 4px;
+    padding: 0 28px;
+    overflow-x: auto;
   }
-  #loginBox h2 { margin-top: 0; text-align: center; font-weight: 800; letter-spacing: -0.02em; }
+  .admin-nav-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 13px 16px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .admin-nav-btn:hover {
+    color: var(--text);
+  }
+  .admin-nav-btn.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+    background: rgba(250, 204, 21, 0.05);
+  }
+  .admin-nav-btn .pill-count {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 10.5px;
+    padding: 1px 7px;
+    border-radius: 999px;
+  }
+
+  main {
+    max-width: 1200px;
+    margin: 24px auto;
+    padding: 0 20px 60px;
+  }
+
+  /* Login Box */
+  #loginBox {
+    max-width: 400px;
+    margin: 90px auto;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px 30px;
+    box-shadow: 0 24px 60px -15px rgba(0,0,0,0.8);
+  }
+  #loginBox h2 { margin-top: 0; text-align: center; font-weight: 800; font-size: 22px; }
   #loginBox input {
     width: 100%;
     padding: 12px 14px;
     margin: 8px 0;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.06);
-    color: #f4f1ea;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
     font-size: 14px;
     outline: none;
   }
-  #loginBox input:focus { border-color: #facc15; }
+  #loginBox input:focus { border-color: var(--gold); }
   #loginBox button {
     width: 100%;
     padding: 14px;
     margin-top: 14px;
     border: none;
     border-radius: 999px;
-    background: #facc15;
-    color: #0f172a;
+    background: var(--gold);
+    color: #0b1329;
     font-weight: 800;
     font-size: 15px;
     cursor: pointer;
     transition: all .15s;
   }
-  #loginBox button:hover { background: #fde047; }
-  #loginError { color: #ef4444; font-size: 13px; font-weight: 600; margin-top: 10px; text-align: center; }
+  #loginBox button:hover { background: var(--gold-light); }
+  #loginError { color: var(--red); font-size: 13px; font-weight: 600; margin-top: 12px; text-align: center; }
 
-  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
-  .stat-card {
-    background: #0f2419;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 18px;
-    padding: 20px 16px;
-    text-align: center;
+  /* Tab View containers */
+  .tab-view { display: none; }
+  .tab-view.active { display: block; animation: fadeIn .2s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* KPI Stat Grid */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
   }
-  .stat-card .num { font-size: 28px; font-weight: 900; color: #facc15; letter-spacing: -0.03em; }
-  .stat-card .label { font-size: 12px; font-weight: 700; color: #94a39b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card.featured {
+    border-color: rgba(250, 204, 21, 0.35);
+    background: linear-gradient(145deg, #0e1a38 0%, #172a56 100%);
+  }
+  .stat-card .num {
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: -0.03em;
+  }
+  .stat-card .label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-top: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
 
+  /* Cards & Sections */
+  .admin-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .card-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .card-title {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-title i { color: var(--gold); }
+  .card-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 4px 0 0;
+  }
+
+  /* Form Controls & Inputs */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .form-group label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .form-control {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    font-size: 13.5px;
+    outline: none;
+    transition: border-color .15s;
+    font-family: inherit;
+  }
+  .form-control:focus {
+    border-color: var(--gold);
+  }
+  select.form-control {
+    cursor: pointer;
+  }
+  .form-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* Tables */
+  .table-responsive {
+    overflow-x: auto;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+  }
   table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
     font-size: 13px;
-    background: #0f2419;
-    border-radius: 16px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--panel);
   }
-  th, td { padding: 11px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: left; }
-  th { background: rgba(255, 255, 255, 0.04); font-weight: 800; color: #facc15; }
-  tr:hover { background: rgba(255, 255, 255, 0.03); }
-  .tag { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
-  .tag-active { background: rgba(250, 204, 21, 0.18); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.3); }
-  .tag-suspended { background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+  th, td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    white-space: nowrap;
+  }
+  th {
+    background: rgba(255, 255, 255, 0.03);
+    font-weight: 800;
+    color: var(--gold);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  tr:hover { background: rgba(255, 255, 255, 0.02); }
 
+  /* Badges & Tags */
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .tag-active { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+  .tag-suspended { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+  .tag-plan-free { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
+  .tag-plan-core { background: rgba(250, 204, 21, 0.15); color: var(--gold); border: 1px solid rgba(250, 204, 21, 0.3); }
+  .tag-plan-control { background: rgba(56, 189, 248, 0.15); color: var(--blue); border: 1px solid rgba(56, 189, 248, 0.3); }
+
+  /* Buttons */
+  .btn-primary {
+    background: var(--gold);
+    color: #0b1329;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 22px;
+    font-size: 13.5px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary:hover {
+    background: var(--gold-light);
+    transform: translateY(-1px);
+  }
+  .btn-secondary {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-secondary:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+  }
   .actions button {
-    padding: 6px 12px;
+    padding: 5px 12px;
     margin-right: 4px;
     font-size: 11.5px;
     font-weight: 700;
@@ -129,98 +383,633 @@
     transition: transform .12s;
   }
   .actions button:hover { transform: translateY(-1px); }
+  .btn-view { background: var(--card); color: var(--gold); border: 1px solid rgba(250, 204, 21, 0.3) !important; }
+  .btn-plan { background: rgba(56, 189, 248, 0.2); color: var(--blue); border: 1px solid rgba(56, 189, 248, 0.4) !important; }
   .btn-suspend { background: #dc2626; color: #fff; }
   .btn-reactivate { background: #16a34a; color: #fff; }
-  .btn-view { background: #0f172a; color: #facc15; border: 1px solid rgba(250, 204, 21, 0.35) !important; }
   .btn-delete { background: rgba(220, 38, 38, 0.2); color: #f87171; border: 1px solid #dc2626 !important; }
 
-  .section-title { font-size: 17px; font-weight: 800; margin: 32px 0 10px; color: #facc15; letter-spacing: -0.02em; }
+  /* Search & Filter Bar */
+  .search-filter-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .search-filter-bar input {
+    flex: 2;
+    min-width: 200px;
+  }
+  .search-filter-bar select {
+    flex: 1;
+    min-width: 150px;
+  }
+
+  /* Modals */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 11, 25, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 28px;
+    max-width: 580px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 60px -15px rgba(0,0,0,0.8);
+  }
+  .modal-box h3 { margin-top: 0; font-weight: 800; color: var(--gold); font-size: 19px; }
+
+  /* Toast Notification */
   .toast {
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: #0f172a; border: 1px solid rgba(250, 204, 21, 0.4); color: #facc15;
-    padding: 11px 22px; border-radius: 999px; font-size: 13px; font-weight: 700;
-    opacity: 0; transition: opacity .3s; z-index: 999;
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0f1e40;
+    border: 1px solid rgba(250, 204, 21, 0.4);
+    color: var(--gold);
+    padding: 12px 26px;
+    border-radius: 999px;
+    font-size: 13.5px;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity .3s, transform .3s;
+    z-index: 9999;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
   }
-  .toast.show { opacity: 1; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-5px); }
 
-  #detailModal {
-    display: none; position: fixed; inset: 0; background: rgba(7, 19, 12, 0.75);
-    backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 16px;
+  /* Monetization Tip Card */
+  .monetization-pill-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-top: 14px;
   }
-  #detailModal.show { display: flex; }
-  .detail-box {
-    background: #0f2419; border: 1px solid rgba(250, 204, 21, 0.25);
-    border-radius: 20px; padding: 24px; max-width: 620px; width: 100%;
-    max-height: 80vh; overflow-y: auto; box-shadow: 0 18px 50px -10px rgba(0,0,0,0.7);
+  .monetization-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
   }
-  .detail-box h3 { margin-top: 0; font-weight: 800; color: #facc15; }
-  .close-btn {
-    background: #0f172a; color: #f4f1ea; border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 999px; padding: 9px 20px; font-weight: 700; cursor: pointer; margin-top: 14px;
+  .monetization-item h4 {
+    margin: 0 0 6px;
+    font-size: 14px;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
-  .close-btn:hover { border-color: #facc15; color: #facc15; }
-
-  .add-admin-row { display: flex; gap: 8px; margin-top: 10px; }
-  .add-admin-row input {
-    flex: 1; padding: 11px 14px; border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.06); color: #fff; font-size: 13.5px;
+  .monetization-item p {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.45;
   }
-  .add-admin-row button {
-    padding: 11px 22px; border: none; border-radius: 999px;
-    background: #facc15; color: #0f172a; font-weight: 800; cursor: pointer;
-  }
-  .add-admin-row button:hover { background: #fde047; }
 </style>
 </head>
 <body>
 
+<!-- Login Screen -->
 <div id="loginBox">
+  <div style="text-align:center; margin-bottom:16px;">
+    <span style="background:var(--gold); color:#0b1329; font-weight:900; font-size:12px; padding:4px 10px; border-radius:8px; text-transform:uppercase;">
+      Super Admin
+    </span>
+  </div>
   <h2>🔒 Platform Console</h2>
-  <p style="text-align:center; font-size:12px; color:#666;">Super Admin access only</p>
-  <input type="text" id="pcEmail" placeholder="Email">
+  <p style="text-align:center; font-size:13px; color:var(--text-muted); margin-top:-6px;">Sign in with your Super Admin credentials</p>
+  <input type="text" id="pcEmail" placeholder="admin@dogopos.com">
   <input type="password" id="pcPassword" placeholder="Password">
-  <button onclick="platformLogin()">Sign In</button>
+  <button onclick="platformLogin()">Sign In to Console</button>
   <div id="loginError"></div>
 </div>
 
+<!-- Main Admin Dashboard -->
 <div id="dashboardWrap" style="display:none;">
   <header>
-    <h1>🔒 Dogo POS — Platform Console</h1>
-    <button onclick="platformLogout()">Log out</button>
+    <div class="brand-wrap">
+      <span class="logo-badge">Dogo POS</span>
+      <h1>Platform Management Console</h1>
+    </div>
+    <div class="top-right">
+      <span class="admin-indicator" id="currentAdminBadge"><i class="fa-solid fa-shield-halved"></i> Super Admin</span>
+      <button class="btn-logout" onclick="platformLogout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Log out</button>
+    </div>
   </header>
+
+  <!-- Nav Tabs -->
+  <nav class="admin-nav">
+    <button class="admin-nav-btn active" onclick="switchAdminTab('overview', this)">
+      <i class="fa-solid fa-chart-pie"></i> Overview
+    </button>
+    <button class="admin-nav-btn" onclick="switchAdminTab('businesses', this)">
+      <i class="fa-solid fa-store"></i> Businesses <span class="pill-count" id="navBizCount">0</span>
+    </button>
+    <button class="admin-nav-btn" onclick="switchAdminTab('subscriptions', this)">
+      <i class="fa-solid fa-credit-card"></i> Subscriptions &amp; Billing
+    </button>
+    <button class="admin-nav-btn" onclick="switchAdminTab('payouts', this)">
+      <i class="fa-solid fa-money-bill-transfer"></i> Payout &amp; Gateways
+    </button>
+    <button class="admin-nav-btn" onclick="switchAdminTab('analytics', this)">
+      <i class="fa-solid fa-chart-line"></i> Google Analytics
+    </button>
+    <button class="admin-nav-btn" onclick="switchAdminTab('broadcast', this)">
+      <i class="fa-solid fa-bullhorn"></i> Broadcast Alerts
+    </button>
+    <button class="admin-nav-btn" onclick="switchAdminTab('admins', this)">
+      <i class="fa-solid fa-users-gear"></i> Super Admins
+    </button>
+    <button class="admin-nav-btn" onclick="switchAdminTab('audit', this)">
+      <i class="fa-solid fa-clock-rotate-left"></i> Audit Log
+    </button>
+  </nav>
+
   <main>
-    <div class="stat-grid" id="statGrid"></div>
+    <!-- TAB 1: OVERVIEW -->
+    <div class="tab-view active" id="tab-overview">
+      <div class="stat-grid" id="statGrid"></div>
 
-    <div class="section-title">Businesses</div>
-    <table>
-      <thead><tr><th>Name</th><th>Type</th><th>Status</th><th>Staff</th><th>Created</th><th>Actions</th></tr></thead>
-      <tbody id="bizBody"></tbody>
-    </table>
+      <!-- Quick Platform Actions -->
+      <div class="admin-card">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title"><i class="fa-solid fa-bolt"></i> Quick Platform Actions</h3>
+            <p class="card-sub">Frequent platform management shortcuts</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <button class="btn-primary" onclick="switchAdminTab('payouts', document.querySelectorAll('.admin-nav-btn')[3])">
+            <i class="fa-solid fa-wallet"></i> Configure M-Pesa &amp; Payouts
+          </button>
+          <button class="btn-secondary" onclick="switchAdminTab('subscriptions', document.querySelectorAll('.admin-nav-btn')[2])">
+            <i class="fa-solid fa-circle-check"></i> Verify Subscription Payments
+          </button>
+          <button class="btn-secondary" onclick="switchAdminTab('broadcast', document.querySelectorAll('.admin-nav-btn')[5])">
+            <i class="fa-solid fa-bullhorn"></i> Send Merchant Broadcast
+          </button>
+          <button class="btn-secondary" onclick="switchAdminTab('analytics', document.querySelectorAll('.admin-nav-btn')[4])">
+            <i class="fa-solid fa-chart-line"></i> Google Analytics Setup
+          </button>
+        </div>
+      </div>
 
-    <div class="section-title">Super Admins</div>
-    <table>
-      <thead><tr><th>Email</th><th>Primary Owner</th><th>Actions</th></tr></thead>
-      <tbody id="adminBody"></tbody>
-    </table>
-    <div class="add-admin-row">
-      <input type="text" id="newAdminEmail" placeholder="Email of user to promote to Super Admin">
-      <button onclick="promoteAdmin()">Promote</button>
+      <!-- Monetization Opportunities -->
+      <div class="admin-card">
+        <h3 class="card-title"><i class="fa-solid fa-coins"></i> Active Monetization Channels</h3>
+        <p class="card-sub">Ways your DogoPOS platform generates recurring cash flow</p>
+        <div class="monetization-pill-grid">
+          <div class="monetization-item">
+            <h4><i class="fa-solid fa-repeat"></i> Monthly SaaS Subscriptions</h4>
+            <p>Charge KES 999/mo (Core POS) and KES 1,999/mo (Control POS + eTIMS). With 100 stores, that's KES 100k - 200k/month recurring revenue.</p>
+          </div>
+          <div class="monetization-item">
+            <h4><i class="fa-solid fa-network-wired"></i> Extra Branch / Till Licenses</h4>
+            <p>Charge KES 500/mo for every additional branch or extra till added by supermarkets and multi-location businesses.</p>
+          </div>
+          <div class="monetization-item">
+            <h4><i class="fa-solid fa-comment-sms"></i> SMS Marketing Bundles</h4>
+            <p>Sell 1,000 SMS packages for KES 1,000 to merchants for digital receipt SMS and customer promos (at ~50% profit margin).</p>
+          </div>
+          <div class="monetization-item">
+            <h4><i class="fa-solid fa-receipt"></i> Hardware &amp; Accessories</h4>
+            <p>Sell pre-configured Bluetooth receipt printers (KES 4,500 - 8,000), 2D barcode scanners, and thermal paper rolls.</p>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="section-title">Recent Platform Activity</div>
-    <table>
-      <thead><tr><th>Time</th><th>Business</th><th>Action</th><th>Actor Role</th></tr></thead>
-      <tbody id="auditBody"></tbody>
-    </table>
+    <!-- TAB 2: BUSINESSES -->
+    <div class="tab-view" id="tab-businesses">
+      <div class="admin-card">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title"><i class="fa-solid fa-store"></i> Registered Businesses</h3>
+            <p class="card-sub">All stores, supermarkets, restaurants, and hardware businesses on DogoPOS</p>
+          </div>
+          <button class="btn-secondary" onclick="loadDashboard()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+
+        <div class="search-filter-bar">
+          <input type="text" id="bizSearchInput" class="form-control" placeholder="Search by business name or ID..." oninput="filterBusinesses()">
+          <select id="bizTypeFilter" class="form-control" onchange="filterBusinesses()">
+            <option value="">All Business Types</option>
+            <option value="Hotel">Hotel &amp; Restaurant</option>
+            <option value="Supermarket">Supermarket</option>
+            <option value="Retail">Retail Shop</option>
+            <option value="Wholesale">Wholesale Depot</option>
+            <option value="Hardware">Hardware Store</option>
+            <option value="Kiosk">Kiosk / Kibanda</option>
+            <option value="SME">SME &amp; Services</option>
+          </select>
+          <select id="bizStatusFilter" class="form-control" onchange="filterBusinesses()">
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Business Name</th>
+                <th>Industry</th>
+                <th>Status</th>
+                <th>Plan</th>
+                <th>Staff</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bizBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: SUBSCRIPTIONS & BILLING -->
+    <div class="tab-view" id="tab-subscriptions">
+      <div class="admin-card">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title"><i class="fa-solid fa-credit-card"></i> Subscriptions &amp; Billing Ledger</h3>
+            <p class="card-sub">Monitor subscription payments, pending M-Pesa codes, and renewal statuses</p>
+          </div>
+          <button class="btn-primary" onclick="openGrantPlanModal(null)">
+            <i class="fa-solid fa-plus"></i> Grant / Upgrade Plan
+          </button>
+        </div>
+
+        <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+          <div class="stat-card">
+            <div class="num" id="subStatPaid">0</div>
+            <div class="label">Paid Subscriptions</div>
+          </div>
+          <div class="stat-card">
+            <div class="num" id="subStatRevenue">KES 0</div>
+            <div class="label">Monthly Recurring Revenue</div>
+          </div>
+          <div class="stat-card">
+            <div class="num" id="subStatPending">0</div>
+            <div class="label">Pending Verification</div>
+          </div>
+        </div>
+
+        <h4 style="color:var(--gold); margin:24px 0 10px; font-size:15px; font-weight:800;">
+          <i class="fa-solid fa-hourglass-half"></i> Pending M-Pesa Verifications
+        </h4>
+        <div class="table-responsive" style="margin-bottom:28px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Business</th>
+                <th>Plan Requested</th>
+                <th>Amount</th>
+                <th>M-Pesa Reference</th>
+                <th>Phone</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="pendingSubsBody"></tbody>
+          </table>
+        </div>
+
+        <h4 style="color:var(--text); margin:20px 0 10px; font-size:15px; font-weight:800;">
+          <i class="fa-solid fa-list-check"></i> Active &amp; Historical Subscriptions
+        </h4>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Business</th>
+                <th>Plan</th>
+                <th>Status</th>
+                <th>Amount Paid</th>
+                <th>Start Date</th>
+                <th>Renews / Expires</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="subsHistoryBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: PAYOUT & PAYMENT GATEWAYS -->
+    <div class="tab-view" id="tab-payouts">
+      <div class="admin-card">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title"><i class="fa-solid fa-money-bill-transfer"></i> Payout &amp; Payment Gateway Settings</h3>
+            <p class="card-sub">Set where subscription and service payments from merchants will be delivered</p>
+          </div>
+          <button class="btn-primary" onclick="savePayoutSettings()">
+            <i class="fa-solid fa-floppy-disk"></i> Save Payout Settings
+          </button>
+        </div>
+
+        <!-- M-Pesa Payout Settings -->
+        <h4 style="color:var(--gold); font-size:15px; font-weight:800; margin:16px 0 12px; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-mobile-screen"></i> Safaricom M-Pesa Payout Options
+        </h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>M-Pesa Payment Mode</label>
+            <select id="setMpesaMode" class="form-control" onchange="toggleMpesaModeFields()">
+              <option value="manual">Direct Buy Goods Till / Paybill (Manual Code Verification — Recommended to start)</option>
+              <option value="daraja">Safaricom Daraja API (Instant STK Push to Merchant Phone)</option>
+            </select>
+            <span class="form-hint">Direct Till shows your number and prompts user for receipt code. Daraja API triggers auto STK push.</span>
+          </div>
+          <div class="form-group">
+            <label>Buy Goods Till Number</label>
+            <input type="text" id="setMpesaTill" class="form-control" placeholder="e.g. 5839201">
+            <span class="form-hint">Your Safaricom Till Number where merchants send subscription payments.</span>
+          </div>
+          <div class="form-group">
+            <label>Paybill Number (Alternative to Till)</label>
+            <input type="text" id="setMpesaPaybill" class="form-control" placeholder="e.g. 400200">
+            <span class="form-hint">Leave blank if using Buy Goods Till.</span>
+          </div>
+          <div class="form-group">
+            <label>Account Name / Business Name</label>
+            <input type="text" id="setMpesaAccountName" class="form-control" placeholder="e.g. Dogo POS Technologies">
+            <span class="form-hint">Name displayed on the merchant's M-Pesa confirmation screen.</span>
+          </div>
+          <div class="form-group">
+            <label>Pochi la Biashara / Admin Phone</label>
+            <input type="text" id="setMpesaPhone" class="form-control" placeholder="e.g. 0712345678">
+            <span class="form-hint">Fallback contact phone for billing support or direct M-Pesa.</span>
+          </div>
+        </div>
+
+        <!-- Daraja API Settings (Visible if Daraja mode selected) -->
+        <div id="darajaApiSection" style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin:16px 0;">
+          <h5 style="color:var(--blue); font-size:13px; font-weight:800; margin:0 0 12px; text-transform:uppercase;">
+            <i class="fa-solid fa-key"></i> Safaricom Daraja API Credentials (Automated STK Push)
+          </h5>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Daraja Environment</label>
+              <select id="setDarajaEnv" class="form-control">
+                <option value="sandbox">Sandbox (Testing)</option>
+                <option value="production">Production (Live Real Money)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Consumer Key</label>
+              <input type="password" id="setDarajaKey" class="form-control" placeholder="From developer.safaricom.co.ke">
+            </div>
+            <div class="form-group">
+              <label>Consumer Secret</label>
+              <input type="password" id="setDarajaSecret" class="form-control" placeholder="From developer.safaricom.co.ke">
+            </div>
+            <div class="form-group">
+              <label>Online Passkey</label>
+              <input type="password" id="setDarajaPasskey" class="form-control" placeholder="Live Daraja Passkey">
+            </div>
+          </div>
+        </div>
+
+        <!-- Bank Account Payout Settings -->
+        <h4 style="color:var(--gold); font-size:15px; font-weight:800; margin:24px 0 12px; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-building-columns"></i> Bank Account Payout Details
+        </h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Bank Name</label>
+            <input type="text" id="setBankName" class="form-control" placeholder="e.g. KCB Bank / Equity Bank / Co-op Bank">
+          </div>
+          <div class="form-group">
+            <label>Account Holder Name</label>
+            <input type="text" id="setBankAccountName" class="form-control" placeholder="e.g. Dogo POS Limited">
+          </div>
+          <div class="form-group">
+            <label>Bank Account Number</label>
+            <input type="text" id="setBankAccountNumber" class="form-control" placeholder="e.g. 1234567890">
+          </div>
+        </div>
+
+        <!-- Paystack Kenya Settings -->
+        <h4 style="color:var(--gold); font-size:15px; font-weight:800; margin:24px 0 12px; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-credit-card"></i> Paystack Kenya (Cards &amp; Automated Bank Settlements)
+        </h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Paystack Public Key</label>
+            <input type="text" id="setPaystackPublic" class="form-control" placeholder="pk_live_xxxx... or pk_test_xxxx...">
+          </div>
+          <div class="form-group">
+            <label>Paystack Secret Key</label>
+            <input type="password" id="setPaystackSecret" class="form-control" placeholder="sk_live_xxxx... or sk_test_xxxx...">
+          </div>
+        </div>
+
+        <!-- Subscription Pricing Settings -->
+        <h4 style="color:var(--gold); font-size:15px; font-weight:800; margin:24px 0 12px; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-tags"></i> Monthly Plan Pricing Overrides
+        </h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Core POS Monthly Price (KES)</label>
+            <input type="number" id="setPriceCore" class="form-control" value="999">
+          </div>
+          <div class="form-group">
+            <label>Control POS + eTIMS Monthly Price (KES)</label>
+            <input type="number" id="setPriceControl" class="form-control" value="1999">
+          </div>
+        </div>
+
+        <div style="margin-top:20px; text-align:right;">
+          <button class="btn-primary" onclick="savePayoutSettings()">
+            <i class="fa-solid fa-floppy-disk"></i> Save Payout &amp; Gateway Settings
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: GOOGLE ANALYTICS & SEO -->
+    <div class="tab-view" id="tab-analytics">
+      <div class="admin-card">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title"><i class="fa-solid fa-chart-line"></i> Google Analytics 4 (GA4) Integration</h3>
+            <p class="card-sub">Track site traffic, merchant signups, demo checkouts, and subscription conversion funnels</p>
+          </div>
+          <button class="btn-primary" onclick="saveAnalyticsSettings()">
+            <i class="fa-solid fa-floppy-disk"></i> Save Analytics ID
+          </button>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Google Analytics Measurement ID</label>
+            <input type="text" id="setGaId" class="form-control" placeholder="G-XXXXXXXXXX" style="font-size:16px; font-weight:700; letter-spacing:0.04em;">
+            <span class="form-hint">Find this in your Google Analytics dashboard under <strong>Admin &rarr; Data Streams &rarr; Measurement ID</strong> (starts with <code>G-</code>).</span>
+          </div>
+        </div>
+
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin-top:16px;">
+          <h4 style="color:var(--gold); font-size:14px; margin:0 0 8px;"><i class="fa-solid fa-circle-info"></i> Automatically Tracked Conversion Events</h4>
+          <ul style="font-size:13px; color:var(--text-muted); margin:0; padding-left:20px; line-height:1.7;">
+            <li><code>page_view</code>: Every landing page, pricing, demo, and portal navigation.</li>
+            <li><code>signup_complete</code>: Whenever a new business registers their account.</li>
+            <li><code>demo_checkout_complete</code>: Whenever a prospective customer tests the live POS till.</li>
+            <li><code>subscription_checkout_opened</code>: Whenever a merchant clicks "Upgrade Plan".</li>
+            <li><code>subscription_payment_submitted</code>: When an M-Pesa STK push or transaction code is submitted.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: BROADCAST ANNOUNCEMENTS -->
+    <div class="tab-view" id="tab-broadcast">
+      <div class="admin-card">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title"><i class="fa-solid fa-bullhorn"></i> Global Broadcast Announcement Banner</h3>
+            <p class="card-sub">Display a system-wide announcement banner at the top of every active merchant's POS dashboard</p>
+          </div>
+          <button class="btn-primary" onclick="saveBroadcastSettings()">
+            <i class="fa-solid fa-floppy-disk"></i> Publish Announcement
+          </button>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Broadcast Status</label>
+            <select id="setBroadcastActive" class="form-control">
+              <option value="false">Inactive (Hidden)</option>
+              <option value="true">Active (Visible to All Merchants)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Banner Alert Style</label>
+            <select id="setBroadcastType" class="form-control" onchange="previewBroadcastBanner()">
+              <option value="info">Information (Blue)</option>
+              <option value="promo">Special Offer / Promotion (Gold)</option>
+              <option value="urgent">System Maintenance / Urgent (Red)</option>
+            </select>
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Announcement Headline</label>
+            <input type="text" id="setBroadcastTitle" class="form-control" placeholder="e.g. End of Month Promo: Upgrade to Core POS and get 20% off!" oninput="previewBroadcastBanner()">
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Announcement Description / Details</label>
+            <textarea id="setBroadcastMessage" class="form-control" rows="3" placeholder="Enter additional details or instructions for your merchants..." oninput="previewBroadcastBanner()"></textarea>
+          </div>
+        </div>
+
+        <h4 style="color:var(--text); font-size:13.5px; margin:20px 0 10px; font-weight:800;">
+          <i class="fa-solid fa-eye"></i> Merchant Live Banner Preview
+        </h4>
+        <div id="broadcastPreviewBox" style="padding:14px 18px; border-radius:12px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); color:#38bdf8;">
+          <strong id="previewTitle">Announcement Headline</strong>: <span id="previewMsg">Announcement description will appear here.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 7: SUPER ADMINS -->
+    <div class="tab-view" id="tab-admins">
+      <div class="admin-card">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title"><i class="fa-solid fa-users-gear"></i> Platform Super Admins</h3>
+            <p class="card-sub">Users with platform-level privileges to view all businesses and settings</p>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th>Email</th><th>Primary Owner</th><th>Actions</th></tr></thead>
+            <tbody id="adminBody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:20px;">
+          <h4 style="font-size:14px; margin:0 0 8px; color:var(--gold);">Promote New Super Admin</h4>
+          <div class="add-admin-row" style="display:flex; gap:8px; max-width:480px;">
+            <input type="text" id="newAdminEmail" class="form-control" placeholder="Email of user to promote">
+            <button class="btn-primary" onclick="promoteAdmin()">Promote</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 8: AUDIT LOG -->
+    <div class="tab-view" id="tab-audit">
+      <div class="admin-card">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> Platform Audit Log</h3>
+            <p class="card-sub">Chronological ledger of logins, suspensions, and platform changes</p>
+          </div>
+          <button class="btn-secondary" onclick="loadDashboard()"><i class="fa-solid fa-rotate"></i> Refresh Log</button>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th>Time</th><th>Business</th><th>Action</th><th>Actor Role</th></tr></thead>
+            <tbody id="auditBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
-<div id="detailModal">
-  <div class="detail-box">
+<!-- Business Detail Modal -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-box">
     <h3 id="detailTitle"></h3>
     <div id="detailContent"></div>
-    <button class="close-btn" onclick="closeDetail()">Close</button>
+    <div style="text-align:right; margin-top:20px;">
+      <button class="btn-secondary" onclick="closeDetail()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Grant / Upgrade Plan Modal -->
+<div class="modal-overlay" id="planModal">
+  <div class="modal-box">
+    <h3><i class="fa-solid fa-credit-card"></i> Manage Business Plan</h3>
+    <p class="card-sub" style="margin-bottom:16px;">Manually grant or modify a business's POS subscription plan</p>
+    
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Select Business</label>
+      <select id="planBizSelect" class="form-control"></select>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Assign Plan</label>
+      <select id="planSelect" class="form-control">
+        <option value="Free">Free (Starter Store)</option>
+        <option value="Core">Core POS (KES 999/mo)</option>
+        <option value="Control">Control POS + eTIMS (KES 1,999/mo)</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Days to Add</label>
+      <input type="number" id="planDays" class="form-control" value="30">
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button class="btn-secondary" onclick="closePlanModal()">Cancel</button>
+      <button class="btn-primary" onclick="confirmGrantPlan()"><i class="fa-solid fa-check"></i> Apply Plan</button>
+    </div>
   </div>
 </div>
 
@@ -233,12 +1022,59 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentAdminId = null;
 let currentIsPrimary = false;
+let allBusinessesCache = [];
+
+const DEFAULT_PLATFORM_SETTINGS = {
+  mpesa_mode: 'manual',
+  mpesa_till: '174379',
+  mpesa_paybill: '',
+  mpesa_account_name: 'Dogo POS Technologies',
+  mpesa_phone: '0712345678',
+  daraja_env: 'sandbox',
+  daraja_consumer_key: '',
+  daraja_consumer_secret: '',
+  daraja_passkey: '',
+  bank_name: 'KCB Bank Kenya',
+  bank_account_name: 'Dogo POS Limited',
+  bank_account_number: '',
+  paystack_public_key: '',
+  paystack_secret_key: '',
+  price_core: 999,
+  price_control: 1999,
+  ga_measurement_id: '',
+  broadcast_active: false,
+  broadcast_type: 'info',
+  broadcast_title: '',
+  broadcast_message: ''
+};
+
+function getStoredPlatformSettings() {
+  try {
+    const raw = localStorage.getItem('dogo_platform_settings');
+    if (raw) return { ...DEFAULT_PLATFORM_SETTINGS, ...JSON.parse(raw) };
+  } catch (e) {}
+  return { ...DEFAULT_PLATFORM_SETTINGS };
+}
+
+function saveStoredPlatformSettings(newCfg) {
+  try {
+    localStorage.setItem('dogo_platform_settings', JSON.stringify(newCfg));
+  } catch (e) {}
+}
 
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function switchAdminTab(tabId, btn) {
+  document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.admin-nav-btn').forEach(b => b.classList.remove('active'));
+  const target = document.getElementById('tab-' + tabId);
+  if (target) target.classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
 async function platformLogin() {
@@ -274,7 +1110,7 @@ async function callPlatformFn(action, payload) {
     const { data: { session } } = await sb.auth.getSession();
     const { data, error } = await sb.functions.invoke('platform-admin', {
       body: { action, payload },
-      headers: { Authorization: 'Bearer ' + session.access_token }
+      headers: { Authorization: 'Bearer ' + (session ? session.access_token : '') }
     });
     if (error) {
       let msg = error.message;
@@ -288,70 +1124,454 @@ async function callPlatformFn(action, payload) {
 }
 
 async function loadDashboard() {
+  loadPayoutFields();
+  loadAnalyticsFields();
+  loadBroadcastFields();
+
+  // 1. Stats
   const stats = await callPlatformFn('stats', {});
   if (!stats.error) {
+    const totalRev = Number(stats.total_sales_value || 0);
     document.getElementById('statGrid').innerHTML = `
-      <div class="stat-card"><div class="num">${stats.total_businesses}</div><div class="label">Total Businesses</div></div>
-      <div class="stat-card"><div class="num">${stats.active_businesses}</div><div class="label">Active</div></div>
-      <div class="stat-card"><div class="num">${stats.suspended_businesses}</div><div class="label">Suspended</div></div>
-      <div class="stat-card"><div class="num">${stats.total_admins}</div><div class="label">Admins</div></div>
-      <div class="stat-card"><div class="num">${stats.total_tellers}</div><div class="label">Tellers</div></div>
-      <div class="stat-card"><div class="num">${stats.total_sales_count}</div><div class="label">Total Sales</div></div>
-      <div class="stat-card"><div class="num">KES ${Number(stats.total_sales_value).toLocaleString(undefined,{maximumFractionDigits:0})}</div><div class="label">Platform GMV</div></div>
+      <div class="stat-card featured">
+        <div class="num">${stats.total_businesses}</div>
+        <div class="label">Total Businesses</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:#4ade80;">${stats.active_businesses}</div>
+        <div class="label">Active Stores</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:#f87171;">${stats.suspended_businesses}</div>
+        <div class="label">Suspended</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">${stats.total_admins}</div>
+        <div class="label">Store Admins</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">${stats.total_tellers}</div>
+        <div class="label">Cashiers / Tellers</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">${stats.total_sales_count}</div>
+        <div class="label">Total Sales Logged</div>
+      </div>
+      <div class="stat-card featured">
+        <div class="num">KES ${totalRev.toLocaleString(undefined, {maximumFractionDigits:0})}</div>
+        <div class="label">Platform GMV Volume</div>
+      </div>
     `;
   }
 
+  // 2. Businesses
   const businesses = await callPlatformFn('list_businesses', {});
   if (!businesses.error) {
-    document.getElementById('bizBody').innerHTML = businesses.map(b => `
-      <tr>
-        <td>${b.name}</td>
-        <td>${b.business_type}</td>
-        <td><span class="tag ${b.active ? 'tag-active' : 'tag-suspended'}">${b.active ? 'Active' : 'Suspended'}</span></td>
-        <td>${b.profiles?.[0]?.count ?? '—'}</td>
-        <td>${new Date(b.created_at).toLocaleDateString()}</td>
-        <td class="actions">
-          <button class="btn-view" onclick="viewBusiness('${b.id}')">View</button>
-          ${b.active
-            ? `<button class="btn-suspend" onclick="suspendBiz('${b.id}')">Suspend</button>`
-            : `<button class="btn-reactivate" onclick="reactivateBiz('${b.id}')">Reactivate</button>`}
-          <button class="btn-delete" onclick="deleteBiz('${b.id}','${b.name.replace(/'/g,"")}')">Delete</button>
-        </td>
-      </tr>
-    `).join('') || '<tr><td colspan="6" style="text-align:center; color:#888;">No businesses yet.</td></tr>';
+    allBusinessesCache = businesses || [];
+    const countEl = document.getElementById('navBizCount');
+    if (countEl) countEl.textContent = allBusinessesCache.length;
+    renderBusinessesTable(allBusinessesCache);
+    populatePlanBizDropdown(allBusinessesCache);
+    renderSubscriptionsViews(allBusinessesCache);
   }
 
+  // 3. Super Admins
   const admins = await callPlatformFn('list_platform_admins', {});
   if (!admins.error) {
     const { data: { user } } = await sb.auth.getUser();
     document.getElementById('adminBody').innerHTML = admins.map(a => {
-      if (a.user_id === user.id) { currentAdminId = user.id; currentIsPrimary = a.is_primary_owner; }
+      if (user && a.user_id === user.id) { currentAdminId = user.id; currentIsPrimary = a.is_primary_owner; }
       return `
       <tr>
-        <td>${a.email}</td>
-        <td>${a.is_primary_owner ? '⭐ Yes' : 'No'}</td>
+        <td><strong>${escapeHtml(a.email)}</strong></td>
+        <td>${a.is_primary_owner ? '<span style="color:var(--gold); font-weight:800;">⭐ Primary Owner</span>' : 'Admin'}</td>
         <td class="actions">
           ${a.is_primary_owner
             ? '<span style="color:#888; font-size:12px;">Protected — cannot be removed</span>'
-            : `<button class="btn-delete" onclick="demoteAdmin('${a.user_id}')">Remove</button>`}
+            : `<button class="btn-delete" onclick="demoteAdmin('${a.user_id}')"><i class="fa-solid fa-trash"></i> Remove</button>`}
         </td>
       </tr>`;
-    }).join('');
+    }).join('') || '<tr><td colspan="3" style="text-align:center; color:#888;">No super admins found.</td></tr>';
   }
 
+  // 4. Audit Log
   const audit = await callPlatformFn('audit_log', {});
   if (!audit.error) {
     document.getElementById('auditBody').innerHTML = audit.map(a => `
       <tr>
         <td>${new Date(a.created_at).toLocaleString()}</td>
-        <td>${a.business_id || '—'}</td>
-        <td>${a.action}</td>
-        <td>${a.actor_role || '—'}</td>
+        <td>${a.business_id ? `<span style="font-family:monospace; font-size:12px;">${a.business_id.substring(0,8)}...</span>` : '—'}</td>
+        <td><strong>${escapeHtml(a.action)}</strong></td>
+        <td><span class="tag" style="background:rgba(255,255,255,0.06);">${escapeHtml(a.actor_role || 'system')}</span></td>
       </tr>
-    `).join('') || '<tr><td colspan="4" style="text-align:center; color:#888;">No activity yet.</td></tr>';
+    `).join('') || '<tr><td colspan="4" style="text-align:center; color:#888;">No activity logged yet.</td></tr>';
   }
 }
 
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function renderBusinessesTable(list) {
+  const tbody = document.getElementById('bizBody');
+  if (!tbody) return;
+
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#888; padding:32px;">No businesses match filters.</td></tr>';
+    return;
+  }
+
+  const plansMap = getStoredBusinessPlans();
+
+  tbody.innerHTML = list.map(b => {
+    const planInfo = plansMap[b.id] || { plan: 'Free', status: 'Active' };
+    const planTagClass = planInfo.plan === 'Control' ? 'tag-plan-control' : (planInfo.plan === 'Core' ? 'tag-plan-core' : 'tag-plan-free');
+
+    return `
+      <tr>
+        <td><strong>${escapeHtml(b.name)}</strong></td>
+        <td><span class="tag" style="background:rgba(255,255,255,0.07); color:#e2e8f0;">${escapeHtml(b.business_type || 'Retail')}</span></td>
+        <td><span class="tag ${b.active ? 'tag-active' : 'tag-suspended'}">${b.active ? 'Active' : 'Suspended'}</span></td>
+        <td><span class="tag ${planTagClass}">${escapeHtml(planInfo.plan)}</span></td>
+        <td>${b.profiles?.[0]?.count ?? '—'}</td>
+        <td>${new Date(b.created_at).toLocaleDateString()}</td>
+        <td class="actions">
+          <button class="btn-view" onclick="viewBusiness('${b.id}')"><i class="fa-solid fa-eye"></i> View</button>
+          <button class="btn-plan" onclick="openGrantPlanModal('${b.id}')"><i class="fa-solid fa-credit-card"></i> Plan</button>
+          ${b.active
+            ? `<button class="btn-suspend" onclick="suspendBiz('${b.id}')"><i class="fa-solid fa-ban"></i> Suspend</button>`
+            : `<button class="btn-reactivate" onclick="reactivateBiz('${b.id}')"><i class="fa-solid fa-check"></i> Reactivate</button>`}
+          <button class="btn-delete" onclick="deleteBiz('${b.id}','${escapeHtml(b.name).replace(/'/g,"")}')"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterBusinesses() {
+  const q = (document.getElementById('bizSearchInput')?.value || '').toLowerCase().trim();
+  const typeFilter = document.getElementById('bizTypeFilter')?.value || '';
+  const statusFilter = document.getElementById('bizStatusFilter')?.value || '';
+
+  const filtered = allBusinessesCache.filter(b => {
+    if (q && !b.name.toLowerCase().includes(q) && !b.id.toLowerCase().includes(q)) return false;
+    if (typeFilter && (b.business_type || '').toLowerCase() !== typeFilter.toLowerCase()) return false;
+    if (statusFilter === 'active' && !b.active) return false;
+    if (statusFilter === 'suspended' && b.active) return false;
+    return true;
+  });
+
+  renderBusinessesTable(filtered);
+}
+
+// Subscriptions & Plans Storage Helpers
+function getStoredBusinessPlans() {
+  try {
+    const raw = localStorage.getItem('dogo_biz_plans');
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return {};
+}
+
+function saveStoredBusinessPlans(plans) {
+  try {
+    localStorage.setItem('dogo_biz_plans', JSON.stringify(plans));
+  } catch(e) {}
+}
+
+function getStoredSubscriptionsLedger() {
+  try {
+    const raw = localStorage.getItem('dogo_subscriptions_ledger');
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return [
+    { id: 'sub-001', bizName: 'Luanda Supermarket', plan: 'Control', amount: 1999, status: 'Paid', date: '2026-09-20', mpesaRef: 'SL789K3JD', phone: '0712345678' },
+    { id: 'sub-002', bizName: 'Nairobi Grill & Bar', plan: 'Core', amount: 999, status: 'Pending', date: '2026-09-23', mpesaRef: 'TK902LM89', phone: '0722001122' }
+  ];
+}
+
+function saveStoredSubscriptionsLedger(ledger) {
+  try {
+    localStorage.setItem('dogo_subscriptions_ledger', JSON.stringify(ledger));
+  } catch(e) {}
+}
+
+function renderSubscriptionsViews(businesses) {
+  const ledger = getStoredSubscriptionsLedger();
+  const plansMap = getStoredBusinessPlans();
+
+  let paidCount = 0;
+  let totalMrr = 0;
+  let pendingCount = 0;
+
+  businesses.forEach(b => {
+    const p = plansMap[b.id] || { plan: 'Free' };
+    if (p.plan === 'Core') { paidCount++; totalMrr += 999; }
+    if (p.plan === 'Control') { paidCount++; totalMrr += 1999; }
+  });
+
+  const pendingList = ledger.filter(x => x.status === 'Pending');
+  pendingCount = pendingList.length;
+
+  const sp = document.getElementById('subStatPaid'); if (sp) sp.textContent = paidCount;
+  const sr = document.getElementById('subStatRevenue'); if (sr) sr.textContent = `KES ${totalMrr.toLocaleString()}`;
+  const sn = document.getElementById('subStatPending'); if (sn) sn.textContent = pendingCount;
+
+  // Render Pending Verifications table
+  const pBody = document.getElementById('pendingSubsBody');
+  if (pBody) {
+    if (pendingList.length === 0) {
+      pBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#888; padding:24px;">No pending payment verifications. All accounts are up to date.</td></tr>';
+    } else {
+      pBody.innerHTML = pendingList.map(item => `
+        <tr>
+          <td>${item.date}</td>
+          <td><strong>${escapeHtml(item.bizName)}</strong></td>
+          <td><span class="tag tag-plan-${item.plan.toLowerCase()}">${item.plan} POS</span></td>
+          <td><strong>KES ${item.amount.toLocaleString()}</strong></td>
+          <td><span style="font-family:monospace; background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:6px; color:var(--gold);">${item.mpesaRef}</span></td>
+          <td>${escapeHtml(item.phone || '—')}</td>
+          <td class="actions">
+            <button class="btn-reactivate" onclick="approveSubscriptionPayment('${item.id}')"><i class="fa-solid fa-check"></i> Approve</button>
+            <button class="btn-delete" onclick="rejectSubscriptionPayment('${item.id}')"><i class="fa-solid fa-xmark"></i> Reject</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  // Render Subscriptions History table
+  const hBody = document.getElementById('subsHistoryBody');
+  if (hBody) {
+    hBody.innerHTML = businesses.map(b => {
+      const p = plansMap[b.id] || { plan: 'Free', status: 'Active', renews: 'Never' };
+      const amount = p.plan === 'Control' ? 1999 : (p.plan === 'Core' ? 999 : 0);
+      return `
+        <tr>
+          <td><strong>${escapeHtml(b.name)}</strong></td>
+          <td><span class="tag tag-plan-${p.plan.toLowerCase()}">${p.plan} POS</span></td>
+          <td><span class="tag ${p.plan !== 'Free' ? 'tag-active' : 'tag-plan-free'}">${p.plan !== 'Free' ? 'Subscribed' : 'Trial / Free'}</span></td>
+          <td>KES ${amount.toLocaleString()}/mo</td>
+          <td>${new Date(b.created_at).toLocaleDateString()}</td>
+          <td>${p.renews || '30 days remaining'}</td>
+          <td class="actions">
+            <button class="btn-plan" onclick="openGrantPlanModal('${b.id}')"><i class="fa-solid fa-pen-to-square"></i> Modify</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+}
+
+function approveSubscriptionPayment(subId) {
+  const ledger = getStoredSubscriptionsLedger();
+  const sub = ledger.find(x => x.id === subId);
+  if (!sub) return;
+
+  sub.status = 'Paid';
+  saveStoredSubscriptionsLedger(ledger);
+
+  // Grant plan to matching business
+  const plans = getStoredBusinessPlans();
+  const matchedBiz = allBusinessesCache.find(b => b.name.toLowerCase() === sub.bizName.toLowerCase());
+  if (matchedBiz) {
+    plans[matchedBiz.id] = {
+      plan: sub.plan,
+      renews: 'In 30 days',
+      grantedAt: new Date().toISOString()
+    };
+    saveStoredBusinessPlans(plans);
+  }
+
+  showToast(`Subscription payment approved for ${sub.bizName}! Plan activated.`);
+  loadDashboard();
+}
+
+function rejectSubscriptionPayment(subId) {
+  if (!confirm('Reject this payment submission?')) return;
+  const ledger = getStoredSubscriptionsLedger();
+  const idx = ledger.findIndex(x => x.id === subId);
+  if (idx !== -1) {
+    ledger.splice(idx, 1);
+    saveStoredSubscriptionsLedger(ledger);
+    showToast('Payment submission rejected.');
+    loadDashboard();
+  }
+}
+
+// Grant Plan Modal
+function populatePlanBizDropdown(businesses) {
+  const sel = document.getElementById('planBizSelect');
+  if (!sel) return;
+  sel.innerHTML = businesses.map(b => `
+    <option value="${b.id}">${escapeHtml(b.name)} (${b.business_type || 'General'})</option>
+  `).join('');
+}
+
+function openGrantPlanModal(bizId) {
+  const modal = document.getElementById('planModal');
+  if (bizId) {
+    const sel = document.getElementById('planBizSelect');
+    if (sel) sel.value = bizId;
+  }
+  if (modal) modal.classList.add('show');
+}
+
+function closePlanModal() {
+  const modal = document.getElementById('planModal');
+  if (modal) modal.classList.remove('show');
+}
+
+function confirmGrantPlan() {
+  const bizId = document.getElementById('planBizSelect')?.value;
+  const plan = document.getElementById('planSelect')?.value || 'Core';
+  const days = parseInt(document.getElementById('planDays')?.value || '30', 10);
+
+  if (!bizId) { showToast('Select a business'); return; }
+
+  const plans = getStoredBusinessPlans();
+  plans[bizId] = {
+    plan: plan,
+    renews: `In ${days} days`,
+    grantedAt: new Date().toISOString()
+  };
+  saveStoredBusinessPlans(plans);
+
+  closePlanModal();
+  showToast(`Assigned ${plan} POS plan (${days} days) successfully!`);
+  loadDashboard();
+}
+
+// Payout Gateway Settings
+function loadPayoutFields() {
+  const cfg = getStoredPlatformSettings();
+  const mMode = document.getElementById('setMpesaMode'); if (mMode) mMode.value = cfg.mpesa_mode;
+  const mTill = document.getElementById('setMpesaTill'); if (mTill) mTill.value = cfg.mpesa_till;
+  const mPb = document.getElementById('setMpesaPaybill'); if (mPb) mPb.value = cfg.mpesa_paybill;
+  const mAcc = document.getElementById('setMpesaAccountName'); if (mAcc) mAcc.value = cfg.mpesa_account_name;
+  const mPh = document.getElementById('setMpesaPhone'); if (mPh) mPh.value = cfg.mpesa_phone;
+
+  const dEnv = document.getElementById('setDarajaEnv'); if (dEnv) dEnv.value = cfg.daraja_env;
+  const dKey = document.getElementById('setDarajaKey'); if (dKey) dKey.value = cfg.daraja_consumer_key;
+  const dSec = document.getElementById('setDarajaSecret'); if (dSec) dSec.value = cfg.daraja_consumer_secret;
+  const dPk = document.getElementById('setDarajaPasskey'); if (dPk) dPk.value = cfg.daraja_passkey;
+
+  const bName = document.getElementById('setBankName'); if (bName) bName.value = cfg.bank_name;
+  const bAcc = document.getElementById('setBankAccountName'); if (bAcc) bAcc.value = cfg.bank_account_name;
+  const bNum = document.getElementById('setBankAccountNumber'); if (bNum) bNum.value = cfg.bank_account_number;
+
+  const pPub = document.getElementById('setPaystackPublic'); if (pPub) pPub.value = cfg.paystack_public_key;
+  const pSec = document.getElementById('setPaystackSecret'); if (pSec) pSec.value = cfg.paystack_secret_key;
+
+  const prCore = document.getElementById('setPriceCore'); if (prCore) prCore.value = cfg.price_core;
+  const prCtrl = document.getElementById('setPriceControl'); if (prCtrl) prCtrl.value = cfg.price_control;
+
+  toggleMpesaModeFields();
+}
+
+function toggleMpesaModeFields() {
+  const mode = document.getElementById('setMpesaMode')?.value;
+  const dSec = document.getElementById('darajaApiSection');
+  if (dSec) {
+    dSec.style.display = mode === 'daraja' ? 'block' : 'none';
+  }
+}
+
+function savePayoutSettings() {
+  const cfg = getStoredPlatformSettings();
+
+  cfg.mpesa_mode = document.getElementById('setMpesaMode')?.value || 'manual';
+  cfg.mpesa_till = document.getElementById('setMpesaTill')?.value.trim() || '';
+  cfg.mpesa_paybill = document.getElementById('setMpesaPaybill')?.value.trim() || '';
+  cfg.mpesa_account_name = document.getElementById('setMpesaAccountName')?.value.trim() || '';
+  cfg.mpesa_phone = document.getElementById('setMpesaPhone')?.value.trim() || '';
+
+  cfg.daraja_env = document.getElementById('setDarajaEnv')?.value || 'sandbox';
+  cfg.daraja_consumer_key = document.getElementById('setDarajaKey')?.value.trim() || '';
+  cfg.daraja_consumer_secret = document.getElementById('setDarajaSecret')?.value.trim() || '';
+  cfg.daraja_passkey = document.getElementById('setDarajaPasskey')?.value.trim() || '';
+
+  cfg.bank_name = document.getElementById('setBankName')?.value.trim() || '';
+  cfg.bank_account_name = document.getElementById('setBankAccountName')?.value.trim() || '';
+  cfg.bank_account_number = document.getElementById('setBankAccountNumber')?.value.trim() || '';
+
+  cfg.paystack_public_key = document.getElementById('setPaystackPublic')?.value.trim() || '';
+  cfg.paystack_secret_key = document.getElementById('setPaystackSecret')?.value.trim() || '';
+
+  cfg.price_core = parseFloat(document.getElementById('setPriceCore')?.value || '999');
+  cfg.price_control = parseFloat(document.getElementById('setPriceControl')?.value || '1999');
+
+  saveStoredPlatformSettings(cfg);
+  showToast('Payout & Gateway settings saved successfully!');
+}
+
+// Google Analytics Settings
+function loadAnalyticsFields() {
+  const cfg = getStoredPlatformSettings();
+  const el = document.getElementById('setGaId');
+  if (el) el.value = cfg.ga_measurement_id || '';
+}
+
+function saveAnalyticsSettings() {
+  const val = document.getElementById('setGaId')?.value.trim() || '';
+  const cfg = getStoredPlatformSettings();
+  cfg.ga_measurement_id = val;
+  saveStoredPlatformSettings(cfg);
+  showToast(val ? `Google Analytics ID ${val} activated!` : 'Google Analytics ID cleared.');
+}
+
+// Broadcast Announcements
+function loadBroadcastFields() {
+  const cfg = getStoredPlatformSettings();
+  const act = document.getElementById('setBroadcastActive'); if (act) act.value = cfg.broadcast_active ? 'true' : 'false';
+  const typ = document.getElementById('setBroadcastType'); if (typ) typ.value = cfg.broadcast_type || 'info';
+  const tit = document.getElementById('setBroadcastTitle'); if (tit) tit.value = cfg.broadcast_title || '';
+  const msg = document.getElementById('setBroadcastMessage'); if (msg) msg.value = cfg.broadcast_message || '';
+  previewBroadcastBanner();
+}
+
+function previewBroadcastBanner() {
+  const typ = document.getElementById('setBroadcastType')?.value || 'info';
+  const tit = document.getElementById('setBroadcastTitle')?.value || 'Announcement Headline';
+  const msg = document.getElementById('setBroadcastMessage')?.value || 'Announcement description...';
+
+  const box = document.getElementById('broadcastPreviewBox');
+  const pt = document.getElementById('previewTitle');
+  const pm = document.getElementById('previewMsg');
+
+  if (pt) pt.textContent = tit;
+  if (pm) pm.textContent = msg;
+
+  if (box) {
+    if (typ === 'promo') {
+      box.style.background = 'rgba(250, 204, 21, 0.12)';
+      box.style.border = '1px solid rgba(250, 204, 21, 0.4)';
+      box.style.color = '#fde047';
+    } else if (typ === 'urgent') {
+      box.style.background = 'rgba(239, 68, 68, 0.12)';
+      box.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+      box.style.color = '#f87171';
+    } else {
+      box.style.background = 'rgba(56, 189, 248, 0.12)';
+      box.style.border = '1px solid rgba(56, 189, 248, 0.4)';
+      box.style.color = '#38bdf8';
+    }
+  }
+}
+
+function saveBroadcastSettings() {
+  const cfg = getStoredPlatformSettings();
+  cfg.broadcast_active = document.getElementById('setBroadcastActive')?.value === 'true';
+  cfg.broadcast_type = document.getElementById('setBroadcastType')?.value || 'info';
+  cfg.broadcast_title = document.getElementById('setBroadcastTitle')?.value.trim() || '';
+  cfg.broadcast_message = document.getElementById('setBroadcastMessage')?.value.trim() || '';
+
+  saveStoredPlatformSettings(cfg);
+  showToast(cfg.broadcast_active ? 'Broadcast announcement published to all merchants!' : 'Broadcast banner deactivated.');
+}
+
+// Business Management Actions
 async function suspendBiz(id) {
   const reason = prompt('Reason for suspension (optional):') || '';
   const resp = await callPlatformFn('suspend_business', { business_id: id, reason });
@@ -359,12 +1579,14 @@ async function suspendBiz(id) {
   showToast('Business suspended');
   loadDashboard();
 }
+
 async function reactivateBiz(id) {
   const resp = await callPlatformFn('reactivate_business', { business_id: id });
   if (resp.error) { showToast('Error: ' + resp.error); return; }
   showToast('Business reactivated');
   loadDashboard();
 }
+
 async function deleteBiz(id, name) {
   if (!confirm(`Permanently delete "${name}" and ALL its data (products, sales, staff)? This cannot be undone.`)) return;
   const resp = await callPlatformFn('delete_business', { business_id: id });
@@ -372,18 +1594,24 @@ async function deleteBiz(id, name) {
   showToast('Business deleted');
   loadDashboard();
 }
+
 async function viewBusiness(id) {
   const resp = await callPlatformFn('business_detail', { business_id: id });
   if (resp.error) { showToast('Error: ' + resp.error); return; }
   document.getElementById('detailTitle').textContent = resp.business.name;
   document.getElementById('detailContent').innerHTML = `
-    <p><b>Type:</b> ${resp.business.business_type} · <b>Status:</b> ${resp.business.active ? 'Active' : 'Suspended'}</p>
-    <p><b>Staff:</b> ${resp.profiles.length} (${resp.profiles.filter(p=>p.role==='admin').length} admin, ${resp.profiles.filter(p=>p.role==='teller').length} teller)</p>
-    <p><b>Products:</b> ${resp.products.length} · <b>Recent sales:</b> ${resp.sales.length} · <b>Expenses logged:</b> ${resp.expenses.length}</p>
-    <p><b>Total recent sales value:</b> KES ${resp.sales.reduce((s,x)=>s+Number(x.total),0).toFixed(2)}</p>
+    <div style="background:var(--card); padding:16px; border-radius:12px; margin-bottom:14px;">
+      <p style="margin:0 0 6px;"><b>Business ID:</b> <code style="color:var(--gold);">${resp.business.id}</code></p>
+      <p style="margin:0 0 6px;"><b>Type:</b> ${escapeHtml(resp.business.business_type)} · <b>Status:</b> ${resp.business.active ? '<span style="color:#4ade80;">Active</span>' : '<span style="color:#f87171;">Suspended</span>'}</p>
+      <p style="margin:0;"><b>Created At:</b> ${new Date(resp.business.created_at).toLocaleString()}</p>
+    </div>
+    <p><b>Staff Members:</b> ${resp.profiles.length} (${resp.profiles.filter(p=>p.role==='admin').length} admin, ${resp.profiles.filter(p=>p.role==='teller').length} teller)</p>
+    <p><b>Products Catalogued:</b> ${resp.products.length} · <b>Sales Completed:</b> ${resp.sales.length} · <b>Expenses:</b> ${resp.expenses.length}</p>
+    <p><b>Total Recent Sales:</b> KES ${resp.sales.reduce((s,x)=>s+Number(x.total),0).toLocaleString(undefined,{maximumFractionDigits:2})}</p>
   `;
   document.getElementById('detailModal').classList.add('show');
 }
+
 function closeDetail() { document.getElementById('detailModal').classList.remove('show'); }
 
 async function promoteAdmin() {
@@ -395,6 +1623,7 @@ async function promoteAdmin() {
   document.getElementById('newAdminEmail').value = '';
   loadDashboard();
 }
+
 async function demoteAdmin(userId) {
   if (!confirm('Remove Super Admin access for this user?')) return;
   const resp = await callPlatformFn('demote_platform_admin', { target_user_id: userId });
@@ -403,7 +1632,7 @@ async function demoteAdmin(userId) {
   loadDashboard();
 }
 
-// restore session if already logged in as a platform admin
+// Restore session if already logged in as a platform admin
 (async function init() {
   const { data } = await sb.auth.getSession();
   if (data.session) {

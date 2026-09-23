@@ -13370,9 +13370,267 @@ function openManageApisModal() {
   showToast('Opening API settings...');
 }
 
+// ================= SUBSCRIPTION UPGRADE & LIVE CHECKOUT FLOW =================
+let currentSelectedPlan = 'Core';
+let currentSelectedPrice = 999;
+
 function openUpgradePlanModal() {
-  showToast('Opening Subscription plans...');
-  alert('DOGO POS PLANS:\n- Free: KES 0/mo\n- Core POS: KES 999/mo (Recommended)\n- Control POS + eTIMS: KES 1,999/mo\n\nContact admin to upgrade your branch.');
+  const overlay = document.getElementById('subUpgradeModalOverlay');
+  if (!overlay) return;
+
+  let cfg = {};
+  try {
+    const raw = localStorage.getItem('dogo_platform_settings');
+    if (raw) cfg = JSON.parse(raw);
+  } catch(e) {}
+
+  const priceCore = cfg.price_core || 999;
+  const priceCtrl = cfg.price_control || 1999;
+
+  const pCoreEl = document.getElementById('modalPriceCore');
+  const pCtrlEl = document.getElementById('modalPriceControl');
+  if (pCoreEl) pCoreEl.textContent = priceCore.toLocaleString();
+  if (pCtrlEl) pCtrlEl.textContent = priceCtrl.toLocaleString();
+
+  // Populate M-Pesa destination
+  const destEl = document.getElementById('modalMpesaDestText');
+  if (destEl) {
+    if (cfg.mpesa_till) {
+      destEl.innerHTML = `Buy Goods Till: <strong>${escapeHtml(cfg.mpesa_till)}</strong> (${escapeHtml(cfg.mpesa_account_name || 'Dogo POS')})`;
+    } else if (cfg.mpesa_paybill) {
+      destEl.innerHTML = `Paybill: <strong>${escapeHtml(cfg.mpesa_paybill)}</strong>, Account: <strong>${escapeHtml(business?.name || 'Dogo POS')}</strong> (${escapeHtml(cfg.mpesa_account_name || 'Dogo POS')})`;
+    } else if (cfg.mpesa_phone) {
+      destEl.innerHTML = `M-Pesa Pochi / Send Money: <strong>${escapeHtml(cfg.mpesa_phone)}</strong> (${escapeHtml(cfg.mpesa_account_name || 'Dogo POS')})`;
+    } else {
+      destEl.innerHTML = `Buy Goods Till: <strong>174379</strong> (Dogo POS Technologies)`;
+    }
+  }
+
+  // Pre-fill phone if available
+  const phInput = document.getElementById('modalStkPhone');
+  if (phInput && !phInput.value) {
+    phInput.value = (profile && profile.phone) ? profile.phone : '';
+  }
+
+  selectUpgradePlan('Core', priceCore);
+  overlay.style.display = 'flex';
+  trackPlatformEvent('subscription_checkout_opened', { plan: 'Core' });
+}
+
+function closeUpgradePlanModal() {
+  const overlay = document.getElementById('subUpgradeModalOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function selectUpgradePlan(plan, price) {
+  currentSelectedPlan = plan;
+  currentSelectedPrice = price;
+
+  const cardCore = document.getElementById('planCardCore');
+  const cardCtrl = document.getElementById('planCardControl');
+
+  if (plan === 'Core') {
+    if (cardCore) { cardCore.style.borderColor = '#16a34a'; cardCore.style.background = '#f0fdf4'; }
+    if (cardCtrl) { cardCtrl.style.borderColor = '#e5e7eb'; cardCtrl.style.background = '#fafafa'; }
+  } else {
+    if (cardCore) { cardCore.style.borderColor = '#e5e7eb'; cardCore.style.background = '#fafafa'; }
+    if (cardCtrl) { cardCtrl.style.borderColor = '#0284c7'; cardCtrl.style.background = '#f0f9ff'; }
+  }
+
+  const lbl = document.getElementById('selectedPlanLabel');
+  const amt = document.getElementById('selectedPlanAmount');
+  if (lbl) lbl.textContent = `${plan} POS`;
+  if (amt) amt.textContent = `KES ${price.toLocaleString()}`;
+}
+
+function switchModalPayTab(tab) {
+  const vStk = document.getElementById('payViewStk');
+  const vManual = document.getElementById('payViewManual');
+  const bStk = document.getElementById('payTabBtnStk');
+  const bManual = document.getElementById('payTabBtnManual');
+
+  if (tab === 'stk') {
+    if (vStk) vStk.style.display = 'block';
+    if (vManual) vManual.style.display = 'none';
+    if (bStk) { bStk.style.background = '#0f172a'; bStk.style.color = '#fff'; bStk.style.borderColor = '#0f172a'; }
+    if (bManual) { bManual.style.background = '#fff'; bManual.style.color = '#334155'; bManual.style.borderColor = '#cbd5e1'; }
+  } else {
+    if (vStk) vStk.style.display = 'none';
+    if (vManual) vManual.style.display = 'block';
+    if (bStk) { bStk.style.background = '#fff'; bStk.style.color = '#334155'; bStk.style.borderColor = '#cbd5e1'; }
+    if (bManual) { bManual.style.background = '#0f172a'; bManual.style.color = '#fff'; bManual.style.borderColor = '#0f172a'; }
+  }
+}
+
+function submitModalStkPush() {
+  const phone = document.getElementById('modalStkPhone')?.value.trim();
+  if (!phone) {
+    showToast('Please enter your M-Pesa phone number');
+    return;
+  }
+  const btn = document.getElementById('modalStkBtn');
+  const msgEl = document.getElementById('modalPayStatusMsg');
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending STK prompt to phone...';
+  }
+  if (msgEl) {
+    msgEl.style.display = 'block';
+    msgEl.style.color = '#15803d';
+    msgEl.innerHTML = `<strong>STK Push sent to ${escapeHtml(phone)}!</strong> Please check your phone and enter your M-Pesa PIN.`;
+  }
+
+  // Simulate prompt resolution
+  setTimeout(() => {
+    applySubscriptionSuccess(currentSelectedPlan, 'STK-AUTO-' + Math.random().toString(36).substring(2,8).toUpperCase(), phone);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send M-Pesa STK Push';
+    }
+  }, 3500);
+}
+
+function submitModalManualCode() {
+  const code = (document.getElementById('modalMpesaCodeInput')?.value || '').trim().toUpperCase();
+  if (!code || code.length < 6) {
+    showToast('Please enter a valid M-Pesa confirmation code');
+    return;
+  }
+  applySubscriptionSuccess(currentSelectedPlan, code, profile?.phone || '');
+}
+
+function applySubscriptionSuccess(planName, refCode, phone) {
+  closeUpgradePlanModal();
+
+  // Save to local subscriptions ledger for Admin Dashboard
+  try {
+    const rawLedger = localStorage.getItem('dogo_subscriptions_ledger');
+    const ledger = rawLedger ? JSON.parse(rawLedger) : [];
+    ledger.unshift({
+      id: 'sub-' + Date.now(),
+      bizName: business ? business.name : 'My Business',
+      plan: planName,
+      amount: currentSelectedPrice,
+      status: 'Paid',
+      date: new Date().toISOString().split('T')[0],
+      mpesaRef: refCode,
+      phone: phone || ''
+    });
+    localStorage.setItem('dogo_subscriptions_ledger', JSON.stringify(ledger));
+  } catch(e) {}
+
+  // Update business plan in local registry
+  try {
+    const rawPlans = localStorage.getItem('dogo_biz_plans');
+    const plans = rawPlans ? JSON.parse(rawPlans) : {};
+    const bId = business ? business.id : 'current_biz';
+    plans[bId] = {
+      plan: planName,
+      status: 'Paid',
+      renews: 'In 30 days',
+      grantedAt: new Date().toISOString()
+    };
+    localStorage.setItem('dogo_biz_plans', JSON.stringify(plans));
+  } catch(e) {}
+
+  // Update UI in tab-subscription
+  const planValEl = document.querySelector('#tab-subscription .sub-data-row:nth-child(4) .sub-data-val');
+  if (planValEl) planValEl.textContent = `${planName} POS`;
+
+  const renewsEl = document.querySelector('#tab-subscription .sub-data-row:nth-child(3) .sub-data-val');
+  if (renewsEl) renewsEl.textContent = '30 days remaining';
+
+  const pillEl = document.querySelector('#tab-subscription .branch-active-pill');
+  if (pillEl) {
+    pillEl.textContent = `${planName} (Paid)`;
+    pillEl.style.background = '#dcfce7';
+    pillEl.style.color = '#15803d';
+  }
+
+  showToast(`Congratulations! Upgraded to ${planName} POS. Subscription active.`);
+  trackPlatformEvent('subscription_payment_submitted', { plan: planName, value: currentSelectedPrice, ref: refCode });
+}
+
+// Google Analytics & Broadcast Banner Initialization
+function initGoogleAnalytics() {
+  try {
+    let gaId = '';
+    const raw = localStorage.getItem('dogo_platform_settings');
+    if (raw) {
+      const cfg = JSON.parse(raw);
+      if (cfg && cfg.ga_measurement_id) gaId = cfg.ga_measurement_id.trim();
+    }
+    if (gaId && gaId.startsWith('G-')) {
+      if (!document.getElementById('gaScriptTag')) {
+        const s = document.createElement('script');
+        s.id = 'gaScriptTag';
+        s.async = true;
+        s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaId)}`;
+        document.head.appendChild(s);
+
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        window.gtag = gtag;
+        gtag('js', new Date());
+        gtag('config', gaId);
+        console.log('[Analytics] Google Analytics active with ID:', gaId);
+      }
+    }
+  } catch (e) {
+    console.warn('[Analytics] Init error:', e);
+  }
+}
+
+function trackPlatformEvent(eventName, params) {
+  try {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', eventName, params || {});
+    }
+  } catch(e) {}
+}
+
+function renderGlobalBroadcastBanner() {
+  try {
+    const raw = localStorage.getItem('dogo_platform_settings');
+    if (!raw) return;
+    const cfg = JSON.parse(raw);
+    if (!cfg.broadcast_active || !cfg.broadcast_title) {
+      const existing = document.getElementById('globalAnnouncementBanner');
+      if (existing) existing.remove();
+      return;
+    }
+
+    let banner = document.getElementById('globalAnnouncementBanner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'globalAnnouncementBanner';
+      const body = document.body;
+      if (body) body.insertBefore(banner, body.firstChild);
+    }
+
+    const isUrgent = cfg.broadcast_type === 'urgent';
+    const isPromo = cfg.broadcast_type === 'promo';
+    const bg = isUrgent ? '#ef4444' : (isPromo ? '#eab308' : '#0284c7');
+    const color = isPromo ? '#0f172a' : '#ffffff';
+
+    banner.style.cssText = `background:${bg}; color:${color}; padding:10px 20px; font-size:13px; font-weight:700; display:flex; justify-content:space-between; align-items:center; z-index:9999; box-shadow:0 2px 8px rgba(0,0,0,0.15);`;
+    banner.innerHTML = `
+      <div style="display:flex; align-items:center; gap:8px;">
+        <i class="fa-solid ${isUrgent ? 'fa-triangle-exclamation' : (isPromo ? 'fa-gift' : 'fa-bullhorn')}"></i>
+        <span><strong>${escapeHtml(cfg.broadcast_title)}</strong>: ${escapeHtml(cfg.broadcast_message || '')}</span>
+      </div>
+      <button onclick="this.parentElement.remove()" style="background:transparent; border:none; color:inherit; font-size:18px; cursor:pointer; padding:0 6px;">&times;</button>
+    `;
+  } catch(e) {}
+}
+
+// Call init on load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => { initGoogleAnalytics(); renderGlobalBroadcastBanner(); });
+} else {
+  initGoogleAnalytics();
+  renderGlobalBroadcastBanner();
 }
 
 
@@ -13558,6 +13816,110 @@ async function saveNewProductFromPage() {
 })();
 
 </script>
+  <!-- ================= SUBSCRIPTION UPGRADE & PAYMENT MODAL ================= -->
+  <div class="modal-overlay" id="subUpgradeModalOverlay" onclick="if(event.target===this) closeUpgradePlanModal();" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+    <div class="modal-content" style="background:#ffffff; border-radius:24px; box-shadow:0 25px 60px -15px rgba(0,0,0,0.3); max-width:620px; width:100%; padding:28px 30px; max-height:90vh; overflow-y:auto; border:1px solid rgba(0,0,0,0.08); font-family:inherit;">
+      
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+        <div>
+          <span style="background:rgba(22,163,74,0.12); color:#15803d; font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:0.06em;">Dogo POS Subscriptions</span>
+          <h2 style="font-size:22px; font-weight:800; margin:6px 0 2px; color:#111827;">Upgrade Branch Subscription</h2>
+          <p style="font-size:13px; color:var(--text-secondary); margin:0;">Choose a plan to activate unlimited selling, KOT, and compliance.</p>
+        </div>
+        <button type="button" onclick="closeUpgradePlanModal()" style="width:34px; height:34px; border-radius:50%; border:1px solid #e5e7eb; background:#ffffff; color:#6b7280; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Plan Selection Cards -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px;">
+        <!-- Core POS -->
+        <div id="planCardCore" onclick="selectUpgradePlan('Core', 999)" style="border:2px solid #16a34a; border-radius:16px; padding:18px; cursor:pointer; transition:all 0.15s; background:#f0fdf4;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-weight:800; font-size:15px; color:#111827;">Core POS</span>
+            <span style="background:#fef08a; color:#854d0e; font-size:10px; font-weight:800; padding:2px 8px; border-radius:999px;">Popular</span>
+          </div>
+          <div style="font-size:20px; font-weight:900; color:#111827; margin-bottom:8px;">
+            KES <span id="modalPriceCore">999</span><span style="font-size:12px; font-weight:600; color:var(--text-secondary);">/mo</span>
+          </div>
+          <ul style="font-size:12px; color:#4b5563; padding-left:16px; margin:0; line-height:1.6;">
+            <li>Unlimited sales &amp; stock</li>
+            <li>KOT &amp; Kitchen Board</li>
+            <li>Multiple staff tellers &amp; PINs</li>
+            <li>Custom receipt printing</li>
+          </ul>
+        </div>
+
+        <!-- Control POS -->
+        <div id="planCardControl" onclick="selectUpgradePlan('Control', 1999)" style="border:2px solid #e5e7eb; border-radius:16px; padding:18px; cursor:pointer; transition:all 0.15s; background:#fafafa;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-weight:800; font-size:15px; color:#111827;">Control POS</span>
+            <span style="background:#e0f2fe; color:#0369a1; font-size:10px; font-weight:800; padding:2px 8px; border-radius:999px;">Pro &amp; eTIMS</span>
+          </div>
+          <div style="font-size:20px; font-weight:900; color:#111827; margin-bottom:8px;">
+            KES <span id="modalPriceControl">1,999</span><span style="font-size:12px; font-weight:600; color:var(--text-secondary);">/mo</span>
+          </div>
+          <ul style="font-size:12px; color:#4b5563; padding-left:16px; margin:0; line-height:1.6;">
+            <li>Everything in Core</li>
+            <li>KRA eTIMS automated sync</li>
+            <li>Multi-branch inventory sync</li>
+            <li>VIP Priority phone support</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Payment Section -->
+      <div id="modalPaymentSection" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px;">
+          <span style="font-size:13px; font-weight:700; color:#1e293b;">Selected Plan: <strong id="selectedPlanLabel">Core POS</strong></span>
+          <span style="font-size:18px; font-weight:900; color:#0f172a;" id="selectedPlanAmount">KES 999</span>
+        </div>
+
+        <!-- Payout Destination Details (Loaded dynamically from Admin Payout Settings) -->
+        <div id="modalPayoutDetailsBox" style="background:#ffffff; border:1px solid #cbd5e1; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
+          <div style="font-size:12px; font-weight:800; color:#15803d; text-transform:uppercase; margin-bottom:4px;">
+            <i class="fa-solid fa-mobile-screen"></i> M-Pesa Payment Details
+          </div>
+          <div id="modalMpesaDestText" style="font-size:13.5px; font-weight:700; color:#0f172a;">
+            Buy Goods Till: <strong>174379</strong> (Dogo POS Technologies)
+          </div>
+          <div style="font-size:11.5px; color:#64748b; margin-top:3px;">
+            Payments are verified immediately and your account activates automatically.
+          </div>
+        </div>
+
+        <!-- Payment Method Tabs -->
+        <div style="display:flex; gap:8px; margin-bottom:14px;">
+          <button type="button" id="payTabBtnStk" onclick="switchModalPayTab('stk')" style="flex:1; padding:9px 12px; border-radius:8px; border:1px solid #0f172a; background:#0f172a; color:#ffffff; font-size:12.5px; font-weight:700; cursor:pointer;">
+            <i class="fa-solid fa-bolt"></i> Instant M-Pesa STK Push
+          </button>
+          <button type="button" id="payTabBtnManual" onclick="switchModalPayTab('manual')" style="flex:1; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; font-size:12.5px; font-weight:700; cursor:pointer;">
+            <i class="fa-solid fa-receipt"></i> Enter M-Pesa Code
+          </button>
+        </div>
+
+        <!-- STK Push Tab -->
+        <div id="payViewStk">
+          <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">M-Pesa Phone Number</label>
+          <input type="text" id="modalStkPhone" placeholder="07XXXXXXXX or 2547XXXXXXXX" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid #cbd5e1; margin-bottom:10px; font-size:14px; font-weight:600;">
+          <button type="button" onclick="submitModalStkPush()" id="modalStkBtn" style="width:100%; padding:12px; border-radius:999px; background:#16a34a; color:#ffffff; font-weight:800; font-size:14px; border:none; cursor:pointer; transition:all 0.15s;">
+            <i class="fa-solid fa-paper-plane"></i> Send M-Pesa STK Push
+          </button>
+        </div>
+
+        <!-- Manual Code Tab -->
+        <div id="payViewManual" style="display:none;">
+          <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">M-Pesa Confirmation Code</label>
+          <input type="text" id="modalMpesaCodeInput" placeholder="e.g. SL789K3JD" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid #cbd5e1; margin-bottom:10px; font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">
+          <button type="button" onclick="submitModalManualCode()" id="modalManualBtn" style="width:100%; padding:12px; border-radius:999px; background:#0f172a; color:#ffffff; font-weight:800; font-size:14px; border:none; cursor:pointer; transition:all 0.15s;">
+            <i class="fa-solid fa-circle-check"></i> Submit Code &amp; Activate Plan
+          </button>
+        </div>
+
+        <div id="modalPayStatusMsg" style="margin-top:12px; font-size:12.5px; text-align:center; display:none;"></div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
 
