@@ -6272,13 +6272,12 @@
         </div>
 
         <div class="rest-category-strip" id="restCategoryStrip">
-          <button class="rest-cat-pill active" onclick="filterRestCat('ALL', this)">ALL</button>
-          <button class="rest-cat-pill" onclick="filterRestCat('GRILL', this)">GRILL &amp; BBQ</button>
-          <button class="rest-cat-pill" onclick="filterRestCat('MAINS', this)">MAINS</button>
-          <button class="rest-cat-pill" onclick="filterRestCat('FISH', this)">FISH</button>
-          <button class="rest-cat-pill" onclick="filterRestCat('SIDES', this)">SIDES</button>
-          <button class="rest-cat-pill" onclick="filterRestCat('BEVERAGES', this)">BEVERAGES</button>
-          <button class="rest-cat-pill" onclick="filterRestCat('ALCOHOL', this)">ALCOHOL</button>
+          <button class="rest-cat-pill active" data-cat="ALL" onclick="filterRestCat('ALL', this)">ALL</button>
+          <button class="rest-cat-pill" data-cat="BREAKFAST" onclick="filterRestCat('BREAKFAST', this)">BREAKFAST</button>
+          <button class="rest-cat-pill" data-cat="DRINKS" onclick="filterRestCat('DRINKS', this)">DRINKS</button>
+          <button class="rest-cat-pill" data-cat="LUNCH" onclick="filterRestCat('LUNCH', this)">LUNCH</button>
+          <button class="rest-cat-pill" data-cat="DINNER/SUPPER" onclick="filterRestCat('DINNER/SUPPER', this)">DINNER/SUPPER</button>
+          <button class="rest-cat-pill" data-cat="SNACKS" onclick="filterRestCat('SNACKS', this)">SNACKS</button>
         </div>
 
         <div class="rest-product-grid" id="restProductGrid">
@@ -6383,6 +6382,42 @@
 
     <div id="kdsTicketGrid" class="kds-ticket-grid">
       <!-- Tickets dynamically rendered here -->
+    </div>
+
+    <!-- KITCHEN ACTION CONFIRMATION MODAL (Matching posfiti.com/kitchen media_1790146243136) -->
+    <div class="kds-confirm-overlay" id="kdsConfirmModalOverlay" onclick="if(event.target===this) closeKdsConfirmModal();" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+      <div class="kds-confirm-card" style="background:#ffffff; border-radius:20px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); max-width:460px; width:100%; padding:24px 26px; border:1px solid rgba(0,0,0,0.08); font-family:inherit;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+          <div>
+            <div style="font-size:11px; font-weight:800; color:#c25e00; text-transform:uppercase; letter-spacing:0.5px;">CONFIRM KITCHEN ACTION</div>
+            <div id="kdsConfirmTicketCode" style="font-size:20px; font-weight:800; color:#111827; margin-top:3px; letter-spacing:-0.3px;">POS-TICKET</div>
+          </div>
+          <button type="button" onclick="closeKdsConfirmModal()" style="width:34px; height:34px; border-radius:50%; border:1px solid #e5e7eb; background:#ffffff; color:#6b7280; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; transition:all 0.15s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='#ffffff'">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:14px; padding:16px 18px; margin-bottom:20px;">
+          <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <span id="kdsConfirmCurrentStatusBadge" style="text-transform:uppercase; border:1px solid #d1d5db; background:#f9fafb; font-weight:700; font-size:11px; padding:3px 12px; border-radius:999px; color:#374151;">PENDING</span>
+            <span id="kdsConfirmOrderTypeBadge" style="text-transform:uppercase; border:1px solid #d1d5db; background:#f9fafb; font-weight:700; font-size:11px; padding:3px 12px; border-radius:999px; color:#374151;">TAKEAWAY</span>
+          </div>
+          <div style="font-size:14px; color:#1f2937; margin-bottom:12px; line-height:1.4;">
+            Are you sure you want to move this kitchen ticket to <strong id="kdsConfirmNextStatusText" style="color:#111827;">Preparing</strong>?
+          </div>
+          <div id="kdsConfirmLocation" style="font-size:13px; color:#6b7280; font-weight:500;">luanda</div>
+          <div id="kdsConfirmItemsCount" style="font-size:13px; color:#6b7280; margin-top:2px;">1 item in ticket</div>
+        </div>
+
+        <div style="display:flex; gap:12px; align-items:center; justify-content:space-between;">
+          <button type="button" onclick="closeKdsConfirmModal()" style="flex:1; border:1px solid #d1d5db; background:#ffffff; border-radius:999px; padding:11px 16px; font-size:13px; font-weight:600; color:#111827; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='#ffffff'">
+            Keep current status
+          </button>
+          <button type="button" id="kdsConfirmActionBtn" style="flex:1; background:#b0f242; border:none; border-radius:999px; padding:11px 16px; font-size:13px; font-weight:700; color:#0f172a; cursor:pointer; transition:all 0.15s; box-shadow:0 2px 4px rgba(132,204,22,0.2);" onmouseover="this.style.filter='brightness(0.95)'" onmouseout="this.style.filter='none'">
+            Confirm Preparing
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -8067,15 +8102,38 @@ const INDUSTRY_CONFIG = {
       { tab: 'reports', icon: 'fa-solid fa-chart-simple', label: 'Reports' }
     ],
     products: [
-      { id: 'ht-1', code: 'FOOD-NYAMA-1KG', name: 'Nyama Choma (1kg Goat)', category: 'GRILL', price: 900.00, vat: 0.16, stock: 25, reorder: 5, unit: 'kg', image: null },
-      { id: 'ht-2', code: 'FOOD-BEEF-STEW', name: 'Beef Stew with Ugali & Greens', category: 'MAINS', price: 350.00, vat: 0.16, stock: 40, reorder: 10, unit: 'plate', image: null },
-      { id: 'ht-3', code: 'FOOD-CHICKEN-BIRYANI', name: 'Chicken Biryani Swahili Style', category: 'MAINS', price: 550.00, vat: 0.16, stock: 30, reorder: 8, unit: 'plate', image: null },
-      { id: 'ht-4', code: 'FOOD-TILAPIA-WET', name: 'Whole Tilapia Fry & Sukuma', category: 'FISH', price: 650.00, vat: 0.16, stock: 20, reorder: 5, unit: 'piece', image: null },
-      { id: 'ht-5', code: 'FOOD-CHIPS-FRIES', name: 'Crispy French Fries', category: 'SIDES', price: 180.00, vat: 0.16, stock: 60, reorder: 15, unit: 'plate', image: null },
-      { id: 'ht-6', code: 'FOOD-CHAPATI-PAIR', name: 'Soft Layered Chapati (Pair)', category: 'SIDES', price: 80.00, vat: 0.16, stock: 80, reorder: 20, unit: 'pair', image: null },
-      { id: 'ht-7', code: 'BEV-PASSION-500ML', name: 'Fresh Passion Juice 500ml', category: 'BEVERAGES', price: 120.00, vat: 0.16, stock: 45, reorder: 10, unit: 'bottle', image: null },
-      { id: 'ht-8', code: 'BEV-KENYAN-CHAI', name: 'Kenyan Spiced Chai Dawa', category: 'BEVERAGES', price: 90.00, vat: 0.16, stock: 100, reorder: 20, unit: 'cup', image: null },
-      { id: 'ht-9', code: 'BEV-TUSKER-LAGER', name: 'Tusker Lager 500ml Bottle', category: 'ALCOHOL', price: 280.00, vat: 0.16, stock: 72, reorder: 24, unit: 'bottle', image: null }
+      // BREAKFAST
+      { id: 'ht-b1', code: 'FOOD-ENG-BREAKFAST', name: 'Full English Breakfast (Eggs, Sausage, Toast, Beans)', category: 'BREAKFAST', price: 450.00, vat: 0.16, stock: 35, reorder: 10, unit: 'plate', image: null },
+      { id: 'ht-b2', code: 'FOOD-CHAI-MANDAZI', name: 'Kenyan Tea & Mandazi (Pair)', category: 'BREAKFAST', price: 150.00, vat: 0.16, stock: 80, reorder: 20, unit: 'order', image: null },
+      { id: 'ht-b3', code: 'FOOD-SPANISH-OMELETTE', name: 'Spanish Omelette & Toast', category: 'BREAKFAST', price: 250.00, vat: 0.16, stock: 40, reorder: 10, unit: 'plate', image: null },
+      { id: 'ht-b4', code: 'FOOD-UJI-WIMBI', name: 'Uji wa Wimbi (Nutritious Porridge)', category: 'BREAKFAST', price: 100.00, vat: 0.16, stock: 50, reorder: 15, unit: 'cup', image: null },
+
+      // DRINKS
+      { id: 'ht-d1', code: 'BEV-PASSION-500ML', name: 'Fresh Passion Juice 500ml', category: 'DRINKS', price: 120.00, vat: 0.16, stock: 50, reorder: 15, unit: 'glass', image: null },
+      { id: 'ht-d2', code: 'BEV-KENYAN-DAWA', name: 'Kenyan Spiced Chai Dawa (Ginger Honey Lemon)', category: 'DRINKS', price: 120.00, vat: 0.16, stock: 90, reorder: 25, unit: 'cup', image: null },
+      { id: 'ht-d3', code: 'BEV-TUSKER-LAGER', name: 'Tusker Lager Cold 500ml', category: 'DRINKS', price: 280.00, vat: 0.16, stock: 72, reorder: 24, unit: 'bottle', image: null },
+      { id: 'ht-d4', code: 'BEV-MINERAL-WATER', name: 'Mineral Drinking Water 500ml', category: 'DRINKS', price: 60.00, vat: 0.16, stock: 120, reorder: 30, unit: 'bottle', image: null },
+      { id: 'ht-d5', code: 'BEV-MANGO-SMOOTHIE', name: 'Fresh Mango Tropical Smoothie', category: 'DRINKS', price: 180.00, vat: 0.16, stock: 40, reorder: 10, unit: 'glass', image: null },
+
+      // LUNCH
+      { id: 'ht-l1', code: 'FOOD-BEEF-STEW', name: 'Beef Stew with Ugali & Sukuma Wiki', category: 'LUNCH', price: 350.00, vat: 0.16, stock: 45, reorder: 10, unit: 'plate', image: null },
+      { id: 'ht-l2', code: 'FOOD-CHICKEN-BIRYANI', name: 'Chicken Biryani Swahili Special', category: 'LUNCH', price: 550.00, vat: 0.16, stock: 30, reorder: 8, unit: 'plate', image: null },
+      { id: 'ht-l3', code: 'FOOD-TILAPIA-WET', name: 'Whole Tilapia Fry with Ugali & Greens', category: 'LUNCH', price: 650.00, vat: 0.16, stock: 25, reorder: 6, unit: 'piece', image: null },
+      { id: 'ht-l4', code: 'FOOD-PILAU-BEEF', name: 'Swahili Beef Pilau with Kachumbari', category: 'LUNCH', price: 400.00, vat: 0.16, stock: 35, reorder: 10, unit: 'plate', image: null },
+      { id: 'ht-l5', code: 'FOOD-CHAPATI-NDENGU', name: 'Layered Chapati with Yellow Ndengu', category: 'LUNCH', price: 220.00, vat: 0.16, stock: 40, reorder: 12, unit: 'plate', image: null },
+
+      // DINNER/SUPPER
+      { id: 'ht-dn1', code: 'FOOD-NYAMA-1KG', name: 'Nyama Choma Goat (1kg) & Ugali', category: 'DINNER/SUPPER', price: 1000.00, vat: 0.16, stock: 25, reorder: 5, unit: 'kg', image: null },
+      { id: 'ht-dn2', code: 'FOOD-KIENYEJI-CHICK', name: 'Kienyeji Chicken Wet Fry (Half)', category: 'DINNER/SUPPER', price: 850.00, vat: 0.16, stock: 20, reorder: 5, unit: 'plate', image: null },
+      { id: 'ht-dn3', code: 'FOOD-PEPPER-STEAK', name: 'Grilled Pepper Steak with Fries', category: 'DINNER/SUPPER', price: 950.00, vat: 0.16, stock: 20, reorder: 5, unit: 'plate', image: null },
+      { id: 'ht-dn4', code: 'FOOD-FISH-COCONUT', name: 'Coconut Curry Fish Fillet with Rice', category: 'DINNER/SUPPER', price: 750.00, vat: 0.16, stock: 25, reorder: 6, unit: 'plate', image: null },
+
+      // SNACKS
+      { id: 'ht-s1', code: 'FOOD-CHIPS-FRIES', name: 'Crispy French Fries (Chips Masala)', category: 'SNACKS', price: 180.00, vat: 0.16, stock: 60, reorder: 15, unit: 'plate', image: null },
+      { id: 'ht-s2', code: 'FOOD-BEEF-SAMOSA', name: 'Crispy Beef Samosas (Pair)', category: 'SNACKS', price: 100.00, vat: 0.16, stock: 70, reorder: 20, unit: 'pair', image: null },
+      { id: 'ht-s3', code: 'FOOD-FC-SAUSAGES', name: 'Farmers Choice Beef Sausages (Pair)', category: 'SNACKS', price: 120.00, vat: 0.16, stock: 65, reorder: 15, unit: 'pair', image: null },
+      { id: 'ht-s4', code: 'FOOD-CHAPATI-PAIR', name: 'Soft Layered Chapati (Pair)', category: 'SNACKS', price: 80.00, vat: 0.16, stock: 90, reorder: 25, unit: 'pair', image: null },
+      { id: 'ht-s5', code: 'FOOD-BHAJIA-PACK', name: 'Crispy Potatoes Bhajia with Chilli Dip', category: 'SNACKS', price: 160.00, vat: 0.16, stock: 45, reorder: 10, unit: 'pack', image: null }
     ]
   },
   'Supermarket': {
@@ -8347,7 +8405,7 @@ function applyIndustryCustomizations(bizType) {
   const pcCatSelect = document.getElementById('pcCategory');
   if (pcCatSelect) {
     const indCats = {
-      'Hotel': ['Food & Dishes', 'Grill & BBQ', 'Mains & Stews', 'Fish & Seafood', 'Sides & Snacks', 'Beverages', 'Alcohol & Beers', 'Desserts'],
+      'Hotel': ['Breakfast', 'Drinks', 'Lunch', 'Dinner/Supper', 'Snacks'],
       'Supermarket': ['Groceries', 'Beverages', 'Dairy & Eggs', 'Bakery', 'Personal Care', 'Household & Cleaning', 'Snacks & Confectionery'],
       'Wholesale': ['Bulk Grains', 'Bulk Pantry', 'Bulk Oils & Fats', 'Bulk Soaps & Detergents', 'Bulk Beverages', 'Sacks & Bales'],
       'Hardware': ['Cement & Masonry', 'Roofing & Iron Sheets', 'Paint & Finishes', 'Plumbing & Pipes', 'Steel & Rebar', 'Tools & Hardware', 'Electrical'],
@@ -12899,12 +12957,16 @@ function renderRestProducts() {
   if (!grid) return;
   const list = (products && products.length > 0) ? products : (INDUSTRY_CONFIG['Hotel']?.products || []);
 
-  // Dynamically synchronize category strip with available food categories
+  // Dynamically synchronize category strip with requested food categories
   const catStrip = document.getElementById('restCategoryStrip');
-  if (catStrip && list.length > 0) {
-    const uniqueCats = ['ALL', ...Array.from(new Set(list.map(p => (p.category || 'General').toUpperCase()).filter(Boolean)))];
-    catStrip.innerHTML = uniqueCats.map((cat, idx) => `
-      <button class="rest-cat-pill ${idx === 0 ? 'active' : ''}" onclick="filterRestCat('${escapeHtml(cat)}', this)">
+  if (catStrip) {
+    const defaultCats = ['ALL', 'BREAKFAST', 'DRINKS', 'LUNCH', 'DINNER/SUPPER', 'SNACKS'];
+    const prodCats = Array.from(new Set(list.map(p => (p.category || '').toUpperCase()).filter(Boolean)));
+    const mergedCats = Array.from(new Set([...defaultCats, ...prodCats]));
+    const currActive = catStrip.querySelector('.rest-cat-pill.active')?.getAttribute('data-cat') || 'ALL';
+
+    catStrip.innerHTML = mergedCats.map(cat => `
+      <button class="rest-cat-pill ${cat === currActive ? 'active' : ''}" data-cat="${escapeHtml(cat)}" onclick="filterRestCat('${escapeHtml(cat)}', this)">
         ${escapeHtml(cat)}
       </button>
     `).join('');
@@ -12936,11 +12998,15 @@ function filterRestMenu() {
 function filterRestCat(cat, btn) {
   document.querySelectorAll('.rest-cat-pill').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
+  const target = (cat || 'ALL').toUpperCase();
   document.querySelectorAll('.rest-prod-card').forEach(c => {
-    if (cat === 'ALL') {
+    if (target === 'ALL') {
       c.style.display = 'flex';
     } else {
-      const match = c.getAttribute('data-cat').toUpperCase().includes(cat);
+      const prodCat = (c.getAttribute('data-cat') || '').toUpperCase();
+      const match = prodCat === target ||
+                    (target.includes('/') && target.split('/').some(p => prodCat.includes(p.trim()))) ||
+                    (prodCat.includes('/') && prodCat.split('/').some(p => target.includes(p.trim())));
       c.style.display = match ? 'flex' : 'none';
     }
   });
@@ -13123,19 +13189,75 @@ function renderKitchenBoard() {
 
       <div class="kds-ticket-actions">
         ${t.status === 'pending' ? `
-          <button class="kds-btn-start" onclick="advanceTicket('${t.id}', 'preparing')">Start preparing</button>
+          <button class="kds-btn-start" onclick="openKdsConfirmModal('${t.id}', 'preparing')">Start preparing</button>
           <button class="kds-btn-cancel" onclick="cancelKitchenTicket('${t.id}')">Cancel order</button>
         ` : ''}
         ${t.status === 'preparing' ? `
-          <button class="kds-btn-start" onclick="advanceTicket('${t.id}', 'ready')">Mark ready</button>
+          <button class="kds-btn-start" onclick="openKdsConfirmModal('${t.id}', 'ready')">Mark ready</button>
           <button class="kds-btn-cancel" onclick="cancelKitchenTicket('${t.id}')">Cancel order</button>
         ` : ''}
         ${t.status === 'ready' ? `
-          <button class="kds-btn-start" onclick="advanceTicket('${t.id}', 'served')">Mark served &amp; close</button>
+          <button class="kds-btn-start" onclick="openKdsConfirmModal('${t.id}', 'served')">Mark served &amp; close</button>
         ` : ''}
       </div>
     </div>
   `).join('');
+}
+
+let pendingKdsAction = null;
+
+function openKdsConfirmModal(ticketId, nextStatus) {
+  const tickets = getKitchenTickets();
+  const t = tickets.find(x => x.id === ticketId);
+  if (!t) return;
+
+  pendingKdsAction = { ticketId, nextStatus };
+
+  const overlay = document.getElementById('kdsConfirmModalOverlay');
+  const codeEl = document.getElementById('kdsConfirmTicketCode');
+  const currBadge = document.getElementById('kdsConfirmCurrentStatusBadge');
+  const typeBadge = document.getElementById('kdsConfirmOrderTypeBadge');
+  const nextText = document.getElementById('kdsConfirmNextStatusText');
+  const locEl = document.getElementById('kdsConfirmLocation');
+  const countEl = document.getElementById('kdsConfirmItemsCount');
+  const actionBtn = document.getElementById('kdsConfirmActionBtn');
+
+  if (codeEl) codeEl.textContent = t.id || t.shortId;
+  if (currBadge) currBadge.textContent = (t.status || 'Pending').toUpperCase();
+  if (typeBadge) typeBadge.textContent = (t.orderType || 'Dine In').toUpperCase();
+
+  const statusDisplayNames = {
+    'preparing': 'Preparing',
+    'ready': 'Ready',
+    'served': 'Served & Closed'
+  };
+  const targetLabel = statusDisplayNames[nextStatus] || (nextStatus.charAt(0).toUpperCase() + nextStatus.slice(1));
+
+  if (nextText) nextText.textContent = targetLabel;
+  if (locEl) locEl.textContent = t.location || 'luanda';
+
+  const totalUnits = (t.items || []).reduce((acc, it) => acc + (it.qty || 1), 0);
+  if (countEl) countEl.textContent = `${totalUnits} ${totalUnits === 1 ? 'item' : 'items'} in ticket`;
+
+  if (actionBtn) {
+    actionBtn.textContent = `Confirm ${targetLabel}`;
+    actionBtn.onclick = function() {
+      if (pendingKdsAction) {
+        advanceTicket(pendingKdsAction.ticketId, pendingKdsAction.nextStatus);
+        closeKdsConfirmModal();
+      }
+    };
+  }
+
+  if (overlay) {
+    overlay.style.display = 'flex';
+  }
+}
+
+function closeKdsConfirmModal() {
+  const overlay = document.getElementById('kdsConfirmModalOverlay');
+  if (overlay) overlay.style.display = 'none';
+  pendingKdsAction = null;
 }
 
 function advanceTicket(id, nextStatus) {
