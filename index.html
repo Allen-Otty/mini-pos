@@ -13453,6 +13453,39 @@ async function safeFetchJson(url, options = {}) {
   }
 }
 
+async function forceSyncPlatformDarajaSettings() {
+  try {
+    const raw = localStorage.getItem('dogo_platform_settings');
+    if (!raw) return false;
+    const cfg = JSON.parse(raw);
+    if (!cfg.daraja_consumer_key || !cfg.daraja_consumer_secret) return false;
+
+    const shortcode = cfg.mpesa_till || cfg.mpesa_paybill || '174379';
+    const payment_type = cfg.mpesa_paybill ? 'paybill' : 'till';
+    const is_production = cfg.daraja_env === 'production';
+
+    const resp = await callEdgeFunction('mpesa-settings', {
+      action: 'save',
+      payment_type,
+      shortcode,
+      consumer_key: cfg.daraja_consumer_key,
+      consumer_secret: cfg.daraja_consumer_secret,
+      passkey: cfg.daraja_passkey || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919',
+      is_production
+    });
+    return Boolean(resp && !resp.error);
+  } catch (e) {
+    return false;
+  }
+}
+
+let _mpesaSettingsChecked = false;
+async function ensureMpesaSettingsSynced() {
+  if (_mpesaSettingsChecked) return;
+  _mpesaSettingsChecked = true;
+  await forceSyncPlatformDarajaSettings();
+}
+
 async function initiatePaymentRequest(payload) {
   const apiBase = getPaymentApiBaseUrl();
 
@@ -13483,7 +13516,9 @@ async function initiatePaymentRequest(payload) {
   // 2. On static cloud hosts (GitHub Pages, Netlify): call Supabase Edge Function 'mpesa-stk-push'
   if (payload.gateway === 'mpesa') {
     try {
-      const edgeRes = await callEdgeFunction('mpesa-stk-push', {
+      await ensureMpesaSettingsSynced();
+
+      let edgeRes = await callEdgeFunction('mpesa-stk-push', {
         phone: payload.phone,
         amount: payload.amount,
         cart: payload.cart,
@@ -13491,6 +13526,21 @@ async function initiatePaymentRequest(payload) {
         plan: payload.plan || null,
         metadata: payload.metadata || {}
       });
+
+      // If the edge function reported unconfigured store, auto-sync from Admin Console platform settings and retry
+      if (edgeRes && edgeRes.error && (edgeRes.error.includes('not set up') || edgeRes.error.includes('credentials') || edgeRes.error.includes('Settings'))) {
+        const didSync = await forceSyncPlatformDarajaSettings();
+        if (didSync) {
+          edgeRes = await callEdgeFunction('mpesa-stk-push', {
+            phone: payload.phone,
+            amount: payload.amount,
+            cart: payload.cart,
+            customer_id: payload.customerId,
+            plan: payload.plan || null,
+            metadata: payload.metadata || {}
+          });
+        }
+      }
 
       if (edgeRes && !edgeRes.error && (edgeRes.payment_request_id || edgeRes.id)) {
         return {
@@ -13505,7 +13555,7 @@ async function initiatePaymentRequest(payload) {
         return {
           success: false,
           error: edgeRes.error.includes('credentials')
-            ? 'M-Pesa credentials not configured for this store. Go to Settings > Integrations to add your Till/Paybill.'
+            ? 'M-Pesa credentials not configured. Go to Settings > Safaricom M-Pesa to add your Till/Paybill.'
             : edgeRes.error
         };
       }
@@ -13923,6 +13973,32 @@ async function loadAllGatewaySettings() {
       if (document.getElementById('mpesaShortcode')) document.getElementById('mpesaShortcode').value = resp.data.shortcode || '';
       if (document.getElementById('mpesaPaymentType')) document.getElementById('mpesaPaymentType').value = resp.data.payment_type || 'till';
       if (document.getElementById('mpesaEnv')) document.getElementById('mpesaEnv').value = String(resp.data.is_production);
+    } else {
+      // If cloud is not configured yet, check if Admin Console has saved Daraja settings
+      const rawPlatform = localStorage.getItem('dogo_platform_settings');
+      if (rawPlatform) {
+        try {
+          const pCfg = JSON.parse(rawPlatform);
+          if (pCfg.daraja_consumer_key && pCfg.daraja_consumer_secret) {
+            const sc = pCfg.mpesa_till || pCfg.mpesa_paybill || '174379';
+            const pt = pCfg.mpesa_paybill ? 'paybill' : 'till';
+            const isProd = pCfg.daraja_env === 'production';
+            if (document.getElementById('mpesaShortcode')) document.getElementById('mpesaShortcode').value = sc;
+            if (document.getElementById('mpesaPaymentType')) document.getElementById('mpesaPaymentType').value = pt;
+            if (document.getElementById('mpesaEnv')) document.getElementById('mpesaEnv').value = String(isProd);
+            const statusEl = document.getElementById('mpesaStatusText');
+            const badgeEl = document.getElementById('badgeMpesaConfig');
+            const intPill = document.getElementById('intMpesaStatusPill');
+            if (statusEl) {
+              statusEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Synced from Admin Console — Shortcode ${escapeHtml(sc)} (${isProd ? 'Production' : 'Sandbox'})`;
+            }
+            if (badgeEl) badgeEl.textContent = isProd ? 'PRODUCTION' : 'SANDBOX READY';
+            if (intPill) intPill.textContent = 'Configured';
+            // Auto sync to cloud edge function
+            forceSyncPlatformDarajaSettings();
+          }
+        } catch(e) {}
+      }
     }
   } catch (e) {}
 
@@ -14008,6 +14084,9 @@ async function saveMpesaSettings() {
       action: 'save', payment_type, shortcode, consumer_key, consumer_secret, passkey, is_production
     });
     if (edgeResp && !edgeResp.error) saved = true;
+    else if (edgeResp && edgeResp.error) {
+      console.warn('M-Pesa edge save error:', edgeResp.error);
+    }
   } catch(e) {}
 
   // 2. Also save to local Express API if reachable
@@ -14023,14 +14102,27 @@ async function saveMpesaSettings() {
     } catch(e) {}
   }
 
+  // 3. Always synchronize with dogo_platform_settings in localStorage
+  try {
+    const raw = localStorage.getItem('dogo_platform_settings');
+    const cfg = raw ? JSON.parse(raw) : {};
+    cfg.daraja_consumer_key = consumer_key;
+    cfg.daraja_consumer_secret = consumer_secret;
+    cfg.daraja_passkey = passkey;
+    cfg.daraja_env = is_production ? 'production' : 'sandbox';
+    if (payment_type === 'paybill') cfg.mpesa_paybill = shortcode;
+    else cfg.mpesa_till = shortcode;
+    localStorage.setItem('dogo_platform_settings', JSON.stringify(cfg));
+  } catch(e) {}
+
   if (saved) {
-    showToast('M-Pesa gateway settings updated successfully');
+    showToast('M-Pesa gateway settings updated and synced successfully');
     ['mpesaConsumerKey', 'mpesaConsumerSecret', 'mpesaPasskey'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
     loadAllGatewaySettings();
   } else {
-    showToast('M-Pesa settings saved locally');
+    showToast('M-Pesa settings saved and cached for checkout');
     loadAllGatewaySettings();
   }
 }
@@ -14294,14 +14386,14 @@ function toggleScanner() {
 /* =====================================================================
    PWA install support & Cache Management
 ===================================================================== */
-const DOGO_BUILD_VER = "2026.09.23.v3";
+const DOGO_BUILD_VER = "2026.09.24.v4";
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
       if (window.caches) {
         const cacheKeys = await caches.keys();
         for (const k of cacheKeys) {
-          if (k !== 'dogo-pos-cache-v3') {
+          if (k !== 'dogo-pos-cache-v4') {
             await caches.delete(k);
           }
         }

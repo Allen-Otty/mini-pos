@@ -2127,7 +2127,7 @@ function toggleMpesaModeFields() {
   if (dSec) dSec.style.display = mode === 'daraja' ? 'block' : 'none';
 }
 
-function savePayoutSettings() {
+async function savePayoutSettings() {
   const cfg = getStoredPlatformSettings();
 
   cfg.mpesa_mode = document.getElementById('setMpesaMode')?.value || 'manual';
@@ -2156,6 +2156,31 @@ function savePayoutSettings() {
   cfg.price_control = parseFloat(document.getElementById('setPriceControl')?.value || '1999');
 
   saveStoredPlatformSettings(cfg);
+
+  // Sync to Supabase cloud mpesa-settings edge function if Daraja keys are provided
+  if (cfg.daraja_consumer_key && cfg.daraja_consumer_secret) {
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const shortcode = cfg.mpesa_till || cfg.mpesa_paybill || '174379';
+      await sb.functions.invoke('mpesa-settings', {
+        body: {
+          action: 'save',
+          payment_type: cfg.mpesa_paybill ? 'paybill' : 'till',
+          shortcode,
+          consumer_key: cfg.daraja_consumer_key,
+          consumer_secret: cfg.daraja_consumer_secret,
+          passkey: cfg.daraja_passkey || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919',
+          is_production: cfg.daraja_env === 'production'
+        },
+        headers: { Authorization: 'Bearer ' + (session ? session.access_token : '') }
+      });
+      showToast('Payout & Daraja settings saved and synced to cloud successfully!');
+      return;
+    } catch (e) {
+      console.warn('Edge function sync notice:', e);
+    }
+  }
+
   showToast('Payout & Gateway settings saved successfully!');
 }
 
