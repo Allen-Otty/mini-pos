@@ -1386,6 +1386,61 @@
     color: var(--accent-text);
     border-color: var(--accent);
   }
+  .su-plan-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 6px 0 12px;
+  }
+  .su-plan-option {
+    position: relative;
+    background: var(--input-bg);
+    border: 2px solid var(--input-border);
+    border-radius: 12px;
+    padding: 10px 8px;
+    cursor: pointer;
+    transition: all .15s;
+    text-align: left;
+  }
+  .su-plan-option:hover {
+    border-color: var(--accent);
+  }
+  .su-plan-option.active {
+    border-color: #16a34a;
+    background: rgba(22, 163, 74, 0.08);
+    box-shadow: 0 0 0 1px #16a34a;
+  }
+  [data-theme="dark"] .su-plan-option.active {
+    background: rgba(22, 163, 74, 0.18);
+  }
+  .su-plan-badge {
+    position: absolute;
+    top: -7px;
+    right: 6px;
+    background: #facc15;
+    color: #0f172a;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  .su-plan-title {
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--surface-text);
+    margin-bottom: 2px;
+  }
+  .su-plan-sub {
+    font-size: 10.5px;
+    color: var(--text-secondary);
+    line-height: 1.25;
+  }
+  @media (max-width: 600px) {
+    .su-plan-selector {
+      grid-template-columns: 1fr;
+    }
+  }
   .auth-btn {
     width: 100%;
     padding: 16px;
@@ -3085,8 +3140,10 @@
 ===================================================================== */
 .kds-header-area {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
   margin-bottom: 20px;
 }
 
@@ -3105,15 +3162,18 @@
 }
 
 .kds-top-actions {
-  display: flex;
+  display: inline-flex;
+  align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .kds-btn-blue {
   background: #0284c7;
   color: #ffffff;
   border: none;
-  padding: 9px 18px;
+  padding: 10px 20px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 700;
@@ -3121,13 +3181,20 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.kds-btn-blue:hover {
+  background: #0369a1;
+  transform: translateY(-1px);
 }
 
 .kds-btn-dark {
   background: #0f172a;
   color: #facc15;
   border: 1px solid rgba(250, 204, 21, 0.3);
-  padding: 9px 18px;
+  padding: 10px 20px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 700;
@@ -3135,6 +3202,13 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.kds-btn-dark:hover {
+  background: #1e293b;
+  transform: translateY(-1px);
 }
 
 .kds-filter-card {
@@ -3143,22 +3217,57 @@
   border-radius: 18px;
   padding: 16px 20px;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 16px;
+  flex-wrap: wrap;
   margin-bottom: 20px;
 }
 
 .kds-filter-card .filter-field {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  min-width: 0;
+}
+
+.kds-filter-card .filter-field.field-location {
+  flex: 0 0 200px;
+  max-width: 240px;
+}
+
+.kds-filter-card .filter-field.field-search {
+  flex: 1 1 240px;
+  min-width: 220px;
 }
 
 .kds-filter-card label {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kds-filter-card select,
+.kds-filter-card input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-primary);
+  font-size: 13.5px;
+  outline: none;
+  height: 42px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.kds-filter-card select:focus,
+.kds-filter-card input:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
 }
 
 .kds-apply-btn {
@@ -3166,12 +3275,22 @@
   color: #0f172a;
   border: none;
   font-weight: 800;
-  font-size: 13.5px;
-  padding: 11px 22px;
+  font-size: 13px;
+  padding: 0 22px;
   border-radius: 999px;
   cursor: pointer;
-  margin-top: 14px;
   white-space: nowrap;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: 0;
+  transition: all 0.2s;
+}
+.kds-apply-btn:hover {
+  background: #eab308;
+  transform: translateY(-1px);
 }
 
 .kds-status-tabs {
@@ -5722,7 +5841,7 @@
           </ul>
         </div>
 
-        <button class="hero-btn-secondary" style="width:100%; border-radius:999px;" onclick="openAuthModal('signup')">
+        <button class="hero-btn-secondary" style="width:100%; border-radius:999px;" onclick="selectPlanAndSignup('Free')">
           Start for free
         </button>
       </div>
@@ -5750,7 +5869,7 @@
           </ul>
         </div>
 
-        <button class="hero-btn-primary" style="width:100%; border-radius:999px;" onclick="openAuthModal('signup')">
+        <button class="hero-btn-primary" style="width:100%; border-radius:999px;" onclick="selectPlanAndSignup('Core')">
           Start 7-day free trial
         </button>
       </div>
@@ -5777,7 +5896,7 @@
           </ul>
         </div>
 
-        <button class="hero-btn-secondary" style="width:100%; border-radius:999px;" onclick="openAuthModal('signup')">
+        <button class="hero-btn-secondary" style="width:100%; border-radius:999px;" onclick="selectPlanAndSignup('Control')">
           Start 7-day free trial
         </button>
       </div>
@@ -5885,6 +6004,25 @@
       <div class="auth-panel" id="authPanelSignup">
         <h2>Create Your Business</h2>
         <div class="sub">You'll be the Admin of this account</div>
+
+        <label><i class="fa-solid fa-crown" style="color:#f59e0b;"></i> Selected Plan &amp; Features</label>
+        <div class="su-plan-selector" id="suPlanSelector">
+          <div class="su-plan-option active" id="suPlanOptFree" onclick="setSignupPlan('Free')">
+            <div class="su-plan-title">Free</div>
+            <div class="su-plan-sub">KES 0/mo · Up to 5 products, 1 branch</div>
+          </div>
+          <div class="su-plan-option" id="suPlanOptCore" onclick="setSignupPlan('Core')">
+            <div class="su-plan-badge">7-Day Trial</div>
+            <div class="su-plan-title">Core POS</div>
+            <div class="su-plan-sub">KES 999/mo · Unlimited, M-Pesa &amp; KOT</div>
+          </div>
+          <div class="su-plan-option" id="suPlanOptControl" onclick="setSignupPlan('Control')">
+            <div class="su-plan-badge" style="background:#0f172a; color:#fff;">Pro</div>
+            <div class="su-plan-title">Control POS</div>
+            <div class="su-plan-sub">KES 1,999/mo · eTIMS &amp; Multi-Branch</div>
+          </div>
+        </div>
+        <input type="hidden" id="suSelectedPlan" value="Free">
 
         <label>Business Name</label>
         <input type="text" id="suBizName" placeholder="e.g. Greenleaf Supermarket">
@@ -6354,18 +6492,18 @@
     </div>
 
     <div class="kds-filter-card">
-      <div class="filter-field">
+      <div class="filter-field field-location">
         <label><i class="fa-solid fa-location-dot"></i> Location</label>
         <select id="kdsFilterLocation" onchange="renderKitchenBoard()">
           <option value="luanda">luanda</option>
           <option value="main">Main Branch</option>
         </select>
       </div>
-      <div class="filter-field" style="flex:2;">
+      <div class="filter-field field-search">
         <label><i class="fa-solid fa-magnifying-glass"></i> Find a ticket</label>
-        <input type="text" id="kdsSearchTicket" placeholder="Search tickets..." oninput="renderKitchenBoard()" style="margin:0;">
+        <input type="text" id="kdsSearchTicket" placeholder="Search ticket number, code, or dish..." oninput="renderKitchenBoard()">
       </div>
-      <button class="kds-apply-btn" onclick="renderKitchenBoard()">Apply filters</button>
+      <button class="kds-apply-btn" onclick="renderKitchenBoard()"><i class="fa-solid fa-filter"></i> Apply filters</button>
     </div>
 
     <div class="kds-status-tabs">
@@ -6806,31 +6944,36 @@
           <h3 style="font-size:20px; font-weight:800; margin:0;" id="subBranchName">luanda</h3>
           <span class="branch-sector-badge" id="subBranchSector">HARDWARE STORES</span>
         </div>
-        <span class="branch-active-pill">Free</span>
+        <span class="branch-active-pill" id="subPlanPill">Free</span>
       </div>
 
       <div class="sub-rows-list">
         <div class="sub-data-row">
-          <div class="sub-data-left"><i class="fa-solid fa-calendar"></i> <span>Trial ends</span></div>
-          <span class="sub-data-val">Not set</span>
+          <div class="sub-data-left"><i class="fa-solid fa-calendar"></i> <span>Trial / Renewal</span></div>
+          <span class="sub-data-val" id="subRenewalVal">Lifetime Free</span>
         </div>
         <div class="sub-data-row">
-          <div class="sub-data-left"><i class="fa-solid fa-circle-check"></i> <span>Starts</span></div>
-          <span class="sub-data-val">Not set</span>
+          <div class="sub-data-left"><i class="fa-solid fa-circle-check"></i> <span>Status</span></div>
+          <span class="sub-data-val" id="subStatusVal">Active Free</span>
         </div>
         <div class="sub-data-row">
-          <div class="sub-data-left"><i class="fa-solid fa-shield-halved"></i> <span>Renews until</span></div>
-          <span class="sub-data-val">Not set</span>
-        </div>
-        <div class="sub-data-row">
-          <div class="sub-data-left"><i class="fa-solid fa-credit-card"></i> <span>Plan</span></div>
-          <span class="sub-data-val">Free</span>
+          <div class="sub-data-left"><i class="fa-solid fa-credit-card"></i> <span>Active Plan</span></div>
+          <span class="sub-data-val" id="subPlanVal">Free (Starter)</span>
         </div>
       </div>
 
-      <button class="sub-upgrade-btn" onclick="openUpgradePlanModal()">
-        <i class="fa-solid fa-credit-card"></i> <span>Upgrade plan</span>
-      </button>
+      <div id="subPlanFeaturesList" style="margin:16px 0; padding:16px 18px; background:var(--panel); border-radius:14px; border:1px solid var(--border);">
+        <!-- Populated dynamically by renderSubscriptionTab() -->
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="sub-upgrade-btn" style="flex:1; min-width:200px;" onclick="openUpgradePlanModal('Core')">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> <span>Upgrade to Core POS (KES 999)</span>
+        </button>
+        <button class="sub-upgrade-btn" style="flex:1; min-width:200px; background:#0f172a; color:#facc15;" onclick="openUpgradePlanModal('Control')">
+          <i class="fa-solid fa-crown"></i> <span>Upgrade to Control POS (KES 1,999)</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -8898,6 +9041,348 @@ let isPlatformAdmin = false;
 let platformBusinessList = [];
 
 let CATALOG = [];
+let products = []; // synchronized alias with CATALOG
+
+/* =====================================================================
+   DOGO POS TIERED PLANS & FEATURE DEFINITIONS
+===================================================================== */
+const PLAN_FEATURES = {
+  'Free': {
+    name: 'Free (Starter)',
+    tier: 'Free',
+    priceMonth: 0,
+    maxProducts: 5,
+    maxUsers: 1,
+    maxBranches: 1,
+    cashSales: true,
+    basicReceipts: true,
+    scanner: true,
+    offlineStorage: true,
+    mpesaStk: false,
+    shifts: false,
+    restaurantKitchen: false,
+    profitReports: false,
+    teamAccounts: false,
+    etims: false,
+    advancedStockAlerts: false,
+    multiBranch: false,
+    prioritySupport: false
+  },
+  'Core': {
+    name: 'Core POS (Growth)',
+    tier: 'Core',
+    priceMonth: 999,
+    maxProducts: Infinity,
+    maxUsers: 5,
+    maxBranches: 1,
+    cashSales: true,
+    basicReceipts: true,
+    scanner: true,
+    offlineStorage: true,
+    mpesaStk: true,
+    shifts: true,
+    restaurantKitchen: true,
+    profitReports: true,
+    teamAccounts: true,
+    etims: false,
+    advancedStockAlerts: false,
+    multiBranch: false,
+    prioritySupport: false
+  },
+  'Control': {
+    name: 'Control POS (Pro)',
+    tier: 'Control',
+    priceMonth: 1999,
+    maxProducts: Infinity,
+    maxUsers: Infinity,
+    maxBranches: Infinity,
+    cashSales: true,
+    basicReceipts: true,
+    scanner: true,
+    offlineStorage: true,
+    mpesaStk: true,
+    shifts: true,
+    restaurantKitchen: true,
+    profitReports: true,
+    teamAccounts: true,
+    etims: true,
+    advancedStockAlerts: true,
+    multiBranch: true,
+    prioritySupport: true
+  }
+};
+
+function getCurrentBusinessPlan() {
+  if (isPlatformAdmin || (profile && profile.email === 'allanotiende1998@gmail.com')) {
+    return {
+      plan: 'Control',
+      tier: 'Control',
+      name: 'Control POS (Platform Admin)',
+      status: 'Active (Unlimited)',
+      renews: 'Permanent',
+      trialEnds: null,
+      features: PLAN_FEATURES['Control']
+    };
+  }
+
+  const bId = activeBusinessId || (business ? business.id : (profile?.email || 'default_tenant'));
+  let saved = null;
+  try {
+    const raw = localStorage.getItem('dogo_biz_plans');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      saved = parsed[bId] || (profile?.email ? parsed[profile.email] : null);
+    }
+  } catch (e) {}
+
+  let rawPlan = saved?.plan || business?.subscription_plan || 'Free';
+  let planKey = 'Free';
+  if (/control/i.test(rawPlan)) planKey = 'Control';
+  else if (/core/i.test(rawPlan)) planKey = 'Core';
+  else planKey = 'Free';
+
+  const cfg = PLAN_FEATURES[planKey] || PLAN_FEATURES['Free'];
+  return {
+    plan: planKey,
+    tier: planKey,
+    name: cfg.name,
+    status: saved?.status || (planKey === 'Free' ? 'Free Plan' : 'Active'),
+    renews: saved?.renews || (planKey === 'Free' ? 'Lifetime Free' : '30 days remaining'),
+    trialEnds: saved?.trialEnds || null,
+    features: cfg
+  };
+}
+
+function setSignupPlan(plan) {
+  const hidden = document.getElementById('suSelectedPlan');
+  if (hidden) hidden.value = plan;
+
+  ['Free', 'Core', 'Control'].forEach(p => {
+    const el = document.getElementById('suPlanOpt' + p);
+    if (el) el.classList.toggle('active', p === plan);
+  });
+}
+
+function selectPlanAndSignup(plan) {
+  setSignupPlan(plan);
+  showAuthTab('signup');
+  const target = document.getElementById('authSection');
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function checkProductLimitBeforeCreate() {
+  const planInfo = getCurrentBusinessPlan();
+  const currentCount = (CATALOG ? CATALOG.length : (products ? products.length : 0));
+  if (planInfo.plan === 'Free' && currentCount >= 5) {
+    showPlanUpgradePrompt(
+      'Catalog Limit Reached (Free Plan)',
+      `The Free Starter plan includes up to 5 catalog products. You have ${currentCount} products. Upgrade to Core POS to add unlimited inventory, shifts, and M-Pesa STK push.`,
+      'Core'
+    );
+    return false;
+  }
+  return true;
+}
+
+function showPlanUpgradePrompt(featureTitle, featureDesc, targetPlan = 'Core') {
+  let modal = document.getElementById('planUpgradePromptModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'planUpgradePromptModal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.65); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); z-index:999999; display:flex; align-items:center; justify-content:center; padding:16px;';
+    modal.onclick = (e) => { if (e.target === modal) closePlanUpgradePrompt(); };
+    document.body.appendChild(modal);
+  }
+
+  const isControl = (targetPlan === 'Control');
+  const planName = isControl ? 'Control POS (Pro)' : 'Core POS (Growth)';
+  const planPrice = isControl ? 'KES 1,999/mo' : 'KES 999/mo';
+  const badgeColor = isControl ? '#0f172a' : '#16a34a';
+
+  modal.innerHTML = `
+    <div style="background:#ffffff; border-radius:22px; max-width:480px; width:100%; padding:26px 28px; box-shadow:0 25px 60px -15px rgba(0,0,0,0.3); border:1px solid rgba(0,0,0,0.08); font-family:inherit; position:relative; text-align:center;">
+      <button onclick="closePlanUpgradePrompt()" style="position:absolute; top:18px; right:18px; border:none; background:#f1f5f9; width:32px; height:32px; border-radius:50%; cursor:pointer; color:#64748b; font-size:14px; display:flex; align-items:center; justify-content:center;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div style="width:56px; height:56px; border-radius:18px; background:rgba(22,163,74,0.12); color:#16a34a; font-size:24px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+        <i class="fa-solid fa-crown" style="color:#f59e0b;"></i>
+      </div>
+
+      <span style="background:${badgeColor}; color:#ffffff; font-size:10.5px; font-weight:800; padding:3px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:0.05em;">
+        ${escapeHtml(planName)} Feature
+      </span>
+
+      <h3 style="font-size:20px; font-weight:800; color:#0f172a; margin:12px 0 8px;">
+        ${escapeHtml(featureTitle)}
+      </h3>
+
+      <p style="font-size:13.5px; color:#64748b; line-height:1.5; margin:0 0 20px;">
+        ${escapeHtml(featureDesc)}
+      </p>
+
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px 14px; margin-bottom:20px; text-align:left; font-size:12.5px; color:#334155;">
+        <div style="font-weight:700; margin-bottom:6px; color:#0f172a;"><i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Included with ${escapeHtml(targetPlan)} POS:</div>
+        <div style="line-height:1.6;">
+          ${isControl ? `
+            &bull; Everything in Core POS<br>
+            &bull; KRA eTIMS Tax Fiscalization<br>
+            &bull; Multi-Branch sync &amp; dashboard<br>
+            &bull; Advanced reorder stock alerts
+          ` : `
+            &bull; Unlimited Catalog Products<br>
+            &bull; Automated M-Pesa STK Push Integration<br>
+            &bull; Shift &amp; Float reconciliation<br>
+            &bull; Restaurant tables &amp; Kitchen tickets
+          `}
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('${targetPlan}');" style="width:100%; padding:13px; border-radius:999px; background:#16a34a; color:#ffffff; font-weight:800; font-size:14px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(22,163,74,0.3); transition:all 0.15s;">
+          Upgrade to ${escapeHtml(targetPlan)} POS &middot; ${planPrice}
+        </button>
+        <button onclick="closePlanUpgradePrompt(); activateFreeTrial('${targetPlan}');" style="width:100%; padding:11px; border-radius:999px; background:#f1f5f9; color:#0f172a; font-weight:700; font-size:13px; border:1px solid #e2e8f0; cursor:pointer;">
+          Start 7-Day Free Trial (Instant Activation)
+        </button>
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+function closePlanUpgradePrompt() {
+  const modal = document.getElementById('planUpgradePromptModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function activateFreeTrial(planName) {
+  applySubscriptionSuccess(planName, 'TRIAL-7DAYS', profile?.phone || '', true);
+}
+
+function applyPlanFeaturesVisibility() {
+  const planInfo = getCurrentBusinessPlan();
+  const f = planInfo.features;
+
+  // 1. Sidebar Plan Badge
+  const bBadge = document.getElementById('sidebarBizType');
+  if (bBadge) {
+    const bType = (business ? business.business_type : 'RETAIL').toUpperCase();
+    bBadge.innerHTML = `${bType} &middot; <span style="color:#facc15; font-weight:800;">${planInfo.plan}</span>`;
+  }
+
+  // 2. Catalog product limit badge
+  const catTitleWrap = document.querySelector('#tab-catalog .top-card');
+  let planLimitBadge = document.getElementById('catalogPlanLimitBadge');
+  if (!planLimitBadge && catTitleWrap) {
+    planLimitBadge = document.createElement('span');
+    planLimitBadge.id = 'catalogPlanLimitBadge';
+    planLimitBadge.style.cssText = 'margin-left:10px; font-size:11.5px; font-weight:800; padding:3px 10px; border-radius:999px; vertical-align:middle;';
+    const h2 = catTitleWrap.querySelector('h2');
+    if (h2) h2.appendChild(planLimitBadge);
+  }
+  if (planLimitBadge) {
+    const count = CATALOG ? CATALOG.length : (products ? products.length : 0);
+    if (planInfo.plan === 'Free') {
+      planLimitBadge.textContent = `${count} / 5 products (Free Plan)`;
+      planLimitBadge.style.background = count >= 5 ? '#fef2f2' : '#f0fdf4';
+      planLimitBadge.style.color = count >= 5 ? '#dc2626' : '#16a34a';
+      planLimitBadge.style.border = count >= 5 ? '1px solid #fecaca' : '1px solid #bbf7d0';
+    } else {
+      planLimitBadge.textContent = `${count} products (${planInfo.plan} POS · Unlimited)`;
+      planLimitBadge.style.background = '#f0fdf4';
+      planLimitBadge.style.color = '#16a34a';
+      planLimitBadge.style.border = '1px solid #bbf7d0';
+    }
+  }
+
+  // 3. M-Pesa STK pill badge in checkout
+  const mpesaPill = document.getElementById('payMethodMpesa');
+  if (mpesaPill) {
+    let stkLock = mpesaPill.querySelector('.stk-lock-badge');
+    if (!f.mpesaStk) {
+      if (!stkLock) {
+        stkLock = document.createElement('span');
+        stkLock.className = 'stk-lock-badge';
+        stkLock.style.cssText = 'background:#facc15; color:#0f172a; font-size:9.5px; font-weight:800; padding:1px 6px; border-radius:999px; margin-left:4px;';
+        stkLock.textContent = 'CORE';
+        mpesaPill.appendChild(stkLock);
+      }
+    } else if (stkLock) {
+      stkLock.remove();
+    }
+  }
+
+  renderSubscriptionTab();
+}
+
+function renderSubscriptionTab() {
+  const planInfo = getCurrentBusinessPlan();
+  const subBranch = document.getElementById('subBranchName');
+  if (subBranch && business) subBranch.textContent = business.name || 'Main Branch';
+  const subSec = document.getElementById('subBranchSector');
+  if (subSec && business) subSec.textContent = (business.business_type || 'Retail').toUpperCase();
+
+  const planValEl = document.getElementById('subPlanVal');
+  if (planValEl) planValEl.textContent = planInfo.name;
+
+  const renewsEl = document.getElementById('subRenewalVal');
+  if (renewsEl) renewsEl.textContent = planInfo.renews;
+
+  const statusEl = document.getElementById('subStatusVal');
+  if (statusEl) statusEl.textContent = planInfo.status;
+
+  const pillEl = document.getElementById('subPlanPill');
+  if (pillEl) {
+    pillEl.textContent = `${planInfo.plan} (${planInfo.status})`;
+    if (planInfo.plan === 'Control') {
+      pillEl.style.background = '#0f172a';
+      pillEl.style.color = '#facc15';
+    } else if (planInfo.plan === 'Core') {
+      pillEl.style.background = '#dcfce7';
+      pillEl.style.color = '#15803d';
+    } else {
+      pillEl.style.background = '#f1f5f9';
+      pillEl.style.color = '#475569';
+    }
+  }
+
+  const featuresBox = document.getElementById('subPlanFeaturesList');
+  if (featuresBox) {
+    const f = planInfo.features;
+    const items = [
+      { label: 'Catalog Products', val: f.maxProducts === Infinity ? 'Unlimited products' : `${f.maxProducts} products max`, ok: true },
+      { label: 'Branches & Users', val: f.maxBranches === Infinity ? 'Multi-branch & unlimited team' : `${f.maxBranches} branch · ${f.maxUsers} user`, ok: true },
+      { label: 'Cash & Basic Receipts', val: 'Active', ok: f.cashSales },
+      { label: 'Camera Barcode Scanner', val: 'Active', ok: f.scanner },
+      { label: 'Offline Sales Storage', val: 'Active', ok: f.offlineStorage },
+      { label: 'M-Pesa STK Push Integration', val: f.mpesaStk ? 'Active' : 'Locked (Core/Control)', ok: f.mpesaStk },
+      { label: 'Shift & Float Reconciliation', val: f.shifts ? 'Active' : 'Locked (Core/Control)', ok: f.shifts },
+      { label: 'Restaurant & Kitchen Tickets', val: f.restaurantKitchen ? 'Active' : 'Locked (Core/Control)', ok: f.restaurantKitchen },
+      { label: 'Profit & Cost Reports', val: f.profitReports ? 'Active' : 'Locked (Core/Control)', ok: f.profitReports },
+      { label: 'Staff & Teller Accounts', val: f.teamAccounts ? 'Active' : 'Locked (Core/Control)', ok: f.teamAccounts },
+      { label: 'KRA eTIMS Tax Compliance', val: f.etims ? 'Active' : 'Locked (Control POS)', ok: f.etims },
+      { label: 'Multi-Branch Dashboard', val: f.multiBranch ? 'Active' : 'Locked (Control POS)', ok: f.multiBranch },
+      { label: 'Priority 24/7 WhatsApp Support', val: f.prioritySupport ? 'Active' : 'Standard Support', ok: f.prioritySupport }
+    ];
+
+    featuresBox.innerHTML = `
+      <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary); margin-bottom:12px;">
+        Included Features in your ${escapeHtml(planInfo.plan)} POS Plan:
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:10px;">
+        ${items.map(i => `
+          <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:${i.ok ? 'var(--text-primary)' : 'var(--text-secondary)'}; background:var(--card); padding:8px 10px; border-radius:10px; border:1px solid var(--border);">
+            <i class="${i.ok ? 'fa-solid fa-circle-check' : 'fa-solid fa-lock'}" style="color:${i.ok ? '#16a34a' : '#94a3b8'}; font-size:13px; flex-shrink:0;"></i>
+            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong>${escapeHtml(i.label)}:</strong> ${escapeHtml(i.val)}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+}
 let customers = [];
 let salesLog = [];     // flattened line items, loaded from Supabase (+ any still-offline queued ones)
 let expenses = [];
@@ -9081,6 +9566,8 @@ async function handleSignup() {
     return;
   }
 
+  const selectedPlan = document.getElementById('suSelectedPlan')?.value || 'Free';
+
   const result = await performLogin(email, password);
   if (btn) { btn.disabled = false; btn.textContent = 'Create Business Account'; }
   if (result.error) {
@@ -9091,7 +9578,24 @@ async function handleSignup() {
     document.getElementById('loginIdentifier').value = email;
     return;
   }
-  showToast('Business created! Welcome to Dogo POS.');
+
+  // Register selected plan in business ledger
+  try {
+    const rawPlans = localStorage.getItem('dogo_biz_plans');
+    const plans = rawPlans ? JSON.parse(rawPlans) : {};
+    const planEntry = {
+      plan: selectedPlan,
+      status: selectedPlan === 'Free' ? 'Free Plan' : 'Trial (7 Days)',
+      renews: selectedPlan === 'Free' ? 'Lifetime Free' : 'In 7 days',
+      trialEnds: selectedPlan === 'Free' ? null : new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+      grantedAt: new Date().toISOString()
+    };
+    plans[email] = planEntry;
+    localStorage.setItem('dogo_biz_plans', JSON.stringify(plans));
+    localStorage.setItem('dogo_pending_signup_plan', selectedPlan);
+  } catch(e) {}
+
+  showToast(`Business created on ${selectedPlan} POS! Welcome to Dogo POS.`);
   await afterLogin();
 }
 
@@ -9332,10 +9836,31 @@ async function afterLogin() {
   // 6. Transition to POS View
   setAppLoggedIn(true);
 
+  // If we had a pending signup plan, bind it to activeBusinessId
+  try {
+    const pendingPlan = localStorage.getItem('dogo_pending_signup_plan');
+    if (pendingPlan && activeBusinessId) {
+      const rawPlans = localStorage.getItem('dogo_biz_plans');
+      const plans = rawPlans ? JSON.parse(rawPlans) : {};
+      plans[activeBusinessId] = {
+        plan: pendingPlan,
+        status: pendingPlan === 'Free' ? 'Free Plan' : 'Trial (7 Days)',
+        renews: pendingPlan === 'Free' ? 'Lifetime Free' : 'In 7 days',
+        trialEnds: pendingPlan === 'Free' ? null : new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+        grantedAt: new Date().toISOString()
+      };
+      localStorage.setItem('dogo_biz_plans', JSON.stringify(plans));
+      localStorage.removeItem('dogo_pending_signup_plan');
+    }
+  } catch(e) {}
+
   applyRoleVisibility();
   applyBusinessTheme();
+  applyPlanFeaturesVisibility();
   renderPlatformSwitcher();
   await loadAllData();
+  products = CATALOG; // keep synchronized
+  applyPlanFeaturesVisibility();
   const initTab = (business && normalizeBizType(business.business_type) === 'Hotel') ? 'restaurant-module' : 'sell';
   switchTab(initTab);
   resetInactivityTimer();
@@ -9380,9 +9905,14 @@ function applyBusinessTheme() {
    TAB SWITCHING
 ===================================================================== */
 function switchTab(name) {
+  if (name === 'product-create') {
+    if (!checkProductLimitBeforeCreate()) return;
+  }
+
   updatePortalHeaderState(name);
   if (name === 'restaurant-order') { renderRestProducts(); renderRestTicket(); }
   if (name === 'kitchen') { renderKitchenBoard(); }
+  if (name === 'subscription') { renderSubscriptionTab(); }
   if (name === 'branches') {
     const pc = document.getElementById('branchProdCount');
     if (pc && products) pc.textContent = products.length;
@@ -9405,7 +9935,7 @@ function switchTab(name) {
   if (name === 'dash') renderDashboard();
   if (name === 'customers') renderCustomers();
   if (name === 'reports') { renderReports(); renderSalesArchive(); }
-  if (name === 'catalog') renderCatalog();
+  if (name === 'catalog') { renderCatalog(); applyPlanFeaturesVisibility(); }
   if (name === 'team') renderTeam();
   if (name === 'menu') renderMenuTab();
   if (name === 'settings') { renderSettingsForm(); loadMpesaStatus(); loadEtimsStatus(); renderPlatformSwitcher(); }
@@ -9432,6 +9962,7 @@ async function loadAllData() {
         id: p.id, code: p.code, name: p.name, category: p.category, price: Number(p.price),
         vat: Number(p.vat_rate), stock: p.stock, reorder: p.reorder_level, unit: p.unit || 'piece'
       }));
+      products = CATALOG;
       customers = (custRes.data || []).map(c => ({ id: c.id, name: c.name, phone: c.phone }));
       expenses = (expRes.data || []).map(e => ({
         id: e.id, date: e.created_at.slice(0,10), category: e.category, desc: e.description, amount: Number(e.amount)
@@ -9507,6 +10038,7 @@ function loadFromLocalCache() {
     if (raw) {
       const cached = JSON.parse(raw);
       CATALOG = cached.CATALOG || [];
+      products = CATALOG;
       customers = cached.customers || [];
       business = cached.business || business;
       team = cached.team || [];
@@ -11729,6 +12261,8 @@ async function addProductManually() {
     return;
   }
 
+  if (!checkProductLimitBeforeCreate()) return;
+
   if (findProduct(code)) { showToast('That code already exists in the catalog'); return; }
 
   const { data, error } = await sb.from('products').insert({
@@ -12109,6 +12643,18 @@ const gatewayConfigLabels = {
 };
 
 function selectPaymentMethod(method) {
+  if (method !== 'cash') {
+    const planInfo = getCurrentBusinessPlan();
+    if (!planInfo.features.mpesaStk) {
+      showPlanUpgradePrompt(
+        'M-Pesa STK Push & Digital Payments',
+        'Automated M-Pesa STK Push and digital payment gateways are included in Core POS and Control POS. Upgrade to start collecting instant phone payments directly to your till.',
+        'Core'
+      );
+      return;
+    }
+  }
+
   currentPaymentMethod = method;
   document.querySelectorAll('.pos-pay-method-pill').forEach(pill => {
     pill.classList.remove('active');
@@ -12955,7 +13501,9 @@ function updatePortalHeaderState(tabName) {
 function renderRestProducts() {
   const grid = document.getElementById('restProductGrid');
   if (!grid) return;
-  const list = (products && products.length > 0) ? products : (INDUSTRY_CONFIG['Hotel']?.products || []);
+  const list = (typeof CATALOG !== 'undefined' && CATALOG && CATALOG.length > 0)
+    ? CATALOG
+    : ((typeof products !== 'undefined' && products && products.length > 0) ? products : (INDUSTRY_CONFIG['Hotel']?.products || []));
 
   // Dynamically synchronize category strip with requested food categories
   const catStrip = document.getElementById('restCategoryStrip');
@@ -13374,7 +13922,7 @@ function openManageApisModal() {
 let currentSelectedPlan = 'Core';
 let currentSelectedPrice = 999;
 
-function openUpgradePlanModal() {
+function openUpgradePlanModal(defaultPlan = 'Core') {
   const overlay = document.getElementById('subUpgradeModalOverlay');
   if (!overlay) return;
 
@@ -13412,9 +13960,11 @@ function openUpgradePlanModal() {
     phInput.value = (profile && profile.phone) ? profile.phone : '';
   }
 
-  selectUpgradePlan('Core', priceCore);
+  const chosenPlan = (defaultPlan === 'Control') ? 'Control' : 'Core';
+  const chosenPrice = (chosenPlan === 'Control') ? priceCtrl : priceCore;
+  selectUpgradePlan(chosenPlan, chosenPrice);
   overlay.style.display = 'flex';
-  trackPlatformEvent('subscription_checkout_opened', { plan: 'Core' });
+  trackPlatformEvent('subscription_checkout_opened', { plan: chosenPlan });
 }
 
 function closeUpgradePlanModal() {
@@ -13483,7 +14033,7 @@ function submitModalStkPush() {
 
   // Simulate prompt resolution
   setTimeout(() => {
-    applySubscriptionSuccess(currentSelectedPlan, 'STK-AUTO-' + Math.random().toString(36).substring(2,8).toUpperCase(), phone);
+    applySubscriptionSuccess(currentSelectedPlan, 'STK-AUTO-' + Math.random().toString(36).substring(2,8).toUpperCase(), phone, false);
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send M-Pesa STK Push';
@@ -13497,11 +14047,16 @@ function submitModalManualCode() {
     showToast('Please enter a valid M-Pesa confirmation code');
     return;
   }
-  applySubscriptionSuccess(currentSelectedPlan, code, profile?.phone || '');
+  applySubscriptionSuccess(currentSelectedPlan, code, profile?.phone || '', false);
 }
 
-function applySubscriptionSuccess(planName, refCode, phone) {
+function applySubscriptionSuccess(planName, refCode, phone, isTrial = false) {
   closeUpgradePlanModal();
+
+  const planKey = planName.includes('Control') ? 'Control' : (planName.includes('Core') ? 'Core' : 'Free');
+  const statusStr = isTrial ? 'Trial (7 Days)' : 'Paid';
+  const renewsStr = isTrial ? 'In 7 days' : '30 days remaining';
+  const trialEndsStr = isTrial ? new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0] : null;
 
   // Save to local subscriptions ledger for Admin Dashboard
   try {
@@ -13510,9 +14065,9 @@ function applySubscriptionSuccess(planName, refCode, phone) {
     ledger.unshift({
       id: 'sub-' + Date.now(),
       bizName: business ? business.name : 'My Business',
-      plan: planName,
-      amount: currentSelectedPrice,
-      status: 'Paid',
+      plan: planKey,
+      amount: isTrial ? 0 : currentSelectedPrice,
+      status: statusStr,
       date: new Date().toISOString().split('T')[0],
       mpesaRef: refCode,
       phone: phone || ''
@@ -13524,64 +14079,61 @@ function applySubscriptionSuccess(planName, refCode, phone) {
   try {
     const rawPlans = localStorage.getItem('dogo_biz_plans');
     const plans = rawPlans ? JSON.parse(rawPlans) : {};
-    const bId = business ? business.id : 'current_biz';
+    const bId = activeBusinessId || (business ? business.id : 'current_biz');
     plans[bId] = {
-      plan: planName,
-      status: 'Paid',
-      renews: 'In 30 days',
+      plan: planKey,
+      status: statusStr,
+      renews: renewsStr,
+      trialEnds: trialEndsStr,
       grantedAt: new Date().toISOString()
     };
+    if (profile?.email) plans[profile.email] = plans[bId];
     localStorage.setItem('dogo_biz_plans', JSON.stringify(plans));
   } catch(e) {}
 
-  // Instant Telegram Push Notification to Super Admin
-  try {
-    const rawCfg = localStorage.getItem('dogo_platform_settings');
-    const cfg = rawCfg ? JSON.parse(rawCfg) : {};
-    const botToken = cfg.telegram_bot_token || '8576294481:AAH_qrp0rQdXbnHqFONS1ril1yJQ_UfbQrA';
-    const chatId = cfg.alert_telegram;
-    if (botToken && chatId) {
-      const nowStr = new Date().toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' });
-      const storeName = business ? business.name : (profile?.email ? profile.email.split('@')[0] + ' Store' : 'New Merchant');
-      const storeType = business?.business_type || 'Retail';
-      const tgMsg = `🔔 <b>Dogo POS Alert: New Subscription Payment!</b>\n\n` +
-        `🏪 <b>Store:</b> ${storeName} (${storeType})\n` +
-        `📦 <b>Plan:</b> ${planName} POS\n` +
-        `💰 <b>Amount:</b> KES ${Number(currentSelectedPrice || 999).toLocaleString()}\n` +
-        `📱 <b>M-Pesa Reference:</b> <code>${refCode}</code>\n` +
-        `📞 <b>Payer Contact:</b> ${phone || profile?.phone || 'Not provided'}\n` +
-        `⏰ <b>Date & Time:</b> ${nowStr} EAT\n\n` +
-        `👉 <i>Log in to /admin to verify payment and review store till.</i>`;
-
-      fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: tgMsg,
-          parse_mode: 'HTML',
-          disable_web_page_preview: true
-        })
-      }).catch(e => console.warn('Telegram notify error:', e));
-    }
-  } catch (e) {}
-
-  // Update UI in tab-subscription
-  const planValEl = document.querySelector('#tab-subscription .sub-data-row:nth-child(4) .sub-data-val');
-  if (planValEl) planValEl.textContent = `${planName} POS`;
-
-  const renewsEl = document.querySelector('#tab-subscription .sub-data-row:nth-child(3) .sub-data-val');
-  if (renewsEl) renewsEl.textContent = '30 days remaining';
-
-  const pillEl = document.querySelector('#tab-subscription .branch-active-pill');
-  if (pillEl) {
-    pillEl.textContent = `${planName} (Paid)`;
-    pillEl.style.background = '#dcfce7';
-    pillEl.style.color = '#15803d';
+  if (business) {
+    business.subscription_plan = planKey;
   }
 
-  showToast(`Congratulations! Upgraded to ${planName} POS. Subscription active.`);
-  trackPlatformEvent('subscription_payment_submitted', { plan: planName, value: currentSelectedPrice, ref: refCode });
+  // Instant Telegram Push Notification to Super Admin
+  if (!isTrial) {
+    try {
+      const rawCfg = localStorage.getItem('dogo_platform_settings');
+      const cfg = rawCfg ? JSON.parse(rawCfg) : {};
+      const botToken = cfg.telegram_bot_token || '8576294481:AAH_qrp0rQdXbnHqFONS1ril1yJQ_UfbQrA';
+      const chatId = cfg.alert_telegram;
+      if (botToken && chatId) {
+        const nowStr = new Date().toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' });
+        const storeName = business ? business.name : (profile?.email ? profile.email.split('@')[0] + ' Store' : 'New Merchant');
+        const storeType = business?.business_type || 'Retail';
+        const tgMsg = `🔔 <b>Dogo POS Alert: New Subscription Payment!</b>\n\n` +
+          `🏪 <b>Store:</b> ${storeName} (${storeType})\n` +
+          `📦 <b>Plan:</b> ${planKey} POS\n` +
+          `💰 <b>Amount:</b> KES ${Number(currentSelectedPrice || 999).toLocaleString()}\n` +
+          `📱 <b>M-Pesa Reference:</b> <code>${refCode}</code>\n` +
+          `📞 <b>Payer Contact:</b> ${phone || profile?.phone || 'Not provided'}\n` +
+          `⏰ <b>Date & Time:</b> ${nowStr} EAT\n\n` +
+          `👉 <i>Log in to /admin to verify payment and review store till.</i>`;
+
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: tgMsg,
+            parse_mode: 'HTML',
+            disable_web_page_preview: true
+          })
+        }).catch(e => console.warn('Telegram notify error:', e));
+      }
+    } catch (e) {}
+  }
+
+  applyPlanFeaturesVisibility();
+  renderSubscriptionTab();
+
+  showToast(`Congratulations! Upgraded to ${planKey} POS. All features are now unlocked!`);
+  trackPlatformEvent('subscription_payment_submitted', { plan: planKey, value: isTrial ? 0 : currentSelectedPrice, ref: refCode });
 }
 
 // Google Analytics & Broadcast Banner Initialization
