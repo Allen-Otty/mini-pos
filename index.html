@@ -249,6 +249,216 @@
   }
   .dogo-links a:hover { color: var(--text); }
 
+  /* =====================================================================
+     NAVBAR DROPDOWN (Business Types)
+  ===================================================================== */
+  .dogo-nav-dropdown {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  .dogo-dropdown-toggle {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 6px 0;
+    transition: color .15s;
+    font-family: inherit;
+  }
+  .dogo-dropdown-toggle:hover,
+  .dogo-nav-dropdown:hover .dogo-dropdown-toggle,
+  .dogo-nav-dropdown.open .dogo-dropdown-toggle {
+    color: var(--text);
+  }
+  .dogo-nav-dropdown:hover .dogo-dropdown-toggle i,
+  .dogo-nav-dropdown.open .dogo-dropdown-toggle i {
+    transform: rotate(180deg);
+  }
+  .dogo-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 14px);
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 10px;
+    min-width: 290px;
+    box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.22);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .dogo-nav-dropdown:hover .dogo-dropdown-menu,
+  .dogo-nav-dropdown.open .dogo-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+  }
+  .dogo-dd-item {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--text) !important;
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  .dogo-dd-item:hover {
+    background: var(--bg);
+    transform: translateX(3px);
+  }
+  .dogo-dd-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .dogo-dd-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .dogo-dd-sub {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  /* =====================================================================
+     LIVE DEMO BUSINESS TYPE SELECTOR & SUBSCRIBE STYLING
+  ===================================================================== */
+  .demo-biz-bar {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .demo-biz-select-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .demo-biz-select {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .demo-biz-select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  }
+  .demo-pills-strip {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 10px 18px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+  }
+  .demo-pills-strip::-webkit-scrollbar { display: none; }
+  .demo-biz-pill-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .demo-biz-pill-btn:hover {
+    color: var(--text);
+    border-color: #2563eb;
+    background: var(--bg);
+  }
+  .demo-biz-pill-btn.active {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+  }
+  .demo-subscribe-top-cta {
+    background: #22c55e;
+    color: #ffffff;
+    border: none;
+    border-radius: 999px;
+    padding: 7px 18px;
+    font-size: 12.5px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+  }
+  .demo-subscribe-top-cta:hover {
+    background: #16a34a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+  }
+  .demo-subscribe-cart-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 13.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    transition: all 0.15s ease;
+  }
+  .demo-subscribe-cart-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  }
+
   .dogo-nav-actions {
     display: flex;
     align-items: center;
@@ -4992,8 +5202,63 @@
 
       <ul class="dogo-links">
         <li><a href="#demo">Live Demo</a></li>
+        <li class="dogo-nav-dropdown">
+          <button type="button" class="dogo-dropdown-toggle">
+            <span>Business Types</span> <i class="fa-solid fa-chevron-down" style="font-size:10px; transition:transform 0.2s;"></i>
+          </button>
+          <div class="dogo-dropdown-menu">
+            <a class="dogo-dd-item" href="#demo" onclick="selectTopBarBizType('Retail')">
+              <div class="dogo-dd-icon" style="color:#2563eb;"><i class="fa-solid fa-bag-shopping"></i></div>
+              <div>
+                <div class="dogo-dd-title">Retail Shop</div>
+                <div class="dogo-dd-sub">Apparel, shoes, accessories &amp; variants</div>
+              </div>
+            </a>
+            <a class="dogo-dd-item" href="#demo" onclick="selectTopBarBizType('Wholesale')">
+              <div class="dogo-dd-icon" style="color:#16a34a;"><i class="fa-solid fa-boxes-packing"></i></div>
+              <div>
+                <div class="dogo-dd-title">Wholesale</div>
+                <div class="dogo-dd-sub">Bulk bales, sacks, cartons &amp; trade credit</div>
+              </div>
+            </a>
+            <a class="dogo-dd-item" href="#demo" onclick="selectTopBarBizType('Supermarket')">
+              <div class="dogo-dd-icon" style="color:#eab308;"><i class="fa-solid fa-barcode"></i></div>
+              <div>
+                <div class="dogo-dd-title">Supermarket</div>
+                <div class="dogo-dd-sub">High-speed barcode lanes &amp; FMCG aisles</div>
+              </div>
+            </a>
+            <a class="dogo-dd-item" href="#demo" onclick="selectTopBarBizType('SME')">
+              <div class="dogo-dd-icon" style="color:#8b5cf6;"><i class="fa-solid fa-briefcase"></i></div>
+              <div>
+                <div class="dogo-dd-title">SME / General Business</div>
+                <div class="dogo-dd-sub">Invoicing, consulting &amp; services billing</div>
+              </div>
+            </a>
+            <a class="dogo-dd-item" href="#demo" onclick="selectTopBarBizType('Hotel')">
+              <div class="dogo-dd-icon" style="color:#ef4444;"><i class="fa-solid fa-utensils"></i></div>
+              <div>
+                <div class="dogo-dd-title">Hotel / Restaurant</div>
+                <div class="dogo-dd-sub">Tables, KOT, kitchen board &amp; food orders</div>
+              </div>
+            </a>
+            <a class="dogo-dd-item" href="#demo" onclick="selectTopBarBizType('Hardware')">
+              <div class="dogo-dd-icon" style="color:#f97316;"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+              <div>
+                <div class="dogo-dd-title">Hardware Store</div>
+                <div class="dogo-dd-sub">Cement, iron sheets, timber, paint &amp; tools</div>
+              </div>
+            </a>
+            <a class="dogo-dd-item" href="#demo" onclick="selectTopBarBizType('Kiosk')">
+              <div class="dogo-dd-icon" style="color:#06b6d4;"><i class="fa-solid fa-shop"></i></div>
+              <div>
+                <div class="dogo-dd-title">Kiosk / Kibanda</div>
+                <div class="dogo-dd-sub">Fast touch till for milk, bread, airtime &amp; cash</div>
+              </div>
+            </a>
+          </div>
+        </li>
         <li><a href="#capabilities">Features</a></li>
-        <li><a href="#restaurant-pos">Restaurant POS</a></li>
         <li><a href="#industries">Industries</a></li>
         <li><a href="#pricing">Pricing</a></li>
         <li><a href="#faqs">FAQs</a></li>
@@ -5018,10 +5283,22 @@
   <div class="dogo-mobile-menu" id="dogoMobileMenu">
     <a href="#demo" onclick="toggleMobileNav()">Live Demo</a>
     <a href="#capabilities" onclick="toggleMobileNav()">Features</a>
-    <a href="#restaurant-pos" onclick="toggleMobileNav()">Restaurant POS</a>
     <a href="#industries" onclick="toggleMobileNav()">Industries</a>
     <a href="#pricing" onclick="toggleMobileNav()">Pricing</a>
     <a href="#faqs" onclick="toggleMobileNav()">FAQs</a>
+
+    <div style="padding:10px 14px 4px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-secondary);">
+      Business Types &amp; POS Demos
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:0 12px 10px;">
+      <a href="#demo" onclick="toggleMobileNav(); selectTopBarBizType('Retail');" style="padding:8px 10px; font-size:12px; border-radius:8px; background:var(--surface);"><i class="fa-solid fa-bag-shopping" style="color:#2563eb;"></i> Retail Shop</a>
+      <a href="#demo" onclick="toggleMobileNav(); selectTopBarBizType('Wholesale');" style="padding:8px 10px; font-size:12px; border-radius:8px; background:var(--surface);"><i class="fa-solid fa-boxes-packing" style="color:#16a34a;"></i> Wholesale</a>
+      <a href="#demo" onclick="toggleMobileNav(); selectTopBarBizType('Supermarket');" style="padding:8px 10px; font-size:12px; border-radius:8px; background:var(--surface);"><i class="fa-solid fa-barcode" style="color:#eab308;"></i> Supermarket</a>
+      <a href="#demo" onclick="toggleMobileNav(); selectTopBarBizType('SME');" style="padding:8px 10px; font-size:12px; border-radius:8px; background:var(--surface);"><i class="fa-solid fa-briefcase" style="color:#8b5cf6;"></i> SME / General</a>
+      <a href="#demo" onclick="toggleMobileNav(); selectTopBarBizType('Hotel');" style="padding:8px 10px; font-size:12px; border-radius:8px; background:var(--surface);"><i class="fa-solid fa-utensils" style="color:#ef4444;"></i> Restaurant</a>
+      <a href="#demo" onclick="toggleMobileNav(); selectTopBarBizType('Hardware');" style="padding:8px 10px; font-size:12px; border-radius:8px; background:var(--surface);"><i class="fa-solid fa-screwdriver-wrench" style="color:#f97316;"></i> Hardware</a>
+      <a href="#demo" onclick="toggleMobileNav(); selectTopBarBizType('Kiosk');" style="padding:8px 10px; font-size:12px; border-radius:8px; background:var(--surface); grid-column:1/-1;"><i class="fa-solid fa-shop" style="color:#06b6d4;"></i> Kiosk / Kibanda</a>
+    </div>
     <div class="m-actions">
       <button class="nav-btn-signin" style="width:100%; text-align:center;" onclick="toggleMobileNav(); openAuthModal('login');">Sign In</button>
       <button class="nav-btn-start" style="width:100%; justify-content:center;" onclick="toggleMobileNav(); openAuthModal('signup');">Start Free</button>
@@ -5068,15 +5345,48 @@
 
     <!-- Interactive Live POS Demo Widget -->
     <div class="demo-widget-container" id="demo">
+      <!-- Industry Selector Bar -->
+      <div class="demo-biz-bar">
+        <div class="demo-biz-select-wrap">
+          <label style="font-size:12.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-layer-group" style="color:#2563eb;"></i> Select Business Type POS:
+          </label>
+          <select id="demoBizTypeSelect" class="demo-biz-select" onchange="switchDemoBusinessType(this.value)">
+            <option value="Retail">Retail Shop</option>
+            <option value="Wholesale">Wholesale</option>
+            <option value="Supermarket">Supermarket</option>
+            <option value="SME">SME / General Business</option>
+            <option value="Hotel">Hotel / Restaurant</option>
+            <option value="Hardware">Hardware Store</option>
+            <option value="Kiosk">Kiosk / Kibanda</option>
+          </select>
+        </div>
+
+        <button type="button" class="demo-subscribe-top-cta" onclick="subscribeToSelectedBizType()">
+          <i class="fa-solid fa-circle-check"></i> <span>Subscribe to <strong id="demoTopSubName">Retail Shop</strong> POS</span> <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Quick Interactive Pills Strip -->
+      <div class="demo-pills-strip" id="demoBizPills">
+        <button type="button" class="demo-biz-pill-btn active" data-type="Retail" onclick="switchDemoBusinessType('Retail')"><i class="fa-solid fa-bag-shopping"></i> Retail Shop</button>
+        <button type="button" class="demo-biz-pill-btn" data-type="Wholesale" onclick="switchDemoBusinessType('Wholesale')"><i class="fa-solid fa-boxes-packing"></i> Wholesale</button>
+        <button type="button" class="demo-biz-pill-btn" data-type="Supermarket" onclick="switchDemoBusinessType('Supermarket')"><i class="fa-solid fa-barcode"></i> Supermarket</button>
+        <button type="button" class="demo-biz-pill-btn" data-type="SME" onclick="switchDemoBusinessType('SME')"><i class="fa-solid fa-briefcase"></i> SME / General</button>
+        <button type="button" class="demo-biz-pill-btn" data-type="Hotel" onclick="switchDemoBusinessType('Hotel')"><i class="fa-solid fa-utensils"></i> Hotel / Restaurant</button>
+        <button type="button" class="demo-biz-pill-btn" data-type="Hardware" onclick="switchDemoBusinessType('Hardware')"><i class="fa-solid fa-screwdriver-wrench"></i> Hardware Store</button>
+        <button type="button" class="demo-biz-pill-btn" data-type="Kiosk" onclick="switchDemoBusinessType('Kiosk')"><i class="fa-solid fa-shop"></i> Kiosk / Kibanda</button>
+      </div>
+
       <div class="demo-widget-header">
         <div class="demo-widget-header-left">
-          <div class="demo-widget-icon"><i class="fa-solid fa-store"></i></div>
+          <div class="demo-widget-icon" id="demoWidgetIcon"><i class="fa-solid fa-store"></i></div>
           <div>
-            <div style="font-weight:800; font-size:14px;">Try your first sale</div>
-            <div style="font-size:12px; color:var(--text-secondary);">Tap a product to add it to your sale</div>
+            <div style="font-weight:800; font-size:14px;" id="demoWidgetTitle">Retail Shop Demo POS</div>
+            <div style="font-size:12px; color:var(--text-secondary);" id="demoWidgetSub">Tap a product to add it to your sale</div>
           </div>
         </div>
-        <span class="demo-badge-pill">Practice mode</span>
+        <span class="demo-badge-pill" id="demoWidgetBadge">RETAIL STORE</span>
       </div>
 
       <div class="demo-widget-body">
@@ -5121,6 +5431,11 @@
                 Clear
               </button>
             </div>
+
+            <!-- Subscribe to selected business type action -->
+            <button type="button" class="demo-subscribe-cart-btn" onclick="subscribeToSelectedBizType()">
+              <i class="fa-solid fa-bolt"></i> <span>Subscribe to <strong id="demoCartSubName">Retail Shop</strong> POS</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
 
             <div class="demo-success-alert" id="demoSuccessAlert"></div>
           </div>
@@ -8231,31 +8546,108 @@ updateThemeToggleUI();
 /* =====================================================================
    DOGO POS LANDING PAGE INTERACTIVITY (Live Demo & Modals)
 ===================================================================== */
-const DEMO_PRODUCTS = [
-  { id: 'rice', name: 'Rice (2kg)', price: 145, image: 'images/demo/1788534931087.webp', icon: '🌾' },
-  { id: 'detergent', name: 'Detergent (1kg)', price: 310, image: 'images/demo/1788535215892.webp', icon: '🧼' },
-  { id: 'coffee', name: 'Coffee (250g)', price: 120, image: 'images/demo/1788535505809.webp', icon: '☕' },
-  { id: 'oil', name: 'Cooking Oil (1L)', price: 280, icon: '🫒' },
-  { id: 'milk', name: 'Fresh Milk (500ml)', price: 70, icon: '🥛' },
-  { id: 'flour', name: 'Wheat Flour (2kg)', price: 160, icon: '🍞' }
-];
+let currentDemoBizType = 'Retail';
 let demoCart = {};
+
+function getActiveDemoProducts() {
+  const norm = typeof normalizeBizType === 'function' ? normalizeBizType(currentDemoBizType) : currentDemoBizType;
+  if (typeof INDUSTRY_CONFIG !== 'undefined' && INDUSTRY_CONFIG[norm] && INDUSTRY_CONFIG[norm].products) {
+    return INDUSTRY_CONFIG[norm].products;
+  }
+  return [
+    { id: 'rice', name: 'Rice (2kg)', price: 145, image: 'images/demo/1788534931087.webp', icon: '🌾' },
+    { id: 'detergent', name: 'Detergent (1kg)', price: 310, image: 'images/demo/1788535215892.webp', icon: '🧼' },
+    { id: 'coffee', name: 'Coffee (250g)', price: 120, image: 'images/demo/1788535505809.webp', icon: '☕' },
+    { id: 'oil', name: 'Cooking Oil (1L)', price: 280, icon: '🫒' },
+    { id: 'milk', name: 'Fresh Milk (500ml)', price: 70, icon: '🥛' },
+    { id: 'flour', name: 'Wheat Flour (2kg)', price: 160, icon: '🍞' }
+  ];
+}
+
+function selectTopBarBizType(bizType) {
+  switchDemoBusinessType(bizType);
+  const demoEl = document.getElementById('demo');
+  if (demoEl) {
+    demoEl.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function switchDemoBusinessType(bizType) {
+  currentDemoBizType = bizType;
+  demoCart = {}; // clear demo cart on switch
+
+  const norm = typeof normalizeBizType === 'function' ? normalizeBizType(bizType) : bizType;
+  const cfg = (typeof INDUSTRY_CONFIG !== 'undefined' && INDUSTRY_CONFIG[norm]) ? INDUSTRY_CONFIG[norm] : null;
+
+  // Update select dropdown
+  const selectEl = document.getElementById('demoBizTypeSelect');
+  if (selectEl) selectEl.value = norm;
+
+  // Update interactive pills
+  document.querySelectorAll('.demo-biz-pill-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-type') === norm);
+  });
+
+  // Update demo header texts and labels
+  if (cfg) {
+    const titleEl = document.getElementById('demoWidgetTitle');
+    if (titleEl) titleEl.textContent = `${cfg.badge} Demo POS`;
+
+    const subEl = document.getElementById('demoWidgetSub');
+    if (subEl) subEl.textContent = cfg.posSub;
+
+    const badgeEl = document.getElementById('demoWidgetBadge');
+    if (badgeEl) badgeEl.textContent = cfg.badge;
+
+    const iconEl = document.getElementById('demoWidgetIcon');
+    if (iconEl) iconEl.innerHTML = `<i class="fa-solid ${cfg.badgeIcon}"></i>`;
+
+    const topSub = document.getElementById('demoTopSubName');
+    if (topSub) topSub.textContent = cfg.badge;
+
+    const cartSub = document.getElementById('demoCartSubName');
+    if (cartSub) cartSub.textContent = cfg.badge;
+
+    const searchInput = document.getElementById('demoSearchInput');
+    if (searchInput) {
+      searchInput.value = '';
+      searchInput.placeholder = cfg.searchPlaceholder;
+    }
+  }
+
+  const alert = document.getElementById('demoSuccessAlert');
+  if (alert) alert.style.display = 'none';
+
+  renderDemoProducts();
+  renderDemoCart();
+}
+
+function subscribeToSelectedBizType() {
+  const chosen = currentDemoBizType || 'Retail';
+  openAuthModal('signup');
+  const suSelect = document.getElementById('suBizType');
+  if (suSelect) {
+    suSelect.value = chosen;
+    if (typeof updateBizTypeHint === 'function') updateBizTypeHint(chosen);
+  }
+}
 
 function renderDemoProducts(filterText = '') {
   const grid = document.getElementById('demoProdsGrid');
   if (!grid) return;
+  const prods = getActiveDemoProducts();
   const q = filterText.toLowerCase().trim();
-  const filtered = DEMO_PRODUCTS.filter(p => p.name.toLowerCase().includes(q));
+  const filtered = prods.filter(p => (p.name && p.name.toLowerCase().includes(q)) || (p.code && p.code.toLowerCase().includes(q)) || (p.category && p.category.toLowerCase().includes(q)));
   if (filtered.length === 0) {
     grid.innerHTML = '<div style="grid-column:1/-1; padding:20px 0; color:var(--text-secondary); text-align:center;">No products found matching your search.</div>';
     return;
   }
   grid.innerHTML = filtered.map(p => `
     <div class="demo-prod-item" onclick="demoAddToCart('${p.id}')">
-      ${p.image ? `<div style="height:62px; display:flex; align-items:center; justify-content:center; margin-bottom:6px;"><img src="${p.image}" alt="${p.name}" style="max-height:100%; max-width:100%; object-fit:contain;"></div>` : `<div class="demo-prod-icon">${p.icon}</div>`}
+      ${p.image ? `<div style="height:62px; display:flex; align-items:center; justify-content:center; margin-bottom:6px;"><img src="${p.image}" alt="${escapeHtml(p.name)}" style="max-height:100%; max-width:100%; object-fit:contain;"></div>` : `<div class="demo-prod-icon">${p.icon || '<i class="fa-solid fa-box"></i>'}</div>`}
       <div>
-        <div class="demo-prod-name">${p.name}</div>
-        <div class="demo-prod-price">KES ${p.price.toLocaleString()}</div>
+        <div class="demo-prod-name">${escapeHtml(p.name)}</div>
+        <div class="demo-prod-price">KES ${Number(p.price).toLocaleString()}</div>
       </div>
       <div class="demo-prod-add">+ Add</div>
     </div>
@@ -8311,8 +8703,9 @@ function renderDemoCart() {
   }
 
   let grandTotal = 0;
+  const prods = getActiveDemoProducts();
   container.innerHTML = entries.map(([id, qty]) => {
-    const prod = DEMO_PRODUCTS.find(p => p.id === id);
+    const prod = prods.find(p => p.id === id);
     if (!prod) return '';
     const lineTotal = prod.price * qty;
     grandTotal += lineTotal;
@@ -8341,14 +8734,25 @@ function demoCheckout() {
   if (totalItems === 0) return;
 
   let grandTotal = 0;
+  const prods = getActiveDemoProducts();
   entries.forEach(([id, qty]) => {
-    const prod = DEMO_PRODUCTS.find(p => p.id === id);
+    const prod = prods.find(p => p.id === id);
     if (prod) grandTotal += prod.price * qty;
   });
 
   const alert = document.getElementById('demoSuccessAlert');
   if (alert) {
-    alert.innerHTML = `🎉 <strong>Demo checkout complete!</strong> Simulated sale of ${totalItems} items totaling KES ${grandTotal.toLocaleString()}. No payment taken or real database record created.`;
+    const norm = typeof normalizeBizType === 'function' ? normalizeBizType(currentDemoBizType) : currentDemoBizType;
+    const bName = (typeof INDUSTRY_CONFIG !== 'undefined' && INDUSTRY_CONFIG[norm]) ? INDUSTRY_CONFIG[norm].badge : 'Business';
+    alert.innerHTML = `
+      <div style="margin-bottom:8px;">🎉 <strong>Demo checkout complete!</strong> Simulated sale of ${totalItems} items totaling <strong>KES ${grandTotal.toLocaleString()}</strong>.</div>
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <span style="font-size:12px; color:var(--text-secondary);">Ready to start selling for real?</span>
+        <button class="btn-small btn-green" onclick="subscribeToSelectedBizType()" style="font-weight:800; padding:6px 14px; border-radius:999px;">
+          Subscribe to ${escapeHtml(bName)} POS &rarr;
+        </button>
+      </div>
+    `;
     alert.style.display = 'block';
   }
   demoCart = {};
@@ -8360,8 +8764,7 @@ function demoSearch(query) {
 }
 
 // Initial demo products load
-renderDemoProducts();
-renderDemoCart();
+switchDemoBusinessType('Retail');
 
 /* Pricing Toggle */
 function setBillingCycle(cycle) {
