@@ -1194,6 +1194,7 @@
         <!-- Daraja Section -->
         <div id="darajaApiSection" style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; margin:14px 0;">
           <h5 style="color:var(--blue); font-size:13px; font-weight:800; margin:0 0 10px;">Safaricom Daraja API Keys</h5>
+          <button type="button" class="btn-small btn-blue" style="margin-bottom:14px; font-size:12px; cursor:pointer;" onclick="fillAdminSandboxDefaults()"><i class="fa-solid fa-bolt"></i> Auto-Fill Sandbox Test Defaults (Shortcode 174379)</button>
           <div class="form-grid">
             <div class="form-group">
               <label>Daraja Environment</label>
@@ -2125,6 +2126,23 @@ function toggleMpesaModeFields() {
   const mode = document.getElementById('setMpesaMode')?.value;
   const dSec = document.getElementById('darajaApiSection');
   if (dSec) dSec.style.display = mode === 'daraja' ? 'block' : 'none';
+}
+
+function fillAdminSandboxDefaults() {
+  const mode = document.getElementById('setMpesaMode');
+  if (mode) mode.value = 'daraja';
+  toggleMpesaModeFields();
+  const pb = document.getElementById('setMpesaPaybill');
+  if (pb) pb.value = '174379';
+  const till = document.getElementById('setMpesaTill');
+  if (till) till.value = '174379';
+  const env = document.getElementById('setDarajaEnv');
+  if (env) env.value = 'sandbox';
+  const pk = document.getElementById('setDarajaPasskey');
+  if (pk) pk.value = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
+  const ck = document.getElementById('setDarajaKey');
+  if (ck && !ck.value) ck.focus();
+  showToast('Safaricom Sandbox defaults set (Shortcode 174379). Paste your Consumer Key & Secret from Daraja Portal.');
 }
 
 async function savePayoutSettings() {

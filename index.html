@@ -8184,6 +8184,7 @@
         <option value="false">Sandbox (Test credentials &amp; simulation)</option>
         <option value="true">Production (Live Daraja API)</option>
       </select>
+      <button type="button" class="btn-blue" style="width:100%; margin:8px 0 6px; font-size:12px; font-weight:700; cursor:pointer;" onclick="fillSandboxDefaults()"><i class="fa-solid fa-bolt"></i> Auto-Fill Sandbox Test Defaults (Shortcode 174379)</button>
       <div style="display:flex; gap:8px; margin-top:6px;">
         <button class="btn-green" style="flex:1;" onclick="saveMpesaSettings()">Save M-Pesa Gateway</button>
         <button class="btn-red" style="padding:0 16px;" onclick="removeMpesaSettings()">Reset</button>
@@ -14064,6 +14065,16 @@ async function loadAllGatewaySettings() {
 
 const loadMpesaStatus = loadAllGatewaySettings;
 
+function fillSandboxDefaults() {
+  if (document.getElementById('mpesaPaymentType')) document.getElementById('mpesaPaymentType').value = 'paybill';
+  if (document.getElementById('mpesaShortcode')) document.getElementById('mpesaShortcode').value = '174379';
+  if (document.getElementById('mpesaPasskey')) document.getElementById('mpesaPasskey').value = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
+  if (document.getElementById('mpesaEnv')) document.getElementById('mpesaEnv').value = 'false';
+  const ck = document.getElementById('mpesaConsumerKey');
+  if (ck && !ck.value) ck.focus();
+  showToast('Safaricom Sandbox defaults set (Shortcode 174379). Paste your Consumer Key & Secret from Daraja Portal.');
+}
+
 async function saveMpesaSettings() {
   const payment_type = document.getElementById('mpesaPaymentType').value;
   const shortcode = document.getElementById('mpesaShortcode').value.trim();
@@ -14386,14 +14397,14 @@ function toggleScanner() {
 /* =====================================================================
    PWA install support & Cache Management
 ===================================================================== */
-const DOGO_BUILD_VER = "2026.09.24.v4";
+const DOGO_BUILD_VER = "2026.09.24.v5";
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
       if (window.caches) {
         const cacheKeys = await caches.keys();
         for (const k of cacheKeys) {
-          if (k !== 'dogo-pos-cache-v4') {
+          if (k !== 'dogo-pos-cache-v5') {
             await caches.delete(k);
           }
         }
