@@ -251,3 +251,74 @@ export function verifyAndProcessMpesaCallback(payload, headers = {}) {
     response: { ResultCode: 0, ResultDesc: 'Callback processed successfully' }
   };
 }
+
+/**
+  * Actively queries Safaricom Daraja STK Push status via stkpushquery API
+  */
+export async function queryDarajaStkStatus(paymentRequestId) {
+  const request = getPaymentRequest(paymentRequestId);
+  if (!request) return null;
+  if (request.status === 'success' || request.status === 'failed' || request.status === 'cancelled') {
+    return request;
+  }
+
+  const config = getInternalConfig('mpesa');
+  const hasLiveCredentials = config.consumer_key && config.consumer_secret && !config.consumer_key.includes('mock');
+  if (!hasLiveCredentials || !request.checkout_request_id) {
+    return request;
+  }
+
+  try {
+    const authHeader = Buffer.from(`${config.consumer_key}:${config.consumer_secret}`).toString('base64');
+    const tokenUrl = config.is_production
+      ? 'https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
+      : 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials';
+
+    const tokenRes = await fetch(tokenUrl, { headers: { Authorization: `Basic ${authHeader}` } });
+    const tokenData = await tokenRes.json();
+    if (!tokenData.access_token) return request;
+
+    const shortcode = config.shortcode || '174379';
+    const passkey = config.passkey || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
+    const timestamp = formatDarajaTimestamp();
+    const password = generateDarajaPassword(shortcode, passkey, timestamp);
+
+    const queryUrl = config.is_production
+      ? 'https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query'
+      : 'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query';
+
+    const qRes = await fetch(queryUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        BusinessShortCode: shortcode,
+        Password: password,
+        Timestamp: timestamp,
+        CheckoutRequestID: request.checkout_request_id
+      })
+    });
+
+    const qData = await qRes.json();
+    if (qData.ResultCode === '0' || qData.ResultCode === 0) {
+      updatePaymentRequest(request.id, {
+        status: 'success',
+        result_desc: qData.ResultDesc || 'The service request is processed successfully.',
+        receipt_reference: request.receipt_reference || `MP${Date.now().toString(36).toUpperCase()}`
+      });
+    } else if (qData.ResultCode && qData.ResultCode !== '0' && qData.ResultCode !== 0) {
+      const isCancelled = qData.ResultCode === '1032' || qData.ResultCode === 1032;
+      updatePaymentRequest(request.id, {
+        status: isCancelled ? 'cancelled' : 'failed',
+        result_desc: qData.ResultDesc || `M-Pesa transaction failed with code ${qData.ResultCode}`
+      });
+    }
+  } catch (err) {
+    console.warn('Daraja STK query error:', err.message);
+  }
+
+  return getPaymentRequest(paymentRequestId);
+}
+

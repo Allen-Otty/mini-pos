@@ -1,5 +1,5 @@
 import express from 'express';
-import { initiateMpesaStkPush, verifyAndProcessMpesaCallback, formatDarajaTimestamp } from './mpesa.js';
+import { initiateMpesaStkPush, verifyAndProcessMpesaCallback, formatDarajaTimestamp, queryDarajaStkStatus } from './mpesa.js';
 import { initiateKcbPayment, verifyAndProcessKcbCallback, generateKcbSignature } from './kcb.js';
 import { initiatePaystackPayment, verifyAndProcessPaystackCallback } from './paystack.js';
 import { initiateAirtelPayment, verifyAndProcessAirtelCallback } from './airtel.js';
@@ -103,12 +103,19 @@ paymentRouter.post('/initiate', async (req, res) => {
  * GET /api/payments/status/:id
  * Polling endpoint used by the POS checkout UI
  */
-paymentRouter.get('/status/:id', (req, res) => {
+paymentRouter.get('/status/:id', async (req, res) => {
   const { id } = req.params;
-  const request = getPaymentRequest(id);
+  let request = getPaymentRequest(id);
 
   if (!request) {
     return res.status(404).json({ success: false, error: 'Payment request not found or expired.' });
+  }
+
+  // Actively query Safaricom Daraja STK status if still pending
+  if (request.gateway === 'mpesa' && request.status === 'pending' && request.checkout_request_id) {
+    try {
+      request = (await queryDarajaStkStatus(id)) || request;
+    } catch (e) {}
   }
 
   res.json({

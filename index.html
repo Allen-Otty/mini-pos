@@ -3655,64 +3655,265 @@
 /* =====================================================================
    VIEW: SUBSCRIPTION (/subscription)
 ===================================================================== */
-.sub-branch-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 24px;
-  max-width: 440px;
-}
-
-.sub-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.sub-rows-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.sub-data-row {
-  background: var(--bg);
+/* =====================================================================
+   VIEW: SUBSCRIPTION (/subscription - POSFITI DESIGN)
+===================================================================== */
+.posfiti-notice-banner {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 12px 18px;
+  font-size: 13.5px;
+  color: #475569;
+  margin-bottom: 24px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 13px;
+  gap: 12px;
+  line-height: 1.45;
 }
-
-.sub-data-left {
+.posfiti-sub-container {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 28px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .posfiti-sub-container {
+    grid-template-columns: 1fr;
+  }
+}
+.posfiti-step-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.posfiti-card-opt {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
+}
+.posfiti-card-opt:hover {
+  border-color: #86efac;
+}
+.posfiti-card-opt.active {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.06);
+  box-shadow: 0 0 0 1px #22c55e;
+}
+.posfiti-card-opt-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.posfiti-card-opt-sub {
+  font-size: 13px;
   color: var(--text-secondary);
 }
-
-.sub-data-val {
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.sub-upgrade-btn {
-  width: 100%;
-  background: #facc15;
-  color: #0f172a;
-  font-weight: 800;
-  padding: 14px;
-  border-radius: 999px;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
+.posfiti-card-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
+  color: transparent;
+  font-size: 12px;
+  transition: all 0.15s ease;
+}
+.posfiti-card-opt.active .posfiti-card-check {
+  border-color: #22c55e;
+  background: #22c55e;
+  color: #ffffff;
+}
+.posfiti-pills-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.posfiti-pill-btn {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  position: relative;
+}
+.posfiti-pill-btn:hover {
+  border-color: #86efac;
+}
+.posfiti-pill-btn.active {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.08);
+  color: #15803d;
+  box-shadow: 0 0 0 1px #22c55e;
+}
+.posfiti-pill-badge {
+  position: absolute;
+  top: -9px;
+  right: 10px;
+  background: #fef08a;
+  color: #854d0e;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.posfiti-selection-card {
+  background: var(--card);
+  border: 1.5px solid #86efac;
+  border-radius: 22px;
+  padding: 28px 30px;
+  box-shadow: 0 15px 35px -10px rgba(34, 197, 94, 0.15);
+  position: relative;
+}
+.posfiti-shield-icon {
+  position: absolute;
+  top: 26px;
+  right: 28px;
+}
+.posfiti-selection-tag {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #16a34a;
+  margin-bottom: 6px;
+}
+.posfiti-selection-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+.posfiti-selection-sub {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0 0 20px;
+}
+.posfiti-price-box {
+  background: #09090b;
+  border-radius: 14px;
+  padding: 18px 24px;
+  color: #ffffff;
+  margin-bottom: 22px;
+}
+.posfiti-price-meta {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a1a1aa;
+  margin-bottom: 4px;
+}
+.posfiti-price-val {
+  font-size: 32px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
   gap: 8px;
+  flex-wrap: wrap;
+}
+.posfiti-save-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(34, 197, 94, 0.22);
+  color: #4ade80;
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+.posfiti-checklist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin-bottom: 20px;
+}
+.posfiti-check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.35;
+}
+.posfiti-check-item i {
+  color: #22c55e;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.posfiti-toggle-link {
+  font-size: 13px;
+  font-weight: 700;
+  color: #16a34a;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 18px;
+  user-select: none;
+}
+.posfiti-toggle-link:hover {
+  text-decoration: underline;
+}
+.posfiti-features-drawer {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  display: none;
+}
+.posfiti-referral-wrap {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  background: var(--bg);
+}
+.posfiti-checkout-btn {
+  width: 100%;
+  background: #22c55e;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+  padding: 15px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.35);
+  transition: all 0.15s ease;
+}
+.posfiti-checkout-btn:hover {
+  background: #16a34a;
+  transform: translateY(-1px);
+}
+.posfiti-security-note {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 /* =====================================================================
@@ -6569,7 +6770,7 @@
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
         <span class="portal-branch-badge">1 branches &middot; 1 active &middot; 1 POS ready</span>
-        <span style="font-size:12px; color:var(--text-secondary); background:var(--card); border:1px solid var(--border); padding:6px 12px; border-radius:999px;">Only owners can create branches.</span>
+        <button class="btn-green" onclick="handleCreateBranchClick()" style="padding:6px 14px; font-size:12px; font-weight:700; border-radius:999px; cursor:pointer;"><i class="fa-solid fa-plus"></i> Create Branch</button>
       </div>
     </div>
 
@@ -6928,52 +7129,173 @@
   </div>
 
   <!-- ================= VIEW: SUBSCRIPTION (/subscription) ================= -->
+  <!-- ================= VIEW: SUBSCRIPTION (/subscription) ================= -->
   <div class="panel" id="tab-subscription">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px;">
+    <!-- Active Status Bar -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
       <div>
         <span class="rest-hub-badge">Billing and access</span>
         <h2 style="font-size:26px; font-weight:800; margin:4px 0 6px;">Subscription</h2>
-        <p style="color:var(--text-secondary); margin:0;">Track active POS plans, renewal dates, and which branches still need checkout access.</p>
+        <p style="color:var(--text-secondary); margin:0;">Choose a plan to activate unlimited selling, M-Pesa STK Push, kitchen tickets, and KRA eTIMS.</p>
       </div>
-      <span class="portal-branch-badge">1 branches &middot; 0 paid &middot; 0 not active</span>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <span class="portal-branch-badge" id="subHeaderStatusBadge">1 branch &middot; Free Plan</span>
+        <span class="branch-active-pill" id="subActivePlanPill" style="background:#f1f5f9; color:#475569; font-weight:800; padding:6px 14px; font-size:12px; border-radius:999px;">Current: Free</span>
+      </div>
     </div>
 
-    <div class="sub-branch-card">
-      <div class="sub-card-header">
-        <div>
-          <h3 style="font-size:20px; font-weight:800; margin:0;" id="subBranchName">luanda</h3>
-          <span class="branch-sector-badge" id="subBranchSector">HARDWARE STORES</span>
+    <!-- Notice Banner (Matching Posfiti Screenshot) -->
+    <div class="posfiti-notice-banner" id="posfitiNoticeBanner">
+      <i class="fa-solid fa-circle-exclamation" style="color:#f59e0b; font-size:16px; flex-shrink:0;"></i>
+      <span id="posfitiNoticeText">...your branch automatically returns to Free unless you subscribe. Your products stay saved; paid features require an upgrade.</span>
+    </div>
+
+    <!-- 2-Column Posfiti Subscription Container -->
+    <div class="posfiti-sub-container">
+      
+      <!-- LEFT COLUMN: The Selection Stepper -->
+      <div class="posfiti-left-col">
+        <!-- Step 1: Choose features -->
+        <div class="posfiti-step-section">
+          <div class="posfiti-step-title">1. Choose features</div>
+          
+          <div class="posfiti-card-opt" id="optFeatureCore" onclick="setPosfitiFeature('core')">
+            <div>
+              <div class="posfiti-card-opt-title">Core POS</div>
+              <div class="posfiti-card-opt-sub">Sales and stock essentials</div>
+            </div>
+            <div class="posfiti-card-check"><i class="fa-solid fa-check"></i></div>
+          </div>
+
+          <div class="posfiti-card-opt active" id="optFeatureControl" onclick="setPosfitiFeature('control')">
+            <div>
+              <div class="posfiti-card-opt-title">Control POS</div>
+              <div class="posfiti-card-opt-sub">Advanced reporting and eTIMS</div>
+            </div>
+            <div class="posfiti-card-check"><i class="fa-solid fa-check"></i></div>
+          </div>
         </div>
-        <span class="branch-active-pill" id="subPlanPill">Free</span>
+
+        <!-- Step 2: How many branches? -->
+        <div class="posfiti-step-section" style="margin-top:24px;">
+          <div class="posfiti-step-title">2. How many branches?</div>
+          <div class="posfiti-pills-row">
+            <button type="button" class="posfiti-pill-btn active" id="optBranch1" onclick="setPosfitiBranches('1')">
+              1 branch
+            </button>
+            <button type="button" class="posfiti-pill-btn" id="optBranch5" onclick="setPosfitiBranches('5')">
+              Up to 5
+              <span class="posfiti-pill-badge">Saves money for 3+ branches</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Billing -->
+        <div class="posfiti-step-section" style="margin-top:24px;">
+          <div class="posfiti-step-title">3. Billing</div>
+          <div class="posfiti-pills-row">
+            <button type="button" class="posfiti-pill-btn active" id="optBillingMonthly" onclick="setPosfitiBilling('monthly')">
+              Monthly
+            </button>
+            <button type="button" class="posfiti-pill-btn" id="optBillingYearly" onclick="setPosfitiBilling('yearly')">
+              Yearly
+              <span class="posfiti-pill-badge" style="background:#dcfce7; color:#15803d;">2 months free</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Branch Context Info -->
+        <div style="margin-top:24px; padding:14px 18px; background:var(--bg); border:1px solid var(--border); border-radius:14px; font-size:12.5px; color:var(--text-secondary);">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span>Configuring Branch:</span>
+            <strong style="color:var(--text);" id="subActiveBranchName">luanda</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Current Status:</span>
+            <strong style="color:#16a34a;" id="subActiveRenewalText">Active Free Plan</strong>
+          </div>
+        </div>
       </div>
 
-      <div class="sub-rows-list">
-        <div class="sub-data-row">
-          <div class="sub-data-left"><i class="fa-solid fa-calendar"></i> <span>Trial / Renewal</span></div>
-          <span class="sub-data-val" id="subRenewalVal">Lifetime Free</span>
-        </div>
-        <div class="sub-data-row">
-          <div class="sub-data-left"><i class="fa-solid fa-circle-check"></i> <span>Status</span></div>
-          <span class="sub-data-val" id="subStatusVal">Active Free</span>
-        </div>
-        <div class="sub-data-row">
-          <div class="sub-data-left"><i class="fa-solid fa-credit-card"></i> <span>Active Plan</span></div>
-          <span class="sub-data-val" id="subPlanVal">Free (Starter)</span>
+      <!-- RIGHT COLUMN: YOUR SELECTION Card -->
+      <div class="posfiti-right-col">
+        <div class="posfiti-selection-card">
+          <!-- Top Shield Outline Icon (Posfiti Match) -->
+          <div class="posfiti-shield-icon">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="m9 12 2 2 4-4"></path>
+            </svg>
+          </div>
+
+          <div class="posfiti-selection-tag">YOUR SELECTION</div>
+          <h3 class="posfiti-selection-title" id="posfitiSelTitle">Control POS</h3>
+          <p class="posfiti-selection-sub" id="posfitiSelSub">For growing businesses that need deeper reporting and KRA eTIMS support.</p>
+
+          <!-- Dark Price Box -->
+          <div class="posfiti-price-box">
+            <div class="posfiti-price-meta" id="posfitiPriceMeta">MONTHLY &middot; 1 BRANCH</div>
+            <div class="posfiti-price-val">
+              <span id="posfitiPriceAmt">KES 1,999</span>
+              <span class="posfiti-save-badge" id="posfitiSaveBadge" style="display:none;">Save KES 3,989</span>
+            </div>
+          </div>
+
+          <!-- 2-Column Checklist -->
+          <div class="posfiti-checklist" id="posfitiChecklist">
+            <!-- Populated dynamically by updatePosfitiUI() -->
+          </div>
+
+          <!-- Expandable: See all features -->
+          <div>
+            <div class="posfiti-toggle-link" id="posfitiAllFeaturesToggle" onclick="togglePosfitiFeatures()">
+              <i class="fa-solid fa-play" id="posfitiFeaturesArrow" style="font-size:10px; transition:transform 0.2s;"></i>
+              <span id="posfitiFeaturesLinkText">See all features</span>
+            </div>
+            
+            <div class="posfiti-features-drawer" id="posfitiFeaturesDrawer">
+              <div style="font-weight:700; margin-bottom:8px; color:var(--text); font-size:13px;">Full Plan Capabilities:</div>
+              <div id="posfitiExpandedList" style="display:grid; grid-template-columns:1fr 1fr; gap:8px 12px; font-size:12px; color:var(--text-secondary);">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Collapsible: Referral Code -->
+          <div class="posfiti-referral-wrap">
+            <div class="posfiti-toggle-link" onclick="togglePosfitiReferral()" style="margin-bottom:0;">
+              <i class="fa-solid fa-play" id="posfitiRefArrow" style="font-size:10px; transition:transform 0.2s;"></i>
+              <span>Have a referral code?</span>
+            </div>
+            <div id="posfitiRefContent" style="display:none; margin-top:10px;">
+              <div style="display:flex; gap:8px;">
+                <input type="text" id="posfitiReferralInput" placeholder="ENTER CODE" style="margin:0; text-transform:uppercase; font-weight:800; font-size:13px; letter-spacing:0.04em;">
+                <button type="button" class="btn-small btn-blue" onclick="applyPosfitiReferralCode()" style="padding:0 16px; font-weight:800; border-radius:10px;">Apply</button>
+              </div>
+              <div id="posfitiReferralMsg" style="margin-top:6px; font-size:12px; display:none;"></div>
+            </div>
+          </div>
+
+          <!-- Checkout CTA Button (Vibrant Green) -->
+          <button type="button" class="posfiti-checkout-btn" id="posfitiCheckoutBtn" onclick="checkoutPosfitiSelection()">
+            Choose monthly
+          </button>
+
+          <!-- Instant Trial Link -->
+          <div style="text-align:center; margin-top:10px;">
+            <button type="button" onclick="startInstantTrialSelection()" style="background:none; border:none; color:var(--accent); font-size:12.5px; font-weight:700; cursor:pointer; text-decoration:underline;">
+              Or start 7-day free trial (instant activation)
+            </button>
+          </div>
+
+          <!-- Footer Security Assurance -->
+          <div class="posfiti-security-note">
+            <i class="fa-solid fa-lock"></i>
+            <span>Secure Paystack &amp; Safaricom Daraja checkout &middot; Duplicate charges are blocked</span>
+          </div>
         </div>
       </div>
 
-      <div id="subPlanFeaturesList" style="margin:16px 0; padding:16px 18px; background:var(--panel); border-radius:14px; border:1px solid var(--border);">
-        <!-- Populated dynamically by renderSubscriptionTab() -->
-      </div>
-
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="sub-upgrade-btn" style="flex:1; min-width:200px;" onclick="openUpgradePlanModal('Core')">
-          <i class="fa-solid fa-arrow-up-right-from-square"></i> <span>Upgrade to Core POS (KES 999)</span>
-        </button>
-        <button class="sub-upgrade-btn" style="flex:1; min-width:200px; background:#0f172a; color:#facc15;" onclick="openUpgradePlanModal('Control')">
-          <i class="fa-solid fa-crown"></i> <span>Upgrade to Control POS (KES 1,999)</span>
-        </button>
-      </div>
     </div>
   </div>
 
@@ -7217,31 +7539,55 @@
           <div class="rc-checkout-cta-sub">Payment details on the next step.</div>
         </button>
 
-        <button class="btn-blue" id="mpesaBtn" onclick="openDigitalPrompt()" style="display:none; width:100%; margin-top:10px; border-radius:12px; padding:12px; font-weight:700;">
+        <!-- Digital Payment Prompt & Phone Input Box (M-Pesa STK, KCB, Airtel, Paystack) -->
+        <div class="cart-box" id="mpesaPromptBox" style="display:none; margin-top:10px; border:2px solid #10b981; background:rgba(16,185,129,0.04); border-radius:14px; padding:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:800; font-size:13.5px; color:#065f46;">
+              <i class="fa-solid fa-mobile-screen-button" id="digitalPromptIcon" style="color:#10b981;"></i>
+              <span id="promptModalTitle">M-Pesa STK Push</span>
+            </div>
+            <span id="digitalPromptTag" style="font-size:10px; font-weight:800; background:#10b981; color:#fff; padding:2px 8px; border-radius:20px;">LIPA NA M-PESA</span>
+          </div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;" id="promptModalSub">
+            Enter customer Safaricom number to send prompt to their phone.
+          </div>
+          <div style="position:relative; margin-bottom:8px;">
+            <i class="fa-solid fa-phone" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#10b981; font-size:13px;"></i>
+            <input type="tel" id="mpesaPhone" placeholder="Customer phone e.g. 0712345678" style="padding-left:36px; margin-bottom:0; font-size:14.5px; font-weight:700; width:100%; border:2px solid #10b981; border-radius:10px; background:var(--surface); color:var(--text);" onkeydown="if(event.key==='Enter') sendDigitalPrompt();">
+          </div>
+          <input type="text" id="digitalAccountInput" placeholder="Account / Email (if applicable)" style="display:none; margin-bottom:8px; font-size:13px; width:100%; border:1px solid #cbd5e1; border-radius:10px; padding:8px 12px; background:var(--surface); color:var(--text);">
+          <div style="display:flex; gap:8px;">
+            <button class="btn-green" onclick="sendDigitalPrompt()" id="btnSendPrompt" style="flex:1; padding:12px; font-weight:800; border-radius:10px; font-size:13.5px; display:flex; align-items:center; justify-content:center; gap:6px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#ffffff; border:none; box-shadow:0 3px 10px rgba(16,185,129,0.35); cursor:pointer;">
+              <i class="fa-solid fa-bolt"></i> <span id="btnSendPromptText">Send STK Push</span>
+            </button>
+            <button class="btn-grey" onclick="cancelDigitalPrompt()" style="padding:10px 14px; border-radius:10px; font-size:12px; font-weight:700;">Cancel</button>
+          </div>
+        </div>
+
+        <button class="btn-blue" id="mpesaBtn" onclick="handleMpesaChargeClick()" style="display:none; width:100%; margin-top:10px; border-radius:12px; padding:12px; font-weight:700;">
           <i class="fa-solid fa-bolt"></i> <span id="mpesaBtnLabel">Charge with M-Pesa</span>
         </button>
+
         <button class="btn-red" id="clearBtn" onclick="clearCart()" style="display:none; width:100%; margin-top:8px; border-radius:12px; padding:8px; font-size:12px;">
           Clear Cart
         </button>
 
-        <!-- Digital Payment Prompts & Modals -->
-        <div class="cart-box" id="mpesaPromptBox" style="display:none; margin-top:10px; border:1px solid var(--accent); background:var(--surface);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <div style="font-weight:800; font-size:13.5px;"><i class="fa-solid fa-bolt" style="color:var(--accent);"></i> <span id="promptModalTitle">Digital Payment Prompt</span></div>
-            <button class="btn-small btn-grey" onclick="cancelDigitalPrompt()" style="padding:2px 8px; font-size:11px;">✕</button>
+        <div class="cart-box" id="mpesaWaitingBox" style="display:none; margin-top:12px; border:2px solid #0284c7; background:rgba(2,132,199,0.04); border-radius:14px; padding:16px; text-align:center;">
+          <div style="display:inline-flex; width:46px; height:46px; border-radius:50%; background:#e0f2fe; color:#0284c7; align-items:center; justify-content:center; font-size:20px; margin-bottom:10px;">
+            <i class="fa-solid fa-spinner fa-spin"></i>
           </div>
-          <div style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;" id="promptModalSub">Enter customer phone number to initiate payment request.</div>
-          <input type="text" id="mpesaPhone" placeholder="Customer phone e.g. 0712345678" style="margin-bottom:8px; font-size:14px; font-weight:700;">
-          <div style="display:flex; gap:8px;">
-            <button class="btn-green" onclick="sendDigitalPrompt()" id="btnSendPrompt" style="flex:1;"><i class="fa-solid fa-paper-plane"></i> Send Prompt</button>
-            <button class="btn-red" onclick="cancelDigitalPrompt()">Cancel</button>
+          <div style="font-size:15px; font-weight:800; color:var(--text);" id="digitalWaitingTitle">Waiting for Customer PIN...</div>
+          <div style="font-size:12.5px; color:var(--text-secondary); margin-top:4px;" id="mpesaWaitingHint">Prompt sent to customer phone. Waiting for PIN entry.</div>
+          <div style="margin-top:8px; font-size:12.5px; font-weight:700; color:#d97706;" id="digitalWaitingTimer">
+            ⏱️ <span id="stkTimerSecs">70</span>s remaining before timeout
           </div>
-        </div>
-
-        <div class="cart-box" id="mpesaWaitingBox" style="display:none; margin-top:12px; text-align:center;">
-          <div style="font-size:14px; font-weight:bold;">⏳ Waiting for customer to complete payment...</div>
-          <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;" id="mpesaWaitingHint">Prompt sent to their phone</div>
-          <button class="btn-red" onclick="cancelDigitalWait()" style="margin-top:8px; padding:6px 12px; font-size:12px;">Cancel Wait</button>
+          <div id="digitalWaitingSubhint" style="font-size:11.5px; color:var(--text-secondary); margin-top:4px;">Listening for Safaricom Daraja confirmation...</div>
+          <div id="mpesaWaitingStatusAlert" style="margin-top:10px; display:none;"></div>
+          <div style="margin-top:12px; display:flex; gap:8px; justify-content:center;">
+            <button class="btn-red" onclick="cancelDigitalWait()" id="btnCancelDigitalWait" style="padding:7px 16px; font-size:12px; border-radius:8px;">
+              <i class="fa-solid fa-xmark"></i> Cancel Payment
+            </button>
+          </div>
         </div>
 
         <!-- Quick New Item modal if needed -->
@@ -9069,9 +9415,11 @@ const PLAN_FEATURES = {
     prioritySupport: false
   },
   'Core': {
-    name: 'Core POS (Growth)',
+    name: 'Core POS (1 Branch)',
     tier: 'Core',
+    branches: 1,
     priceMonth: 999,
+    priceYear: 9999,
     maxProducts: Infinity,
     maxUsers: 5,
     maxBranches: 1,
@@ -9085,17 +9433,67 @@ const PLAN_FEATURES = {
     profitReports: true,
     teamAccounts: true,
     etims: false,
-    advancedStockAlerts: false,
+    advancedStockAlerts: true,
     multiBranch: false,
     prioritySupport: false
   },
+  'Core Group': {
+    name: 'Core Group (Up to 5 Branches)',
+    tier: 'Core',
+    branches: 5,
+    priceMonth: 3999,
+    priceYear: 39999,
+    maxProducts: Infinity,
+    maxUsers: 25,
+    maxBranches: 5,
+    cashSales: true,
+    basicReceipts: true,
+    scanner: true,
+    offlineStorage: true,
+    mpesaStk: true,
+    shifts: true,
+    restaurantKitchen: true,
+    profitReports: true,
+    teamAccounts: true,
+    etims: false,
+    advancedStockAlerts: true,
+    multiBranch: true,
+    prioritySupport: false
+  },
   'Control': {
-    name: 'Control POS (Pro)',
+    name: 'Control POS (1 Branch)',
     tier: 'Control',
+    branches: 1,
     priceMonth: 1999,
+    priceYear: 19999,
     maxProducts: Infinity,
     maxUsers: Infinity,
-    maxBranches: Infinity,
+    maxBranches: 1,
+    cashSales: true,
+    basicReceipts: true,
+    scanner: true,
+    offlineStorage: true,
+    mpesaStk: true,
+    shifts: true,
+    restaurantKitchen: true,
+    profitReports: true,
+    teamAccounts: true,
+    etims: true,
+    advancedStockAlerts: true,
+    multiBranch: false,
+    advancedInventory: true,
+    staffPermissions: true,
+    prioritySupport: true
+  },
+  'Control Group': {
+    name: 'Control Group (Up to 5 Branches)',
+    tier: 'Control',
+    branches: 5,
+    priceMonth: 7999,
+    priceYear: 79999,
+    maxProducts: Infinity,
+    maxUsers: Infinity,
+    maxBranches: 5,
     cashSales: true,
     basicReceipts: true,
     scanner: true,
@@ -9108,20 +9506,221 @@ const PLAN_FEATURES = {
     etims: true,
     advancedStockAlerts: true,
     multiBranch: true,
+    advancedInventory: true,
+    staffPermissions: true,
+    centralizedDashboard: true,
     prioritySupport: true
   }
 };
 
+const POSFITI_PRICING = {
+  core: {
+    '1': {
+      title: 'Core POS',
+      sub: 'Core POS essentials for one branch.',
+      monthly: { price: 999, periodText: 'MONTHLY · 1 BRANCH', saveBadge: '' },
+      yearly: { price: 9999, periodText: 'YEARLY · 1 BRANCH', saveBadge: 'Save KES 1,989' },
+      features: [
+        'Unlimited products', 'Cash & M-Pesa sales', 'Stock management',
+        'Sales and profit reports', 'Staff accounts', 'Receipt printing'
+      ],
+      expanded: [
+        'Fast customer checkout', 'Camera barcode scanning', 'Offline sales storage',
+        'Shift & float reconciliation', 'Restaurant tables & kitchen tickets', 'Export reports to CSV'
+      ]
+    },
+    '5': {
+      title: 'Core Group',
+      sub: 'Core POS for up to five branches under one business account.',
+      monthly: { price: 3999, periodText: 'MONTHLY · UP TO 5 BRANCHES', saveBadge: '' },
+      yearly: { price: 39999, periodText: 'YEARLY · UP TO 5 BRANCHES', saveBadge: 'Save KES 7,989' },
+      features: [
+        'Everything in Core POS', 'Up to 5 branches', 'Unlimited products',
+        'Shared owner billing', 'Cash & M-Pesa checkout', 'Stock management'
+      ],
+      expanded: [
+        'Sales & profit reports', 'Staff accounts (up to 25)', 'Multi-branch cashiers',
+        'Central sales overview', 'Restaurant & retail support', 'Shift float tracking'
+      ]
+    }
+  },
+  control: {
+    '1': {
+      title: 'Control POS',
+      sub: 'For growing businesses that need deeper reporting and KRA eTIMS support.',
+      monthly: { price: 1999, periodText: 'MONTHLY · 1 BRANCH', saveBadge: '' },
+      yearly: { price: 19999, periodText: 'YEARLY · 1 BRANCH', saveBadge: 'Save KES 3,989' },
+      features: [
+        'Everything in Core POS', 'KRA eTIMS support', 'Advanced reports',
+        'Advanced inventory', 'Staff permissions', 'Branch management'
+      ],
+      expanded: [
+        'Detailed profit margin analysis', 'Supplier purchase orders', 'Expense & credit tracking',
+        'Automated eTIMS QR invoice', 'Priority WhatsApp support', 'Custom permission levels'
+      ]
+    },
+    '5': {
+      title: 'Control Group',
+      sub: 'Control POS and advanced management for up to five branches.',
+      monthly: { price: 7999, periodText: 'MONTHLY · UP TO 5 BRANCHES', saveBadge: '' },
+      yearly: { price: 79999, periodText: 'YEARLY · UP TO 5 BRANCHES', saveBadge: 'Save KES 15,989' },
+      features: [
+        'Everything in Control POS', 'Up to 5 branches', 'Unlimited products',
+        'Shared owner billing', 'KRA eTIMS support', 'Advanced inventory and reports'
+      ],
+      expanded: [
+        'Staff permissions', 'Business performance dashboard', 'Multi-store stock transfers',
+        'Inter-branch analytics', 'Automated KRA tax compliance', 'VIP 24/7 dedicated support'
+      ]
+    }
+  }
+};
+
+let posfitiSelectedFeature = 'control'; // 'core' | 'control'
+let posfitiSelectedBranches = '1';       // '1' | '5'
+let posfitiSelectedBilling = 'monthly';  // 'monthly' | 'yearly'
+let posfitiReferralCode = '';
+let posfitiFeaturesExpanded = false;
+
+function setPosfitiFeature(feat) {
+  posfitiSelectedFeature = feat;
+  const optCore = document.getElementById('optFeatureCore');
+  const optCtrl = document.getElementById('optFeatureControl');
+  if (optCore) optCore.classList.toggle('active', feat === 'core');
+  if (optCtrl) optCtrl.classList.toggle('active', feat === 'control');
+  updatePosfitiUI();
+}
+
+function setPosfitiBranches(branches) {
+  posfitiSelectedBranches = String(branches);
+  const b1 = document.getElementById('optBranch1');
+  const b5 = document.getElementById('optBranch5');
+  if (b1) b1.classList.toggle('active', branches === '1');
+  if (b5) b5.classList.toggle('active', branches === '5');
+  updatePosfitiUI();
+}
+
+function setPosfitiBilling(billing) {
+  posfitiSelectedBilling = billing;
+  const bMo = document.getElementById('optBillingMonthly');
+  const bYr = document.getElementById('optBillingYearly');
+  if (bMo) bMo.classList.toggle('active', billing === 'monthly');
+  if (bYr) bYr.classList.toggle('active', billing === 'yearly');
+  updatePosfitiUI();
+}
+
+function togglePosfitiFeatures() {
+  posfitiFeaturesExpanded = !posfitiFeaturesExpanded;
+  const drawer = document.getElementById('posfitiFeaturesDrawer');
+  const arrow = document.getElementById('posfitiFeaturesArrow');
+  const txt = document.getElementById('posfitiFeaturesLinkText');
+  if (drawer) drawer.style.display = posfitiFeaturesExpanded ? 'block' : 'none';
+  if (arrow) arrow.style.transform = posfitiFeaturesExpanded ? 'rotate(90deg)' : 'rotate(0deg)';
+  if (txt) txt.textContent = posfitiFeaturesExpanded ? 'Hide all features' : 'See all features';
+}
+
+function togglePosfitiReferral() {
+  const c = document.getElementById('posfitiRefContent');
+  const a = document.getElementById('posfitiRefArrow');
+  if (c) {
+    const isHidden = c.style.display === 'none';
+    c.style.display = isHidden ? 'block' : 'none';
+    if (a) a.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+  }
+}
+
+function applyPosfitiReferralCode() {
+  const input = document.getElementById('posfitiReferralInput');
+  const msg = document.getElementById('posfitiReferralMsg');
+  const val = (input?.value || '').trim().toUpperCase();
+  if (!val) {
+    showToast('Please enter a referral code');
+    return;
+  }
+  posfitiReferralCode = val;
+  if (msg) {
+    msg.style.display = 'block';
+    msg.style.color = '#15803d';
+    msg.innerHTML = `<strong>✓ Referral code ${escapeHtml(val)} applied!</strong> Partner credit registered.`;
+  }
+  showToast(`Referral code ${val} applied!`);
+}
+
+function updatePosfitiUI() {
+  const cfgGroup = POSFITI_PRICING[posfitiSelectedFeature] || POSFITI_PRICING['control'];
+  const branchCfg = cfgGroup[posfitiSelectedBranches] || cfgGroup['1'];
+  const billingCfg = branchCfg[posfitiSelectedBilling] || branchCfg['monthly'];
+
+  const titleEl = document.getElementById('posfitiSelTitle');
+  const subEl = document.getElementById('posfitiSelSub');
+  const metaEl = document.getElementById('posfitiPriceMeta');
+  const amtEl = document.getElementById('posfitiPriceAmt');
+  const saveEl = document.getElementById('posfitiSaveBadge');
+  const checklistEl = document.getElementById('posfitiChecklist');
+  const expListEl = document.getElementById('posfitiExpandedList');
+  const ctaBtn = document.getElementById('posfitiCheckoutBtn');
+
+  if (titleEl) titleEl.textContent = branchCfg.title;
+  if (subEl) subEl.textContent = branchCfg.sub;
+  if (metaEl) metaEl.textContent = billingCfg.periodText;
+  if (amtEl) amtEl.textContent = `KES ${billingCfg.price.toLocaleString()}`;
+
+  if (saveEl) {
+    if (billingCfg.saveBadge) {
+      saveEl.style.display = 'inline-block';
+      saveEl.textContent = billingCfg.saveBadge;
+    } else {
+      saveEl.style.display = 'none';
+    }
+  }
+
+  if (checklistEl) {
+    checklistEl.innerHTML = branchCfg.features.map(f => `
+      <div class="posfiti-check-item">
+        <i class="fa-regular fa-circle-check"></i>
+        <span>${escapeHtml(f)}</span>
+      </div>
+    `).join('');
+  }
+
+  if (expListEl) {
+    expListEl.innerHTML = branchCfg.expanded.map(f => `
+      <div style="display:flex; align-items:center; gap:6px;">
+        <i class="fa-solid fa-check" style="color:#22c55e; font-size:11px;"></i>
+        <span>${escapeHtml(f)}</span>
+      </div>
+    `).join('');
+  }
+
+  if (ctaBtn) {
+    ctaBtn.textContent = posfitiSelectedBilling === 'yearly' ? 'Choose yearly' : 'Choose monthly';
+  }
+}
+
+function checkoutPosfitiSelection() {
+  const cfgGroup = POSFITI_PRICING[posfitiSelectedFeature] || POSFITI_PRICING['control'];
+  const branchCfg = cfgGroup[posfitiSelectedBranches] || cfgGroup['1'];
+  const billingCfg = branchCfg[posfitiSelectedBilling] || branchCfg['monthly'];
+
+  openUpgradePlanModal(posfitiSelectedFeature === 'control' ? 'Control' : 'Core', billingCfg.price, branchCfg.title, posfitiSelectedBranches, posfitiSelectedBilling);
+}
+
+function startInstantTrialSelection() {
+  const cfgGroup = POSFITI_PRICING[posfitiSelectedFeature] || POSFITI_PRICING['control'];
+  const branchCfg = cfgGroup[posfitiSelectedBranches] || cfgGroup['1'];
+  applySubscriptionSuccess(branchCfg.title, 'TRIAL-7DAYS', profile?.phone || '', true, posfitiSelectedBranches, posfitiSelectedBilling);
+}
+
 function getCurrentBusinessPlan() {
   if (isPlatformAdmin || (profile && profile.email === 'allanotiende1998@gmail.com')) {
     return {
-      plan: 'Control',
+      plan: 'Control Group',
       tier: 'Control',
-      name: 'Control POS (Platform Admin)',
+      name: 'Control Group (Platform Super Admin)',
       status: 'Active (Unlimited)',
       renews: 'Permanent',
       trialEnds: null,
-      features: PLAN_FEATURES['Control']
+      features: PLAN_FEATURES['Control Group']
     };
   }
 
@@ -9137,14 +9736,16 @@ function getCurrentBusinessPlan() {
 
   let rawPlan = saved?.plan || business?.subscription_plan || 'Free';
   let planKey = 'Free';
-  if (/control/i.test(rawPlan)) planKey = 'Control';
-  else if (/core/i.test(rawPlan)) planKey = 'Core';
+  if (/control.*group/i.test(rawPlan)) planKey = 'Control Group';
+  else if (/control/i.test(rawPlan)) planKey = (saved?.branches === 5 || saved?.branches === '5') ? 'Control Group' : 'Control';
+  else if (/core.*group/i.test(rawPlan)) planKey = 'Core Group';
+  else if (/core/i.test(rawPlan)) planKey = (saved?.branches === 5 || saved?.branches === '5') ? 'Core Group' : 'Core';
   else planKey = 'Free';
 
   const cfg = PLAN_FEATURES[planKey] || PLAN_FEATURES['Free'];
   return {
     plan: planKey,
-    tier: planKey,
+    tier: cfg.tier || planKey,
     name: cfg.name,
     status: saved?.status || (planKey === 'Free' ? 'Free Plan' : 'Active'),
     renews: saved?.renews || (planKey === 'Free' ? 'Lifetime Free' : '30 days remaining'),
@@ -9320,27 +9921,21 @@ function applyPlanFeaturesVisibility() {
 
 function renderSubscriptionTab() {
   const planInfo = getCurrentBusinessPlan();
-  const subBranch = document.getElementById('subBranchName');
+  const subBranch = document.getElementById('subActiveBranchName');
   if (subBranch && business) subBranch.textContent = business.name || 'Main Branch';
-  const subSec = document.getElementById('subBranchSector');
-  if (subSec && business) subSec.textContent = (business.business_type || 'Retail').toUpperCase();
 
-  const planValEl = document.getElementById('subPlanVal');
-  if (planValEl) planValEl.textContent = planInfo.name;
+  const badgeEl = document.getElementById('subHeaderStatusBadge');
+  if (badgeEl) {
+    badgeEl.textContent = `${planInfo.features.maxBranches === Infinity ? 'Multi-branch' : planInfo.features.maxBranches + ' branch'} · ${planInfo.plan} Plan`;
+  }
 
-  const renewsEl = document.getElementById('subRenewalVal');
-  if (renewsEl) renewsEl.textContent = planInfo.renews;
-
-  const statusEl = document.getElementById('subStatusVal');
-  if (statusEl) statusEl.textContent = planInfo.status;
-
-  const pillEl = document.getElementById('subPlanPill');
+  const pillEl = document.getElementById('subActivePlanPill');
   if (pillEl) {
-    pillEl.textContent = `${planInfo.plan} (${planInfo.status})`;
-    if (planInfo.plan === 'Control') {
+    pillEl.textContent = `Current: ${planInfo.plan} (${planInfo.status})`;
+    if (planInfo.plan.includes('Control')) {
       pillEl.style.background = '#0f172a';
       pillEl.style.color = '#facc15';
-    } else if (planInfo.plan === 'Core') {
+    } else if (planInfo.plan.includes('Core')) {
       pillEl.style.background = '#dcfce7';
       pillEl.style.color = '#15803d';
     } else {
@@ -9349,39 +9944,27 @@ function renderSubscriptionTab() {
     }
   }
 
-  const featuresBox = document.getElementById('subPlanFeaturesList');
-  if (featuresBox) {
-    const f = planInfo.features;
-    const items = [
-      { label: 'Catalog Products', val: f.maxProducts === Infinity ? 'Unlimited products' : `${f.maxProducts} products max`, ok: true },
-      { label: 'Branches & Users', val: f.maxBranches === Infinity ? 'Multi-branch & unlimited team' : `${f.maxBranches} branch · ${f.maxUsers} user`, ok: true },
-      { label: 'Cash & Basic Receipts', val: 'Active', ok: f.cashSales },
-      { label: 'Camera Barcode Scanner', val: 'Active', ok: f.scanner },
-      { label: 'Offline Sales Storage', val: 'Active', ok: f.offlineStorage },
-      { label: 'M-Pesa STK Push Integration', val: f.mpesaStk ? 'Active' : 'Locked (Core/Control)', ok: f.mpesaStk },
-      { label: 'Shift & Float Reconciliation', val: f.shifts ? 'Active' : 'Locked (Core/Control)', ok: f.shifts },
-      { label: 'Restaurant & Kitchen Tickets', val: f.restaurantKitchen ? 'Active' : 'Locked (Core/Control)', ok: f.restaurantKitchen },
-      { label: 'Profit & Cost Reports', val: f.profitReports ? 'Active' : 'Locked (Core/Control)', ok: f.profitReports },
-      { label: 'Staff & Teller Accounts', val: f.teamAccounts ? 'Active' : 'Locked (Core/Control)', ok: f.teamAccounts },
-      { label: 'KRA eTIMS Tax Compliance', val: f.etims ? 'Active' : 'Locked (Control POS)', ok: f.etims },
-      { label: 'Multi-Branch Dashboard', val: f.multiBranch ? 'Active' : 'Locked (Control POS)', ok: f.multiBranch },
-      { label: 'Priority 24/7 WhatsApp Support', val: f.prioritySupport ? 'Active' : 'Standard Support', ok: f.prioritySupport }
-    ];
-
-    featuresBox.innerHTML = `
-      <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary); margin-bottom:12px;">
-        Included Features in your ${escapeHtml(planInfo.plan)} POS Plan:
-      </div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:10px;">
-        ${items.map(i => `
-          <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:${i.ok ? 'var(--text-primary)' : 'var(--text-secondary)'}; background:var(--card); padding:8px 10px; border-radius:10px; border:1px solid var(--border);">
-            <i class="${i.ok ? 'fa-solid fa-circle-check' : 'fa-solid fa-lock'}" style="color:${i.ok ? '#16a34a' : '#94a3b8'}; font-size:13px; flex-shrink:0;"></i>
-            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong>${escapeHtml(i.label)}:</strong> ${escapeHtml(i.val)}</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
+  const renText = document.getElementById('subActiveRenewalText');
+  if (renText) {
+    renText.textContent = `${planInfo.status} (${planInfo.renews})`;
   }
+
+  const noticeBanner = document.getElementById('posfitiNoticeBanner');
+  const noticeText = document.getElementById('posfitiNoticeText');
+  if (noticeBanner && noticeText) {
+    if (planInfo.plan === 'Free') {
+      const trialEndDate = new Date(Date.now() + 30 * 86400000).toLocaleDateString('en-KE', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+      noticeText.textContent = `...your branch automatically returns to Free on ${trialEndDate} unless you subscribe. Your products stay saved; paid features require an upgrade.`;
+      noticeBanner.style.background = '#fffbeb';
+      noticeBanner.style.borderColor = '#fef3c7';
+    } else {
+      noticeText.textContent = `Your store is currently active on ${planInfo.name}. Subscription renewal: ${planInfo.renews}. You can manage or upgrade your branches below.`;
+      noticeBanner.style.background = '#f0fdf4';
+      noticeBanner.style.borderColor = '#bbf7d0';
+    }
+  }
+
+  updatePosfitiUI();
 }
 let customers = [];
 let salesLog = [];     // flattened line items, loaded from Supabase (+ any still-offline queued ones)
@@ -12670,54 +13253,89 @@ function updatePaymentMethodUi() {
   const qtb = document.getElementById('quickTenderBox');
   const checkoutBtn = document.getElementById('checkoutBtn');
   const digitalPayBtn = document.getElementById('mpesaBtn');
-  const digitalLabel = document.getElementById('mpesaBtnLabel');
+  const promptBox = document.getElementById('mpesaPromptBox');
+  const waitingBox = document.getElementById('mpesaWaitingBox');
 
   if (isCash) {
     if (qtb) qtb.style.display = 'block';
     if (checkoutBtn) checkoutBtn.style.display = 'block';
     if (digitalPayBtn) digitalPayBtn.style.display = 'none';
+    if (promptBox) promptBox.style.display = 'none';
+    if (waitingBox) waitingBox.style.display = 'none';
   } else {
     if (qtb) qtb.style.display = 'none';
     if (checkoutBtn) checkoutBtn.style.display = 'none';
-    if (digitalPayBtn) {
-      digitalPayBtn.style.display = 'block';
-      const gw = gatewayConfigLabels[currentPaymentMethod] || { name: currentPaymentMethod.toUpperCase() };
-      if (digitalLabel) digitalLabel.textContent = `Charge with ${gw.name}`;
+    if (digitalPayBtn) digitalPayBtn.style.display = 'none';
+
+    // Automatically display the digital payment prompt and phone input
+    if (promptBox) {
+      promptBox.style.display = 'block';
+      const gw = gatewayConfigLabels[currentPaymentMethod] || { name: currentPaymentMethod.toUpperCase(), tag: 'DIGITAL', icon: 'fa-bolt', promptDesc: 'Process payment.' };
+      const titleEl = document.getElementById('promptModalTitle');
+      const tagEl = document.getElementById('digitalPromptTag');
+      const descEl = document.getElementById('promptModalSub');
+      const phoneInput = document.getElementById('mpesaPhone');
+      const accountInput = document.getElementById('digitalAccountInput');
+      const sendBtnText = document.getElementById('btnSendPromptText');
+      const iconEl = document.getElementById('digitalPromptIcon');
+
+      let grand = 0;
+      cart.forEach(item => { grand += item.price * item.qty; });
+
+      if (titleEl) titleEl.textContent = `${gw.name} Payment`;
+      if (tagEl) tagEl.textContent = gw.tag || currentPaymentMethod.toUpperCase();
+      if (iconEl) iconEl.className = `fa-solid ${gw.icon || 'fa-bolt'}`;
+      if (descEl) descEl.textContent = gw.promptDesc || 'Enter customer phone to initiate instant payment request.';
+      if (sendBtnText) sendBtnText.textContent = grand > 0 ? `Charge KES ${grand.toFixed(2)} with ${gw.name}` : `Send STK Push`;
+
+      // Auto-populate from chosen customer if available
+      const custId = document.getElementById('cartCustomerPick')?.value;
+      if (custId && phoneInput && !phoneInput.value) {
+        const c = (customers || []).find(x => x.id === custId);
+        if (c && c.phone) phoneInput.value = c.phone;
+      }
+
+      if (currentPaymentMethod === 'paystack') {
+        if (phoneInput) phoneInput.placeholder = 'Customer email or phone (e.g. shopper@gmail.com)';
+        if (accountInput) accountInput.style.display = 'none';
+      } else if (currentPaymentMethod === 'kcb') {
+        if (phoneInput) phoneInput.placeholder = 'Vooma phone (e.g. 0722000111)';
+        if (accountInput) {
+          accountInput.placeholder = 'KCB Account number (optional)';
+          accountInput.style.display = 'block';
+        }
+      } else if (currentPaymentMethod === 'airtel') {
+        if (phoneInput) phoneInput.placeholder = 'Airtel phone (e.g. 0733123456)';
+        if (accountInput) accountInput.style.display = 'none';
+      } else {
+        if (phoneInput) phoneInput.placeholder = 'Customer phone e.g. 0712345678';
+        if (accountInput) accountInput.style.display = 'none';
+      }
     }
   }
 }
 
-function openDigitalPrompt() {
-  if (cart.length === 0) return;
-  const promptBox = document.getElementById('mpesaPromptBox');
-  const titleEl = document.getElementById('digitalPromptTitle');
-  const tagEl = document.getElementById('digitalPromptTag');
-  const descEl = document.getElementById('digitalPromptDesc');
+function handleMpesaChargeClick() {
   const phoneInput = document.getElementById('mpesaPhone');
-  const accountInput = document.getElementById('digitalAccountInput');
-  const gw = gatewayConfigLabels[currentPaymentMethod] || { name: currentPaymentMethod.toUpperCase(), tag: 'DIGITAL', icon: 'fa-bolt', promptDesc: 'Process payment.' };
-
-  if (titleEl) titleEl.innerHTML = `<i class="fa-solid ${gw.icon}" style="color:var(--accent);"></i> ${gw.name} Payment`;
-  if (tagEl) tagEl.textContent = gw.tag || 'DIGITAL';
-  if (descEl) descEl.textContent = gw.promptDesc || '';
-
-  if (currentPaymentMethod === 'paystack') {
-    phoneInput.placeholder = 'Customer email or phone (e.g. shopper@gmail.com)';
-    accountInput.style.display = 'none';
-  } else if (currentPaymentMethod === 'kcb') {
-    phoneInput.placeholder = 'Customer Vooma phone (e.g. 0722000111)';
-    accountInput.placeholder = 'KCB Account number (optional for direct bank push)';
-    accountInput.style.display = 'block';
-  } else if (currentPaymentMethod === 'airtel') {
-    phoneInput.placeholder = 'Airtel phone (e.g. 0733123456)';
-    accountInput.style.display = 'none';
+  if (phoneInput && phoneInput.value.trim()) {
+    sendDigitalPrompt();
   } else {
-    phoneInput.placeholder = 'Customer phone e.g. 0712345678';
-    accountInput.style.display = 'none';
+    openDigitalPrompt();
   }
+}
 
-  promptBox.style.display = 'block';
-  phoneInput.focus();
+function openDigitalPrompt() {
+  if (cart.length === 0) {
+    showToast('Cart is empty. Add products before charging.');
+    return;
+  }
+  const promptBox = document.getElementById('mpesaPromptBox');
+  if (promptBox) promptBox.style.display = 'block';
+  const phoneInput = document.getElementById('mpesaPhone');
+  if (phoneInput) {
+    phoneInput.focus();
+    phoneInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 function cancelDigitalPrompt() {
@@ -12727,29 +13345,70 @@ function cancelDigitalPrompt() {
   if (phoneInput) phoneInput.value = '';
   const accountInput = document.getElementById('digitalAccountInput');
   if (accountInput) accountInput.value = '';
+  selectPaymentMethod('cash');
 }
 
 async function sendDigitalPrompt() {
-  const rawContact = document.getElementById('mpesaPhone').value.trim();
+  if (cart.length === 0) {
+    showToast('Cart is empty. Please add items to checkout.');
+    return;
+  }
+
+  const phoneInput = document.getElementById('mpesaPhone');
+  const rawContact = phoneInput ? phoneInput.value.trim() : '';
   const accountVal = document.getElementById('digitalAccountInput') ? document.getElementById('digitalAccountInput').value.trim() : '';
 
   if (!rawContact && !accountVal) {
-    showToast('Please enter customer phone or account details');
+    if (phoneInput) {
+      phoneInput.focus();
+      phoneInput.style.borderColor = '#ef4444';
+      setTimeout(() => { phoneInput.style.borderColor = '#10b981'; }, 2000);
+    }
+    showToast('Please enter customer phone number (e.g. 0712345678)');
     return;
   }
 
   let grand = 0;
   cart.forEach(item => { grand += item.price * item.qty; });
-  const custId = document.getElementById('cartCustomerPick').value || null;
+  const custId = document.getElementById('cartCustomerPick')?.value || null;
 
-  document.getElementById('mpesaPromptBox').style.display = 'none';
+  const btnSend = document.getElementById('btnSendPrompt');
+  if (btnSend) {
+    btnSend.disabled = true;
+    btnSend.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending STK Push...';
+  }
+
+  const promptBox = document.getElementById('mpesaPromptBox');
+  if (promptBox) promptBox.style.display = 'none';
+
   const waitingBox = document.getElementById('mpesaWaitingBox');
-  waitingBox.style.display = 'block';
+  if (waitingBox) waitingBox.style.display = 'block';
 
   const gwName = (gatewayConfigLabels[currentPaymentMethod] || {}).name || currentPaymentMethod.toUpperCase();
-  document.getElementById('digitalWaitingTitle').textContent = `Waiting for ${gwName} confirmation...`;
-  document.getElementById('mpesaWaitingHint').textContent = `KES ${grand.toFixed(2)} prompt sent to ${rawContact || accountVal}`;
-  document.getElementById('digitalWaitingSubhint').textContent = `Listening for server webhook callback verification...`;
+  const waitingTitle = document.getElementById('digitalWaitingTitle');
+  if (waitingTitle) waitingTitle.textContent = `Waiting for ${gwName} PIN...`;
+
+  const waitingHint = document.getElementById('mpesaWaitingHint');
+  if (waitingHint) waitingHint.textContent = `KES ${grand.toFixed(2)} prompt sent to ${rawContact || accountVal}. Customer enters PIN on phone.`;
+
+  const statusAlert = document.getElementById('mpesaWaitingStatusAlert');
+  if (statusAlert) {
+    statusAlert.style.display = 'none';
+    statusAlert.innerHTML = '';
+  }
+
+  // 70-second real-time countdown timer
+  let secondsLeft = 70;
+  const timerSecsEl = document.getElementById('stkTimerSecs');
+  if (timerSecsEl) timerSecsEl.textContent = String(secondsLeft);
+  if (window._posStkCountdown) clearInterval(window._posStkCountdown);
+  window._posStkCountdown = setInterval(() => {
+    secondsLeft--;
+    if (timerSecsEl) timerSecsEl.textContent = String(Math.max(0, secondsLeft));
+    if (secondsLeft <= 0) {
+      clearInterval(window._posStkCountdown);
+    }
+  }, 1000);
 
   try {
     const payload = {
@@ -12769,16 +13428,28 @@ async function sendDigitalPrompt() {
     }).then(r => r.json());
 
     if (!resp.success) {
+      if (window._posStkCountdown) clearInterval(window._posStkCountdown);
       showToast(`${gwName} error: ` + (resp.error || 'Initiation failed'));
-      waitingBox.style.display = 'none';
+      if (waitingBox) waitingBox.style.display = 'none';
+      if (promptBox) promptBox.style.display = 'block';
+      if (btnSend) {
+        btnSend.disabled = false;
+        btnSend.innerHTML = '<i class="fa-solid fa-bolt"></i> <span id="btnSendPromptText">Send STK Push</span>';
+      }
       return;
     }
 
     mpesaCurrentRequestId = resp.payment_request_id;
-    pollDigitalStatus(resp.payment_request_id, currentPaymentMethod, grand, custId);
+    pollDigitalStatus(resp.payment_request_id, currentPaymentMethod, grand, custId, secondsLeft);
   } catch (err) {
+    if (window._posStkCountdown) clearInterval(window._posStkCountdown);
     showToast(`${gwName} network error: ` + err.message);
-    waitingBox.style.display = 'none';
+    if (waitingBox) waitingBox.style.display = 'none';
+    if (promptBox) promptBox.style.display = 'block';
+    if (btnSend) {
+      btnSend.disabled = false;
+      btnSend.innerHTML = '<i class="fa-solid fa-bolt"></i> <span id="btnSendPromptText">Send STK Push</span>';
+    }
   }
 }
 
@@ -12787,61 +13458,136 @@ function pollDigitalStatus(paymentRequestId, gateway, grand, custId) {
   if (digitalPollInterval) clearInterval(digitalPollInterval);
 
   digitalPollInterval = setInterval(async () => {
-    elapsed += 2.5;
+    elapsed += 2;
     try {
       const res = await fetch(`/api/payments/status/${paymentRequestId}`).then(r => r.json());
       if (!res.success) return;
       const data = res.data;
 
+      const waitingBox = document.getElementById('mpesaWaitingBox');
+      const statusAlert = document.getElementById('mpesaWaitingStatusAlert');
+      const btnSend = document.getElementById('btnSendPrompt');
+
       if (data.status === 'success') {
         clearInterval(digitalPollInterval);
-        document.getElementById('mpesaWaitingBox').style.display = 'none';
-        await completeDigitalSale(gateway, data);
+        if (window._posStkCountdown) clearInterval(window._posStkCountdown);
+
+        const realRef = data.receipt_reference || `MP${Date.now().toString(36).toUpperCase()}`;
+
+        if (statusAlert) {
+          statusAlert.style.display = 'block';
+          statusAlert.innerHTML = `
+            <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:12px; color:#15803d; font-weight:800;">
+              <i class="fa-solid fa-circle-check"></i> Safaricom M-Pesa Confirmed!<br>
+              <span style="font-size:12.5px; font-weight:600; color:#166534;">Ref: ${escapeHtml(realRef)}</span>
+            </div>
+          `;
+        }
+
+        showToast('Payment confirmed by Safaricom! Completing sale...');
+
+        setTimeout(async () => {
+          if (waitingBox) waitingBox.style.display = 'none';
+          if (btnSend) {
+            btnSend.disabled = false;
+            btnSend.innerHTML = '<i class="fa-solid fa-bolt"></i> <span id="btnSendPromptText">Send STK Push</span>';
+          }
+          await completeDigitalSale(gateway, { ...data, receipt_reference: realRef });
+        }, 1200);
+
       } else if (data.status === 'failed' || data.status === 'cancelled') {
         clearInterval(digitalPollInterval);
-        document.getElementById('mpesaWaitingBox').style.display = 'none';
-        showToast('Payment ' + data.status + ': ' + (data.result_desc || 'Declined or cancelled by customer'));
-      } else if (elapsed >= 90) {
+        if (window._posStkCountdown) clearInterval(window._posStkCountdown);
+
+        if (statusAlert) {
+          statusAlert.style.display = 'block';
+          statusAlert.innerHTML = `
+            <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:12px; color:#b91c1c; font-weight:800;">
+              <i class="fa-solid fa-circle-xmark"></i> M-Pesa Payment Rejected<br>
+              <span style="font-size:12px; font-weight:500;">${escapeHtml(data.result_desc || 'Cancelled by customer or wrong PIN entered. Sale was not completed.')}</span>
+            </div>
+          `;
+        }
+
+        showToast('M-Pesa payment rejected: ' + (data.result_desc || 'Declined'));
+
+        setTimeout(() => {
+          if (waitingBox) waitingBox.style.display = 'none';
+          const promptBox = document.getElementById('mpesaPromptBox');
+          if (promptBox && currentPaymentMethod !== 'cash') promptBox.style.display = 'block';
+          if (btnSend) {
+            btnSend.disabled = false;
+            btnSend.innerHTML = '<i class="fa-solid fa-rotate-right"></i> <span id="btnSendPromptText">Try Again</span>';
+          }
+        }, 3200);
+
+      } else if (elapsed >= 72) {
         clearInterval(digitalPollInterval);
-        document.getElementById('mpesaWaitingBox').style.display = 'none';
-        showToast('Payment timed out waiting for customer — ask them to check their device');
+        if (window._posStkCountdown) clearInterval(window._posStkCountdown);
+
+        if (statusAlert) {
+          statusAlert.style.display = 'block';
+          statusAlert.innerHTML = `
+            <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:12px; color:#b91c1c; font-weight:800;">
+              <i class="fa-solid fa-triangle-exclamation"></i> Payment Timed Out<br>
+              <span style="font-size:12px; font-weight:500;">No PIN entered on phone within 70 seconds. Sale was not completed.</span>
+            </div>
+          `;
+        }
+
+        showToast('Payment timed out waiting for customer PIN.');
+
+        setTimeout(() => {
+          if (waitingBox) waitingBox.style.display = 'none';
+          const promptBox = document.getElementById('mpesaPromptBox');
+          if (promptBox && currentPaymentMethod !== 'cash') promptBox.style.display = 'block';
+          if (btnSend) {
+            btnSend.disabled = false;
+            btnSend.innerHTML = '<i class="fa-solid fa-rotate-right"></i> <span id="btnSendPromptText">Retry STK Push</span>';
+          }
+        }, 3000);
       }
-    } catch (e) {}
-  }, 2500);
-}
-
-async function simulateCurrentGatewayApproval() {
-  if (!mpesaCurrentRequestId) {
-    showToast('No active digital transaction to simulate');
-    return;
-  }
-  try {
-    const res = await fetch(`/api/payments/simulate/${mpesaCurrentRequestId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'approve' })
-    }).then(r => r.json());
-
-    if (res.success) {
-      showToast('Simulated callback processed and cryptographically verified!');
-    } else {
-      showToast('Simulation error: ' + (res.error || 'Failed'));
+    } catch (e) {
+      console.warn('Status poll error:', e);
     }
-  } catch (err) {
-    showToast('Simulation error: ' + err.message);
-  }
+  }, 2000);
 }
 
-function cancelMpesaWait() {
+function cancelDigitalWait() {
   if (digitalPollInterval) clearInterval(digitalPollInterval);
-  document.getElementById('mpesaWaitingBox').style.display = 'none';
-  showToast('Stopped waiting — payment may still complete separately');
+  if (window._posStkCountdown) clearInterval(window._posStkCountdown);
+  const waitingBox = document.getElementById('mpesaWaitingBox');
+  if (waitingBox) waitingBox.style.display = 'none';
+  const promptBox = document.getElementById('mpesaPromptBox');
+  if (promptBox && currentPaymentMethod !== 'cash') promptBox.style.display = 'block';
+  const btnSend = document.getElementById('btnSendPrompt');
+  if (btnSend) {
+    btnSend.disabled = false;
+    btnSend.innerHTML = '<i class="fa-solid fa-bolt"></i> <span id="btnSendPromptText">Send STK Push</span>';
+  }
+  showToast('Payment wait cancelled. Sale was not completed.');
 }
 
-// Backwards compatibility aliases
+const cancelMpesaWait = cancelDigitalWait;
 const openMpesaPrompt = openDigitalPrompt;
 const cancelMpesaPrompt = cancelDigitalPrompt;
 const sendMpesaPrompt = sendDigitalPrompt;
+
+function handleCreateBranchClick() {
+  const planInfo = getCurrentBusinessPlan();
+  const maxBranches = planInfo.branches || (planInfo.name.includes('Group') ? 5 : 1);
+  const currentBranches = 1;
+
+  if (currentBranches >= maxBranches) {
+    showPlanUpgradePrompt(
+      'Multi-Branch Expansion (Group Plan)',
+      `Your current plan (${planInfo.name}) supports ${maxBranches} branch. Upgrade to Core Group (KES 3,999/mo) or Control Group (KES 7,999/mo) to manage up to 5 branch locations with unified inventory.`,
+      planInfo.name.includes('Control') ? 'Control Group' : 'Core Group'
+    );
+    return;
+  }
+  showToast('Branch creation ready. Enter branch details to add your next location.');
+}
 
 async function completeDigitalSale(gateway, paymentRequest) {
   const now = new Date();
@@ -13148,6 +13894,16 @@ async function loadEtimsStatus() {
 }
 
 async function saveEtimsSettings() {
+  const planInfo = getCurrentBusinessPlan();
+  if (!planInfo.features || !planInfo.features.etims) {
+    showPlanUpgradePrompt(
+      'KRA eTIMS Fiscal Compliance',
+      'Direct KRA eTIMS automated tax fiscalization and QR signing is exclusive to Control POS. Upgrade to activate real-time KRA integration.',
+      'Control'
+    );
+    return;
+  }
+
   const kra_pin = document.getElementById('etimsKraPin').value.trim();
   const bhf_id = document.getElementById('etimsBhfId').value.trim() || '00';
   const is_production = document.getElementById('etimsEnv').value === 'true';
@@ -13919,26 +14675,25 @@ function openManageApisModal() {
 }
 
 // ================= SUBSCRIPTION UPGRADE & LIVE CHECKOUT FLOW =================
-let currentSelectedPlan = 'Core';
-let currentSelectedPrice = 999;
+let currentSelectedPlan = 'Control POS';
+let currentSelectedPrice = 1999;
+let currentSelectedBranches = '1';
+let currentSelectedBilling = 'monthly';
 
-function openUpgradePlanModal(defaultPlan = 'Core') {
+function openUpgradePlanModal(tier = 'Control', price = 1999, planTitle = 'Control POS', branches = '1', billing = 'monthly') {
   const overlay = document.getElementById('subUpgradeModalOverlay');
   if (!overlay) return;
+
+  currentSelectedPlan = planTitle || (tier === 'Control' ? 'Control POS' : 'Core POS');
+  currentSelectedPrice = price || (tier === 'Control' ? 1999 : 999);
+  currentSelectedBranches = String(branches || '1');
+  currentSelectedBilling = billing || 'monthly';
 
   let cfg = {};
   try {
     const raw = localStorage.getItem('dogo_platform_settings');
     if (raw) cfg = JSON.parse(raw);
   } catch(e) {}
-
-  const priceCore = cfg.price_core || 999;
-  const priceCtrl = cfg.price_control || 1999;
-
-  const pCoreEl = document.getElementById('modalPriceCore');
-  const pCtrlEl = document.getElementById('modalPriceControl');
-  if (pCoreEl) pCoreEl.textContent = priceCore.toLocaleString();
-  if (pCtrlEl) pCtrlEl.textContent = priceCtrl.toLocaleString();
 
   // Populate M-Pesa destination
   const destEl = document.getElementById('modalMpesaDestText');
@@ -13960,26 +14715,29 @@ function openUpgradePlanModal(defaultPlan = 'Core') {
     phInput.value = (profile && profile.phone) ? profile.phone : '';
   }
 
-  const chosenPlan = (defaultPlan === 'Control') ? 'Control' : 'Core';
-  const chosenPrice = (chosenPlan === 'Control') ? priceCtrl : priceCore;
-  selectUpgradePlan(chosenPlan, chosenPrice);
+  selectUpgradePlan(tier, currentSelectedPrice, currentSelectedPlan);
   overlay.style.display = 'flex';
-  trackPlatformEvent('subscription_checkout_opened', { plan: chosenPlan });
+  trackPlatformEvent('subscription_checkout_opened', { plan: currentSelectedPlan, price: currentSelectedPrice });
 }
 
 function closeUpgradePlanModal() {
   const overlay = document.getElementById('subUpgradeModalOverlay');
   if (overlay) overlay.style.display = 'none';
+  if (window._subStkPollInterval) {
+    clearInterval(window._subStkPollInterval);
+    window._subStkPollInterval = null;
+  }
 }
 
-function selectUpgradePlan(plan, price) {
-  currentSelectedPlan = plan;
+function selectUpgradePlan(tier, price, title) {
+  const planName = title || (tier === 'Control' ? 'Control POS' : 'Core POS');
+  currentSelectedPlan = planName;
   currentSelectedPrice = price;
 
   const cardCore = document.getElementById('planCardCore');
   const cardCtrl = document.getElementById('planCardControl');
 
-  if (plan === 'Core') {
+  if (tier === 'Core') {
     if (cardCore) { cardCore.style.borderColor = '#16a34a'; cardCore.style.background = '#f0fdf4'; }
     if (cardCtrl) { cardCtrl.style.borderColor = '#e5e7eb'; cardCtrl.style.background = '#fafafa'; }
   } else {
@@ -13989,8 +14747,8 @@ function selectUpgradePlan(plan, price) {
 
   const lbl = document.getElementById('selectedPlanLabel');
   const amt = document.getElementById('selectedPlanAmount');
-  if (lbl) lbl.textContent = `${plan} POS`;
-  if (amt) amt.textContent = `KES ${price.toLocaleString()}`;
+  if (lbl) lbl.textContent = planName;
+  if (amt) amt.textContent = `KES ${Number(price).toLocaleString()}`;
 }
 
 function switchModalPayTab(tab) {
@@ -14012,33 +14770,172 @@ function switchModalPayTab(tab) {
   }
 }
 
-function submitModalStkPush() {
+async function submitModalStkPush() {
   const phone = document.getElementById('modalStkPhone')?.value.trim();
   if (!phone) {
     showToast('Please enter your M-Pesa phone number');
     return;
   }
+
   const btn = document.getElementById('modalStkBtn');
   const msgEl = document.getElementById('modalPayStatusMsg');
 
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending STK prompt to phone...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Contacting Safaricom Daraja...';
   }
   if (msgEl) {
     msgEl.style.display = 'block';
-    msgEl.style.color = '#15803d';
-    msgEl.innerHTML = `<strong>STK Push sent to ${escapeHtml(phone)}!</strong> Please check your phone and enter your M-Pesa PIN.`;
+    msgEl.style.color = '#0284c7';
+    msgEl.innerHTML = `<strong>Initiating STK Push to ${escapeHtml(phone)}...</strong>`;
   }
 
-  // Simulate prompt resolution
-  setTimeout(() => {
-    applySubscriptionSuccess(currentSelectedPlan, 'STK-AUTO-' + Math.random().toString(36).substring(2,8).toUpperCase(), phone, false);
+  try {
+    const payload = {
+      gateway: 'mpesa',
+      amount: currentSelectedPrice,
+      phone: phone,
+      metadata: {
+        type: 'subscription',
+        plan: currentSelectedPlan,
+        branches: currentSelectedBranches || 1,
+        billing: currentSelectedBilling || 'monthly',
+        business_id: activeBusinessId || (business ? business.id : 'current_biz'),
+        business_name: business ? business.name : 'Store'
+      }
+    };
+
+    const resp = await fetch('/api/payments/initiate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(r => r.json());
+
+    if (!resp.success) {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send M-Pesa STK Push';
+      }
+      if (msgEl) {
+        msgEl.style.color = '#dc2626';
+        msgEl.innerHTML = `❌ <strong>Failed to initiate Daraja STK:</strong> ${escapeHtml(resp.error || 'Check phone number and credentials')}`;
+      }
+      showToast('M-Pesa STK initiation failed: ' + (resp.error || ''));
+      return;
+    }
+
+    const paymentReqId = resp.payment_request_id;
+    let secondsLeft = 70;
+
+    if (msgEl) {
+      msgEl.style.color = '#15803d';
+      msgEl.innerHTML = `
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px; margin-top:8px;">
+          <div style="font-weight:800; font-size:14px; margin-bottom:4px;"><i class="fa-solid fa-mobile-screen fa-bounce"></i> STK Prompt Sent!</div>
+          <div style="font-size:13px; color:#166534; line-height:1.4;">
+            Please check your phone (<strong>${escapeHtml(phone)}</strong>) and enter your <strong>M-Pesa PIN</strong> to pay <strong>KES ${Number(currentSelectedPrice).toLocaleString()}</strong>.
+          </div>
+          <div style="font-size:12px; color:#64748b; margin-top:6px;" id="stkTimerNotice">
+            <i class="fa-regular fa-clock"></i> Waiting for Daraja confirmation (<span id="stkSecondsCount">${secondsLeft}</span>s)...
+          </div>
+        </div>
+      `;
+    }
+
+    if (btn) {
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Waiting for M-Pesa PIN...';
+    }
+
+    if (window._subStkPollInterval) clearInterval(window._subStkPollInterval);
+
+    window._subStkPollInterval = setInterval(async () => {
+      secondsLeft -= 2;
+      const countEl = document.getElementById('stkSecondsCount');
+      if (countEl) countEl.textContent = Math.max(0, secondsLeft);
+
+      try {
+        const statusRes = await fetch(`/api/payments/status/${paymentReqId}`).then(r => r.json());
+        if (!statusRes.success) return;
+
+        const data = statusRes.data;
+
+        if (data.status === 'success') {
+          clearInterval(window._subStkPollInterval);
+          window._subStkPollInterval = null;
+
+          const realMpesaRef = data.receipt_reference || `MP${Date.now().toString(36).toUpperCase()}`;
+
+          if (msgEl) {
+            msgEl.innerHTML = `
+              <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:12px; padding:12px; color:#15803d; font-weight:800;">
+                <i class="fa-solid fa-circle-check"></i> Payment Confirmed by Safaricom!<br>
+                <span style="font-size:12px; font-weight:600; color:#166534;">M-Pesa Ref: ${escapeHtml(realMpesaRef)}</span>
+              </div>
+            `;
+          }
+
+          setTimeout(() => {
+            applySubscriptionSuccess(currentSelectedPlan, realMpesaRef, phone, false, currentSelectedBranches, currentSelectedBilling);
+            if (btn) {
+              btn.disabled = false;
+              btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send M-Pesa STK Push';
+            }
+          }, 1200);
+
+        } else if (data.status === 'failed' || data.status === 'cancelled') {
+          clearInterval(window._subStkPollInterval);
+          window._subStkPollInterval = null;
+
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Try Again';
+          }
+          if (msgEl) {
+            msgEl.style.color = '#dc2626';
+            msgEl.innerHTML = `
+              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:12px; color:#b91c1c;">
+                <i class="fa-solid fa-circle-xmark"></i> <strong>M-Pesa Payment Rejected</strong><br>
+                <span style="font-size:12.5px;">${escapeHtml(data.result_desc || 'Transaction cancelled or insufficient funds. Subscription was not activated.')}</span>
+              </div>
+            `;
+          }
+          showToast('Payment rejected: ' + (data.result_desc || 'Cancelled by user'));
+
+        } else if (secondsLeft <= 0) {
+          clearInterval(window._subStkPollInterval);
+          window._subStkPollInterval = null;
+
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry STK Push';
+          }
+          if (msgEl) {
+            msgEl.style.color = '#dc2626';
+            msgEl.innerHTML = `
+              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:12px; color:#b91c1c;">
+                <i class="fa-solid fa-triangle-exclamation"></i> <strong>Payment Timed Out</strong><br>
+                <span style="font-size:12.5px;">No PIN was entered on phone within 70 seconds. Subscription was not activated.</span>
+              </div>
+            `;
+          }
+          showToast('Daraja payment timed out. Please try again.');
+        }
+      } catch (err) {
+        console.warn('Poll error:', err);
+      }
+    }, 2000);
+
+  } catch (err) {
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send M-Pesa STK Push';
     }
-  }, 3500);
+    if (msgEl) {
+      msgEl.style.color = '#dc2626';
+      msgEl.innerHTML = `❌ Network error connecting to payment gateway: ${escapeHtml(err.message)}`;
+    }
+    showToast('Network error: ' + err.message);
+  }
 }
 
 function submitModalManualCode() {
@@ -14047,15 +14944,22 @@ function submitModalManualCode() {
     showToast('Please enter a valid M-Pesa confirmation code');
     return;
   }
-  applySubscriptionSuccess(currentSelectedPlan, code, profile?.phone || '', false);
+  applySubscriptionSuccess(currentSelectedPlan, code, profile?.phone || '', false, currentSelectedBranches, currentSelectedBilling);
 }
 
-function applySubscriptionSuccess(planName, refCode, phone, isTrial = false) {
+function applySubscriptionSuccess(planName, refCode, phone, isTrial = false, branches = 1, billing = 'monthly') {
   closeUpgradePlanModal();
 
-  const planKey = planName.includes('Control') ? 'Control' : (planName.includes('Core') ? 'Core' : 'Free');
+  let planKey = 'Free';
+  if (/control.*group/i.test(planName)) planKey = 'Control Group';
+  else if (/control/i.test(planName)) planKey = (Number(branches) === 5) ? 'Control Group' : 'Control';
+  else if (/core.*group/i.test(planName)) planKey = 'Core Group';
+  else if (/core/i.test(planName)) planKey = (Number(branches) === 5) ? 'Core Group' : 'Core';
+  else planKey = 'Free';
+
+  const isYearly = (billing === 'yearly');
   const statusStr = isTrial ? 'Trial (7 Days)' : 'Paid';
-  const renewsStr = isTrial ? 'In 7 days' : '30 days remaining';
+  const renewsStr = isTrial ? 'In 7 days' : (isYearly ? '365 days remaining (Yearly)' : '30 days remaining (Monthly)');
   const trialEndsStr = isTrial ? new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0] : null;
 
   // Save to local subscriptions ledger for Admin Dashboard
@@ -14065,8 +14969,10 @@ function applySubscriptionSuccess(planName, refCode, phone, isTrial = false) {
     ledger.unshift({
       id: 'sub-' + Date.now(),
       bizName: business ? business.name : 'My Business',
-      plan: planKey,
+      plan: planName,
       amount: isTrial ? 0 : currentSelectedPrice,
+      branches: Number(branches) || 1,
+      billing: billing,
       status: statusStr,
       date: new Date().toISOString().split('T')[0],
       mpesaRef: refCode,
@@ -14082,6 +14988,9 @@ function applySubscriptionSuccess(planName, refCode, phone, isTrial = false) {
     const bId = activeBusinessId || (business ? business.id : 'current_biz');
     plans[bId] = {
       plan: planKey,
+      planTitle: planName,
+      branches: Number(branches) || 1,
+      billing: billing,
       status: statusStr,
       renews: renewsStr,
       trialEnds: trialEndsStr,
@@ -14095,12 +15004,12 @@ function applySubscriptionSuccess(planName, refCode, phone, isTrial = false) {
     business.subscription_plan = planKey;
   }
 
-  // Instant Telegram Push Notification to Super Admin
+  // Instant Telegram Push Notification to Super Admin with Real Payment Reference
   if (!isTrial) {
     try {
       const rawCfg = localStorage.getItem('dogo_platform_settings');
       const cfg = rawCfg ? JSON.parse(rawCfg) : {};
-      const botToken = cfg.telegram_bot_token || '8576294481:AAH_qrp0rQdXbnHqFONS1ril1yJQ_UfbQrA';
+      const botToken = cfg.telegram_bot_token || '';
       const chatId = cfg.alert_telegram;
       if (botToken && chatId) {
         const nowStr = new Date().toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' });
@@ -14108,7 +15017,7 @@ function applySubscriptionSuccess(planName, refCode, phone, isTrial = false) {
         const storeType = business?.business_type || 'Retail';
         const tgMsg = `🔔 <b>Dogo POS Alert: New Subscription Payment!</b>\n\n` +
           `🏪 <b>Store:</b> ${storeName} (${storeType})\n` +
-          `📦 <b>Plan:</b> ${planKey} POS\n` +
+          `📦 <b>Plan:</b> ${planName} (${billing === 'yearly' ? 'Yearly' : 'Monthly'}, ${Number(branches) > 1 ? 'Up to 5 Branches' : '1 Branch'})\n` +
           `💰 <b>Amount:</b> KES ${Number(currentSelectedPrice || 999).toLocaleString()}\n` +
           `📱 <b>M-Pesa Reference:</b> <code>${refCode}</code>\n` +
           `📞 <b>Payer Contact:</b> ${phone || profile?.phone || 'Not provided'}\n` +
@@ -14132,8 +15041,8 @@ function applySubscriptionSuccess(planName, refCode, phone, isTrial = false) {
   applyPlanFeaturesVisibility();
   renderSubscriptionTab();
 
-  showToast(`Congratulations! Upgraded to ${planKey} POS. All features are now unlocked!`);
-  trackPlatformEvent('subscription_payment_submitted', { plan: planKey, value: isTrial ? 0 : currentSelectedPrice, ref: refCode });
+  showToast(`Congratulations! Upgraded to ${planName}. All features are now unlocked!`);
+  trackPlatformEvent('subscription_payment_submitted', { plan: planName, value: isTrial ? 0 : currentSelectedPrice, ref: refCode });
 }
 
 // Google Analytics & Broadcast Banner Initialization

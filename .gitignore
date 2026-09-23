@@ -1,0 +1,37 @@
+# =====================================================================
+# DOGO POS - GIT IGNORE (PROTECT SENSITIVE SECRETS & KEYS)
+# =====================================================================
+
+# Environment variables & secret files (NEVER COMMIT TO PUBLIC REPO)
+.env
+.env.*
+!.env.example
+*.env
+config/secrets/
+secrets/
+credentials.json
+*.pem
+*.key
+*.cert
+*.pfx
+
+# Dependency directories
+node_modules/
+__pycache__/
+*.pyc
+
+# Local runtime & logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+.system_generated/
+
+# OS / Editor temporary files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.tmp
+temp_*

@@ -1,23 +1,61 @@
 /**
  * Dogo POS - 24/7 Telegram Admin Bot & Remote Command Controller
  * 
- * Bot Name: @DogoPOSbot (Gogo_POS_bot)
- * Token: 8576294481:AAH_qrp0rQdXbnHqFONS1ril1yJQ_UfbQrA
+ * Bot Name: @DogoPOSbot
+ * 
+ * Configuration:
+ *   Configure TELEGRAM_BOT_TOKEN in .env or config/secrets/.env
+ *   (Do not hardcode API tokens directly in source code)
  * 
  * Usage:
  *   node telegram-bot.js
- * 
- * Features:
- *   - Auto-detects and prints your Chat ID on /start
- *   - Live /stats, /mrr, /stores, /health commands
- *   - Can broadcast alerts directly to your phone
  */
 
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8576294481:AAH_qrp0rQdXbnHqFONS1ril1yJQ_UfbQrA';
-const SUPABASE_URL = 'https://uzwomzkzqrpiumtnniik.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D';
+// Safely load environment variables from .env or config/secrets/.env
+function loadLocalEnv() {
+  const possiblePaths = [
+    path.join(__dirname, '.env'),
+    path.join(__dirname, 'config', 'secrets', '.env'),
+    path.join(__dirname, 'config', '.env')
+  ];
+
+  for (const envPath of possiblePaths) {
+    if (fs.existsSync(envPath)) {
+      try {
+        const raw = fs.readFileSync(envPath, 'utf8');
+        const lines = raw.split(/\r?\n/);
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const eq = trimmed.indexOf('=');
+          if (eq > 0) {
+            const key = trimmed.slice(0, eq).trim();
+            const val = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
+            if (!process.env[key]) process.env[key] = val;
+          }
+        }
+        break;
+      } catch (e) {}
+    }
+  }
+}
+loadLocalEnv();
+
+const BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://uzwomzkzqrpiumtnniik.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D';
+
+if (!BOT_TOKEN) {
+  console.error('\n❌ ERROR: TELEGRAM_BOT_TOKEN is not set!');
+  console.error('Please configure your private token in .env or config/secrets/.env:');
+  console.error('  TELEGRAM_BOT_TOKEN=your_token_from_botfather\n');
+  console.error('See config/secrets/.env.example for details.\n');
+  process.exit(1);
+}
 
 let lastUpdateId = 0;
 
