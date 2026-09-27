@@ -17,6 +17,7 @@ import {
   getInternalConfig
 } from './store.js';
 import crypto from 'crypto';
+import { requireBusinessAdmin } from './auth.js';
 
 export const paymentRouter = express.Router();
 
@@ -41,7 +42,7 @@ paymentRouter.get('/config', (req, res) => {
  * POST /api/payments/config/:gateway
  * Saves settings for a specific gateway
  */
-paymentRouter.post('/config/:gateway', (req, res) => {
+paymentRouter.post('/config/:gateway', requireBusinessAdmin, (req, res) => {
   const { gateway } = req.params;
   if (!['mpesa', 'kcb', 'paystack', 'airtel'].includes(gateway)) {
     return res.status(400).json({ success: false, error: `Unsupported gateway: ${gateway}` });
@@ -246,7 +247,7 @@ paymentRouter.post('/callbacks/airtel', (req, res) => {
  * POST /api/payments/simulate/:id
  * Dedicated sandbox simulation endpoint that runs through the exact callback verification engine!
  */
-paymentRouter.post('/simulate/:id', (req, res) => {
+paymentRouter.post('/simulate/:id', requireBusinessAdmin, (req, res) => {
   const { id } = req.params;
   const { action = 'approve', receipt } = req.body;
   const request = getPaymentRequest(id);
@@ -260,6 +261,17 @@ paymentRouter.post('/simulate/:id', (req, res) => {
   }
 
   const gateway = request.gateway;
+  const gwConfig = getInternalConfig(gateway) || {};
+
+  // SECURITY: never allow a simulated "successful payment" to be injected against a
+  // gateway that is configured for real production money — sandbox/test mode only,
+  // even for a verified Admin.
+  if (gwConfig.is_production) {
+    return res.status(403).json({
+      success: false,
+      error: `${gateway.toUpperCase()} is in production mode — simulated callbacks are disabled. Switch to sandbox to test.`
+    });
+  }
   let simulatedOutcome;
 
   if (gateway === 'mpesa') {

@@ -3,7 +3,24 @@ import crypto from 'crypto';
 // In-memory persistent store for active and completed payment requests
 const paymentRequests = new Map();
 
-// Configuration store for payment gateways (in-memory with sensible defaults / env overrides)
+// SECURITY: no gateway secret ever ships with a hardcoded fallback value.
+// Missing secrets generate a random per-boot value (dev/sandbox only, logged loudly)
+// instead of a fixed value anyone reading this public repo could reuse to forge
+// webhook signatures. Set real values in config/secrets/.env (gitignored) for anything
+// resembling production use.
+function requireSecret(envVar, { devDefaultLabel } = {}) {
+  const val = process.env[envVar];
+  if (val && val.trim()) return val.trim();
+  const generated = crypto.randomBytes(24).toString('hex');
+  console.warn(
+    `\n⚠️  [SECURITY] ${envVar} is not set. Generated a RANDOM ${devDefaultLabel || 'secret'} for this process only.\n` +
+    `   This value changes every restart and is NOT shared with any real payment provider.\n` +
+    `   Set ${envVar} in config/secrets/.env before accepting real payments.\n`
+  );
+  return generated;
+}
+
+// Configuration store for payment gateways (in-memory with env overrides; no committed fallback secrets)
 const gatewayConfigs = {
   mpesa: {
     enabled: true,
@@ -11,6 +28,8 @@ const gatewayConfigs = {
     shortcode: process.env.MPESA_SHORTCODE || '174379',
     consumer_key: process.env.MPESA_CONSUMER_KEY || '',
     consumer_secret: process.env.MPESA_CONSUMER_SECRET || '',
+    // Safaricom's published sandbox passkey is public by design (not a secret) — safe as the only
+    // committed fallback, and only ever used when MPESA_ENVIRONMENT is not 'production'.
     passkey: process.env.MPESA_PASSKEY || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919',
     is_production: process.env.MPESA_ENVIRONMENT === 'production',
     callback_url: '/api/payments/callbacks/mpesa'
@@ -20,7 +39,7 @@ const gatewayConfigs = {
     merchant_code: process.env.KCB_MERCHANT_CODE || 'KCB-DEMO-001',
     app_key: process.env.KCB_APP_KEY || '',
     app_secret: process.env.KCB_APP_SECRET || '',
-    shared_secret: process.env.KCB_SHARED_SECRET || 'kcb_buni_webhook_secret_key_2026',
+    shared_secret: requireSecret('KCB_SHARED_SECRET', { devDefaultLabel: 'KCB webhook shared secret' }),
     account_number: process.env.KCB_ACCOUNT || '1234567890',
     is_production: process.env.KCB_ENVIRONMENT === 'production',
     callback_url: '/api/payments/callbacks/kcb'
@@ -28,8 +47,8 @@ const gatewayConfigs = {
   paystack: {
     enabled: true,
     public_key: process.env.PAYSTACK_PUBLIC_KEY || '',
-    secret_key: process.env.PAYSTACK_SECRET_KEY || 'sk_test_paystack_default_secret_key',
-    is_production: false,
+    secret_key: requireSecret('PAYSTACK_SECRET_KEY', { devDefaultLabel: 'Paystack secret key' }),
+    is_production: process.env.PAYSTACK_ENVIRONMENT === 'production',
     callback_url: '/api/payments/callbacks/paystack'
   },
   airtel: {
@@ -37,8 +56,8 @@ const gatewayConfigs = {
     client_id: process.env.AIRTEL_CLIENT_ID || '',
     client_secret: process.env.AIRTEL_CLIENT_SECRET || '',
     merchant_number: process.env.AIRTEL_MERCHANT_NUMBER || 'AIRTEL_TILL_882',
-    encryption_key: process.env.AIRTEL_ENCRYPTION_KEY || 'airtel_sec_key_2026',
-    is_production: false,
+    encryption_key: requireSecret('AIRTEL_ENCRYPTION_KEY', { devDefaultLabel: 'Airtel encryption key' }),
+    is_production: process.env.AIRTEL_ENVIRONMENT === 'production',
     callback_url: '/api/payments/callbacks/airtel'
   }
 };

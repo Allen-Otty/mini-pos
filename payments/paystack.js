@@ -53,7 +53,7 @@ export async function initiatePaystackPayment({ email, phone, amount, customerId
 export function verifyAndProcessPaystackCallback(payload, rawBody, headers = {}) {
   const config = getInternalConfig('paystack');
   const signature = headers['x-paystack-signature'];
-  const secretKey = config.secret_key || process.env.PAYSTACK_SECRET_KEY || 'sk_test_paystack_default_secret_key';
+  const secretKey = config.secret_key; // resolved centrally in store.js — never falls back to a hardcoded value
 
   if (!payload || typeof payload !== 'object') {
     return { verified: false, statusCode: 400, response: { message: 'Invalid payload' } };

@@ -12306,22 +12306,28 @@ async function executeSimulatedWebhook() {
     return;
   }
 
+  const pendingId = document.getElementById('simGwSelect')?.dataset?.pendingId
+    || gatewayTransactions.find(t => t.gateway === gateway && t.status === 'pending')?.id;
+
+  if (!pendingId) {
+    showToast('No pending ' + gateway.toUpperCase() + ' transaction to simulate — start a checkout first, then simulate its callback here.');
+    return;
+  }
+
   try {
-    const res = await safeFetchJson(`${apiBase}/api/payments/simulate-callback`, {
+    const authToken = await getSupabaseAccessToken();
+    const res = await safeFetchJson(`${apiBase}/api/payments/simulate/${pendingId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        gateway,
-        phone,
-        amount,
-        account: phone,
-        email: phone.includes('@') ? phone : 'customer@dogo-pos.co.ke',
-        outcome
-      })
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+      },
+      body: JSON.stringify({ action: outcome === 'success' ? 'approve' : 'cancel' })
     });
 
     if (res.ok && res.data && res.data.success) {
-      showToast(`${gateway.toUpperCase()} callback successfully processed and verified! Ref: ${res.data.receipt_reference || res.data.checkout_request_id}`);
+      const receipt = res.data.data?.receipt_reference || res.data.data?.checkout_request_id;
+      showToast(`${gateway.toUpperCase()} callback successfully processed and verified! Ref: ${receipt || ''}`);
       await loadGatewayTransactions();
       renderLog();
     } else {
@@ -12330,6 +12336,26 @@ async function executeSimulatedWebhook() {
   } catch (err) {
     showToast('Simulation request failed: ' + err.message);
   }
+}
+
+// Returns the current Supabase session's access token, or null if signed out.
+// Sent as a Bearer token so the backend can verify the caller is a logged-in Admin
+// before it will simulate a payment callback or change gateway settings.
+async function getSupabaseAccessToken() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    return session?.access_token || null;
+  } catch {
+    return null;
+  }
+}
+
+// Small helper for spreading an Authorization header into a fetch() headers object
+// only when a session actually exists, so gateway-settings saves and callback
+// simulations are always sent as the logged-in Admin.
+async function getAuthHeader() {
+  const token = await getSupabaseAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 async function simulateGwTxAction(paymentId, outcome) {
@@ -12343,14 +12369,14 @@ async function simulateGwTxAction(paymentId, outcome) {
     const tx = gatewayTransactions.find(t => t.id === paymentId);
     if (!tx) return;
 
-    const res = await safeFetchJson(`${apiBase}/api/payments/simulate-callback`, {
+    const authToken = await getSupabaseAccessToken();
+    const res = await safeFetchJson(`${apiBase}/api/payments/simulate/${paymentId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        payment_request_id: paymentId,
-        gateway: tx.gateway,
-        outcome
-      })
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+      },
+      body: JSON.stringify({ action: outcome === 'success' ? 'approve' : 'cancel' })
     });
 
     if (res.ok && res.data && res.data.success) {
@@ -14106,7 +14132,7 @@ async function saveMpesaSettings() {
     try {
       const res = await safeFetchJson(`${apiBase}/api/payments/config/mpesa`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeader()) },
         body: JSON.stringify({ payment_type, shortcode, consumer_key, consumer_secret, passkey, is_production })
       });
       if (res.ok && res.data && res.data.success) saved = true;
@@ -14156,7 +14182,7 @@ async function saveKcbSettings() {
     try {
       const res = await safeFetchJson(`${apiBase}/api/payments/config/kcb`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeader()) },
         body: JSON.stringify({ merchant_code, account_number, app_key, app_secret, shared_secret, is_production })
       });
       if (res.ok && res.data && res.data.success) {
@@ -14190,7 +14216,7 @@ async function savePaystackSettings() {
     try {
       const res = await safeFetchJson(`${apiBase}/api/payments/config/paystack`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeader()) },
         body: JSON.stringify({ public_key, secret_key, is_production })
       });
       if (res.ok && res.data && res.data.success) {
@@ -14223,7 +14249,7 @@ async function saveAirtelSettings() {
     try {
       const res = await safeFetchJson(`${apiBase}/api/payments/config/airtel`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeader()) },
         body: JSON.stringify({ merchant_number, client_id, client_secret, encryption_key, is_production })
       });
       if (res.ok && res.data && res.data.success) {
