@@ -107,3 +107,14 @@ git push origin main
   - `payments/store.js` no longer ships hardcoded fallback values for `KCB_SHARED_SECRET`, `PAYSTACK_SECRET_KEY`, or `AIRTEL_ENCRYPTION_KEY` — these are the secrets used to verify webhook HMAC signatures, and a fixed value committed to a public repo means anyone could forge a valid-looking payment webhook. Missing env vars now generate a random per-process value instead (logged loudly on boot) rather than silently falling back to a value visible in git history. The M-Pesa passkey fallback is intentionally kept as-is — it's Safaricom's own published public sandbox passkey, not a secret.
   - Real secrets belong in `config/secrets/.env` (gitignored — see `config/secrets/.env.example` for the full list of variables) or the root `.env`. Neither is ever committed.
 - **Still open / worth a follow-up pass:** payment requests on the Express server aren't tagged with `business_id`, so the new Admin check confirms *an* Admin is calling, not that they're an Admin of the specific business that owns that payment request — low risk while the server is single-tenant/local, but should be closed before/if this server is ever deployed multi-tenant alongside the Supabase backend. Also ~100 of the 125 `innerHTML` call sites in `index.html` haven't been through the `escapeHtml()` hardening pass yet (see Aug 29 session in memory — only ~23 were patched).
+
+
+## 8. Multipage rebuild (in progress)
+
+New shared design system modelled on the DigiKua-style reference (orange header, rounded nav grid, white cards), fully responsive.
+
+- `assets/css/theme.css` — all colors, cards, buttons, tables, forms, breakpoints (change once, updates every page)
+- `assets/js/app-shell.js` — shared header + nav grid; add a page in `NAV_ITEMS` and set `BUILT[id] = true` once its page exists (unbuilt items fall back to `index.html`)
+- `assets/js/dogo-data.js` — shared Supabase client (publishable key only), `requireSession()`, formatters
+- `dashboard.html` — **built**: Overview page on live Supabase data
+- Still to migrate from `index.html`: sell, catalog, customers, purchases, expenses, reports, team, settings

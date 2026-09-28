@@ -1,0 +1,542 @@
+/* ==========================================================================
+   Dogo POS — shared design system
+   Used by every page in the new multipage app (dashboard, catalog, sell,
+   purchases, expenses, reports, customers, settings, ...). One file, so a
+   color or spacing change here updates every page at once.
+   ========================================================================== */
+
+:root {
+  /* Brand */
+  --dogo-orange: #d9670e;
+  --dogo-orange-dark: #b8560a;
+  --dogo-orange-light: #fdf1e7;
+
+  /* Neutrals */
+  --dogo-ink: #1a1d29;
+  --dogo-text: #2b2f3a;
+  --dogo-text-muted: #6b7280;
+  --dogo-text-faint: #9aa1ac;
+  --dogo-border: #e7e8ec;
+  --dogo-panel: #f5f6f8;
+  --dogo-panel-2: #eef0f3;
+  --dogo-white: #ffffff;
+
+  /* Semantic accents (used for summary-card icons/badges, not for text) */
+  --dogo-blue: #4f6df5;
+  --dogo-blue-bg: #eaeeff;
+  --dogo-purple: #8b5cf6;
+  --dogo-purple-bg: #f2edff;
+  --dogo-pink: #ec4899;
+  --dogo-pink-bg: #fdeef6;
+  --dogo-green: #16a34a;
+  --dogo-green-bg: #e9f9ef;
+  --dogo-teal: #0d9488;
+  --dogo-teal-bg: #e6f8f6;
+  --dogo-red: #dc2626;
+  --dogo-red-bg: #fdecec;
+  --dogo-amber: #d97706;
+  --dogo-amber-bg: #fef3e2;
+
+  /* Layout */
+  --dogo-radius-sm: 10px;
+  --dogo-radius: 16px;
+  --dogo-radius-lg: 22px;
+  --dogo-radius-pill: 999px;
+  --dogo-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --dogo-shadow-float: 0 12px 32px -8px rgba(16, 24, 40, 0.18);
+  --dogo-header-h: 60px;
+  --dogo-max-width: 1180px;
+
+  --dogo-font: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   Reset-ish base
+   -------------------------------------------------------------------------- */
+* { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--dogo-header-h) + env(safe-area-inset-top, 0px));
+}
+
+body {
+  margin: 0;
+  font-family: var(--dogo-font);
+  color: var(--dogo-text);
+  background: var(--dogo-panel);
+  -webkit-font-smoothing: antialiased;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+img { max-width: 100%; display: block; }
+button, input, select, textarea { font-family: inherit; }
+a { color: inherit; text-decoration: none; }
+
+/* --------------------------------------------------------------------------
+   Header — orange bar, logo, hamburger (mobile) / inline links (desktop)
+   -------------------------------------------------------------------------- */
+.dogo-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: var(--dogo-header-h);
+  padding: 0 16px;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: var(--dogo-orange);
+  color: #fff;
+}
+
+.dogo-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 17px;
+  min-width: 0;
+}
+
+.dogo-header__logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fff2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.dogo-header__brand span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dogo-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dogo-header__icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+}
+.dogo-header__icon-btn:hover { background: rgba(255, 255, 255, 0.15); }
+
+/* --------------------------------------------------------------------------
+   Nav grid — the rounded gray panel with icon + label buttons
+   -------------------------------------------------------------------------- */
+.dogo-nav-panel {
+  background: var(--dogo-panel);
+  border-bottom: 1px solid var(--dogo-border);
+  padding: 14px 16px 18px;
+}
+
+.dogo-nav-grid {
+  max-width: var(--dogo-max-width);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 720px) {
+  .dogo-nav-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+@media (min-width: 1080px) {
+  .dogo-nav-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+}
+
+.dogo-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 10px;
+  border-radius: var(--dogo-radius);
+  color: var(--dogo-text-muted);
+  font-weight: 600;
+  font-size: 13.5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dogo-nav-item svg { flex: none; width: 18px; height: 18px; }
+
+.dogo-nav-item:hover { background: var(--dogo-panel-2); }
+
+.dogo-nav-item.is-active {
+  background: var(--dogo-white);
+  color: var(--dogo-orange);
+  box-shadow: var(--dogo-shadow-card);
+}
+
+/* --------------------------------------------------------------------------
+   Page shell / breadcrumb / title block
+   -------------------------------------------------------------------------- */
+.dogo-page {
+  max-width: var(--dogo-max-width);
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+}
+
+.dogo-breadcrumb {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--dogo-text-faint);
+  margin-bottom: 6px;
+}
+.dogo-breadcrumb .is-current { color: var(--dogo-orange); }
+
+.dogo-page-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-left: 14px;
+  border-left: 4px solid var(--dogo-orange);
+  margin-bottom: 4px;
+}
+
+.dogo-page-title h1 {
+  margin: 0;
+  font-size: clamp(22px, 4vw, 30px);
+  font-weight: 800;
+  color: var(--dogo-ink);
+}
+
+.dogo-page-subtitle {
+  color: var(--dogo-text-muted);
+  font-size: 14px;
+  margin: 4px 0 24px 18px;
+}
+
+/* --------------------------------------------------------------------------
+   Cards
+   -------------------------------------------------------------------------- */
+.dogo-card {
+  background: var(--dogo-white);
+  border: 1px solid var(--dogo-border);
+  border-radius: var(--dogo-radius-lg);
+  box-shadow: var(--dogo-shadow-card);
+  padding: 20px;
+}
+
+.dogo-card + .dogo-card { margin-top: 16px; }
+
+.dogo-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.dogo-card__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--dogo-ink);
+}
+
+.dogo-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--dogo-radius-pill);
+  background: var(--dogo-blue-bg);
+  color: var(--dogo-blue);
+  white-space: nowrap;
+}
+.dogo-badge--warn { background: var(--dogo-amber-bg); color: var(--dogo-amber); }
+.dogo-badge--danger { background: var(--dogo-red-bg); color: var(--dogo-red); }
+.dogo-badge--ok { background: var(--dogo-green-bg); color: var(--dogo-green); }
+
+.dogo-card__empty {
+  text-align: center;
+  color: var(--dogo-text-faint);
+  font-size: 14px;
+  padding: 28px 12px;
+}
+
+.dogo-link {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--dogo-orange);
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+.dogo-link:hover { text-decoration: underline; }
+
+/* --------------------------------------------------------------------------
+   Stat / summary cards (grid of KPI tiles, like the Dashboard + Analytics)
+   -------------------------------------------------------------------------- */
+.dogo-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+@media (min-width: 640px) {
+  .dogo-stat-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dogo-stat-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dogo-stat-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.dogo-stat-card {
+  background: var(--dogo-white);
+  border: 1px solid var(--dogo-border);
+  border-radius: var(--dogo-radius-lg);
+  box-shadow: var(--dogo-shadow-card);
+  padding: 20px;
+}
+
+.dogo-stat-card__label {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dogo-text-faint);
+  margin-bottom: 10px;
+}
+
+.dogo-stat-card__value {
+  font-size: clamp(22px, 5vw, 30px);
+  font-weight: 800;
+  color: var(--dogo-ink);
+  line-height: 1.1;
+}
+.dogo-stat-card__value.is-positive { color: var(--dogo-green); }
+.dogo-stat-card__value.is-negative { color: var(--dogo-red); }
+
+.dogo-stat-card__foot {
+  margin-top: 12px;
+  display: inline-flex;
+}
+
+/* Tinted mini-tile, used for the 2x4 "Products / Variants / Suppliers ..." grid */
+.dogo-tile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (min-width: 720px) { .dogo-tile-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.dogo-tile {
+  border-radius: var(--dogo-radius);
+  padding: 18px;
+}
+.dogo-tile__icon {
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 26px;
+}
+.dogo-tile__label {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.dogo-tile__value { font-size: 26px; font-weight: 800; }
+
+.dogo-tile--blue   { background: var(--dogo-blue-bg);   color: var(--dogo-blue); }
+.dogo-tile--purple { background: var(--dogo-purple-bg); color: var(--dogo-purple); }
+.dogo-tile--pink   { background: var(--dogo-pink-bg);   color: var(--dogo-pink); }
+.dogo-tile--green  { background: var(--dogo-green-bg);  color: var(--dogo-green); }
+.dogo-tile--teal   { background: var(--dogo-teal-bg);   color: var(--dogo-teal); }
+.dogo-tile--red    { background: var(--dogo-red-bg);    color: var(--dogo-red); }
+.dogo-tile--amber  { background: var(--dogo-amber-bg);  color: var(--dogo-amber); }
+
+/* --------------------------------------------------------------------------
+   Buttons — sized/shaped to fit any screen, never overflow their container
+   -------------------------------------------------------------------------- */
+.dogo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 12px 20px;
+  border-radius: var(--dogo-radius-pill);
+  font-weight: 700;
+  font-size: 14.5px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dogo-btn--primary { background: var(--dogo-orange); color: #fff; }
+.dogo-btn--primary:hover { background: var(--dogo-orange-dark); }
+
+.dogo-btn--outline { background: #fff; color: var(--dogo-text); border-color: var(--dogo-border); }
+.dogo-btn--outline:hover { background: var(--dogo-panel); }
+
+.dogo-btn--ghost { background: transparent; color: var(--dogo-text-muted); }
+.dogo-btn--ghost:hover { background: var(--dogo-panel-2); }
+
+.dogo-btn--block { width: 100%; }
+.dogo-btn--sm { padding: 8px 14px; font-size: 13px; }
+
+.dogo-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   Tables — horizontal scroll container so wide tables never blow out the
+   page on a phone
+   -------------------------------------------------------------------------- */
+.dogo-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--dogo-radius);
+  border: 1px solid var(--dogo-border);
+}
+
+.dogo-table {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.dogo-table th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--dogo-text-faint);
+  background: var(--dogo-panel);
+  padding: 12px 14px;
+  white-space: nowrap;
+}
+
+.dogo-table td {
+  padding: 12px 14px;
+  border-top: 1px solid var(--dogo-border);
+  white-space: nowrap;
+}
+
+.dogo-table tbody tr:hover { background: var(--dogo-panel); }
+
+/* --------------------------------------------------------------------------
+   Forms
+   -------------------------------------------------------------------------- */
+.dogo-field { margin-bottom: 14px; }
+.dogo-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dogo-text);
+  margin-bottom: 6px;
+}
+.dogo-input, .dogo-select, .dogo-textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--dogo-radius-sm);
+  border: 1px solid var(--dogo-border);
+  font-size: 14px;
+  background: #fff;
+  color: var(--dogo-text);
+}
+.dogo-input:focus, .dogo-select:focus, .dogo-textarea:focus {
+  outline: none;
+  border-color: var(--dogo-orange);
+  box-shadow: 0 0 0 3px var(--dogo-orange-light);
+}
+
+/* --------------------------------------------------------------------------
+   Bottom mobile tab bar (optional — used on narrow screens as a quick-jump
+   dock, mirrors the phone-nav bar in the reference screens)
+   -------------------------------------------------------------------------- */
+.dogo-tabbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: space-around;
+  background: #fff;
+  border-top: 1px solid var(--dogo-border);
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 900px) { .dogo-tabbar { display: none; } }
+
+.dogo-tabbar__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--dogo-text-faint);
+  background: none;
+  border: none;
+  padding: 4px 8px;
+}
+.dogo-tabbar__item.is-active { color: var(--dogo-orange); }
+.dogo-tabbar__item svg { width: 20px; height: 20px; }
+
+/* Leave room for the fixed bottom bar on small screens */
+@media (max-width: 899px) {
+  .dogo-page { padding-bottom: 84px; }
+}
+
+/* --------------------------------------------------------------------------
+   Utility
+   -------------------------------------------------------------------------- */
+.dogo-flex { display: flex; align-items: center; }
+.dogo-flex-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.dogo-muted { color: var(--dogo-text-muted); }
+.dogo-hide-mobile { display: none; }
+@media (min-width: 900px) { .dogo-hide-mobile { display: initial; } }
+.dogo-hide-desktop { }
+@media (min-width: 900px) { .dogo-hide-desktop { display: none; } }
+
+/* Mobile: nav grid collapses behind the hamburger; desktop: always shown */
+@media (max-width: 899px) {
+  .dogo-nav-panel { display: none; position: sticky; top: var(--dogo-header-h); z-index: 30; }
+  body.dogo-nav-open .dogo-nav-panel { display: block; }
+}
+.dogo-header__icon-btn svg { width: 22px; height: 22px; }
+.dogo-split { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .dogo-split { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.dogo-list-row { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid var(--dogo-border); font-size:14px; }
+.dogo-list-row:first-child { border-top:none; }
+.dogo-toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.dogo-toolbar .dogo-input { flex:1 1 140px; min-width:0; }
+
+/* Desktop nav: size to content instead of a fixed 12-col grid so labels never clip */
+@media (min-width: 900px) {
+  .dogo-nav-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dogo-nav-item { flex: 0 0 auto; overflow: visible; padding: 10px 16px; }
+}
+.dogo-split > .dogo-card { margin-top: 0; }
