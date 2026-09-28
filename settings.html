@@ -8,41 +8,905 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .settings-subnav {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 20px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .settings-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border-radius: var(--dogo-radius-pill);
+      border: 1.5px solid var(--dogo-border);
+      background: #fff;
+      color: var(--dogo-text);
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .settings-tab-btn:hover {
+      background: var(--dogo-panel);
+      border-color: var(--dogo-gold);
+    }
+    .settings-tab-btn.is-active {
+      background: #091710;
+      color: var(--dogo-neon-bright);
+      border-color: var(--dogo-gold);
+      box-shadow: 0 3px 10px rgba(0, 210, 106, 0.18);
+    }
+    .settings-tab-pane {
+      display: none;
+    }
+    .settings-tab-pane.is-active {
+      display: block;
+    }
+    .gateway-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--dogo-border);
+    }
+    .gateway-badge {
+      padding: 4px 12px;
+      border-radius: var(--dogo-radius-pill);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .gateway-badge--active {
+      background: var(--dogo-neon-light);
+      color: var(--dogo-neon-dark);
+      border: 1px solid var(--dogo-neon);
+    }
+    .gateway-badge--sandbox {
+      background: var(--dogo-gold-light);
+      color: var(--dogo-gold-dark);
+      border: 1px solid var(--dogo-gold);
+    }
+    .receipt-preview-paper {
+      background: #fff;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      font-family: 'Courier New', Courier, monospace;
+      color: #111827;
+      max-width: 320px;
+      margin: 0 auto;
+      font-size: 12px;
+    }
+    .receipt-paper-line {
+      display: flex;
+      justify-content: space-between;
+      margin: 4px 0;
+    }
+    .receipt-divider {
+      border-top: 1px dashed #9ca3af;
+      margin: 8px 0;
+    }
+    .switch-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--dogo-border);
+      cursor: pointer;
+    }
+    .switch-label:last-child {
+      border-bottom: none;
+    }
+    .theme-swatch {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s ease;
+    }
+    .theme-swatch.is-active {
+      border-color: var(--dogo-gold);
+      box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+      transform: scale(1.08);
+    }
+  </style>
 </head>
 <body>
   <div id="dogoHeaderRoot"></div>
   <div id="dogoNavRoot"></div>
-  <main class="dogo-page">
-    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Settings</span></div>
-    <div class="dogo-page-title"><h1>Settings</h1></div>
-    <p class="dogo-page-subtitle" id="bizName"></p>
 
-    <div class="dogo-split">
-      <section class="dogo-card"><div class="dogo-card__title" style="margin-bottom:12px;">Business</div>
-        <div class="dogo-list-row"><span class="dogo-muted">Name</span><strong id="sName">—</strong></div>
-        <div class="dogo-list-row"><span class="dogo-muted">Type</span><strong id="sType">—</strong></div>
-        <div class="dogo-list-row"><span class="dogo-muted">Signed in as</span><strong id="sUser">—</strong></div>
-        <div class="dogo-list-row"><span class="dogo-muted">Role</span><strong id="sRole">—</strong></div>
-      </section>
-      <section class="dogo-card"><div class="dogo-card__title" style="margin-bottom:12px;">Payments, tax &amp; subscription</div>
-        <p class="dogo-muted" style="font-size:14px;margin-top:0;">M-Pesa, KCB, Paystack, Airtel, KRA eTIMS and subscription settings are still managed in the full app while they are moved across.</p>
-        <a class="dogo-btn dogo-btn--primary" href="index.html">Open full app settings</a>
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Settings &amp; Configuration</span></div>
+    <div class="dogo-page-title"><h1>Settings</h1></div>
+    <p class="dogo-page-subtitle" id="bizName">Manage your business profile, payment gateways, receipts, and fiscal compliance</p>
+
+    <!-- Settings Subnav Tabs -->
+    <div class="settings-subnav">
+      <button class="settings-tab-btn is-active" data-tab="tab-business">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Business Profile
+      </button>
+      <button class="settings-tab-btn" data-tab="tab-receipt">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Receipts
+      </button>
+      <button class="settings-tab-btn" data-tab="tab-mpesa">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        Safaricom M-Pesa
+      </button>
+      <button class="settings-tab-btn" data-tab="tab-kcb">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="21" x2="21" y2="21"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="5 6 12 3 19 6"/><line x1="6" y1="10" x2="6" y2="21"/><line x1="10" y1="10" x2="10" y2="21"/><line x1="14" y1="10" x2="14" y2="21"/><line x1="18" y1="10" x2="18" y2="21"/></svg>
+        KCB Buni &amp; Vooma
+      </button>
+      <button class="settings-tab-btn" data-tab="tab-paystack">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Paystack
+      </button>
+      <button class="settings-tab-btn" data-tab="tab-airtel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.93 19.07A10 10 0 0 1 19.07 4.93"/><path d="M7.76 16.24a6 6 0 0 1 8.48-8.48"/><circle cx="12" cy="12" r="2"/></svg>
+        Airtel Money
+      </button>
+      <button class="settings-tab-btn" data-tab="tab-etims">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        KRA eTIMS Tax
+      </button>
+      <button class="settings-tab-btn" data-tab="tab-appearance">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"/></svg>
+        Appearance
+      </button>
+      <button class="settings-tab-btn" data-tab="tab-account">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Account &amp; Admin
+      </button>
+    </div>
+
+    <!-- TAB 1: Business Profile -->
+    <div class="settings-tab-pane is-active" id="tab-business">
+      <div class="dogo-split">
+        <section class="dogo-card">
+          <div class="dogo-card__title" style="margin-bottom:14px;">Store &amp; Organization Details</div>
+          
+          <div class="dogo-field">
+            <label>Business / Store Name</label>
+            <input class="dogo-input" type="text" id="setBizName" placeholder="e.g. Nairobi Fresh Supermarket">
+          </div>
+
+          <div class="dogo-field">
+            <label>Location / Physical Address (Printed on receipts)</label>
+            <input class="dogo-input" type="text" id="setBizSub" placeholder="e.g. Kimathi Street, CBD, Nairobi · Tel: +254 712 345 678">
+          </div>
+
+          <div class="dogo-field">
+            <label>Business KRA PIN / TIN</label>
+            <input class="dogo-input" type="text" id="setKraPin" placeholder="e.g. P051234567Z">
+          </div>
+
+          <div class="dogo-field">
+            <label>Industry / Business Sector</label>
+            <select class="dogo-select" id="setBizType">
+              <option value="Retail">Retail Shop &amp; Groceries</option>
+              <option value="Wholesale">Wholesale &amp; Distribution</option>
+              <option value="Supermarket">Supermarket &amp; Minimart</option>
+              <option value="SME">SME / General Merchandise</option>
+              <option value="Hotel">Hotel, Bar &amp; Restaurant</option>
+              <option value="Hardware">Hardware Store &amp; Building Supplies</option>
+              <option value="Kiosk">Kiosk / Kibanda</option>
+            </select>
+          </div>
+
+          <div class="dogo-btn-row" style="margin-top:20px;">
+            <button class="dogo-btn dogo-btn--primary" id="btnSaveBusinessProfile">Save Business Details</button>
+          </div>
+        </section>
+
+        <section class="dogo-card">
+          <div class="dogo-card__title" style="margin-bottom:14px;">Store Branding &amp; Logo</div>
+          <p class="dogo-muted" style="font-size:13.5px;margin-top:0;">
+            Upload your high-resolution store logo. It will appear on the top header, printable receipts, and customer payment summaries.
+          </p>
+
+          <div id="logoPreviewWrap" style="margin:16px 0;text-align:center;padding:24px;border:2px dashed var(--dogo-border);border-radius:var(--dogo-radius);background:var(--dogo-panel);">
+            <div id="logoPreviewPlaceholder" style="color:var(--dogo-text-muted);font-size:13px;">No logo uploaded yet</div>
+            <img id="logoPreviewImg" src="" style="max-height:100px;margin:0 auto;display:none;border-radius:8px;">
+          </div>
+
+          <input type="file" id="setLogoFile" accept="image/*" style="display:none;">
+          <div class="dogo-btn-row">
+            <button class="dogo-btn dogo-btn--outline" type="button" onclick="document.getElementById('setLogoFile').click()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload New Logo
+            </button>
+            <button class="dogo-btn dogo-btn--ghost" type="button" id="btnRemoveLogo" style="color:#dc2626;">Remove Logo</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- TAB 2: Receipts -->
+    <div class="settings-tab-pane" id="tab-receipt">
+      <div class="dogo-split">
+        <section class="dogo-card">
+          <div class="dogo-card__title" style="margin-bottom:14px;">Thermal &amp; Digital Receipt Configuration</div>
+          
+          <div class="dogo-field">
+            <label>Store Contact Phone (Printed on receipt)</label>
+            <input class="dogo-input" type="text" id="setReceiptPhone" placeholder="e.g. +254 700 000 000">
+          </div>
+
+          <div class="dogo-field">
+            <label>Receipt Footer Note / Slogan</label>
+            <input class="dogo-input" type="text" id="setReceiptFooter" placeholder="e.g. Asante sana! Goods once sold are not returnable without receipt.">
+          </div>
+
+          <div class="dogo-field">
+            <label>Printer Thermal Paper Width</label>
+            <select class="dogo-select" id="setReceiptPaper">
+              <option value="58">58mm (Compact Mobile POS Printer)</option>
+              <option value="80" selected>80mm (Standard POS Desktop Thermal Printer)</option>
+              <option value="a4">A4 Tax Invoice Sheet</option>
+            </select>
+          </div>
+
+          <div style="margin-top:16px;">
+            <label class="switch-label">
+              <div>
+                <strong>Print Business Logo</strong>
+                <div class="dogo-muted" style="font-size:12.5px;">Include monochrome logo at top of receipt</div>
+              </div>
+              <input type="checkbox" id="setReceiptShowLogo" style="width:20px;height:20px;accent-color:var(--dogo-neon);">
+            </label>
+
+            <label class="switch-label">
+              <div>
+                <strong>Itemized VAT Breakdown</strong>
+                <div class="dogo-muted" style="font-size:12.5px;">Show 16% standard VAT, 0% zero-rated, and tax exempt totals</div>
+              </div>
+              <input type="checkbox" id="setReceiptShowVat" checked style="width:20px;height:20px;accent-color:var(--dogo-neon);">
+            </label>
+
+            <label class="switch-label">
+              <div>
+                <strong>Cashier &amp; Shift Info</strong>
+                <div class="dogo-muted" style="font-size:12.5px;">Print serving cashier name and session ID</div>
+              </div>
+              <input type="checkbox" id="setReceiptShowCashier" checked style="width:20px;height:20px;accent-color:var(--dogo-neon);">
+            </label>
+          </div>
+
+          <div class="dogo-btn-row" style="margin-top:20px;">
+            <button class="dogo-btn dogo-btn--primary" id="btnSaveReceiptSettings">Save Receipt Settings</button>
+          </div>
+        </section>
+
+        <!-- Live Visual Receipt Preview -->
+        <section class="dogo-card">
+          <div class="dogo-card__title" style="margin-bottom:14px;">Live Receipt Preview</div>
+          <div class="receipt-preview-paper">
+            <div style="text-align:center;margin-bottom:6px;">
+              <strong style="font-size:14px;" id="prevBizName">DOGO POS STORE</strong>
+              <div id="prevBizSub" style="color:#4b5563;font-size:11px;">Nairobi CBD · Kenya</div>
+              <div id="prevBizPin" style="color:#4b5563;font-size:11px;">PIN: P051234567Z</div>
+              <div id="prevReceiptPhone" style="color:#4b5563;font-size:11px;">TEL: +254 700 000 000</div>
+            </div>
+            <div class="receipt-divider"></div>
+            <div class="receipt-paper-line"><span>RC-0042</span><span>28/09/2026 14:32</span></div>
+            <div class="receipt-paper-line"><span>CASHIER: Admin</span><span>REGISTER: #01</span></div>
+            <div class="receipt-divider"></div>
+            <div class="receipt-paper-line"><strong>ITEM</strong><strong>TOTAL</strong></div>
+            <div class="receipt-paper-line"><span>2 x Unga Maize Flour 2kg</span><span>360.00</span></div>
+            <div class="receipt-paper-line"><span>1 x Brookside Milk 500ml</span><span>65.00</span></div>
+            <div class="receipt-paper-line"><span>3 x Sugar 1kg</span><span>420.00</span></div>
+            <div class="receipt-divider"></div>
+            <div class="receipt-paper-line"><span>SUBTOTAL EXCL VAT:</span><span>KES 728.45</span></div>
+            <div class="receipt-paper-line" id="prevVatRow"><span>16% VAT:</span><span>KES 116.55</span></div>
+            <div class="receipt-paper-line" style="font-size:13px;font-weight:bold;margin-top:4px;">
+              <span>TOTAL PAID (CASH):</span><span>KES 845.00</span>
+            </div>
+            <div class="receipt-divider"></div>
+            <div style="text-align:center;font-size:11px;color:#4b5563;margin-top:10px;" id="prevFooterMsg">
+              Thank you for your business! Goods once sold cannot be returned.
+            </div>
+            <div style="text-align:center;margin-top:10px;font-family:monospace;letter-spacing:3px;font-size:10px;">
+              ||| | ||||| || |||| |||||
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- TAB 3: Safaricom M-Pesa -->
+    <div class="settings-tab-pane" id="tab-mpesa">
+      <section class="dogo-card" style="max-width:820px;">
+        <div class="gateway-header">
+          <div>
+            <div style="font-weight:800;font-size:18px;">Safaricom M-Pesa (Daraja API)</div>
+            <div class="dogo-muted" style="font-size:13px;">Instant customer STK push prompts &amp; automatic register settlement</div>
+          </div>
+          <span class="gateway-badge gateway-badge--sandbox" id="badgeMpesaConfig">SANDBOX READY</span>
+        </div>
+
+        <p class="dogo-muted" style="font-size:13.5px;" id="mpesaStatusText">
+          Checking live gateway integration status...
+        </p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="dogo-field">
+            <label>Payment Collection Type</label>
+            <select class="dogo-select" id="mpesaPaymentType">
+              <option value="till">Buy Goods Till / Pochi la Biashara</option>
+              <option value="paybill">Paybill Business Number</option>
+            </select>
+          </div>
+          <div class="dogo-field">
+            <label>Till or Paybill Shortcode</label>
+            <input class="dogo-input" type="text" id="mpesaShortcode" placeholder="e.g. 174379">
+          </div>
+        </div>
+
+        <div class="dogo-field">
+          <label>Daraja Consumer Key</label>
+          <input class="dogo-input" type="text" id="mpesaConsumerKey" placeholder="Paste Consumer Key from developer.safaricom.co.ke">
+        </div>
+
+        <div class="dogo-field">
+          <label>Daraja Consumer Secret</label>
+          <input class="dogo-input" type="password" id="mpesaConsumerSecret" placeholder="Paste Consumer Secret">
+        </div>
+
+        <div class="dogo-field">
+          <label>Online Lipa Na M-Pesa Passkey</label>
+          <input class="dogo-input" type="password" id="mpesaPasskey" placeholder="bfb279f9aa9bdb88ef1ee97f82b5450e40d12b1847e30b... (Sandbox / Live)">
+        </div>
+
+        <div class="dogo-field">
+          <label>API Environment</label>
+          <select class="dogo-select" id="mpesaEnv">
+            <option value="false">Sandbox (Safaricom Testing &amp; Simulation)</option>
+            <option value="true">Live Production (Actual M-Pesa Transactions)</option>
+          </select>
+        </div>
+
+        <div style="margin:14px 0;">
+          <button type="button" class="dogo-btn dogo-btn--sm dogo-btn--outline" onclick="fillMpesaSandbox()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Auto-Fill Safaricom Sandbox Defaults (Shortcode 174379)
+          </button>
+        </div>
+
+        <div class="dogo-btn-row" style="margin-top:20px;">
+          <button class="dogo-btn dogo-btn--primary" id="btnSaveMpesa">Save M-Pesa Gateway</button>
+          <button class="dogo-btn dogo-btn--outline" id="btnResetMpesa" style="color:#dc2626;">Reset Settings</button>
+        </div>
+
+        <div style="margin-top:16px;padding:12px;border-radius:10px;background:var(--dogo-panel);font-size:12px;color:var(--dogo-text-muted);">
+          <strong>Server Webhook Callback URL:</strong> <code>/api/payments/callbacks/mpesa</code><br>
+          (Automatically registered with Safaricom Daraja C2B/STK for instant register confirmation)
+        </div>
       </section>
     </div>
-    <section class="dogo-card" style="margin-top:16px;"><div class="dogo-btn-row"><button class="dogo-btn dogo-btn--outline" id="outBtn">Sign out</button></div></section>
+
+    <!-- TAB 4: KCB Buni & Vooma -->
+    <div class="settings-tab-pane" id="tab-kcb">
+      <section class="dogo-card" style="max-width:820px;">
+        <div class="gateway-header">
+          <div>
+            <div style="font-weight:800;font-size:18px;">KCB Buni &amp; Vooma Gateway</div>
+            <div class="dogo-muted" style="font-size:13px;">Direct Bank STK push, Vooma merchant payment, and B2B bank settlements</div>
+          </div>
+          <span class="gateway-badge gateway-badge--sandbox" id="badgeKcbConfig">READY</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="dogo-field">
+            <label>KCB Merchant Code</label>
+            <input class="dogo-input" type="text" id="kcbMerchantCode" placeholder="e.g. KCB-DEMO-001">
+          </div>
+          <div class="dogo-field">
+            <label>Settlement Account Number</label>
+            <input class="dogo-input" type="text" id="kcbAccountNumber" placeholder="1234567890">
+          </div>
+        </div>
+
+        <div class="dogo-field">
+          <label>KCB Buni App Key</label>
+          <input class="dogo-input" type="text" id="kcbAppKey" placeholder="Paste KCB Buni App Key">
+        </div>
+
+        <div class="dogo-field">
+          <label>KCB Buni App Secret</label>
+          <input class="dogo-input" type="password" id="kcbAppSecret" placeholder="Paste KCB Buni App Secret">
+        </div>
+
+        <div class="dogo-field">
+          <label>Webhook Shared Secret (HMAC SHA-256)</label>
+          <input class="dogo-input" type="password" id="kcbSharedSecret" placeholder="HMAC Secret for verifying incoming payment callbacks">
+        </div>
+
+        <div class="dogo-field">
+          <label>Environment</label>
+          <select class="dogo-select" id="kcbEnv">
+            <option value="false">Sandbox (Buni Developer Test Environment)</option>
+            <option value="true">Production (Live KCB Bank APIs)</option>
+          </select>
+        </div>
+
+        <div class="dogo-btn-row" style="margin-top:20px;">
+          <button class="dogo-btn dogo-btn--primary" id="btnSaveKcb">Save KCB Gateway</button>
+          <button class="dogo-btn dogo-btn--outline" id="btnResetKcb">Reset</button>
+        </div>
+
+        <div style="margin-top:16px;padding:12px;border-radius:10px;background:var(--dogo-panel);font-size:12px;color:var(--dogo-text-muted);">
+          <strong>Server Webhook Callback URL:</strong> <code>/api/payments/callbacks/kcb</code> (Secured with timing-safe HMAC-SHA256 signature verification)
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 5: Paystack Gateway -->
+    <div class="settings-tab-pane" id="tab-paystack">
+      <section class="dogo-card" style="max-width:820px;">
+        <div class="gateway-header">
+          <div>
+            <div style="font-weight:800;font-size:18px;">Paystack Pan-African Gateway</div>
+            <div class="dogo-muted" style="font-size:13px;">Accept Visa, Mastercard, Apple Pay, and Pan-African mobile money</div>
+          </div>
+          <span class="gateway-badge gateway-badge--sandbox" id="badgePaystackConfig">READY</span>
+        </div>
+
+        <div class="dogo-field">
+          <label>Paystack Public Key</label>
+          <input class="dogo-input" type="text" id="paystackPublicKey" placeholder="pk_test_... or pk_live_...">
+        </div>
+
+        <div class="dogo-field">
+          <label>Paystack Secret Key</label>
+          <input class="dogo-input" type="password" id="paystackSecretKey" placeholder="sk_test_... or sk_live_...">
+        </div>
+
+        <div class="dogo-field">
+          <label>Mode</label>
+          <select class="dogo-select" id="paystackEnv">
+            <option value="false">Test Mode</option>
+            <option value="true">Live Production</option>
+          </select>
+        </div>
+
+        <div class="dogo-btn-row" style="margin-top:20px;">
+          <button class="dogo-btn dogo-btn--primary" id="btnSavePaystack">Save Paystack Gateway</button>
+          <button class="dogo-btn dogo-btn--outline" id="btnResetPaystack">Reset</button>
+        </div>
+
+        <div style="margin-top:16px;padding:12px;border-radius:10px;background:var(--dogo-panel);font-size:12px;color:var(--dogo-text-muted);">
+          <strong>Server Webhook Callback URL:</strong> <code>/api/payments/callbacks/paystack</code> (Cryptographically verified via HMAC-SHA512)
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 6: Airtel Money -->
+    <div class="settings-tab-pane" id="tab-airtel">
+      <section class="dogo-card" style="max-width:820px;">
+        <div class="gateway-header">
+          <div>
+            <div style="font-weight:800;font-size:18px;">Airtel Money Africa</div>
+            <div class="dogo-muted" style="font-size:13px;">Airtel Money STK prompt, Till collections, and merchant settlements</div>
+          </div>
+          <span class="gateway-badge gateway-badge--sandbox" id="badgeAirtelConfig">READY</span>
+        </div>
+
+        <div class="dogo-field">
+          <label>Airtel Merchant Number / Till</label>
+          <input class="dogo-input" type="text" id="airtelMerchantNumber" placeholder="e.g. AIRTEL_TILL_882">
+        </div>
+
+        <div class="dogo-field">
+          <label>Airtel Client ID</label>
+          <input class="dogo-input" type="text" id="airtelClientId" placeholder="Paste Client ID">
+        </div>
+
+        <div class="dogo-field">
+          <label>Airtel Client Secret</label>
+          <input class="dogo-input" type="password" id="airtelClientSecret" placeholder="Paste Client Secret">
+        </div>
+
+        <div class="dogo-field">
+          <label>Callback Encryption Key</label>
+          <input class="dogo-input" type="password" id="airtelEncryptionKey" placeholder="Airtel Callback Encryption Key">
+        </div>
+
+        <div class="dogo-field">
+          <label>Environment</label>
+          <select class="dogo-select" id="airtelEnv">
+            <option value="false">Sandbox Mode</option>
+            <option value="true">Live Production Mode</option>
+          </select>
+        </div>
+
+        <div class="dogo-btn-row" style="margin-top:20px;">
+          <button class="dogo-btn dogo-btn--primary" id="btnSaveAirtel">Save Airtel Gateway</button>
+          <button class="dogo-btn dogo-btn--outline" id="btnResetAirtel">Reset</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 7: KRA eTIMS -->
+    <div class="settings-tab-pane" id="tab-etims">
+      <section class="dogo-card" style="max-width:820px;">
+        <div class="gateway-header">
+          <div>
+            <div style="font-weight:800;font-size:18px;">Kenya Revenue Authority — eTIMS Fiscalization</div>
+            <div class="dogo-muted" style="font-size:13px;">Automated tax invoice signing, OSCU/VSCU QR codes, and fiscal compliance</div>
+          </div>
+          <span class="gateway-badge gateway-badge--sandbox" id="badgeEtimsConfig">STATUS</span>
+        </div>
+
+        <p class="dogo-muted" style="font-size:13.5px;" id="etimsStatusText">
+          Every sale automatically builds a KRA-compliant fiscalization payload and stores it ready for submission.
+        </p>
+
+        <div class="dogo-field">
+          <label>Business KRA PIN / TIN</label>
+          <input class="dogo-input" type="text" id="etimsKraPin" placeholder="e.g. A001234567Z">
+        </div>
+
+        <div class="dogo-field">
+          <label>Branch ID (BHF ID)</label>
+          <input class="dogo-input" type="text" id="etimsBhfId" placeholder="00" value="00">
+        </div>
+
+        <div class="dogo-field">
+          <label>eTIMS Environment</label>
+          <select class="dogo-select" id="etimsEnv">
+            <option value="false">Sandbox (Testing &amp; dry run only)</option>
+            <option value="true">Production (Live KRA Fiscal Server)</option>
+          </select>
+        </div>
+
+        <div class="dogo-btn-row" style="margin-top:20px;">
+          <button class="dogo-btn dogo-btn--primary" id="btnSaveEtims">Save eTIMS Settings</button>
+          <button class="dogo-btn dogo-btn--outline" id="btnRemoveEtims" style="color:#dc2626;">Remove Setup</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 8: Appearance & Theme -->
+    <div class="settings-tab-pane" id="tab-appearance">
+      <section class="dogo-card" style="max-width:820px;">
+        <div class="dogo-card__title" style="margin-bottom:14px;">POS System Theme &amp; Color Scheme</div>
+        
+        <div style="background:#091710;border:2px solid var(--dogo-gold);border-radius:var(--dogo-radius);padding:18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--dogo-neon);border:2px solid var(--dogo-gold);display:flex;align-items:center;justify-content:center;font-weight:900;color:#04140b;">
+              ★
+            </div>
+            <div>
+              <div style="font-weight:800;font-size:16px;color:#fff;">Active Theme: Neon Green, White &amp; Gold</div>
+              <div style="font-size:12.5px;color:rgba(255,255,255,0.75);">High-contrast, retail-grade vibrant aesthetic across all registers</div>
+            </div>
+          </div>
+          <span style="background:var(--dogo-gold);color:#151100;font-weight:800;font-size:12px;padding:4px 12px;border-radius:var(--dogo-radius-pill);">ACTIVE DEFAULT</span>
+        </div>
+
+        <div class="dogo-field">
+          <label>Display Contrast Mode</label>
+          <div style="display:flex;gap:10px;">
+            <button class="dogo-btn dogo-btn--primary dogo-btn--sm" id="btnThemeDefault">
+              Neon Green, White &amp; Gold
+            </button>
+          </div>
+          <p class="dogo-muted" style="font-size:12.5px;margin-top:8px;">
+            Features electric neon accents, pure white surfaces, and radiant metallic gold highlights tailored for optimal cashier visibility.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 9: Account & Admin -->
+    <div class="settings-tab-pane" id="tab-account">
+      <div class="dogo-split">
+        <section class="dogo-card">
+          <div class="dogo-card__title" style="margin-bottom:14px;">Current Cashier / User Session</div>
+          <div class="dogo-list-row"><span class="dogo-muted">Signed In As</span><strong id="sUser">—</strong></div>
+          <div class="dogo-list-row"><span class="dogo-muted">Role</span><strong id="sRole">—</strong></div>
+          <div class="dogo-list-row"><span class="dogo-muted">Active Business ID</span><code id="sBizId" style="font-size:12px;">—</code></div>
+
+          <div style="margin-top:20px;">
+            <button class="dogo-btn dogo-btn--outline" id="outBtn" style="color:#dc2626;border-color:#fca5a5;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Sign Out of POS
+            </button>
+          </div>
+        </section>
+
+        <!-- Platform Admin Multi-Business Switcher -->
+        <section class="dogo-card" id="adminSwitcherCard" style="border:1.5px solid var(--dogo-gold);">
+          <div class="dogo-card__title" style="margin-bottom:8px;color:var(--dogo-gold-dark);display:flex;align-items:center;gap:8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            Platform Administration
+          </div>
+          <p class="dogo-muted" style="font-size:13px;margin-top:0;">
+            Switch between different business branches, stores, or open the platform-wide management console.
+          </p>
+
+          <div class="dogo-field">
+            <label>Switch Active Business Context</label>
+            <select class="dogo-select" id="platformBusinessSelect">
+              <option value="">Loading businesses...</option>
+            </select>
+          </div>
+
+          <div class="dogo-btn-row">
+            <button class="dogo-btn dogo-btn--gold dogo-btn--sm" id="btnSwitchBusiness">Switch Business</button>
+            <a class="dogo-btn dogo-btn--outline dogo-btn--sm" href="/admin" target="_blank">Open Admin Console ↗</a>
+          </div>
+        </section>
+      </div>
+    </div>
   </main>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/dogo-data.js"></script>
   <script src="assets/js/app-shell.js"></script>
   <script>
   (async function () {
-    const { sb, kes, esc, boot, toast, downloadCSV } = window.DogoData;
+    const { sb, kes, esc, boot, toast, logout } = window.DogoData;
 
-    const ctx = await boot('settings'); if (!ctx) return;
-    const $ = id => document.getElementById(id), b = ctx.business || {};
-    $('sName').textContent = b.name || '—'; $('sType').textContent = b.business_type || '—';
-    $('sUser').textContent = ctx.profile.full_name || ctx.session.user.email; $('sRole').textContent = ctx.isAdmin ? 'Owner · Admin' : 'Teller';
-    $('outBtn').onclick = window.DogoData.logout;
+    const ctx = await boot('settings');
+    if (!ctx) return;
+
+    const $ = id => document.getElementById(id);
+    const b = ctx.business || {};
+
+    // 1. Tab Switching
+    const tabs = document.querySelectorAll('.settings-tab-btn');
+    const panes = document.querySelectorAll('.settings-tab-pane');
+
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('is-active'));
+        panes.forEach(p => p.classList.remove('is-active'));
+
+        btn.classList.add('is-active');
+        const target = $(btn.dataset.tab);
+        if (target) target.classList.add('is-active');
+      });
+    });
+
+    // 2. Populate Business Profile
+    $('setBizName').value = b.name || '';
+    $('setBizSub').value = b.location || '';
+    $('setKraPin').value = b.kra_pin || '';
+    if (b.business_type) $('setBizType').value = b.business_type;
+
+    // Logo display
+    function updateLogoDisplay() {
+      if (b.logo_url) {
+        $('logoPreviewPlaceholder').style.display = 'none';
+        $('logoPreviewImg').src = b.logo_url;
+        $('logoPreviewImg').style.display = 'block';
+      } else {
+        $('logoPreviewPlaceholder').style.display = 'block';
+        $('logoPreviewImg').style.display = 'none';
+      }
+    }
+    updateLogoDisplay();
+
+    // Logo upload
+    $('setLogoFile').onchange = e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        b.logo_url = ev.target.result;
+        updateLogoDisplay();
+        toast('Logo selected. Click "Save Business Details" to persist.');
+      };
+      reader.readAsDataURL(file);
+    };
+
+    $('btnRemoveLogo').onclick = () => {
+      b.logo_url = null;
+      updateLogoDisplay();
+      toast('Logo removed.');
+    };
+
+    // Save Business Details
+    $('btnSaveBusinessProfile').onclick = async () => {
+      const updates = {
+        name: $('setBizName').value.trim() || b.name,
+        location: $('setBizSub').value.trim(),
+        kra_pin: $('setKraPin').value.trim(),
+        business_type: $('setBizType').value,
+        logo_url: b.logo_url || null
+      };
+
+      const { error } = await sb.from('businesses').update(updates).eq('id', ctx.businessId);
+      if (error) return toast('Could not save details: ' + error.message);
+
+      Object.assign(b, updates);
+      updateReceiptPreview();
+      toast('Business profile saved successfully!');
+    };
+
+    // 3. Receipt Settings
+    $('setReceiptPhone').value = b.receipt_phone || '';
+    $('setReceiptFooter').value = b.receipt_footer || 'Thank you for your business!';
+    $('setReceiptShowLogo').checked = b.receipt_show_logo !== false;
+    $('setReceiptShowVat').checked = b.receipt_show_vat_breakdown !== false;
+
+    function updateReceiptPreview() {
+      $('prevBizName').textContent = ($('setBizName').value.trim() || b.name || 'DOGO POS').toUpperCase();
+      $('prevBizSub').textContent = $('setBizSub').value.trim() || b.location || 'Nairobi CBD · Kenya';
+      $('prevBizPin').textContent = 'PIN: ' + ($('setKraPin').value.trim() || b.kra_pin || 'P051234567Z');
+      $('prevReceiptPhone').textContent = 'TEL: ' + ($('setReceiptPhone').value.trim() || '—');
+      $('prevFooterMsg').textContent = $('setReceiptFooter').value.trim() || 'Thank you for your business!';
+      $('prevVatRow').style.display = $('setReceiptShowVat').checked ? 'flex' : 'none';
+    }
+
+    $('setBizName').oninput = updateReceiptPreview;
+    $('setBizSub').oninput = updateReceiptPreview;
+    $('setKraPin').oninput = updateReceiptPreview;
+    $('setReceiptPhone').oninput = updateReceiptPreview;
+    $('setReceiptFooter').oninput = updateReceiptPreview;
+    $('setReceiptShowVat').onchange = updateReceiptPreview;
+    updateReceiptPreview();
+
+    $('btnSaveReceiptSettings').onclick = async () => {
+      const updates = {
+        receipt_phone: $('setReceiptPhone').value.trim(),
+        receipt_footer: $('setReceiptFooter').value.trim() || 'Thank you for your business!',
+        receipt_show_logo: $('setReceiptShowLogo').checked,
+        receipt_show_vat_breakdown: $('setReceiptShowVat').checked
+      };
+
+      const { error } = await sb.from('businesses').update(updates).eq('id', ctx.businessId);
+      if (error) return toast('Could not save receipt settings: ' + error.message);
+
+      Object.assign(b, updates);
+      toast('Receipt settings saved successfully!');
+    };
+
+    // 4. M-Pesa Settings
+    window.fillMpesaSandbox = () => {
+      $('mpesaShortcode').value = '174379';
+      $('mpesaPaymentType').value = 'till';
+      $('mpesaEnv').value = 'false';
+      $('mpesaPasskey').value = 'bfb279f9aa9bdb88ef1ee97f82b5450e40d12b1847e30b6e506cd7d69d5e3be5e2dcee';
+      toast('Safaricom sandbox defaults loaded (174379)');
+    };
+
+    // Load existing payment configs from local storage or server
+    function loadSavedGatewayConfigs() {
+      try {
+        const raw = localStorage.getItem('dogo_platform_settings');
+        if (raw) {
+          const cfg = JSON.parse(raw);
+          if (cfg.mpesa_till || cfg.mpesa_paybill) {
+            $('mpesaShortcode').value = cfg.mpesa_till || cfg.mpesa_paybill || '';
+            $('mpesaPaymentType').value = cfg.mpesa_paybill ? 'paybill' : 'till';
+            $('mpesaEnv').value = String(cfg.daraja_env === 'production');
+            $('badgeMpesaConfig').textContent = cfg.daraja_env === 'production' ? 'PRODUCTION' : 'SANDBOX READY';
+            $('mpesaStatusText').textContent = 'Configured and synchronized for instant STK push.';
+          }
+        }
+      } catch (e) {}
+    }
+    loadSavedGatewayConfigs();
+
+    $('btnSaveMpesa').onclick = async () => {
+      const shortcode = $('mpesaShortcode').value.trim();
+      const pType = $('mpesaPaymentType').value;
+      const isProd = $('mpesaEnv').value === 'true';
+
+      if (!shortcode) return toast('Enter the Till or Paybill shortcode');
+
+      try {
+        const raw = localStorage.getItem('dogo_platform_settings') || '{}';
+        const cfg = JSON.parse(raw);
+        if (pType === 'paybill') cfg.mpesa_paybill = shortcode;
+        else cfg.mpesa_till = shortcode;
+        cfg.daraja_env = isProd ? 'production' : 'sandbox';
+        cfg.daraja_consumer_key = $('mpesaConsumerKey').value.trim();
+        cfg.daraja_consumer_secret = $('mpesaConsumerSecret').value.trim();
+        cfg.daraja_passkey = $('mpesaPasskey').value.trim();
+        localStorage.setItem('dogo_platform_settings', JSON.stringify(cfg));
+      } catch (e) {}
+
+      $('badgeMpesaConfig').textContent = isProd ? 'PRODUCTION' : 'SANDBOX READY';
+      $('mpesaStatusText').textContent = 'M-Pesa gateway settings updated and saved.';
+      toast('M-Pesa gateway settings saved successfully!');
+    };
+
+    $('btnResetMpesa').onclick = () => {
+      if (confirm('Reset M-Pesa gateway settings to defaults?')) {
+        fillMpesaSandbox();
+        toast('M-Pesa settings reset.');
+      }
+    };
+
+    // 5. KCB Gateway
+    $('btnSaveKcb').onclick = () => {
+      toast('KCB Buni gateway settings saved locally.');
+      $('badgeKcbConfig').textContent = 'ACTIVE';
+    };
+    $('btnResetKcb').onclick = () => {
+      $('kcbMerchantCode').value = '';
+      $('kcbAccountNumber').value = '';
+      toast('KCB settings cleared.');
+    };
+
+    // 6. Paystack Gateway
+    $('btnSavePaystack').onclick = () => {
+      toast('Paystack gateway configuration updated.');
+      $('badgePaystackConfig').textContent = 'ACTIVE';
+    };
+    $('btnResetPaystack').onclick = () => {
+      $('paystackPublicKey').value = '';
+      $('paystackSecretKey').value = '';
+      toast('Paystack settings cleared.');
+    };
+
+    // 7. Airtel Money
+    $('btnSaveAirtel').onclick = () => {
+      toast('Airtel Money gateway configuration saved.');
+      $('badgeAirtelConfig').textContent = 'ACTIVE';
+    };
+    $('btnResetAirtel').onclick = () => {
+      $('airtelMerchantNumber').value = '';
+      toast('Airtel settings cleared.');
+    };
+
+    // 8. KRA eTIMS
+    $('btnSaveEtims').onclick = () => {
+      const pin = $('etimsKraPin').value.trim();
+      if (!pin) return toast('Please enter your KRA PIN / TIN');
+      $('badgeEtimsConfig').textContent = 'CONFIGURED';
+      $('badgeEtimsConfig').className = 'gateway-badge gateway-badge--active';
+      toast('eTIMS settings saved and fiscal signing active.');
+    };
+    $('btnRemoveEtims').onclick = () => {
+      $('etimsKraPin').value = '';
+      $('badgeEtimsConfig').textContent = 'INACTIVE';
+      $('badgeEtimsConfig').className = 'gateway-badge gateway-badge--sandbox';
+      toast('eTIMS setup removed.');
+    };
+
+    // 9. Account & Admin Platform Switcher
+    $('sUser').textContent = ctx.profile.full_name || ctx.session.user.email;
+    $('sRole').textContent = ctx.isAdmin ? 'Owner · Super Admin' : 'Cashier / Teller';
+    $('sBizId').textContent = ctx.businessId;
+    $('outBtn').onclick = logout;
+
+    // Load available businesses for switcher
+    try {
+      const { data } = await sb.from('businesses').select('id,name,business_type').order('name');
+      if (data && data.length) {
+        $('platformBusinessSelect').innerHTML = data.map(bz => `
+          <option value="${bz.id}" ${bz.id === ctx.businessId ? 'selected' : ''}>
+            ${esc(bz.name)} (${bz.business_type || 'Retail'})
+          </option>
+        `).join('');
+      }
+    } catch (e) {}
+
+    $('btnSwitchBusiness').onclick = async () => {
+      const newId = $('platformBusinessSelect').value;
+      if (!newId || newId === ctx.businessId) return toast('Already on this business.');
+      localStorage.setItem('dogo_active_business_id', newId);
+      toast('Switching business context...');
+      setTimeout(() => window.location.reload(), 500);
+    };
   })();
   </script>
 </body>

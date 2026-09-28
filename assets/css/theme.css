@@ -6,20 +6,40 @@
    ========================================================================== */
 
 :root {
-  /* Brand */
-  --dogo-orange: #d9670e;
-  --dogo-orange-dark: #b8560a;
-  --dogo-orange-light: #fdf1e7;
+  /* Brand Theme: Neon Green, Pure White, & Radiant Gold */
+  --dogo-neon: #00d26a;           /* Vibrant Neon Green */
+  --dogo-neon-bright: #10f07a;    /* Electric Neon Highlight */
+  --dogo-neon-dark: #009e4f;      /* Deep contrast green */
+  --dogo-neon-glow: rgba(0, 210, 106, 0.28);
+  --dogo-neon-light: #e6fbf1;     /* Soft pastel neon green background */
+
+  --dogo-gold: #d4af37;           /* Elegant Rich Gold */
+  --dogo-gold-bright: #f5c443;    /* Brilliant Gold */
+  --dogo-gold-dark: #b88d1d;      /* Metallic Burnished Gold */
+  --dogo-gold-glow: rgba(212, 175, 55, 0.28);
+  --dogo-gold-light: #fef8e7;     /* Soft warm gold background */
+
+  --dogo-white: #ffffff;          /* Pure Crisp White */
+  --dogo-white-surface: #f9fbf9;  /* Pristine light surface */
+
+  /* Semantic aliases */
+  --dogo-primary: var(--dogo-neon);
+  --dogo-primary-dark: var(--dogo-neon-dark);
+  --dogo-primary-light: var(--dogo-neon-light);
+
+  /* Legacy aliases mapped to Neon Green & Gold */
+  --dogo-orange: var(--dogo-neon);
+  --dogo-orange-dark: var(--dogo-neon-dark);
+  --dogo-orange-light: var(--dogo-neon-light);
 
   /* Neutrals */
-  --dogo-ink: #1a1d29;
-  --dogo-text: #2b2f3a;
-  --dogo-text-muted: #6b7280;
-  --dogo-text-faint: #9aa1ac;
-  --dogo-border: #e7e8ec;
-  --dogo-panel: #f5f6f8;
-  --dogo-panel-2: #eef0f3;
-  --dogo-white: #ffffff;
+  --dogo-ink: #0d1912;
+  --dogo-text: #1b2920;
+  --dogo-text-muted: #576b60;
+  --dogo-text-faint: #899c91;
+  --dogo-border: #dde8e1;
+  --dogo-panel: #f3f7f4;
+  --dogo-panel-2: #e8f0eb;
 
   /* Semantic accents (used for summary-card icons/badges, not for text) */
   --dogo-blue: #4f6df5;
@@ -88,7 +108,9 @@ a { color: inherit; text-decoration: none; }
   height: var(--dogo-header-h);
   padding: 0 16px;
   padding-top: env(safe-area-inset-top, 0px);
-  background: var(--dogo-orange);
+  background: #091710;
+  border-bottom: 2px solid var(--dogo-gold);
+  box-shadow: 0 2px 12px rgba(0, 210, 106, 0.12);
   color: #fff;
 }
 
@@ -105,13 +127,16 @@ a { color: inherit; text-decoration: none; }
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #fff2;
+  background: var(--dogo-neon);
+  color: #06170d;
+  border: 1.5px solid var(--dogo-gold);
   display: flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  font-size: 15px;
-  font-weight: 800;
+  font-size: 16px;
+  font-weight: 900;
+  box-shadow: 0 0 10px var(--dogo-neon-glow);
 }
 
 .dogo-header__brand span {
@@ -188,7 +213,9 @@ a { color: inherit; text-decoration: none; }
 
 .dogo-nav-item.is-active {
   background: var(--dogo-white);
-  color: var(--dogo-orange);
+  color: var(--dogo-neon-dark);
+  font-weight: 700;
+  border-bottom: 2px solid var(--dogo-gold);
   box-shadow: var(--dogo-shadow-card);
 }
 
@@ -209,7 +236,7 @@ a { color: inherit; text-decoration: none; }
   color: var(--dogo-text-faint);
   margin-bottom: 6px;
 }
-.dogo-breadcrumb .is-current { color: var(--dogo-orange); }
+.dogo-breadcrumb .is-current { color: var(--dogo-neon-dark); font-weight: 700; }
 
 .dogo-page-title {
   display: flex;
@@ -391,8 +418,31 @@ a { color: inherit; text-decoration: none; }
   text-overflow: ellipsis;
 }
 
-.dogo-btn--primary { background: var(--dogo-orange); color: #fff; }
-.dogo-btn--primary:hover { background: var(--dogo-orange-dark); }
+.dogo-btn--primary {
+  background: var(--dogo-neon);
+  color: #04140b;
+  font-weight: 800;
+  border: 1px solid var(--dogo-gold);
+  box-shadow: 0 2px 8px var(--dogo-neon-glow);
+}
+.dogo-btn--primary:hover {
+  background: var(--dogo-neon-bright);
+  color: #000;
+  box-shadow: 0 4px 14px var(--dogo-neon-glow);
+}
+
+.dogo-btn--gold {
+  background: linear-gradient(135deg, #f5c443 0%, #d4af37 100%);
+  color: #151100;
+  font-weight: 800;
+  border: 1px solid #b88d1d;
+  box-shadow: 0 2px 8px var(--dogo-gold-glow);
+}
+.dogo-btn--gold:hover {
+  background: linear-gradient(135deg, #ffd700 0%, #e5b82c 100%);
+  color: #000;
+  box-shadow: 0 4px 14px var(--dogo-gold-glow);
+}
 
 .dogo-btn--outline { background: #fff; color: var(--dogo-text); border-color: var(--dogo-border); }
 .dogo-btn--outline:hover { background: var(--dogo-panel); }
@@ -615,32 +665,34 @@ a { color: inherit; text-decoration: none; }
 }
 .dogo-subnav-btn.is-active {
   background: #fff;
-  border-color: #d97706;
-  color: #b45309;
-  box-shadow: 0 1px 4px rgba(217, 119, 6, 0.12);
+  border-color: var(--dogo-gold);
+  color: var(--dogo-neon-dark);
+  font-weight: 700;
+  box-shadow: 0 2px 6px var(--dogo-gold-glow);
 }
 .dogo-subnav-btn svg {
   width: 17px;
   height: 17px;
 }
 
-.dogo-btn-primary-orange {
-  background: #d97706;
-  color: #fff;
-  border: none;
+.dogo-btn-primary-orange, .dogo-btn-primary-neon {
+  background: var(--dogo-neon);
+  color: #06170d;
+  border: 1px solid var(--dogo-gold);
   border-radius: var(--dogo-radius-pill);
   padding: 9px 22px;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 14px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.25);
-  transition: background 0.15s ease;
+  box-shadow: 0 2px 8px var(--dogo-neon-glow);
+  transition: all 0.15s ease;
 }
-.dogo-btn-primary-orange:hover {
-  background: #b45309;
+.dogo-btn-primary-orange:hover, .dogo-btn-primary-neon:hover {
+  background: var(--dogo-neon-bright);
+  box-shadow: 0 4px 14px var(--dogo-neon-glow);
 }
 
 .dogo-table-top-bar {
@@ -689,7 +741,8 @@ a { color: inherit; text-decoration: none; }
   outline: none;
 }
 .dogo-search-pill-input:focus {
-  border-color: #d97706;
+  border-color: var(--dogo-neon);
+  box-shadow: 0 0 0 3px var(--dogo-neon-glow);
   background: #fff;
 }
 .dogo-btn-pill-outline {
@@ -747,8 +800,9 @@ a { color: inherit; text-decoration: none; }
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #d97706;
-  color: #fff;
+  background: var(--dogo-neon);
+  color: #06170d;
+  border: 1px solid var(--dogo-gold);
   display: inline-flex;
   align-items: center;
   justify-content: center;
