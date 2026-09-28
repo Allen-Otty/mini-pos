@@ -13,13 +13,23 @@
   // Returns { session, profile, business } or redirects to the sign-in page.
   async function requireSession() {
     const { data: { session } } = await sb.auth.getSession();
-    if (!session) { location.replace('index.html'); return null; }
+    if (!session) { await toSignIn(); return null; }
     const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-    const { data: business } = await sb.from('businesses').select('*').limit(1).maybeSingle();
+    if (!profile) { await toSignIn(); return null; }
+    // Look the business up by the profile's own id (platform admins can see many businesses)
+    const { data: business } = await sb.from('businesses').select('*').eq('id', profile.business_id).maybeSingle();
     return { session, profile, business };
   }
 
-  async function logout() { await sb.auth.signOut(); location.replace('index.html'); }
+  // No valid session: clear the "use new UI" flag (prevents a redirect loop) and show the sign-in screen.
+  async function toSignIn() {
+    try { localStorage.removeItem('dogo_new_ui_ok'); await sb.auth.signOut(); } catch (e) {}
+    location.replace('index.html?signin=1');
+  }
+  async function logout() {
+    try { localStorage.removeItem('dogo_new_ui_ok'); sessionStorage.removeItem('dogo_legacy'); await sb.auth.signOut(); } catch (e) {}
+    location.replace('index.html?signin=1');
+  }
 
   function toast(msg) {
     let t = document.getElementById('dogoToast');
@@ -31,6 +41,7 @@
   // Common page start-up: renders header/nav, enforces login, returns context.
   async function boot(active, opts) {
     opts = opts || {};
+    try { sessionStorage.removeItem('dogo_legacy'); } catch (e) {}
     DogoShell.render({ active, businessName: 'Dogo POS', onLogout: logout });
     const ctx = await requireSession();
     if (!ctx) return null;

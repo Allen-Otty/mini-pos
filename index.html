@@ -2,6 +2,22 @@
 <html lang="en">
 <head>
 <script>
+/* NEW-LOOK DEFAULT: signed-in users go straight to the new multipage UI (dashboard.html).
+   ?legacy=1 keeps the classic single-page app for this browser tab; ?signin=1 forces the sign-in screen.
+   'dogo_new_ui_ok' is set by afterLogin() once we know the account is eligible (real profile, not a Hotel/Restaurant
+   business) and cleared on sign-out or when the new pages find no valid session. */
+(function () {
+  try {
+    var q = new URLSearchParams(location.search);
+    if (q.get('legacy') === '1') sessionStorage.setItem('dogo_legacy', '1');
+    if (q.get('signin') === '1') { localStorage.removeItem('dogo_new_ui_ok'); return; }
+    if (sessionStorage.getItem('dogo_legacy') === '1') return;
+    if (localStorage.getItem('dogo_new_ui_ok') === '1') location.replace('dashboard.html');
+  } catch (e) {}
+})();
+</script>
+
+<script>
   // Apply saved theme immediately, before first paint, to avoid a flash of
   // the wrong theme on load. Must stay this early in <head>.
   (function() {
@@ -6431,7 +6447,7 @@
   </div>
 
   <!-- Multipage UI Link -->
-  <a href="dashboard.html" style="display:flex;align-items:center;gap:8px;margin:0 14px 10px;padding:10px 14px;border-radius:12px;background:#d9670e;color:#fff;font-weight:700;font-size:13px;text-decoration:none;">
+  <a href="dashboard.html" onclick="try{sessionStorage.removeItem('dogo_legacy')}catch(e){}" style="display:flex;align-items:center;gap:8px;margin:0 14px 10px;padding:10px 14px;border-radius:12px;background:#d9670e;color:#fff;font-weight:700;font-size:13px;text-decoration:none;">
     <i class="fa-solid fa-arrow-left"></i> <span>Main Dashboard</span>
   </a>
 
@@ -10234,6 +10250,7 @@ async function handleLogin() {
 }
 
 async function handleLogout() {
+  try { localStorage.removeItem('dogo_new_ui_ok'); sessionStorage.removeItem('dogo_legacy'); } catch (e) {}
   await sb.auth.signOut();
   stopScanner();
   session = null; profile = null; business = null;
@@ -10422,6 +10439,22 @@ async function afterLogin() {
   }
   business = biz;
 
+  // NEW-LOOK DEFAULT: hand eligible accounts to the multipage UI.
+  // Stay in the classic app for: ?legacy=1 tabs, Hotel/Restaurant businesses (their modules are not migrated),
+  // and platform admins currently "testing as" another business.
+  try {
+    const legacyTab = sessionStorage.getItem('dogo_legacy') === '1' || location.search.includes('legacy=1');
+    const realProfile = !!(prof && profile && profile.business_id && !String(profile.business_id).startsWith('biz-'));
+    const isHotel = normalizeBizType(business.business_type) === 'Hotel';
+    const switched = isPlatformAdmin && profile.business_id && activeBusinessId !== profile.business_id;
+    if (!legacyTab && realProfile && !isHotel && !switched) {
+      localStorage.setItem('dogo_new_ui_ok', '1');
+      location.replace('dashboard.html');
+      return;
+    }
+    localStorage.removeItem('dogo_new_ui_ok');
+  } catch (e) {}
+
   // Update sidebar user display
   const sName = document.getElementById('sidebarUserName');
   const sRole = document.getElementById('sidebarUserRole');
@@ -10461,10 +10494,6 @@ async function afterLogin() {
   await loadAllData();
   products = CATALOG; // keep synchronized
   applyPlanFeaturesVisibility();
-  if (!location.search.includes('legacy=1')) {
-    window.location.replace('dashboard.html');
-    return;
-  }
   const initTab = (business && normalizeBizType(business.business_type) === 'Hotel') ? 'restaurant-module' : 'sell';
   switchTab(initTab);
   resetInactivityTimer();
@@ -15702,7 +15731,7 @@ async function saveNewProductFromPage() {
         applyRoleVisibility();
         applyBusinessTheme();
         renderCatalog();
-        if (!location.search.includes('legacy=1')) {
+        if (!location.search.includes('legacy=1') && sessionStorage.getItem('dogo_legacy') !== '1') {
           window.location.replace('dashboard.html');
           return;
         }

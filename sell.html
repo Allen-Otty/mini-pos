@@ -190,6 +190,7 @@
             <option value="credit">Customer Credit / Tab</option>
           </select>
         </div>
+        <div id="payFields"></div>
 
         <div class="dogo-total-row" style="margin-top:14px;border-top:2px solid var(--dogo-gold);padding-top:14px;">
           <span style="font-weight:800;font-size:16px;">Total Amount</span>
@@ -199,6 +200,8 @@
         <button class="dogo-btn dogo-btn--primary dogo-btn--block" id="payBtn" disabled style="padding:14px;font-size:15px;margin-top:8px;">
           Complete Sale
         </button>
+
+        <div id="waiting" style="display:none;margin-top:8px;"></div>
 
         <div id="shiftLockNotice" style="display:none;background:var(--dogo-gold-light);border:1px solid var(--dogo-gold);border-radius:10px;padding:10px;margin-top:10px;font-size:12px;color:var(--dogo-gold-dark);text-align:center;">
           <strong>Register Locked:</strong> Open a cashier shift above before completing transactions.
@@ -339,6 +342,8 @@
     </div>
   </div>
 
+  <div class="dogo-modal" id="receiptModal"><div class="dogo-modal__box" id="receiptBox"></div></div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/dogo-data.js"></script>
   <script src="assets/js/app-shell.js"></script>
@@ -351,6 +356,7 @@
 
     const $ = id => document.getElementById(id);
     let products = [], cart = [], currentShift = null, shiftSales = [];
+    let busy = false, pollTimer = null, tickTimer = null;
 
     // Load initial data
     const [pRes, cRes, shRes] = await Promise.all([
@@ -653,10 +659,11 @@
         </div>
       `).join('') : '<div class="dogo-card__empty">Cart is empty. Tap a product to add it.</div>';
 
-      $('payBtn').disabled = !cart.length || !currentShift;
+      $('payBtn').disabled = busy || !cart.length || !currentShift;
     }
 
     $('grid').onclick = e => {
+      if (busy) return;
       const b = e.target.closest('[data-id]');
       if (!b) return;
       const pr = products.find(x => String(x.id) === b.dataset.id);
@@ -672,6 +679,7 @@
     };
 
     $('cart').onclick = e => {
+      if (busy) return;
       const d = e.target.dataset || {};
       if (d.inc !== undefined) {
         const l = cart[+d.inc];
@@ -689,76 +697,148 @@
 
     $('q').oninput = drawGrid;
 
-    $('payBtn').onclick = async () => {
-      if (!currentShift) {
-        toast('Open a shift first before making a sale.');
-        return;
-      }
-      if (!cart.length) return;
+    /* ------------------------------------------------------------------
+       Payments. Cash / card terminal / credit record immediately.
+       M-Pesa (and KCB / Paystack / Airtel when an Express API is configured) send a
+       real request and record the sale only after the gateway confirms it.
+    ------------------------------------------------------------------- */
+    const apiBase = (() => { const c = localStorage.getItem('dogo_api_url') || (window.DOGO_CONFIG && window.DOGO_CONFIG.api_url);
+      if (c) return c.replace(/\/+$/, ''); return ['localhost', '127.0.0.1'].includes(location.hostname) ? '' : null; })();
+    const DIGITAL = { mpesa: { name: 'M-Pesa', label: 'Customer phone (Safaricom)', ph: '07XX XXX XXX' },
+      kcb: { name: 'KCB Buni', label: 'Customer phone', ph: '07XX XXX XXX' },
+      paystack: { name: 'Paystack', label: 'Customer email or phone', ph: 'name@email.com' },
+      airtel: { name: 'Airtel Money', label: 'Customer Airtel phone', ph: '073X XXX XXX' } };
+    const NAMES = Object.assign({ cash: 'Cash', card: 'Card / Bank Terminal', credit: 'Customer Credit' }, Object.fromEntries(Object.entries(DIGITAL).map(([k, v]) => [k, v.name])));
+    if (apiBase !== null) ['kcb', 'paystack', 'airtel'].forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = DIGITAL[k].name; $('payMethod').appendChild(o); });
+    const PENDING_KEY = 'dogo_pending_payment_v1_' + ctx.profile.id, TIMEOUT_S = 72;
 
-      $('payBtn').disabled = true;
-      let sub = 0, vat = 0, grand = 0;
-      const items = cart.map(l => {
-        const t = +(l.qty * Number(l.p.price)).toFixed(2);
-        const v = Number(l.p.vat_rate || 0);
-        const lv = t - t / (1 + v);
-        sub += t - lv;
-        vat += lv;
-        grand += t;
-        return {
-          product_id: l.p.id,
-          code: l.p.code,
-          name: l.p.name,
-          qty: l.qty,
-          price: Number(l.p.price),
-          vat_rate: v,
-          unit: l.p.unit || 'piece',
-          line_total: t
-        };
-      });
+    function drawPayFields() {
+      const m = DIGITAL[$('payMethod').value];
+      $('payFields').innerHTML = m ? `<div class="dogo-field"><label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--dogo-text-muted);">${esc(m.label)}</label><input class="dogo-input" id="payContact" placeholder="${esc(m.ph)}" inputmode="${$('payMethod').value === 'paystack' ? 'email' : 'tel'}"></div>` : '';
+      $('payBtn').textContent = m ? 'Send ' + m.name + ' request' : 'Complete Sale';
+    }
+    $('payMethod').onchange = () => { if (!busy) drawPayFields(); };
 
+    const totalOf = list => list.reduce((a, l) => a + l.qty * Number(l.p.price), 0);
+    const snapOf = list => list.map(l => ({ product_id: l.p.id, code: l.p.code, name: l.p.name, qty: l.qty, price: Number(l.p.price), vat_rate: Number(l.p.vat_rate || 0), unit: l.p.unit || 'piece' }));
+    const toLines = snap => snap.map(l => { const t = +(l.qty * Number(l.price)).toFixed(2); return { product_id: l.product_id, code: l.code, name: l.name, qty: l.qty, price: Number(l.price), vat_rate: Number(l.vat_rate || 0), unit: l.unit || 'piece', line_total: t }; });
+
+    async function recordSale({ snap, customerId, shiftId, pay, ref, uuid }) {
+      let sub = 0, vat = 0, grand = 0; const items = toLines(snap);
+      items.forEach(i => { const lv = i.line_total - i.line_total / (1 + i.vat_rate); sub += i.line_total - lv; vat += lv; grand += i.line_total; });
       const { count } = await sb.from('sales').select('id', { count: 'exact', head: true });
-      const receiptNo = 'RC-' + String((count || 0) + 1).padStart(4, '0');
-      const method = $('payMethod').value;
+      const receipt = 'RC-' + String((count || 0) + 1).padStart(4, '0');
+      const { data, error } = await sb.rpc('process_sale', { p_business_id: ctx.businessId, p_cashier_id: ctx.profile.id, p_receipt_no: receipt, p_customer_id: customerId || null,
+        p_subtotal_excl_vat: +sub.toFixed(2), p_vat_total: +vat.toFixed(2), p_total: +grand.toFixed(2), p_offline_uuid: uuid || crypto.randomUUID(), p_items: items,
+        p_payment_method: pay, p_shift_id: shiftId, p_mpesa_receipt_no: ref || null });
+      if (error) return { error };
+      if (DIGITAL[pay]) sb.functions.invoke('etims-submit', { body: { sale_id: data } }).catch(() => {});
+      return { id: data, receipt, grand, sub, vat, items };
+    }
+    async function afterSale() {
+      const [r] = await Promise.all([sb.from('products').select('*').order('name'), loadShiftSales()]);
+      products = r.data || products; drawGrid(); drawCart(); renderShiftBar();
+    }
+    function showReceipt(r, pay, ref) {
+      $('receiptBox').innerHTML = `<h2>Sale complete</h2><div class="dogo-muted" style="font-size:13px;margin-bottom:10px;">${esc(r.receipt)} · ${esc(new Date().toLocaleString())}</div>
+        ${r.items.map(i => `<div class="dogo-list-row"><span>${esc(i.name)} × ${esc(i.qty)}</span><span>${kes(i.line_total)}</span></div>`).join('')}
+        <div class="dogo-list-row"><span class="dogo-muted">VAT included</span><span>${kes(r.vat)}</span></div>
+        <div class="dogo-total-row"><span>Total</span><span>${kes(r.grand)}</span></div>
+        <div class="dogo-list-row"><span class="dogo-muted">Paid by</span><strong>${esc(NAMES[pay] || pay)}</strong></div>
+        ${ref ? `<div class="dogo-list-row"><span class="dogo-muted">Reference</span><strong>${esc(ref)}</strong></div>` : ''}
+        <div class="dogo-btn-row" style="justify-content:flex-end;margin-top:16px;"><button class="dogo-btn dogo-btn--outline" onclick="window.print()">Print</button><button class="dogo-btn dogo-btn--primary" id="rcClose">Done</button></div>`;
+      $('receiptModal').classList.add('open'); $('rcClose').onclick = () => $('receiptModal').classList.remove('open');
+    }
 
-      const { data, error } = await sb.rpc('process_sale', {
-        p_business_id: ctx.businessId,
-        p_cashier_id: ctx.profile.id,
-        p_receipt_no: receiptNo,
-        p_customer_id: $('cust').value || null,
-        p_subtotal_excl_vat: +sub.toFixed(2),
-        p_vat_total: +vat.toFixed(2),
-        p_total: +grand.toFixed(2),
-        p_offline_uuid: crypto.randomUUID(),
-        p_items: items,
-        p_payment_method: method,
-        p_shift_id: currentShift.id,
-        p_mpesa_receipt_no: null
-      });
-
-      if (error) {
-        toast(error.message.includes('Insufficient stock') ? error.message : 'Could not complete sale: ' + error.message);
-        $('payBtn').disabled = false;
-        return;
+    const fnError = async err => { let m = err.message || 'Payment request failed'; try { const t = await err.context.text(); const j = JSON.parse(t); m = j.error || j.message || m; } catch (_) {} return m; };
+    async function initiate(m, snap, grand, contact, customerId) {
+      if (m === 'mpesa') {
+        const { data, error } = await sb.functions.invoke('mpesa-stk-push', { body: { phone: contact, amount: grand, customer_id: customerId || null, plan: null, metadata: {},
+          cart: snap.map(l => ({ id: l.product_id, code: l.code, name: l.name, price: l.price, qty: l.qty, vat: l.vat_rate, unit: l.unit })) } });
+        if (error) return { error: await fnError(error) };
+        if (data && data.error) return { error: /credentials|not set up|Settings/i.test(data.error) ? 'M-Pesa is not set up for this business yet. Add your Till/Paybill in Settings.' : data.error };
+        const id = data && (data.payment_request_id || data.id); return id ? { id, channel: 'supabase' } : { error: 'M-Pesa did not return a payment request.' };
       }
+      const r = await fetch(apiBase + '/api/payments/initiate', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gateway: m, amount: grand, phone: contact, email: contact.includes('@') ? contact : '', account: contact, customerId: customerId || null, cart: snap }) }).then(x => x.json()).catch(e => ({ error: e.message }));
+      return r.success ? { id: r.payment_request_id, channel: 'express' } : { error: r.error || 'Could not reach the payments server.' };
+    }
+    async function statusOf(pd) {
+      if (pd.channel === 'express') { const r = await fetch(apiBase + '/api/payments/status/' + pd.id).then(x => x.json()).catch(() => null); const d = r && r.data; return d ? { status: d.status, ref: d.receipt_reference, desc: d.result_desc, amount: d.amount } : null; }
+      const { data: row } = await sb.from('payment_requests').select('*').eq('id', pd.id).maybeSingle();
+      return row ? { status: row.status, ref: row.mpesa_receipt || row.receipt_reference || row.checkout_request_id, desc: row.result_desc, amount: row.amount } : null;
+    }
+    const stopTimers = () => { clearInterval(pollTimer); clearInterval(tickTimer); };
+    function setWaiting(html) { $('waiting').innerHTML = html; $('waiting').style.display = html ? '' : 'none'; $('payBtn').style.display = html ? 'none' : ''; }
+    function endBusy() { busy = false; $('payMethod').disabled = false; localStorage.removeItem(PENDING_KEY); stopTimers(); setWaiting(''); drawPayFields(); drawCart(); }
+    function failPanel(msg) { stopTimers(); localStorage.removeItem(PENDING_KEY);
+      setWaiting(`<div class="dogo-card" style="background:var(--dogo-red-bg);box-shadow:none;border-color:#fecaca;"><strong style="color:var(--dogo-red);">Payment not completed</strong><p style="margin:6px 0 12px;font-size:13.5px;">${esc(String(msg).replace(/[.\s]+$/, ''))}. The sale was not recorded.</p><button class="dogo-btn dogo-btn--primary dogo-btn--block" id="tryAgain">Try again</button></div>`);
+      $('tryAgain').onclick = endBusy; }
 
-      toast(`Sale complete (${receiptNo}): ${kes(grand)}`);
-      cart = [];
-
-      // Reload products and shift sales
-      const [rProd] = await Promise.all([
-        sb.from('products').select('*').order('name'),
-        loadShiftSales()
-      ]);
-      products = rProd.data || [];
-      drawGrid();
-      drawCart();
-      renderShiftBar();
+    async function finalize(pd, st) {
+      const ref = st.ref || ('REF-' + pd.id.slice(0, 8));
+      if (st.amount != null && Math.abs(Number(st.amount) - pd.grand) > 0.01) return failPanel(`The confirmed amount (${kes(st.amount)}) does not match this sale (${kes(pd.grand)}). Reference ${ref}`);
+      setWaiting(`<div class="dogo-card" style="background:var(--dogo-green-bg);box-shadow:none;"><strong style="color:var(--dogo-green);">Payment confirmed</strong><div style="font-size:13px;">Ref ${esc(ref)}. Recording sale…</div></div>`);
+      const r = await recordSale({ snap: pd.snap, customerId: pd.customerId, shiftId: pd.shiftId, pay: pd.method, ref, uuid: pd.id });
+      if (r.error && /duplicate|already exists|unique/i.test(r.error.message || '')) { toast('That payment was already recorded.'); cart = []; endBusy(); return afterSale(); }
+      if (r.error) { setWaiting(`<div class="dogo-card" style="background:var(--dogo-amber-bg);box-shadow:none;"><strong style="color:var(--dogo-amber);">Paid, but the sale was not recorded</strong><p style="font-size:13.5px;margin:6px 0 12px;">${esc(r.error.message)}<br>Payment reference: <strong>${esc(ref)}</strong></p><button class="dogo-btn dogo-btn--primary dogo-btn--block" id="retryRec">Retry recording</button></div>`);
+        $('retryRec').onclick = () => finalize(pd, st); return; }
+      cart = []; $('cust').value = ''; endBusy(); showReceipt(r, pd.method, ref); afterSale();
+    }
+    function startPolling(pd) {
+      const left = () => Math.max(0, TIMEOUT_S - Math.floor((Date.now() - pd.startedAt) / 1000));
+      setWaiting(`<div class="dogo-card" style="background:var(--dogo-gold-light);box-shadow:none;"><strong>Waiting for ${esc(NAMES[pd.method])} confirmation…</strong><div style="font-size:13.5px;margin:6px 0 12px;">${kes(pd.grand)} requested. Ask the customer to enter their PIN. <span id="secs">${left()}</span>s left.</div><button class="dogo-btn dogo-btn--outline dogo-btn--block" id="cancelWait">Cancel</button></div>`);
+      $('cancelWait').onclick = () => { toast('Cancelled. If the customer was already charged, check the ' + NAMES[pd.method] + ' statement.'); endBusy(); };
+      tickTimer = setInterval(() => { const el = $('secs'); if (el) el.textContent = left(); }, 1000);
+      let checking = false;
+      pollTimer = setInterval(async () => {
+        if (checking) return; checking = true;
+        try {
+          const st = await statusOf(pd);
+          if (st && st.status === 'success') { stopTimers(); await finalize(pd, st); }
+          else if (st && (st.status === 'failed' || st.status === 'cancelled')) failPanel(st.desc || 'The customer cancelled or entered a wrong PIN.');
+          else if (left() <= 0) failPanel('No confirmation within ' + TIMEOUT_S + ' seconds.');
+        } finally { checking = false; }
+      }, 2000);
+    }
+    async function startDigital(method) {
+      let contact = ($('payContact') && $('payContact').value.trim()) || '';
+      if (method !== 'paystack') contact = contact.replace(/\s+/g, '');
+      if (!contact) return toast('Enter the customer contact first');
+      if (method === 'mpesa' && !/^(\+?254|0)?[71]\d{8}$/.test(contact)) return toast('Enter a valid Safaricom number, e.g. 0712345678');
+      const snap = snapOf(cart), grand = +totalOf(cart).toFixed(2), customerId = $('cust').value || null;
+      busy = true; drawCart(); $('payMethod').disabled = true;
+      setWaiting('<div class="dogo-card__empty">Sending request…</div>');
+      const init = await initiate(method, snap, grand, contact, customerId);
+      if (init.error) { busy = false; $('payMethod').disabled = false; setWaiting(''); drawCart(); return toast(init.error); }
+      const pd = { id: String(init.id), channel: init.channel, method, snap, grand, customerId, shiftId: currentShift.id, startedAt: Date.now() };
+      localStorage.setItem(PENDING_KEY, JSON.stringify(pd)); startPolling(pd);
+    }
+    $('payBtn').onclick = async () => {
+      if (!currentShift) { toast('Open a shift first before making a sale.'); return; }
+      if (!cart.length || busy) return;
+      const method = $('payMethod').value;
+      if (DIGITAL[method]) return startDigital(method);
+      if (method === 'credit' && !$('cust').value) return toast('Select a customer for a credit sale.');
+      $('payBtn').disabled = true;
+      const r = await recordSale({ snap: snapOf(cart), customerId: $('cust').value || null, shiftId: currentShift.id, pay: method });
+      if (r.error) { toast(r.error.message.includes('Insufficient stock') ? r.error.message : 'Could not complete sale: ' + r.error.message); drawCart(); return; }
+      cart = []; $('cust').value = ''; showReceipt(r, method); afterSale();
     };
 
     renderShiftBar();
     drawGrid();
     drawCart();
+    drawPayFields();
+
+    // If the page was closed or refreshed while waiting for a customer's PIN, pick the payment back up
+    try {
+      const saved = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null');
+      if (saved && saved.id && currentShift && saved.shiftId === currentShift.id && DIGITAL[saved.method]) {
+        busy = true; $('payMethod').value = saved.method; $('payMethod').disabled = true; drawPayFields(); drawCart(); startPolling(saved);
+        toast('Resumed a payment that was waiting for confirmation.');
+      } else localStorage.removeItem(PENDING_KEY);
+    } catch (_) { localStorage.removeItem(PENDING_KEY); }
   })();
   </script>
 </body>

@@ -118,3 +118,5 @@ Shared design system modelled on the DigiKua-style reference (orange header, rou
 - `assets/js/dogo-data.js` — shared Supabase client (publishable key only), `boot()`, login check, toast, CSV download
 - Pages: `dashboard.html` (Overview), `catalog.html` (Products + Inventory), `customers.html` (Contacts), `sell.html` (cash checkout with shift), `expenses.html`, `reports.html` (daily / monthly / sales log + CSV download), `team.html` (read-only), `settings.html`
 - Still in `index.html` (full app): M-Pesa/KCB/Paystack/Airtel checkout, gateway + eTIMS + subscription settings, restaurant/hotel modules, shift close, staff invites, Purchases
+
+**Change history:** see `CHANGELOG.md`. Entry points: `index.html` = sign-in + classic app (`?legacy=1`); signed-in users are redirected to `dashboard.html`.
