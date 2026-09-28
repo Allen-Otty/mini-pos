@@ -116,7 +116,7 @@ Shared design system modelled on the DigiKua-style reference (orange header, rou
 - `assets/css/theme.css` — all colours, cards, buttons, tables, forms, modals, breakpoints (change once, every page updates)
 - `assets/js/app-shell.js` — shared header + nav grid; add a page to `NAV_ITEMS` and set `BUILT[id] = true`
 - `assets/js/dogo-data.js` — shared Supabase client (publishable key only), `boot()`, login check, toast, CSV download
-- Pages: `dashboard.html` (Overview), `catalog.html` (Products + Inventory), `customers.html` (Contacts), `sell.html` (cash checkout with shift), `expenses.html`, `reports.html` (daily / monthly / sales log + CSV download), `team.html` (read-only), `settings.html`
+- Pages: `dashboard.html` (Overview), `catalog.html` (Products + Inventory), `customers.html` (Contacts), `sell.html` (cash checkout with shift), `expenses.html`, `reports.html` (daily / monthly / sales log + CSV download), `team.html` (read-only), `settings.html`, `team.html` (branches + tellers/managers), `tables.html` (Hotel/Restaurant table service)
 - Still in `index.html` (full app): M-Pesa/KCB/Paystack/Airtel checkout, gateway + eTIMS + subscription settings, restaurant/hotel modules, shift close, staff invites, Purchases
 
 **Change history:** see `CHANGELOG.md`. Entry points: `index.html` = sign-in + classic app (`?legacy=1`); signed-in users are redirected to `dashboard.html`.

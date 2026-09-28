@@ -14,12 +14,40 @@
   <div id="dogoNavRoot"></div>
   <main class="dogo-page">
     <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Team</span></div>
-    <div class="dogo-page-title"><h1>Team</h1></div>
-    <p class="dogo-page-subtitle" id="bizName"></p>
+    <div class="dogo-page-title"><h1>Team & Branches</h1></div>
+    <p class="dogo-page-subtitle" id="bizName">Add tellers and managers, and organize them by branch</p>
 
-    <section class="dogo-card">
-      <div class="dogo-table-wrap"><table class="dogo-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table></div>
-      <p class="dogo-muted" style="font-size:13px;margin:14px 0 0;">To invite or remove staff, use <a class="dogo-link" href="index.html?legacy=1">the full app</a>.</p>
+    <div class="dogo-split">
+      <section class="dogo-card">
+        <div class="dogo-card__header"><div class="dogo-card__title">Branches</div></div>
+        <div class="dogo-table-wrap"><table class="dogo-table"><thead><tr><th>Name</th><th>Location</th><th>Status</th><th></th></tr></thead><tbody id="branchRows"></tbody></table></div>
+        <div class="dogo-form-row dogo-form-row--2" style="margin-top:14px;">
+          <div class="dogo-field"><label>Branch name</label><input class="dogo-input" id="bName" placeholder="e.g. Luanda"></div>
+          <div class="dogo-field"><label>Location (optional)</label><input class="dogo-input" id="bLoc" placeholder="e.g. Vihiga County"></div>
+        </div>
+        <button class="dogo-btn dogo-btn--primary" id="addBranchBtn">+ Add branch</button>
+        <p class="dogo-muted" id="branchNote" style="font-size:12.5px;margin-top:12px;"></p>
+      </section>
+
+      <section class="dogo-card">
+        <div class="dogo-card__title" style="margin-bottom:12px;">Add a teller or manager</div>
+        <div class="dogo-form-row dogo-form-row--2">
+          <div class="dogo-field"><label>Full name</label><input class="dogo-input" id="tName"></div>
+          <div class="dogo-field"><label>Email</label><input class="dogo-input" id="tEmail" type="email"></div>
+          <div class="dogo-field"><label>Temporary password</label><input class="dogo-input" id="tPass" type="password" placeholder="Min. 8 characters"></div>
+          <div class="dogo-field"><label>Role</label><select class="dogo-select" id="tRole"><option value="teller">Teller</option><option value="manager">Manager</option></select></div>
+          <div class="dogo-field" style="grid-column:1/-1;"><label>Branch</label><select class="dogo-select" id="tBranch"><option value="">Not assigned</option></select></div>
+        </div>
+        <button class="dogo-btn dogo-btn--primary dogo-btn--block" id="addTellerBtn">Create account</button>
+      </section>
+    </div>
+
+    <section class="dogo-card" style="margin-top:16px;">
+      <div class="dogo-card__header"><div class="dogo-card__title">Team</div></div>
+      <div class="dogo-table-wrap"><table class="dogo-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Branch</th><th>Status</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
     </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -30,10 +58,81 @@
     const { sb, kes, esc, boot, toast, downloadCSV } = window.DogoData;
 
     const ctx = await boot('team', { adminOnly: true }); if (!ctx) return;
-    const { data } = await sb.from('profiles').select('*'); const list = data || [];
-    document.getElementById('rows').innerHTML = list.length ? list.map(p => `<tr><td><strong>${esc(p.full_name || '—')}</strong></td><td>${esc(p.email || '—')}</td>
-      <td><span class="dogo-badge">${esc(p.role === 'admin' ? 'Admin' : 'Teller')}</span></td><td><span class="dogo-badge ${p.active === false ? 'dogo-badge--danger' : 'dogo-badge--ok'}">${p.active === false ? 'Inactive' : 'Active'}</span></td></tr>`).join('')
-      : '<tr><td colspan="4" class="dogo-card__empty">No team members</td></tr>';
+    const $ = id => document.getElementById(id);
+    let branches = [], team = [], branchesReady = true;
+
+    async function loadBranches() {
+      const { data, error } = await sb.from('branches').select('*').order('name');
+      if (error) { branchesReady = false;
+        $('branchNote').textContent = 'Branches are not set up on this database yet — ask whoever manages the project to run the branches migration, then reload this page.';
+        $('branchRows').innerHTML = '<tr><td colspan="4" class="dogo-card__empty">Not available yet</td></tr>';
+        $('addBranchBtn').disabled = true; $('tBranch').disabled = true; return; }
+      branches = data || [];
+      $('branchRows').innerHTML = branches.length ? branches.map(b => `<tr><td><strong>${esc(b.name)}</strong></td><td>${esc(b.location || '—')}</td>
+        <td><span class="dogo-badge ${b.active === false ? 'dogo-badge--danger' : 'dogo-badge--ok'}">${b.active === false ? 'Inactive' : 'Active'}</span></td>
+        <td><button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-toggle-branch="${esc(b.id)}">${b.active === false ? 'Reactivate' : 'Deactivate'}</button></td></tr>`).join('')
+        : '<tr><td colspan="4" class="dogo-card__empty">No branches yet — every teller counts as head-office for now</td></tr>';
+      $('tBranch').innerHTML = '<option value="">Not assigned</option>' + branches.filter(b => b.active !== false).map(b => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+    }
+    $('addBranchBtn').onclick = async () => {
+      const name = $('bName').value.trim(); if (!name) return toast('Enter a branch name');
+      const { error } = await sb.from('branches').insert({ business_id: ctx.businessId, name, location: $('bLoc').value.trim() || null });
+      if (error) return toast('Could not add branch: ' + error.message);
+      $('bName').value = ''; $('bLoc').value = ''; toast('Branch added'); loadBranches();
+    };
+    $('branchRows').onclick = async e => { const id = e.target.dataset && e.target.dataset.toggleBranch; if (!id) return;
+      const b = branches.find(x => x.id === id); const { error } = await sb.from('branches').update({ active: b.active === false }).eq('id', id);
+      if (error) return toast('Could not update branch: ' + error.message); loadBranches(); };
+
+    function branchName(id) { const b = branches.find(x => x.id === id); return b ? b.name : '—'; }
+    async function loadTeam() {
+      const { data, error } = await sb.from('profiles').select('*').eq('business_id', ctx.businessId).order('full_name');
+      if (error) return toast('Could not load team: ' + error.message);
+      team = data || []; drawTeam();
+    }
+    function drawTeam() {
+      $('rows').innerHTML = team.length ? team.map(p => `<tr>
+        <td><strong>${esc(p.full_name || '(unnamed)')}</strong>${p.id === ctx.profile.id ? ' <span class="dogo-muted" style="font-size:12px;">(you)</span>' : ''}</td>
+        <td>${esc(p.email || '—')}</td>
+        <td>${p.role === 'admin' ? '<span class="dogo-badge">Admin</span>' : `<select class="dogo-select" style="padding:6px 10px;font-size:12.5px;" data-role="${esc(p.id)}" ${p.id === ctx.profile.id ? 'disabled' : ''}><option value="teller" ${p.role === 'teller' ? 'selected' : ''}>Teller</option><option value="manager" ${p.role === 'manager' ? 'selected' : ''}>Manager</option></select>`}</td>
+        <td>${branchesReady ? `<select class="dogo-select" style="padding:6px 10px;font-size:12.5px;" data-branch="${esc(p.id)}" ${p.role === 'admin' ? 'disabled' : ''}><option value="">Not assigned</option>${branches.map(b => `<option value="${esc(b.id)}" ${p.branch_id === b.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select>` : branchName(p.branch_id)}</td>
+        <td><span class="dogo-badge ${p.active === false ? 'dogo-badge--danger' : 'dogo-badge--ok'}">${p.active === false ? 'Inactive' : 'Active'}</span></td>
+        <td>${p.id === ctx.profile.id ? '' : `<button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-toggle="${esc(p.id)}">${p.active === false ? 'Reactivate' : 'Deactivate'}</button>`}</td>
+      </tr>`).join('') : '<tr><td colspan="6" class="dogo-card__empty">No team members yet</td></tr>';
+    }
+    $('rows').onclick = async e => { const id = e.target.dataset && e.target.dataset.toggle; if (!id) return;
+      const p = team.find(x => x.id === id); const { error } = await sb.from('profiles').update({ active: p.active === false }).eq('id', id);
+      if (error) return toast('Could not update: ' + error.message); toast(p.active === false ? 'Reactivated' : 'Deactivated'); loadTeam(); };
+    $('rows').onchange = async e => {
+      const roleId = e.target.dataset && e.target.dataset.role, branchId = e.target.dataset && e.target.dataset.branch;
+      if (roleId) { const { error } = await sb.from('profiles').update({ role: e.target.value }).eq('id', roleId); if (error) return toast('Could not change role: ' + error.message); toast('Role updated'); loadTeam(); }
+      if (branchId !== undefined && e.target.dataset.branch) { const { error } = await sb.from('profiles').update({ branch_id: e.target.value || null }).eq('id', branchId); if (error) return toast('Could not assign branch: ' + error.message); toast('Branch updated'); loadTeam(); }
+    };
+
+    $('addTellerBtn').onclick = async () => {
+      const full_name = $('tName').value.trim(), email = $('tEmail').value.trim(), password = $('tPass').value;
+      const role = $('tRole').value, branch_id = $('tBranch').value || null;
+      if (!full_name || !email || !password) return toast('Fill in name, email and password');
+      if (password.length < 8) return toast('Password must be at least 8 characters');
+      $('addTellerBtn').disabled = true; $('addTellerBtn').textContent = 'Creating…';
+      const resp = await sb.functions.invoke('create-teller', { body: { email, password, full_name } });
+      const data = resp.error ? null : resp.data;
+      $('addTellerBtn').disabled = false; $('addTellerBtn').textContent = 'Create account';
+      if (resp.error || (data && data.error)) return toast('Could not create account: ' + (resp.error ? resp.error.message : data.error));
+      toast('Account created for ' + full_name);
+      $('tName').value = ''; $('tEmail').value = ''; $('tPass').value = '';
+      // create-teller only sets up the login + a default 'teller' row — apply the chosen role/branch as a follow-up.
+      if (role !== 'teller' || branch_id) {
+        const newId = data && (data.user_id || data.id || data.profile_id);
+        let target = newId;
+        if (!target) { await new Promise(r => setTimeout(r, 1200)); const { data: match } = await sb.from('profiles').select('id').eq('business_id', ctx.businessId).eq('email', email).maybeSingle(); target = match && match.id; }
+        if (target) { const { error } = await sb.from('profiles').update({ role, branch_id }).eq('id', target); if (error) toast('Account created, but could not set role/branch: ' + error.message + '. Set it below in Team.'); }
+        else toast('Account created — set their role/branch below once they appear in the Team list.');
+      }
+      loadTeam();
+    };
+
+    await loadBranches(); await loadTeam();
   })();
   </script>
 </body>

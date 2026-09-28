@@ -46,12 +46,14 @@
     const ctx = await requireSession();
     if (!ctx) return null;
     const name = ctx.business && ctx.business.name;
-    if (name) {
-      DogoShell.render({ active, businessName: name, onLogout: logout });
-      const sub = document.getElementById('bizName'); if (sub) sub.textContent = name;
-    }
     ctx.businessId = ctx.profile && ctx.profile.business_id;
     ctx.isAdmin = !!(ctx.profile && ctx.profile.role === 'admin');
+    const rawType = (ctx.business && ctx.business.business_type || '').toLowerCase();
+    ctx.isHotelOrRestaurant = rawType.includes('hotel') || rawType.includes('restaurant');
+    if (name) {
+      DogoShell.render({ active, businessName: name, onLogout: logout, showTables: ctx.isHotelOrRestaurant });
+      const sub = document.getElementById('bizName'); if (sub) sub.textContent = name;
+    }
     if (opts.adminOnly && !ctx.isAdmin) {
       document.querySelector('main').innerHTML = '<div class="dogo-card"><div class="dogo-card__empty">This page is for the business Admin only.</div></div>';
       return null;

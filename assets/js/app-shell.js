@@ -48,6 +48,7 @@
     { id: 'catalog', label: 'Products', href: 'catalog.html', icon: 'products' },
     { id: 'purchases', label: 'Purchases', href: 'purchases.html', icon: 'purchases' },
     { id: 'sell', label: 'Sales', href: 'sell.html', icon: 'sales' },
+    { id: 'tables', label: 'Menu & Tables', href: 'tables.html', icon: 'inventory', hotelOnly: true },
     { id: 'inventory', label: 'Inventory', href: 'inventory.html', icon: 'inventory' },
     { id: 'expenses', label: 'Expenses', href: 'expenses.html', icon: 'expenses' },
     { id: 'reports', label: 'Reports', href: 'reports.html', icon: 'reports' },
@@ -79,7 +80,7 @@
   }
 
   function renderNav(root, opts) {
-    const items = opts.items || NAV_ITEMS;
+    const items = (opts.items || NAV_ITEMS).filter(i => !i.hotelOnly || opts.showTables);
     root.innerHTML = `
       <nav class="dogo-nav-panel" id="dogoNavPanel">
         <div class="dogo-nav-grid">

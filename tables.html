@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Menu & Tables · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Menu & Tables</span></div>
+    <div class="dogo-page-title"><h1>Menu & Tables</h1></div>
+    <p class="dogo-page-subtitle" id="bizName">Table service for restaurants and hotels</p>
+
+    <div id="floorView">
+      <div class="dogo-toolbar" style="justify-content:space-between;margin-bottom:14px;">
+        <div class="dogo-toolbar"><input class="dogo-input" id="tName" placeholder="New table name, e.g. Table 5" style="max-width:220px;"><button class="dogo-btn dogo-btn--primary dogo-btn--sm" id="addTable">+ Add table</button></div>
+      </div>
+      <div class="dogo-prod-grid" id="grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));"></div>
+    </div>
+
+    <div id="orderView" style="display:none;">
+      <div class="dogo-toolbar" style="justify-content:space-between;margin-bottom:14px;">
+        <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="backBtn">&larr; All tables</button>
+        <h2 id="orderTitle" style="margin:0;font-size:18px;"></h2>
+      </div>
+      <div class="dogo-pos">
+        <section class="dogo-card">
+          <div class="dogo-seg" id="catChips" style="margin-bottom:14px;flex-wrap:wrap;"></div>
+          <div class="dogo-prod-grid" id="itemGrid"></div>
+        </section>
+        <aside class="dogo-card dogo-pos__cart">
+          <div class="dogo-card__title" style="margin-bottom:10px;">Order</div>
+          <div id="checkLines"><div class="dogo-card__empty">No items yet</div></div>
+          <div class="dogo-total-row"><span>Total</span><span id="checkTotal">KES 0.00</span></div>
+          <div class="dogo-btn-row" style="flex-direction:column;">
+            <button class="dogo-btn dogo-btn--outline dogo-btn--block" id="kitchenBtn">Send to kitchen</button>
+            <button class="dogo-btn dogo-btn--primary dogo-btn--block" id="checkoutBtn">Checkout (cash)</button>
+          </div>
+          <p class="dogo-muted" style="font-size:12.5px;margin-top:10px;">For M-Pesa and other digital payment on an order, use the <a class="dogo-link" href="sell.html">Sales</a> page instead — add the same items there and note the table on the receipt.</p>
+        </aside>
+      </div>
+    </div>
+
+    <div class="dogo-modal" id="kotModal"><div class="dogo-modal__box" id="kotBox"></div></div>
+    <div class="dogo-modal" id="receiptModal"><div class="dogo-modal__box" id="receiptBox"></div></div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast, downloadCSV } = window.DogoData;
+
+    const ctx = await boot('tables'); if (!ctx) return;
+    const $ = id => document.getElementById(id);
+    if (!ctx.isHotelOrRestaurant) {
+      document.querySelector('main').innerHTML = '<div class="dogo-card"><div class="dogo-card__empty">Menu &amp; Tables is for Hotel and Restaurant businesses. Your business is set to a different type in Settings.</div></div>';
+      return;
+    }
+    let products = [], tables = [], activeId = null, activeCat = null, cats = [];
+
+    const [p, t] = await Promise.all([sb.from('products').select('*').order('name'), sb.from('tables').select('*').order('created_at')]);
+    products = p.data || []; tables = t.data || [];
+    cats = [...new Set(products.map(x => x.category || 'Uncategorized'))];
+
+    function drawGrid() {
+      $('grid').innerHTML = tables.length ? tables.map(t => { const order = t.current_order || []; const total = order.reduce((s, l) => s + l.price * l.qty, 0);
+        return `<button class="dogo-prod" data-open="${esc(t.id)}" style="align-items:center;text-align:center;position:relative;${t.status === 'occupied' ? 'border-color:var(--dogo-orange);' : ''}">
+          <button data-remove="${esc(t.id)}" style="position:absolute;top:6px;right:8px;border:none;background:none;color:var(--dogo-text-faint);font-size:16px;cursor:pointer;">&times;</button>
+          <span class="dogo-prod__name">${esc(t.name)}</span><span class="dogo-badge ${t.status === 'occupied' ? 'dogo-badge--warn' : 'dogo-badge--ok'}">${t.status === 'occupied' ? 'Occupied' : 'Free'}</span>
+          ${order.length ? `<span class="dogo-prod__price" style="margin-top:6px;">${kes(total)}</span>` : ''}</button>`; }).join('')
+        : '<div class="dogo-card__empty">No tables yet — add one above</div>';
+    }
+    $('addTable').onclick = async () => { const name = $('tName').value.trim(); if (!name) return toast('Enter a table name');
+      const { data, error } = await sb.from('tables').insert({ business_id: ctx.businessId, name, status: 'free', current_order: [] }).select().single();
+      if (error) return toast('Could not add table: ' + error.message); tables.push(data); $('tName').value = ''; drawGrid(); };
+    $('grid').onclick = async e => {
+      const rm = e.target.closest('[data-remove]'); if (rm) { const { error } = await sb.from('tables').delete().eq('id', rm.dataset.remove); if (error) return toast('Could not remove: ' + error.message); tables = tables.filter(t => t.id !== rm.dataset.remove); return drawGrid(); }
+      const b = e.target.closest('[data-open]'); if (b) openTable(b.dataset.open);
+    };
+
+    function openTable(id) { activeId = id; activeCat = cats[0] || null; $('floorView').style.display = 'none'; $('orderView').style.display = 'block';
+      $('orderTitle').textContent = tables.find(t => t.id === id).name + ' — order'; drawCats(); drawItems(); drawCheck(); }
+    $('backBtn').onclick = () => { $('floorView').style.display = 'block'; $('orderView').style.display = 'none'; activeId = null; drawGrid(); };
+    function drawCats() { $('catChips').innerHTML = cats.map(c => `<button data-cat="${esc(c)}" class="${c === activeCat ? 'is-active' : ''}">${esc(c)}</button>`).join(''); }
+    $('catChips').onclick = e => { const b = e.target.closest('[data-cat]'); if (!b) return; activeCat = b.dataset.cat; drawCats(); drawItems(); };
+
+    function table() { return tables.find(t => t.id === activeId); }
+    function drawItems() {
+      const items = products.filter(p => (p.category || 'Uncategorized') === activeCat);
+      const order = table().current_order || [];
+      $('itemGrid').innerHTML = items.length ? items.map(p => { const line = order.find(l => l.code === p.code);
+        return `<button class="dogo-prod" data-add="${esc(p.code)}"><span class="dogo-prod__name">${esc(p.name)}</span><span class="dogo-prod__price">${kes(p.price)}</span>${line ? `<span class="dogo-badge">${line.qty} added</span>` : ''}</button>`; }).join('')
+        : '<div class="dogo-card__empty">No items in this category</div>';
+    }
+    $('itemGrid').onclick = async e => { const b = e.target.closest('[data-add]'); if (!b) return;
+      const p = products.find(x => x.code === b.dataset.add); const t = table(); let order = t.current_order || [];
+      const idx = order.findIndex(l => l.code === p.code);
+      if (idx === -1) order.push({ code: p.code, name: p.name, price: Number(p.price), vat: Number(p.vat_rate || 0), unit: p.unit || 'piece', qty: 1 });
+      else order[idx].qty += 1;
+      t.current_order = order; t.status = 'occupied';
+      const { error } = await sb.from('tables').update({ current_order: order, status: 'occupied' }).eq('id', t.id);
+      if (error) toast('Could not save: ' + error.message); drawItems(); drawCheck();
+    };
+    $('checkLines').onclick = async e => { const d = e.target.dataset || {}; const t = table(); let order = t.current_order || [];
+      if (d.less !== undefined) { const i = +d.less; order[i].qty--; if (order[i].qty <= 0) order.splice(i, 1); }
+      if (d.more !== undefined) { order[+d.more].qty++; }
+      t.current_order = order; t.status = order.length ? 'occupied' : 'free';
+      await sb.from('tables').update({ current_order: order, status: t.status }).eq('id', t.id); drawItems(); drawCheck();
+    };
+    function drawCheck() {
+      const order = table().current_order || []; const total = order.reduce((s, l) => s + l.price * l.qty, 0);
+      $('checkLines').innerHTML = order.length ? order.map((l, i) => `<div class="dogo-cart-line"><div><strong>${esc(l.name)}</strong></div><div style="text-align:right;">${kes(l.price * l.qty)}</div>
+        <div class="dogo-qty"><button data-less="${i}">−</button><span>${l.qty}</span><button data-more="${i}">+</button></div><div></div></div>`).join('') : '<div class="dogo-card__empty">No items yet</div>';
+      $('checkTotal').textContent = kes(total);
+    }
+    $('kitchenBtn').onclick = () => { const t = table(); const order = t.current_order || []; if (!order.length) return toast('No items to send');
+      $('kotBox').innerHTML = `<h2>Kitchen order</h2><div class="dogo-muted" style="margin-bottom:10px;">${esc(t.name)} · ${esc(new Date().toLocaleString())}</div>
+        ${order.map(l => `<div class="dogo-list-row"><span>${l.qty} × ${esc(l.name)}</span></div>`).join('')}
+        <div class="dogo-btn-row" style="justify-content:flex-end;margin-top:14px;"><button class="dogo-btn dogo-btn--outline" onclick="window.print()">Print</button><button class="dogo-btn dogo-btn--primary" id="kotClose">Close</button></div>`;
+      $('kotModal').classList.add('open'); $('kotClose').onclick = () => $('kotModal').classList.remove('open'); };
+
+    $('checkoutBtn').onclick = async () => {
+      const t = table(); const order = t.current_order || []; if (!order.length) return toast('No items to checkout');
+      $('checkoutBtn').disabled = true;
+      let sub = 0, vat = 0, grand = 0;
+      const items = order.map(l => { const lt = +(l.qty * l.price).toFixed(2), lv = lt - lt / (1 + l.vat); sub += lt - lv; vat += lv; grand += lt;
+        const prod = products.find(p => p.code === l.code);
+        return { product_id: prod ? prod.id : null, code: l.code, name: l.name, qty: l.qty, price: l.price, vat_rate: l.vat, unit: l.unit, line_total: lt }; });
+      const { count } = await sb.from('sales').select('id', { count: 'exact', head: true });
+      const receipt = 'RC-' + String((count || 0) + 1).padStart(4, '0');
+      const { data, error } = await sb.rpc('process_sale', { p_business_id: ctx.businessId, p_cashier_id: ctx.profile.id, p_receipt_no: receipt, p_customer_id: null,
+        p_subtotal_excl_vat: +sub.toFixed(2), p_vat_total: +vat.toFixed(2), p_total: +grand.toFixed(2), p_offline_uuid: crypto.randomUUID(), p_items: items,
+        p_payment_method: 'cash', p_shift_id: null, p_mpesa_receipt_no: null });
+      $('checkoutBtn').disabled = false;
+      if (error) return toast(error.message.includes('Insufficient stock') ? error.message : 'Could not complete sale: ' + error.message);
+      await sb.from('tables').update({ current_order: [], status: 'free' }).eq('id', t.id);
+      t.current_order = []; t.status = 'free';
+      $('receiptBox').innerHTML = `<h2>Table settled</h2><div class="dogo-muted" style="margin-bottom:10px;">${esc(receipt)} · ${esc(t.name)}</div>
+        ${items.map(i => `<div class="dogo-list-row"><span>${esc(i.name)} × ${i.qty}</span><span>${kes(i.line_total)}</span></div>`).join('')}
+        <div class="dogo-total-row"><span>Total</span><span>${kes(grand)}</span></div>
+        <div class="dogo-btn-row" style="justify-content:flex-end;margin-top:14px;"><button class="dogo-btn dogo-btn--outline" onclick="window.print()">Print</button><button class="dogo-btn dogo-btn--primary" id="rcClose">Done</button></div>`;
+      $('receiptModal').classList.add('open'); $('rcClose').onclick = () => { $('receiptModal').classList.remove('open'); $('backBtn').click(); };
+      const r = await sb.from('products').select('*').order('name'); products = r.data || products;
+    };
+
+    drawGrid();
+  })();
+  </script>
+</body>
+</html>

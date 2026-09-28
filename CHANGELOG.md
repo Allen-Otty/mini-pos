@@ -2,6 +2,25 @@
 
 Newest first. Each entry lists what changed and why, so nothing has to be rediscovered from the git log.
 
+## 2026-09-29 — Team: branches, managers; Restaurant/Hotel on the new layout
+
+**Team & Branches (`team.html`, rewritten)**
+- Admin can add a **branch** (name + optional location) and deactivate/reactivate one.
+- Admin can create a teller **or manager** account (via the existing `create-teller` edge function), and assign a branch at creation or later from the Team list.
+- Team list: change anyone's role (Teller ⇄ Manager) or branch assignment inline, deactivate/reactivate anyone but yourself.
+- Requires a small database change the app itself cannot make (only holds the publishable key): **`supabase/migrations/20260929_branches_and_manager_role.sql`** — adds a `branches` table and `profiles.branch_id`, with RLS scoped to `current_business_id()`. Run it once in the Supabase SQL editor. Until then, the Team page still works (add/edit tellers, roles) and shows a plain notice instead of the Branches table.
+- **Scope note:** a Manager's branch assignment is not yet enforced anywhere else — sales, products, expenses etc. stay visible business-wide, same as today. This migration only adds the ability to organize the team by branch; branch-scoped data isolation across the rest of the app is a separate, larger change if you want it next.
+
+**Restaurant/Hotel on the new layout (`tables.html`, new)**
+- Table grid (free/occupied, running total), add/remove tables.
+- Tap a table for an order screen: category chips, item grid with tap-to-add, running check, quantity +/−.
+- **Send to kitchen** (printable ticket, same as the classic app's KOT). **Checkout (cash)** runs the same `process_sale` RPC as every other page and clears the table.
+- M-Pesa and other digital payment on a table order is not built here yet — noted in the page, with a pointer to the Sales page as a workaround.
+- The new look is now the default for Hotel/Restaurant businesses too (the earlier exclusion in `index.html` is removed), since Menu & Tables now covers what they need. Opening `tables.html` on a non-Hotel/Restaurant business shows a message instead of an empty page.
+- Nav: "Menu & Tables" only appears for businesses whose type is Hotel or Restaurant (`assets/js/app-shell.js`, `assets/js/dogo-data.js`).
+
+**Tested with mocked data only** (Playwright): team page with and without the branches table present, adding a branch, table order → checkout → `process_sale` call → table cleared. Not yet tested against your real Supabase/data — please run the migration, then try adding a branch, creating one teller and one manager, and settling one real table order before relying on this.
+
 ## 2026-09-28 — New look is the default, hardened (merged with commits b9191a6 → e0762c7)
 
 Another set of commits landed on `main` while this was being built (Purchases, Inventory, Loans, Equity, Fixed Assets pages, a neon-green/white/gold theme, shift open/close on the Sales page, Settings ported to the new layout, Zoho removed). Those were kept as-is; the changes below were re-applied on top of them.
