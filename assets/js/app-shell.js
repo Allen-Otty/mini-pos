@@ -27,6 +27,7 @@
   // Single source of truth for every page in the app. Add a page here and it
   // shows up in the nav grid on every other page automatically.
   const BUILT = { dashboard: true };
+  // NOTE: 'Back to full app' link is added to the nav panel below
   const LEGACY = 'index.html';
   const NAV_ITEMS_RAW = [
     { id: 'dashboard', label: 'Overview', href: 'dashboard.html', icon: 'overview' },
@@ -72,6 +73,7 @@
               ${ICONS[item.icon] || ''}<span>${item.label}</span>
             </a>
           `).join('')}
+          <a class="dogo-nav-item" href="index.html" style="margin-left:auto;color:var(--dogo-orange);"><span>&larr; Full app</span></a>
         </div>
       </nav>
     `;
