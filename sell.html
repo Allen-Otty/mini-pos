@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sales · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Sales</span></div>
+    <div class="dogo-page-title"><h1>Sales</h1></div>
+    <p class="dogo-page-subtitle" id="bizName">Ring up cash sales</p>
+
+    <div class="dogo-pos">
+      <section class="dogo-card">
+        <div class="dogo-toolbar" style="margin-bottom:14px;"><input class="dogo-input" id="q" placeholder="Search product or code"></div>
+        <div class="dogo-prod-grid" id="grid"></div>
+      </section>
+      <aside class="dogo-card dogo-pos__cart">
+        <div class="dogo-card__header"><div class="dogo-card__title">Current sale</div><span class="dogo-badge" id="cnt">0 items</span></div>
+        <div id="shiftBox"></div>
+        <div id="cart"><div class="dogo-card__empty">Cart is empty. Tap a product to add it.</div></div>
+        <div class="dogo-field" style="margin-top:10px;"><select class="dogo-select" id="cust"><option value="">Walk-in customer</option></select></div>
+        <div class="dogo-total-row"><span>Total</span><span id="total">KES 0.00</span></div>
+        <button class="dogo-btn dogo-btn--primary dogo-btn--block" id="payBtn" disabled>Complete cash sale</button>
+        <p class="dogo-muted" style="font-size:12.5px;margin:10px 0 0;">Cash sales here. For M-Pesa, KCB, Paystack or Airtel payments use the <a class="dogo-link" href="index.html">full app</a>.</p>
+      </aside>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast, downloadCSV } = window.DogoData;
+
+    const ctx = await boot('sell'); if (!ctx) return;
+    const $ = id => document.getElementById(id); let products = [], cart = [], shift = null;
+    const [p, c, sh] = await Promise.all([sb.from('products').select('*').order('name'), sb.from('customers').select('id,name').order('name'),
+      sb.from('shift_sessions').select('*').eq('user_id', ctx.profile.id).eq('status', 'OPEN').order('created_at', { ascending: false })]);
+    products = p.data || [];
+    $('cust').innerHTML += (c.data || []).map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('');
+    const todayStr = new Date().toISOString().slice(0, 10);
+    shift = (sh.data || []).find(s => (s.created_at || '').slice(0, 10) === todayStr) || null;
+
+    function drawShift() {
+      $('shiftBox').innerHTML = shift ? `<span class="dogo-badge dogo-badge--ok" style="margin-bottom:10px;display:inline-block;">Shift open</span>`
+        : `<div class="dogo-card" style="background:var(--dogo-panel);box-shadow:none;margin-bottom:12px;"><strong>No open shift</strong><div class="dogo-toolbar" style="margin-top:8px;"><input class="dogo-input" id="float" type="number" step="0.01" min="0" placeholder="Opening float" value="0"><button class="dogo-btn dogo-btn--primary dogo-btn--sm" id="openShift">Open shift</button></div></div>`;
+      const b = $('openShift'); if (b) b.onclick = async () => {
+        const { data, error } = await sb.from('shift_sessions').insert({ id: crypto.randomUUID(), business_id: ctx.businessId, user_id: ctx.profile.id, opening_float: parseFloat($('float').value) || 0, status: 'OPEN' }).select().single();
+        if (error) return toast('Could not open shift: ' + error.message); shift = data; drawShift(); drawCart();
+      };
+    }
+    function drawGrid() {
+      const q = $('q').value.trim().toLowerCase();
+      const list = products.filter(x => !q || (x.name || '').toLowerCase().includes(q) || (x.code || '').toLowerCase().includes(q));
+      $('grid').innerHTML = list.length ? list.map(x => `<button class="dogo-prod" data-id="${esc(x.id)}" ${Number(x.stock) <= 0 ? 'disabled' : ''}><span class="dogo-prod__name">${esc(x.name)}</span><span class="dogo-prod__price">${kes(x.price)}</span><span class="dogo-muted" style="font-size:12px;">${Number(x.stock) <= 0 ? 'Out of stock' : x.stock + ' in stock'}</span></button>`).join('')
+        : '<div class="dogo-card__empty">No products found</div>';
+    }
+    function drawCart() {
+      const items = cart.reduce((a, l) => a + l.qty, 0), total = cart.reduce((a, l) => a + l.qty * Number(l.p.price), 0);
+      $('cnt').textContent = items + (items === 1 ? ' item' : ' items'); $('total').textContent = kes(total);
+      $('cart').innerHTML = cart.length ? cart.map((l, i) => `<div class="dogo-cart-line"><div><strong>${esc(l.p.name)}</strong><div class="dogo-muted" style="font-size:12.5px;">${kes(l.p.price)} each</div></div><div style="text-align:right;"><strong>${kes(l.qty * Number(l.p.price))}</strong></div>
+        <div class="dogo-qty"><button data-dec="${i}">−</button><span>${l.qty}</span><button data-inc="${i}">+</button></div><div style="text-align:right;"><button class="dogo-link" data-rm="${i}">Remove</button></div></div>`).join('')
+        : '<div class="dogo-card__empty">Cart is empty. Tap a product to add it.</div>';
+      $('payBtn').disabled = !cart.length || !shift;
+    }
+    $('grid').onclick = e => { const b = e.target.closest('[data-id]'); if (!b) return; const pr = products.find(x => String(x.id) === b.dataset.id);
+      const l = cart.find(x => x.p.id === pr.id); if (l) { if (l.qty < Number(pr.stock)) l.qty++; else toast('No more stock for ' + pr.name); } else cart.push({ p: pr, qty: 1 }); drawCart(); };
+    $('cart').onclick = e => { const d = e.target.dataset || {};
+      if (d.inc !== undefined) { const l = cart[+d.inc]; if (l.qty < Number(l.p.stock)) l.qty++; else toast('No more stock'); }
+      if (d.dec !== undefined) { const l = cart[+d.dec]; l.qty--; if (l.qty <= 0) cart.splice(+d.dec, 1); }
+      if (d.rm !== undefined) cart.splice(+d.rm, 1); drawCart(); };
+    $('q').oninput = drawGrid;
+
+    $('payBtn').onclick = async () => {
+      if (!shift) return toast('Open a shift first');
+      $('payBtn').disabled = true;
+      let sub = 0, vat = 0, grand = 0;
+      const items = cart.map(l => { const t = +(l.qty * Number(l.p.price)).toFixed(2), v = Number(l.p.vat_rate || 0), lv = t - t / (1 + v); sub += t - lv; vat += lv; grand += t;
+        return { product_id: l.p.id, code: l.p.code, name: l.p.name, qty: l.qty, price: Number(l.p.price), vat_rate: v, unit: l.p.unit || 'piece', line_total: t }; });
+      const { count } = await sb.from('sales').select('id', { count: 'exact', head: true });
+      const { data, error } = await sb.rpc('process_sale', { p_business_id: ctx.businessId, p_cashier_id: ctx.profile.id, p_receipt_no: 'RC-' + String((count || 0) + 1).padStart(4, '0'),
+        p_customer_id: $('cust').value || null, p_subtotal_excl_vat: +sub.toFixed(2), p_vat_total: +vat.toFixed(2), p_total: +grand.toFixed(2), p_offline_uuid: crypto.randomUUID(),
+        p_items: items, p_payment_method: 'cash', p_shift_id: shift.id, p_mpesa_receipt_no: null });
+      if (error) { toast(error.message.includes('Insufficient stock') ? error.message : 'Could not complete sale: ' + error.message); return drawCart(); }
+      toast('Sale complete: ' + kes(grand)); cart = [];
+      const r = await sb.from('products').select('*').order('name'); products = r.data || []; drawGrid(); drawCart();
+    };
+    drawShift(); drawGrid(); drawCart();
+  })();
+  </script>
+</body>
+</html>

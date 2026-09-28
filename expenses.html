@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Expenses · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Expenses</span></div>
+    <div class="dogo-page-title"><h1>Expenses</h1></div>
+    <p class="dogo-page-subtitle" id="bizName"></p>
+
+    <div class="dogo-stat-grid dogo-stat-grid--3" style="margin-bottom:16px;">
+      <div class="dogo-stat-card"><div class="dogo-stat-card__label">This month</div><div class="dogo-stat-card__value" id="kMonth">KES 0.00</div></div>
+      <div class="dogo-stat-card"><div class="dogo-stat-card__label">All time</div><div class="dogo-stat-card__value" id="kAll">KES 0.00</div></div>
+      <div class="dogo-stat-card"><div class="dogo-stat-card__label">Entries</div><div class="dogo-stat-card__value" id="kCount">0</div></div>
+    </div>
+    <section class="dogo-card">
+      <div class="dogo-card__title" style="margin-bottom:12px;">Log an expense</div>
+      <div class="dogo-form-row dogo-form-row--2">
+        <div class="dogo-field"><label>Description</label><input class="dogo-input" id="fDesc"></div>
+        <div class="dogo-field"><label>Category</label><select class="dogo-select" id="fCat"><option>Rent</option><option>Utilities</option><option>Stock Purchases</option><option>Salaries</option><option>Transport</option><option>Licenses</option><option>Equipment</option><option>Marketing</option><option>Petty Cash</option><option>Other</option></select></div>
+        <div class="dogo-field"><label>Amount (KES)</label><input class="dogo-input" id="fAmt" type="number" step="0.01" min="0"></div>
+        <div class="dogo-field" style="align-self:end;"><button class="dogo-btn dogo-btn--primary dogo-btn--block" id="addBtn">Add expense</button></div>
+      </div>
+      <p class="dogo-muted" id="tellerNote" style="display:none;font-size:13px;">As a Teller you can log expenses, but only the Admin can view the history and totals.</p>
+    </section>
+    <section class="dogo-card" id="histCard">
+      <div class="dogo-card__header"><div class="dogo-card__title">History</div><button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="csvBtn">Export CSV</button></div>
+      <div class="dogo-table-wrap"><table class="dogo-table"><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr></thead><tbody id="rows"></tbody></table></div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast, downloadCSV } = window.DogoData;
+
+    const ctx = await boot('expenses'); if (!ctx) return;
+    const $ = id => document.getElementById(id); let rows = [];
+    if (!ctx.isAdmin) { $('histCard').style.display = 'none'; $('tellerNote').style.display = ''; $('kMonth').textContent = $('kAll').textContent = '—'; }
+    async function load() {
+      if (!ctx.isAdmin) return;
+      const { data } = await sb.from('expenses').select('*').order('created_at', { ascending: false }); rows = data || [];
+      const m = new Date().toISOString().slice(0, 7);
+      $('kMonth').textContent = kes(rows.filter(r => (r.created_at || '').startsWith(m)).reduce((a, r) => a + Number(r.amount), 0));
+      $('kAll').textContent = kes(rows.reduce((a, r) => a + Number(r.amount), 0)); $('kCount').textContent = rows.length;
+      $('rows').innerHTML = rows.length ? rows.map(r => `<tr><td>${esc((r.created_at || '').slice(0, 10))}</td><td>${esc(r.category)}</td><td>${esc(r.description)}</td><td>${kes(r.amount)}</td></tr>`).join('')
+        : '<tr><td colspan="4" class="dogo-card__empty">No expenses logged</td></tr>';
+    }
+    $('addBtn').onclick = async () => {
+      const description = $('fDesc').value.trim(), amount = parseFloat($('fAmt').value);
+      if (!description || isNaN(amount) || amount <= 0) return toast('Enter a description and valid amount');
+      const { error } = await sb.from('expenses').insert({ business_id: ctx.businessId, category: $('fCat').value, description, amount, vat_rate: 0, created_by: ctx.profile.id });
+      if (error) return toast('Could not log expense: ' + error.message);
+      $('fDesc').value = ''; $('fAmt').value = ''; toast('Expense logged'); load();
+    };
+    $('csvBtn').onclick = () => downloadCSV('expenses.csv', [['Date','Category','Description','Amount']].concat(rows.map(r => [(r.created_at || '').slice(0, 10), r.category, r.description, r.amount])));
+    load();
+  })();
+  </script>
+</body>
+</html>

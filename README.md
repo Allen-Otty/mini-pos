@@ -109,12 +109,12 @@ git push origin main
 - **Still open / worth a follow-up pass:** payment requests on the Express server aren't tagged with `business_id`, so the new Admin check confirms *an* Admin is calling, not that they're an Admin of the specific business that owns that payment request — low risk while the server is single-tenant/local, but should be closed before/if this server is ever deployed multi-tenant alongside the Supabase backend. Also ~100 of the 125 `innerHTML` call sites in `index.html` haven't been through the `escapeHtml()` hardening pass yet (see Aug 29 session in memory — only ~23 were patched).
 
 
-## 8. Multipage rebuild (in progress)
+## 8. Multipage rebuild
 
-New shared design system modelled on the DigiKua-style reference (orange header, rounded nav grid, white cards), fully responsive.
+Shared design system modelled on the DigiKua-style reference (orange header, rounded nav grid, white cards), responsive from phone to desktop.
 
-- `assets/css/theme.css` — all colors, cards, buttons, tables, forms, breakpoints (change once, updates every page)
-- `assets/js/app-shell.js` — shared header + nav grid; add a page in `NAV_ITEMS` and set `BUILT[id] = true` once its page exists (unbuilt items fall back to `index.html`)
-- `assets/js/dogo-data.js` — shared Supabase client (publishable key only), `requireSession()`, formatters
-- `dashboard.html` — **built**: Overview page on live Supabase data
-- Still to migrate from `index.html`: sell, catalog, customers, purchases, expenses, reports, team, settings
+- `assets/css/theme.css` — all colours, cards, buttons, tables, forms, modals, breakpoints (change once, every page updates)
+- `assets/js/app-shell.js` — shared header + nav grid; add a page to `NAV_ITEMS` and set `BUILT[id] = true`
+- `assets/js/dogo-data.js` — shared Supabase client (publishable key only), `boot()`, login check, toast, CSV download
+- Pages: `dashboard.html` (Overview), `catalog.html` (Products + Inventory), `customers.html` (Contacts), `sell.html` (cash checkout with shift), `expenses.html`, `reports.html` (daily / monthly / sales log + CSV download), `team.html` (read-only), `settings.html`
+- Still in `index.html` (full app): M-Pesa/KCB/Paystack/Airtel checkout, gateway + eTIMS + subscription settings, restaurant/hotel modules, shift close, staff invites, Purchases

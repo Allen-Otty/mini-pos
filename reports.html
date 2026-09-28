@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Reports · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Reports</span></div>
+    <div class="dogo-page-title"><h1>Sales Reports</h1></div>
+    <p class="dogo-page-subtitle" id="bizName">Daily and monthly totals, with downloads</p>
+
+    <section class="dogo-card">
+      <div class="dogo-toolbar">
+        <div class="dogo-seg" id="seg"><button data-v="day" class="is-active">Daily</button><button data-v="month">Monthly</button><button data-v="log">Sales log</button></div>
+        <label class="dogo-muted" style="font-size:13px;">From <input class="dogo-input" type="date" id="from" style="width:auto;"></label>
+        <label class="dogo-muted" style="font-size:13px;">To <input class="dogo-input" type="date" id="to" style="width:auto;"></label>
+        <button class="dogo-btn dogo-btn--primary dogo-btn--sm" id="csvBtn">Download CSV</button>
+        <button class="dogo-btn dogo-btn--outline dogo-btn--sm" onclick="window.print()">Print</button>
+      </div>
+    </section>
+    <div class="dogo-stat-grid dogo-stat-grid--4" style="margin:16px 0;">
+      <div class="dogo-stat-card"><div class="dogo-stat-card__label">Revenue</div><div class="dogo-stat-card__value" id="kRev">KES 0.00</div></div>
+      <div class="dogo-stat-card"><div class="dogo-stat-card__label">VAT included</div><div class="dogo-stat-card__value" id="kVat">KES 0.00</div></div>
+      <div class="dogo-stat-card"><div class="dogo-stat-card__label">Sales</div><div class="dogo-stat-card__value" id="kCnt">0</div></div>
+      <div class="dogo-stat-card"><div class="dogo-stat-card__label">Average sale</div><div class="dogo-stat-card__value" id="kAvg">KES 0.00</div></div>
+    </div>
+    <section class="dogo-card"><div class="dogo-table-wrap"><table class="dogo-table"><thead id="head"></thead><tbody id="rows"></tbody></table></div></section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast, downloadCSV } = window.DogoData;
+
+    const ctx = await boot('reports'); if (!ctx) return;
+    const $ = id => document.getElementById(id); let view = 'day', lines = [];
+    const iso = d => d.toISOString().slice(0, 10);
+    const today = new Date(); const start = new Date(); start.setDate(start.getDate() - 30);
+    $('from').value = iso(start); $('to').value = iso(today);
+
+    async function load() {
+      const [s, i] = await Promise.all([sb.from('sales').select('*').order('created_at', { ascending: false }), sb.from('sale_items').select('*')]);
+      const sales = {}; (s.data || []).forEach(x => sales[x.id] = x);
+      lines = (i.data || []).map(l => { const x = sales[l.sale_id]; if (!x) return null;
+        const method = x.payment_method || 'cash', ok = method === 'cash' || !x.status || x.status === 'success';
+        const t = Number(l.line_total || 0), vr = Number(l.vat_rate || 0);
+        return { sale: l.sale_id, date: (x.created_at || '').slice(0, 10), receipt: x.receipt_no, method, ok, name: l.name, qty: l.qty, total: t, vat: t - t / (1 + vr) };
+      }).filter(Boolean);
+      draw();
+    }
+    function inRange() { const f = $('from').value, t = $('to').value; return lines.filter(l => l.ok && (!f || l.date >= f) && (!t || l.date <= t)); }
+    function group(list, keyLen) {
+      const g = {}; list.forEach(l => { const k = l.date.slice(0, keyLen); const r = g[k] || (g[k] = { key: k, sales: new Set(), rev: 0, vat: 0 }); r.sales.add(l.sale); r.rev += l.total; r.vat += l.vat; });
+      return Object.values(g).sort((a, b) => b.key.localeCompare(a.key));
+    }
+    let table = [];
+    function draw() {
+      const list = inRange(); const all = new Set(list.map(l => l.sale));
+      const rev = list.reduce((a, l) => a + l.total, 0), vat = list.reduce((a, l) => a + l.vat, 0);
+      $('kRev').textContent = kes(rev); $('kVat').textContent = kes(vat); $('kCnt').textContent = all.size; $('kAvg').textContent = kes(all.size ? rev / all.size : 0);
+      if (view === 'log') {
+        $('head').innerHTML = '<tr><th>Date</th><th>Receipt</th><th>Item</th><th>Qty</th><th>Method</th><th>Total</th></tr>';
+        table = list.map(l => [l.date, l.receipt, l.name, l.qty, l.method, l.total.toFixed(2)]);
+        $('rows').innerHTML = table.length ? list.map(l => `<tr><td>${esc(l.date)}</td><td>${esc(l.receipt)}</td><td>${esc(l.name)}</td><td>${esc(l.qty)}</td><td>${esc(l.method)}</td><td>${kes(l.total)}</td></tr>`).join('') : '<tr><td colspan="6" class="dogo-card__empty">No sales in this period</td></tr>';
+        table.unshift(['Date', 'Receipt', 'Item', 'Qty', 'Method', 'Total']);
+      } else {
+        const g = group(list, view === 'day' ? 10 : 7);
+        $('head').innerHTML = `<tr><th>${view === 'day' ? 'Day' : 'Month'}</th><th>Sales</th><th>VAT</th><th>Revenue</th></tr>`;
+        table = [[view === 'day' ? 'Day' : 'Month', 'Sales', 'VAT', 'Revenue']].concat(g.map(r => [r.key, r.sales.size, r.vat.toFixed(2), r.rev.toFixed(2)]));
+        $('rows').innerHTML = g.length ? g.map(r => `<tr><td><strong>${esc(r.key)}</strong></td><td>${r.sales.size}</td><td>${kes(r.vat)}</td><td>${kes(r.rev)}</td></tr>`).join('') : '<tr><td colspan="4" class="dogo-card__empty">No sales in this period</td></tr>';
+      }
+    }
+    document.querySelectorAll('#seg button').forEach(b => b.onclick = () => { view = b.dataset.v; document.querySelectorAll('#seg button').forEach(x => x.classList.toggle('is-active', x === b)); draw(); });
+    $('from').onchange = $('to').onchange = draw;
+    $('csvBtn').onclick = () => downloadCSV(`sales-${view}-${$('from').value}_to_${$('to').value}.csv`, table);
+    load();
+  })();
+  </script>
+</body>
+</html>

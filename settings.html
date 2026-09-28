@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Settings · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Settings</span></div>
+    <div class="dogo-page-title"><h1>Settings</h1></div>
+    <p class="dogo-page-subtitle" id="bizName"></p>
+
+    <div class="dogo-split">
+      <section class="dogo-card"><div class="dogo-card__title" style="margin-bottom:12px;">Business</div>
+        <div class="dogo-list-row"><span class="dogo-muted">Name</span><strong id="sName">—</strong></div>
+        <div class="dogo-list-row"><span class="dogo-muted">Type</span><strong id="sType">—</strong></div>
+        <div class="dogo-list-row"><span class="dogo-muted">Signed in as</span><strong id="sUser">—</strong></div>
+        <div class="dogo-list-row"><span class="dogo-muted">Role</span><strong id="sRole">—</strong></div>
+      </section>
+      <section class="dogo-card"><div class="dogo-card__title" style="margin-bottom:12px;">Payments, tax &amp; subscription</div>
+        <p class="dogo-muted" style="font-size:14px;margin-top:0;">M-Pesa, KCB, Paystack, Airtel, KRA eTIMS and subscription settings are still managed in the full app while they are moved across.</p>
+        <a class="dogo-btn dogo-btn--primary" href="index.html">Open full app settings</a>
+      </section>
+    </div>
+    <section class="dogo-card" style="margin-top:16px;"><div class="dogo-btn-row"><button class="dogo-btn dogo-btn--outline" id="outBtn">Sign out</button></div></section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast, downloadCSV } = window.DogoData;
+
+    const ctx = await boot('settings'); if (!ctx) return;
+    const $ = id => document.getElementById(id), b = ctx.business || {};
+    $('sName').textContent = b.name || '—'; $('sType').textContent = b.business_type || '—';
+    $('sUser').textContent = ctx.profile.full_name || ctx.session.user.email; $('sRole').textContent = ctx.isAdmin ? 'Owner · Admin' : 'Teller';
+    $('outBtn').onclick = window.DogoData.logout;
+  })();
+  </script>
+</body>
+</html>

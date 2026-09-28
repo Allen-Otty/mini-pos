@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Products · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Products</span></div>
+    <div class="dogo-page-title"><h1>Product Catalogue</h1></div>
+    <p class="dogo-page-subtitle" id="bizName">Manage your shop items and inventory levels</p>
+
+    <div class="dogo-toolbar" style="justify-content:space-between;margin-bottom:14px;">
+      <div class="dogo-seg" id="viewSeg">
+        <button data-v="all" class="is-active">Products</button>
+        <button data-v="inventory">Inventory</button>
+      </div>
+      <button class="dogo-btn dogo-btn--primary" id="addBtn" style="display:none;">+ New product</button>
+    </div>
+    <section class="dogo-card">
+      <div class="dogo-toolbar" style="margin-bottom:14px;">
+        <input class="dogo-input" id="q" placeholder="Search name, code or category">
+        <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="csvBtn">Export CSV</button>
+        <button class="dogo-btn dogo-btn--outline dogo-btn--sm" onclick="window.print()">Print</button>
+      </div>
+      <div class="dogo-table-wrap"><table class="dogo-table">
+        <thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Price</th><th>VAT</th><th>Stock</th><th>Reorder</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+      <div class="dogo-pager"><span id="pageInfo"></span><span><button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="prev">Prev</button> <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="next">Next</button></span></div>
+    </section>
+
+    <div class="dogo-modal" id="modal"><div class="dogo-modal__box">
+      <h2 id="mTitle">New product</h2>
+      <div class="dogo-form-row dogo-form-row--2">
+        <div class="dogo-field"><label>Code</label><input class="dogo-input" id="fCode"></div>
+        <div class="dogo-field"><label>Name</label><input class="dogo-input" id="fName"></div>
+        <div class="dogo-field"><label>Price (KES)</label><input class="dogo-input" id="fPrice" type="number" step="0.01" min="0"></div>
+        <div class="dogo-field"><label>VAT rate</label><select class="dogo-select" id="fVat"><option value="0.16">16%</option><option value="0">0% (exempt)</option></select></div>
+        <div class="dogo-field"><label>Stock</label><input class="dogo-input" id="fStock" type="number" step="0.01" min="0" value="0"></div>
+        <div class="dogo-field"><label>Reorder level</label><input class="dogo-input" id="fReorder" type="number" step="0.01" min="0" value="0"></div>
+      </div>
+      <div class="dogo-btn-row" style="justify-content:flex-end;margin-top:8px;">
+        <button class="dogo-btn dogo-btn--ghost" id="mCancel">Cancel</button>
+        <button class="dogo-btn dogo-btn--primary" id="mSave">Save</button>
+      </div>
+    </div></div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast, downloadCSV } = window.DogoData;
+
+    let view = location.hash === '#inventory' ? 'inventory' : 'all';
+    const ctx = await boot(view === 'inventory' ? 'inventory' : 'catalog');
+    if (!ctx) return;
+    const { businessId, isAdmin, profile } = ctx;
+    let products = [], page = 1; const PER = 10; let editing = null;
+    const $ = id => document.getElementById(id);
+    if (isAdmin) $('addBtn').style.display = '';
+
+    async function load() {
+      const { data, error } = await sb.from('products').select('*').order('name');
+      if (error) toast('Could not load products: ' + error.message);
+      products = data || []; draw();
+    }
+    function filtered() {
+      const q = $('q').value.trim().toLowerCase();
+      return products.filter(p => (!q || [p.name, p.code, p.category].some(v => String(v || '').toLowerCase().includes(q)))
+        && (view !== 'inventory' || Number(p.stock) <= Number(p.reorder_level || 0)));
+    }
+    function draw() {
+      const list = filtered(), pages = Math.max(1, Math.ceil(list.length / PER));
+      page = Math.min(page, pages);
+      const slice = list.slice((page - 1) * PER, page * PER);
+      $('rows').innerHTML = slice.length ? slice.map(p => {
+        const st = Number(p.stock), low = st <= Number(p.reorder_level || 0);
+        return `<tr><td>${esc(p.code)}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.category || '—')}</td><td>${kes(p.price)}</td><td>${Math.round(Number(p.vat_rate || 0) * 100)}%</td>
+          <td><span class="dogo-badge ${st <= 0 ? 'dogo-badge--danger' : low ? 'dogo-badge--warn' : 'dogo-badge--ok'}">${st}</span></td><td>${esc(p.reorder_level ?? 0)}</td>
+          <td>${isAdmin ? `<button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-edit="${esc(p.id)}">Edit</button>` : ''}</td></tr>`;
+      }).join('') : '<tr><td colspan="8" class="dogo-card__empty">No products found</td></tr>';
+      $('pageInfo').textContent = list.length ? `Showing ${(page - 1) * PER + 1}-${Math.min(page * PER, list.length)} of ${list.length}` : '';
+      $('prev').disabled = page <= 1; $('next').disabled = page >= pages;
+    }
+    document.querySelectorAll('#viewSeg button').forEach(b => {
+      b.classList.toggle('is-active', b.dataset.v === view);
+      b.onclick = () => { view = b.dataset.v; page = 1; document.querySelectorAll('#viewSeg button').forEach(x => x.classList.toggle('is-active', x === b)); draw(); };
+    });
+    $('q').oninput = () => { page = 1; draw(); };
+    $('prev').onclick = () => { page--; draw(); }; $('next').onclick = () => { page++; draw(); };
+    $('csvBtn').onclick = () => downloadCSV('products.csv', [['Code','Name','Category','Price','VAT','Stock','Reorder']].concat(filtered().map(p => [p.code, p.name, p.category, p.price, p.vat_rate, p.stock, p.reorder_level])));
+
+    function openModal(p) {
+      editing = p || null; $('mTitle').textContent = p ? 'Edit product' : 'New product';
+      $('fCode').value = p ? p.code : ''; $('fName').value = p ? p.name : ''; $('fPrice').value = p ? p.price : '';
+      $('fVat').value = p ? String(Number(p.vat_rate)) : '0.16'; $('fStock').value = p ? p.stock : 0; $('fReorder').value = p ? (p.reorder_level || 0) : 0;
+      $('modal').classList.add('open');
+    }
+    const closeModal = () => $('modal').classList.remove('open');
+    $('addBtn').onclick = () => openModal(null); $('mCancel').onclick = closeModal;
+    $('rows').onclick = e => { const id = e.target.dataset && e.target.dataset.edit; if (id) openModal(products.find(p => String(p.id) === id)); };
+    $('mSave').onclick = async () => {
+      const rec = { code: $('fCode').value.trim(), name: $('fName').value.trim(), price: parseFloat($('fPrice').value),
+        vat_rate: parseFloat($('fVat').value), stock: parseFloat($('fStock').value) || 0, reorder_level: parseFloat($('fReorder').value) || 0 };
+      if (!rec.code || !rec.name || isNaN(rec.price) || rec.price < 0) return toast('Enter a code, name and valid price');
+      const res = editing ? await sb.from('products').update(rec).eq('id', editing.id)
+                          : await sb.from('products').insert(Object.assign({ business_id: businessId, unit: 'piece', created_by: profile.id }, rec));
+      if (res.error) return toast('Could not save: ' + res.error.message);
+      closeModal(); toast('Product saved'); load();
+    };
+    load();
+  })();
+  </script>
+</body>
+</html>

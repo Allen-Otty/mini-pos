@@ -26,7 +26,7 @@
 
   // Single source of truth for every page in the app. Add a page here and it
   // shows up in the nav grid on every other page automatically.
-  const BUILT = { dashboard: true };
+  const BUILT = { dashboard: true, catalog: true, inventory: true, customers: true, expenses: true, reports: true, sell: true, team: true, settings: true };
   // NOTE: 'Back to full app' link is added to the nav panel below
   const LEGACY = 'index.html';
   const NAV_ITEMS_RAW = [
