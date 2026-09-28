@@ -49,8 +49,8 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static assets from the root directory
-app.use(express.static(__dirname));
+// Serve static assets from the root directory (disabling default index.html auto-serving for root)
+app.use(express.static(__dirname, { index: false }));
 
 // Payment modules API endpoints
 app.use('/api/payments', paymentRouter);
@@ -60,9 +60,24 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin', 'index.html'));
 });
 
-// Single-page application fallback for other web routes
-app.get('*', (req, res) => {
+// Explicit route for legacy full app if requested
+app.get('/legacy', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Primary root route: serve dashboard.html (the permanent new look)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dashboard.html'));
+});
+
+// Application fallback for other web routes: serve existing static files or dashboard.html
+app.get('*', (req, res) => {
+  const cleanPath = req.path.replace(/^\/+/, '');
+  const targetFile = path.join(__dirname, cleanPath);
+  if (cleanPath && fs.existsSync(targetFile) && fs.statSync(targetFile).isFile()) {
+    return res.sendFile(targetFile);
+  }
+  res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
 
 app.listen(PORT, HOST, () => {

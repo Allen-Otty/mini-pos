@@ -6430,9 +6430,9 @@
     </div>
   </div>
 
-  <!-- New multipage UI preview -->
+  <!-- Multipage UI Link -->
   <a href="dashboard.html" style="display:flex;align-items:center;gap:8px;margin:0 14px 10px;padding:10px 14px;border-radius:12px;background:#d9670e;color:#fff;font-weight:700;font-size:13px;text-decoration:none;">
-    <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Try the new look</span>
+    <i class="fa-solid fa-arrow-left"></i> <span>Main Dashboard</span>
   </a>
 
   <!-- Bottom User Card -->
@@ -10461,6 +10461,10 @@ async function afterLogin() {
   await loadAllData();
   products = CATALOG; // keep synchronized
   applyPlanFeaturesVisibility();
+  if (!location.search.includes('legacy=1')) {
+    window.location.replace('dashboard.html');
+    return;
+  }
   const initTab = (business && normalizeBizType(business.business_type) === 'Hotel') ? 'restaurant-module' : 'sell';
   switchTab(initTab);
   resetInactivityTimer();
@@ -15698,6 +15702,10 @@ async function saveNewProductFromPage() {
         applyRoleVisibility();
         applyBusinessTheme();
         renderCatalog();
+        if (!location.search.includes('legacy=1')) {
+          window.location.replace('dashboard.html');
+          return;
+        }
         switchTab('sell');
         hasValidSession = true;
       } catch(e) {}

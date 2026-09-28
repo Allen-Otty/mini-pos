@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Purchases &amp; Stock Replenishment · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Purchases</span></div>
+    <div class="dogo-page-title"><h1>Purchases &amp; Stock Replenishment</h1></div>
+    <p class="dogo-page-subtitle" id="bizName">Record supplier purchase orders, restock inventory, and track procurement expenses</p>
+
+    <div class="dogo-stat-grid dogo-stat-grid--4" style="margin-bottom:16px;">
+      <div class="dogo-stat-card">
+        <div class="dogo-stat-card__label">This month</div>
+        <div class="dogo-stat-card__value" id="kMonth">KES 0.00</div>
+        <span class="dogo-badge dogo-badge--warn dogo-stat-card__foot">Current period</span>
+      </div>
+      <div class="dogo-stat-card">
+        <div class="dogo-stat-card__label">All-time purchases</div>
+        <div class="dogo-stat-card__value" id="kAll">KES 0.00</div>
+        <span class="dogo-badge dogo-badge--ok dogo-stat-card__foot">Total stock investment</span>
+      </div>
+      <div class="dogo-stat-card">
+        <div class="dogo-stat-card__label">Purchase orders</div>
+        <div class="dogo-stat-card__value" id="kCount">0</div>
+        <div class="dogo-stat-card__foot dogo-muted" style="font-size:12.5px;font-weight:700;">Recorded batches</div>
+      </div>
+      <div class="dogo-stat-card">
+        <div class="dogo-stat-card__label">Units restocked</div>
+        <div class="dogo-stat-card__value" id="kUnits">0</div>
+        <div class="dogo-stat-card__foot dogo-muted" style="font-size:12.5px;font-weight:700;">Added to inventory</div>
+      </div>
+    </div>
+
+    <section class="dogo-card">
+      <div class="dogo-toolbar" style="justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div class="dogo-toolbar" style="flex:1;min-width:260px;gap:8px;">
+          <input class="dogo-input" id="q" placeholder="Search supplier, PO number, or items...">
+          <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="csvBtn">Export CSV</button>
+          <button class="dogo-btn dogo-btn--outline dogo-btn--sm" onclick="window.print()">Print</button>
+        </div>
+        <button class="dogo-btn dogo-btn--primary" id="addPoBtn" style="display:none;">+ New Purchase Order</button>
+      </div>
+
+      <div class="dogo-table-wrap">
+        <table class="dogo-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>PO / Ref #</th>
+              <th>Supplier</th>
+              <th>Items Restocked</th>
+              <th>Total Units</th>
+              <th>Total (KES)</th>
+              <th>Payment</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="dogo-pager">
+        <span id="pageInfo"></span>
+        <span>
+          <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="prev">Prev</button>
+          <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="next">Next</button>
+        </span>
+      </div>
+    </section>
+
+    <!-- New Purchase Modal -->
+    <div class="dogo-modal" id="poModal">
+      <div class="dogo-modal__box" style="max-width:680px;width:100%;">
+        <h2>New Purchase Order &amp; Stock Inward</h2>
+        <p class="dogo-muted" style="font-size:13px;margin:-4px 0 16px;">Items added will automatically increase stock in your product catalogue and log a procurement expense.</p>
+        
+        <div class="dogo-form-row dogo-form-row--2">
+          <div class="dogo-field">
+            <label>Supplier Name</label>
+            <input class="dogo-input" id="fSupplier" list="supplierList" placeholder="e.g. Bidco, Unga Ltd, Brookside, Local Farm">
+            <datalist id="supplierList">
+              <option value="Bidco Africa">
+              <option value="Brookside Dairy">
+              <option value="Unga Farm Care">
+              <option value="New KCC">
+              <option value="Farmer's Choice">
+              <option value="Kenchic Ltd">
+              <option value="General Wholesale Distributor">
+            </datalist>
+          </div>
+          <div class="dogo-field">
+            <label>PO / Invoice Number</label>
+            <input class="dogo-input" id="fRef" placeholder="PO-2026-001">
+          </div>
+          <div class="dogo-field">
+            <label>Payment Method</label>
+            <select class="dogo-select" id="fPayment">
+              <option value="Cash">Cash</option>
+              <option value="M-Pesa">M-Pesa (Till / Paybill)</option>
+              <option value="Bank Transfer">Bank Transfer / EFT</option>
+              <option value="Credit / Pay Later">Supplier Credit / Pay Later</option>
+            </select>
+          </div>
+          <div class="dogo-field">
+            <label>Date Received</label>
+            <input class="dogo-input" id="fDate" type="date">
+          </div>
+        </div>
+
+        <div style="margin:16px 0 8px;border-top:1px solid var(--dogo-border);padding-top:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <strong style="font-size:14px;">Products to Restock</strong>
+            <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="addItemBtn" type="button">+ Add Item</button>
+          </div>
+          <div id="itemsContainer" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+
+        <div class="dogo-total-row" style="margin-top:16px;">
+          <span>Order Grand Total</span>
+          <span id="orderGrandTotal">KES 0.00</span>
+        </div>
+
+        <div class="dogo-field" style="margin-top:12px;">
+          <label>Notes / Delivery Remarks</label>
+          <input class="dogo-input" id="fNotes" placeholder="Delivery vehicle, driver name, condition of goods...">
+        </div>
+
+        <div class="dogo-btn-row" style="justify-content:flex-end;margin-top:16px;">
+          <button class="dogo-btn dogo-btn--ghost" id="mCancel">Cancel</button>
+          <button class="dogo-btn dogo-btn--primary" id="mSave">Save &amp; Restock Inventory</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- View Voucher Modal -->
+    <div class="dogo-modal" id="voucherModal">
+      <div class="dogo-modal__box" style="max-width:560px;width:100%;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <h2 style="margin:0 0 4px;" id="vTitle">Purchase Order Voucher</h2>
+            <p class="dogo-muted" id="vSubtitle" style="font-size:13px;margin:0;"></p>
+          </div>
+          <span class="dogo-badge dogo-badge--ok" id="vBadge">Received</span>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--dogo-border);margin:14px 0;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;margin-bottom:14px;">
+          <div><span class="dogo-muted">Supplier:</span> <strong id="vSupplier">—</strong></div>
+          <div><span class="dogo-muted">Date:</span> <strong id="vDate">—</strong></div>
+          <div><span class="dogo-muted">Ref / Invoice:</span> <strong id="vRef">—</strong></div>
+          <div><span class="dogo-muted">Payment:</span> <strong id="vPayment">—</strong></div>
+        </div>
+        <div class="dogo-table-wrap" style="margin-bottom:14px;">
+          <table class="dogo-table">
+            <thead>
+              <tr><th>Item</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Unit Cost</th><th style="text-align:right;">Subtotal</th></tr>
+            </thead>
+            <tbody id="vItems"></tbody>
+          </table>
+        </div>
+        <div class="dogo-total-row">
+          <span>Total Purchase Amount</span>
+          <span id="vTotal">KES 0.00</span>
+        </div>
+        <p id="vNotes" class="dogo-muted" style="font-size:13px;margin:10px 0 0;font-style:italic;"></p>
+        <div class="dogo-btn-row" style="justify-content:space-between;margin-top:18px;">
+          <button class="dogo-btn dogo-btn--outline" onclick="window.print()">Print Voucher</button>
+          <button class="dogo-btn dogo-btn--primary" id="vClose">Close</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast, downloadCSV } = window.DogoData;
+
+    const ctx = await boot('purchases');
+    if (!ctx) return;
+    const { businessId, isAdmin, profile } = ctx;
+    const $ = id => document.getElementById(id);
+
+    let products = [];
+    let purchases = [];
+    let page = 1;
+    const PER = 10;
+
+    if (isAdmin) $('addPoBtn').style.display = '';
+
+    // Storage key for persistent purchases with itemized lines
+    const STORAGE_KEY = 'dogo_purchases_' + (businessId || 'default');
+
+    function getStoredPurchases() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveStoredPurchases(list) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      } catch (e) {}
+    }
+
+    async function loadData() {
+      // 1. Load products for restocking dropdown and current stock lookups
+      const { data: prods, error: pErr } = await sb.from('products').select('*').order('name');
+      if (pErr) toast('Could not load products: ' + pErr.message);
+      products = prods || [];
+
+      // 2. Load purchases from local persistent store
+      let localList = getStoredPurchases();
+
+      // 3. Also check expenses with category 'Stock Purchases' to merge any logged on other devices
+      const { data: expList } = await sb.from('expenses')
+        .select('*')
+        .eq('category', 'Stock Purchases')
+        .order('created_at', { ascending: false });
+
+      if (expList && expList.length) {
+        expList.forEach(e => {
+          const exists = localList.some(p => p.expense_id === e.id || p.id === e.id);
+          if (!exists) {
+            // Synthesize purchase entry from expense record
+            localList.push({
+              id: e.id,
+              expense_id: e.id,
+              supplier: e.description ? e.description.split('-')[0].replace(/PO\s*#[^:]*:\s*/i, '').trim() : 'Supplier',
+              ref_no: 'EXP-' + e.id.slice(0, 6).toUpperCase(),
+              payment_method: 'Cash',
+              date: (e.created_at || '').slice(0, 10),
+              total_amount: Number(e.amount || 0),
+              total_units: 1,
+              items: [{ name: e.description || 'Inventory stock batch', qty: 1, unit_cost: Number(e.amount || 0), total: Number(e.amount || 0) }],
+              notes: e.description || '',
+              status: 'Completed'
+            });
+          }
+        });
+      }
+
+      // Sort newest first
+      purchases = localList.sort((a, b) => new Date(b.date || b.created_at || 0) - new Date(a.date || a.created_at || 0));
+      saveStoredPurchases(purchases);
+
+      updateStats();
+      draw();
+    }
+
+    function updateStats() {
+      const nowMonth = new Date().toISOString().slice(0, 7);
+      const mPurchases = purchases.filter(p => (p.date || '').startsWith(nowMonth));
+      const mTotal = mPurchases.reduce((a, p) => a + Number(p.total_amount || 0), 0);
+      const allTotal = purchases.reduce((a, p) => a + Number(p.total_amount || 0), 0);
+      const unitsTotal = purchases.reduce((a, p) => a + Number(p.total_units || 0), 0);
+
+      $('kMonth').textContent = kes(mTotal);
+      $('kAll').textContent = kes(allTotal);
+      $('kCount').textContent = purchases.length;
+      $('kUnits').textContent = unitsTotal.toLocaleString();
+    }
+
+    function filtered() {
+      const q = $('q').value.trim().toLowerCase();
+      return purchases.filter(p => {
+        if (!q) return true;
+        const matchesSupplier = (p.supplier || '').toLowerCase().includes(q);
+        const matchesRef = (p.ref_no || '').toLowerCase().includes(q);
+        const matchesItems = (p.items || []).some(i => (i.name || '').toLowerCase().includes(q));
+        return matchesSupplier || matchesRef || matchesItems;
+      });
+    }
+
+    function draw() {
+      const list = filtered();
+      const pages = Math.max(1, Math.ceil(list.length / PER));
+      page = Math.min(page, pages);
+      const slice = list.slice((page - 1) * PER, page * PER);
+
+      $('rows').innerHTML = slice.length ? slice.map(p => {
+        const itemsSummary = (p.items || []).map(i => `${esc(i.name)} (${i.qty})`).join(', ') || 'Inventory batch';
+        return `
+          <tr>
+            <td>${esc(p.date || '—')}</td>
+            <td><strong>${esc(p.ref_no || '—')}</strong></td>
+            <td>${esc(p.supplier || '—')}</td>
+            <td style="max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(itemsSummary)}">${esc(itemsSummary)}</td>
+            <td><span class="dogo-badge dogo-badge--ok">${p.total_units || 0}</span></td>
+            <td><strong>${kes(p.total_amount)}</strong></td>
+            <td><small class="dogo-muted">${esc(p.payment_method || 'Cash')}</small></td>
+            <td><span class="dogo-badge dogo-badge--ok">${esc(p.status || 'Received')}</span></td>
+            <td>
+              <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-view="${esc(p.id)}">View Voucher</button>
+            </td>
+          </tr>
+        `;
+      }).join('') : '<tr><td colspan="9" class="dogo-card__empty">No purchase orders recorded yet</td></tr>';
+
+      $('pageInfo').textContent = list.length ? `Showing ${(page - 1) * PER + 1}-${Math.min(page * PER, list.length)} of ${list.length}` : '';
+      $('prev').disabled = page <= 1;
+      $('next').disabled = page >= pages;
+    }
+
+    $('q').oninput = () => { page = 1; draw(); };
+    $('prev').onclick = () => { page--; draw(); };
+    $('next').onclick = () => { page++; draw(); };
+
+    // --- CSV Export ---
+    $('csvBtn').onclick = () => {
+      const rows = filtered().map(p => [
+        p.date || '',
+        p.ref_no || '',
+        p.supplier || '',
+        (p.items || []).map(i => `${i.name} (x${i.qty})`).join('; '),
+        p.total_units || 0,
+        p.total_amount || 0,
+        p.payment_method || '',
+        p.status || 'Received'
+      ]);
+      downloadCSV('purchases.csv', [['Date', 'PO Number', 'Supplier', 'Items', 'Total Units', 'Total KES', 'Payment Method', 'Status']].concat(rows));
+    };
+
+    // --- Item Line Management in Modal ---
+    let lineItemCount = 0;
+
+    function addLineItem(initialProdId, initialQty, initialCost) {
+      lineItemCount++;
+      const id = lineItemCount;
+      const row = document.createElement('div');
+      row.className = 'dogo-form-row';
+      row.id = 'line-' + id;
+      row.style.gridTemplateColumns = '2.2fr 1fr 1.2fr 1.2fr auto';
+      row.style.gap = '8px';
+      row.style.alignItems = 'center';
+      row.style.padding = '8px';
+      row.style.background = 'var(--dogo-panel)';
+      row.style.borderRadius = 'var(--dogo-radius-sm)';
+
+      const prodOptions = products.map(p =>
+        `<option value="${esc(p.id)}" data-price="${esc(p.price || 0)}" data-stock="${esc(p.stock || 0)}" ${initialProdId === p.id ? 'selected' : ''}>${esc(p.name)} (Stock: ${p.stock ?? 0})</option>`
+      ).join('');
+
+      row.innerHTML = `
+        <div class="dogo-field" style="margin:0;">
+          <select class="dogo-select item-prod" style="font-size:13px;">
+            <option value="">Select product to restock...</option>
+            ${prodOptions}
+          </select>
+        </div>
+        <div class="dogo-field" style="margin:0;">
+          <input class="dogo-input item-qty" type="number" step="1" min="1" value="${initialQty || 1}" placeholder="Qty">
+        </div>
+        <div class="dogo-field" style="margin:0;">
+          <input class="dogo-input item-cost" type="number" step="0.01" min="0" value="${initialCost || ''}" placeholder="Unit Cost">
+        </div>
+        <div style="font-weight:700;font-size:13px;text-align:right;padding-right:6px;" class="item-line-total">
+          KES 0.00
+        </div>
+        <div>
+          <button type="button" class="dogo-btn dogo-btn--ghost dogo-btn--sm item-del" style="color:var(--dogo-red);padding:6px 8px;">✕</button>
+        </div>
+      `;
+
+      $('itemsContainer').appendChild(row);
+
+      const sel = row.querySelector('.item-prod');
+      const qtyIn = row.querySelector('.item-qty');
+      const costIn = row.querySelector('.item-cost');
+      const lineTot = row.querySelector('.item-line-total');
+      const delBtn = row.querySelector('.item-del');
+
+      function updateLine() {
+        const q = parseFloat(qtyIn.value) || 0;
+        const c = parseFloat(costIn.value) || 0;
+        const tot = q * c;
+        lineTot.textContent = kes(tot);
+        recalcGrandTotal();
+      }
+
+      sel.onchange = () => {
+        const opt = sel.options[sel.selectedIndex];
+        if (opt && opt.dataset.price && !costIn.value) {
+          // Suggest standard cost as ~75% of selling price if not yet filled
+          const estCost = Math.round(Number(opt.dataset.price) * 0.75);
+          costIn.value = estCost > 0 ? estCost : opt.dataset.price;
+        }
+        updateLine();
+      };
+
+      qtyIn.oninput = updateLine;
+      costIn.oninput = updateLine;
+
+      delBtn.onclick = () => {
+        if ($('itemsContainer').children.length > 1) {
+          row.remove();
+          recalcGrandTotal();
+        } else {
+          toast('Purchase order must have at least one product.');
+        }
+      };
+
+      updateLine();
+    }
+
+    function recalcGrandTotal() {
+      let total = 0;
+      document.querySelectorAll('#itemsContainer .dogo-form-row').forEach(r => {
+        const q = parseFloat(r.querySelector('.item-qty')?.value) || 0;
+        const c = parseFloat(r.querySelector('.item-cost')?.value) || 0;
+        total += (q * c);
+      });
+      $('orderGrandTotal').textContent = kes(total);
+    }
+
+    $('addItemBtn').onclick = () => addLineItem();
+
+    // --- Open / Close New PO Modal ---
+    function openPoModal() {
+      $('fSupplier').value = '';
+      const today = new Date().toISOString().slice(0, 10);
+      $('fDate').value = today;
+      const refSuffix = String(purchases.length + 101).padStart(3, '0');
+      $('fRef').value = 'PO-' + today.replace(/-/g, '') + '-' + refSuffix;
+      $('fNotes').value = '';
+      $('fPayment').value = 'Cash';
+
+      $('itemsContainer').innerHTML = '';
+      addLineItem(); // Initial blank row
+      $('poModal').classList.add('open');
+    }
+
+    const closePoModal = () => $('poModal').classList.remove('open');
+    $('addPoBtn').onclick = openPoModal;
+    $('mCancel').onclick = closePoModal;
+
+    // --- Save Purchase & Restock Inventory ---
+    $('mSave').onclick = async () => {
+      const supplier = $('fSupplier').value.trim();
+      const refNo = $('fRef').value.trim() || 'PO-' + Date.now().toString().slice(-6);
+      const paymentMethod = $('fPayment').value;
+      const date = $('fDate').value || new Date().toISOString().slice(0, 10);
+      const notes = $('fNotes').value.trim();
+
+      if (!supplier) return toast('Please enter a supplier name.');
+
+      const itemRows = document.querySelectorAll('#itemsContainer .dogo-form-row');
+      const itemsToSave = [];
+      let totalAmount = 0;
+      let totalUnits = 0;
+
+      for (const r of itemRows) {
+        const prodId = r.querySelector('.item-prod').value;
+        const qty = parseFloat(r.querySelector('.item-qty').value) || 0;
+        const unitCost = parseFloat(r.querySelector('.item-cost').value) || 0;
+
+        if (!prodId) return toast('Please select a product for all added line items.');
+        if (qty <= 0) return toast('Please enter a valid quantity greater than 0.');
+        if (unitCost < 0) return toast('Unit cost cannot be negative.');
+
+        const prod = products.find(p => p.id === prodId);
+        const prodName = prod ? prod.name : 'Product';
+        const lineTotal = qty * unitCost;
+
+        itemsToSave.push({
+          productId: prodId,
+          name: prodName,
+          qty: qty,
+          unit_cost: unitCost,
+          total: lineTotal,
+          previousStock: Number(prod ? prod.stock : 0)
+        });
+
+        totalAmount += lineTotal;
+        totalUnits += qty;
+      }
+
+      if (!itemsToSave.length) return toast('Please add at least one product.');
+
+      $('mSave').disabled = true;
+      $('mSave').textContent = 'Saving & Restocking...';
+
+      try {
+        // 1. Restock each product in Supabase `products` table
+        for (const item of itemsToSave) {
+          const newStock = Number(item.previousStock || 0) + Number(item.qty);
+          await sb.from('products').update({ stock: newStock }).eq('id', item.productId);
+        }
+
+        // 2. Insert expense into Supabase `expenses` table for financial P&L synchronization
+        const itemsSummary = itemsToSave.map(i => `${i.name} (x${i.qty})`).join(', ');
+        const desc = `Supplier PO: ${supplier} [${refNo}] - ${itemsSummary}`;
+
+        let expenseId = null;
+        const { data: expData, error: expErr } = await sb.from('expenses').insert({
+          business_id: businessId,
+          category: 'Stock Purchases',
+          description: desc,
+          amount: totalAmount,
+          vat_rate: 0,
+          created_by: profile ? profile.id : null
+        }).select().maybeSingle();
+
+        if (expData) expenseId = expData.id;
+
+        // 3. Create persistent purchase order record
+        const newPurchase = {
+          id: 'po-' + crypto.randomUUID(),
+          expense_id: expenseId,
+          business_id: businessId,
+          supplier: supplier,
+          ref_no: refNo,
+          date: date,
+          payment_method: paymentMethod,
+          total_amount: totalAmount,
+          total_units: totalUnits,
+          items: itemsToSave,
+          notes: notes,
+          status: 'Received',
+          created_at: new Date().toISOString()
+        };
+
+        // Try inserting into `purchases` table in Supabase if exists (silent fallback)
+        try {
+          await sb.from('purchases').insert({
+            business_id: businessId,
+            supplier: supplier,
+            ref_no: refNo,
+            total_amount: totalAmount,
+            payment_method: paymentMethod,
+            items: itemsToSave,
+            notes: notes
+          });
+        } catch(e) {}
+
+        // Save into persistent local array
+        purchases.unshift(newPurchase);
+        saveStoredPurchases(purchases);
+
+        closePoModal();
+        toast(`Purchased & restocked ${totalUnits} units successfully!`);
+        await loadData();
+      } catch (err) {
+        toast('Error saving purchase: ' + err.message);
+      } finally {
+        $('mSave').disabled = false;
+        $('mSave').textContent = 'Save & Restock Inventory';
+      }
+    };
+
+    // --- View Voucher Modal ---
+    $('rows').onclick = e => {
+      const viewId = e.target.dataset && e.target.dataset.view;
+      if (viewId) {
+        const po = purchases.find(p => p.id === viewId);
+        if (po) openVoucher(po);
+      }
+    };
+
+    function openVoucher(po) {
+      $('vTitle').textContent = `Purchase Voucher · ${po.ref_no || ''}`;
+      $('vSubtitle').textContent = `Issued by ${po.supplier || 'Supplier'}`;
+      $('vSupplier').textContent = po.supplier || '—';
+      $('vDate').textContent = po.date || (po.created_at || '').slice(0, 10) || '—';
+      $('vRef').textContent = po.ref_no || '—';
+      $('vPayment').textContent = po.payment_method || 'Cash';
+      $('vTotal').textContent = kes(po.total_amount);
+      $('vNotes').textContent = po.notes ? `Remarks: ${po.notes}` : '';
+
+      $('vItems').innerHTML = (po.items || []).map(i => `
+        <tr>
+          <td><strong>${esc(i.name)}</strong></td>
+          <td style="text-align:right;">${i.qty}</td>
+          <td style="text-align:right;">${kes(i.unit_cost)}</td>
+          <td style="text-align:right;"><strong>${kes(i.total || (i.qty * i.unit_cost))}</strong></td>
+        </tr>
+      `).join('') || '<tr><td colspan="4" class="dogo-card__empty">No line items</td></tr>';
+
+      $('voucherModal').classList.add('open');
+    }
+
+    $('vClose').onclick = () => $('voucherModal').classList.remove('open');
+
+    // Initial load
+    await loadData();
+  })();
+  </script>
+</body>
+</html>

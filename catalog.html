@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Products · Dogo POS</title>
+  <title>Products &amp; Inventory · Dogo POS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,14 +13,14 @@
   <div id="dogoHeaderRoot"></div>
   <div id="dogoNavRoot"></div>
   <main class="dogo-page">
-    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Products</span></div>
-    <div class="dogo-page-title"><h1>Product Catalogue</h1></div>
-    <p class="dogo-page-subtitle" id="bizName">Manage your shop items and inventory levels</p>
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Products &amp; Inventory</span></div>
+    <div class="dogo-page-title"><h1>Products &amp; Inventory</h1></div>
+    <p class="dogo-page-subtitle" id="bizName">Manage your shop items, pricing, and inventory stock levels in one place</p>
 
     <div class="dogo-toolbar" style="justify-content:space-between;margin-bottom:14px;">
       <div class="dogo-seg" id="viewSeg">
-        <button data-v="all" class="is-active">Products</button>
-        <button data-v="inventory">Inventory</button>
+        <button data-v="all" class="is-active">All Products</button>
+        <button data-v="inventory">Low Stock &amp; Alerts</button>
       </div>
       <button class="dogo-btn dogo-btn--primary" id="addBtn" style="display:none;">+ New product</button>
     </div>
@@ -61,7 +61,7 @@
     const { sb, kes, esc, boot, toast, downloadCSV } = window.DogoData;
 
     let view = location.hash === '#inventory' ? 'inventory' : 'all';
-    const ctx = await boot(view === 'inventory' ? 'inventory' : 'catalog');
+    const ctx = await boot('catalog');
     if (!ctx) return;
     const { businessId, isAdmin, profile } = ctx;
     let products = [], page = 1; const PER = 10; let editing = null;
