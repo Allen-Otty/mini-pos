@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Loans &amp; Liabilities · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+
+  <main class="dogo-page">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1 style="font-size:24px;font-weight:800;margin:0 0 4px;color:var(--dogo-ink);">Loans &amp; Liabilities</h1>
+        <p style="font-size:14px;color:var(--dogo-text-muted);margin:0;">Track your business loans</p>
+      </div>
+      <button style="background:#dc2626;color:#fff;border:none;border-radius:var(--dogo-radius-pill);padding:9px 22px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(220,38,38,0.25);" id="btnOpenLoan">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>New Loan</span>
+      </button>
+    </div>
+
+    <section class="dogo-card" style="padding:20px;">
+      <div style="font-size:12px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.6px;margin-bottom:16px;">
+        CREDIT DIRECTORY
+      </div>
+
+      <div class="dogo-table-top-bar">
+        <div class="dogo-entries-select-wrap">
+          <input class="dogo-entries-input" id="entriesInput" value="10" type="number" min="1" max="100">
+          <span>ENTRIES PER PAGE</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button class="dogo-btn-pill-outline" id="btnExport">Export Excel</button>
+          <button class="dogo-btn-pill-outline" onclick="window.print()">Print Report</button>
+          <div class="dogo-search-pill-wrap">
+            <span>SEARCH:</span>
+            <input class="dogo-search-pill-input" id="searchInput">
+          </div>
+        </div>
+      </div>
+
+      <div class="dogo-table-wrap">
+        <table class="dogo-table">
+          <thead>
+            <tr>
+              <th style="cursor:pointer;" onclick="sortBy('loan_no')">▲ LOAN # <span class="table-sort-arrow">▲▼</span></th>
+              <th style="cursor:pointer;" onclick="sortBy('lender')">LENDER <span class="table-sort-arrow">▲▼</span></th>
+              <th style="cursor:pointer;" onclick="sortBy('principal')">PRINCIPAL <span class="table-sort-arrow">▲▼</span></th>
+              <th style="cursor:pointer;" onclick="sortBy('outstanding')">OUTSTANDING <span class="table-sort-arrow">▲▼</span></th>
+              <th style="cursor:pointer;" onclick="sortBy('status')">STATUS <span class="table-sort-arrow">▲▼</span></th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="rowsBody">
+            <tr><td colspan="6" style="text-align:center;padding:48px 16px;color:var(--dogo-text-muted);">No data available in table</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="dogo-pager">
+        <span id="pageInfo">Showing 0 to 0 of 0 entries</span>
+        <span>
+          <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="prevAll" disabled>&laquo;</button>
+          <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="prevOne" disabled>&lsaquo;</button>
+          <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="nextOne" disabled>&rsaquo;</button>
+          <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="nextAll" disabled>&raquo;</button>
+        </span>
+      </div>
+    </section>
+
+    <!-- Modal: Record Facility (Screenshots 309, 310) -->
+    <div class="dogo-modal" id="loanModal">
+      <div class="dogo-modal__box" style="max-width:480px;border-radius:18px;padding:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+          <div>
+            <h2 style="font-size:20px;font-weight:800;color:var(--dogo-ink);margin:0 0 2px;">Record Facility</h2>
+            <div style="font-size:13px;color:var(--dogo-text-muted);">Provide lender details</div>
+          </div>
+          <button style="border:none;background:transparent;color:var(--dogo-text-muted);font-size:20px;cursor:pointer;" id="btnCloseModal">&times;</button>
+        </div>
+
+        <div style="margin-top:14px;">
+          <div class="dogo-field" style="margin-bottom:14px;">
+            <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">LENDER NAME</label>
+            <input class="dogo-input" id="loanLender" placeholder="E.g. Equity Bank" style="border:1.5px solid #d97706;border-radius:10px;padding:10px 12px;font-size:14px;">
+          </div>
+
+          <div class="dogo-field" style="margin-bottom:20px;">
+            <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">PRINCIPAL AMOUNT</label>
+            <input class="dogo-input" id="loanAmount" type="number" step="0.01" min="0" value="0.00" style="background:#f8fafc;padding:10px 12px;font-size:14px;">
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;align-items:center;gap:16px;">
+            <button style="border:none;background:transparent;color:var(--dogo-text-muted);font-weight:700;font-size:14px;cursor:pointer;" id="btnCancelModal">Cancel</button>
+            <button style="background:#dc2626;color:#fff;border:none;border-radius:var(--dogo-radius-pill);padding:9px 28px;font-size:14px;font-weight:700;cursor:pointer;" id="btnSaveLoan">Save Loan</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { boot, toast, downloadCSV, esc } = window.DogoData;
+    const ksh = n => 'Ksh ' + Number(n || 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const ctx = await boot('loans');
+    if (!ctx) return;
+    const { businessId } = ctx;
+    const $ = id => document.getElementById(id);
+
+    const STORAGE_KEY = 'dogo_loans_' + (businessId || 'def');
+    let loans = [];
+
+    function loadPersisted() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) loans = JSON.parse(raw);
+      } catch(e) {}
+    }
+
+    function savePersisted() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(loans));
+      } catch(e) {}
+    }
+
+    function renderTable() {
+      const q = ($('searchInput').value || '').trim().toLowerCase();
+      const list = loans.filter(l => !q || (l.loan_no || '').toLowerCase().includes(q) || (l.lender || '').toLowerCase().includes(q));
+
+      const tbody = $('rowsBody');
+      if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:48px 16px;color:var(--dogo-text-muted);">No data available in table</td></tr>';
+        $('pageInfo').textContent = 'Showing 0 to 0 of 0 entries';
+        return;
+      }
+
+      tbody.innerHTML = list.map((l, idx) => `
+        <tr>
+          <td><strong>${esc(l.loan_no || 'LN-' + (idx + 1))}</strong></td>
+          <td><strong>${esc(l.lender)}</strong></td>
+          <td>${ksh(l.principal)}</td>
+          <td>${ksh(l.outstanding)}</td>
+          <td><span class="dogo-badge ${l.status === 'Active' ? 'dogo-badge--warn' : 'dogo-badge--ok'}">${esc(l.status || 'Active')}</span></td>
+          <td>
+            <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-del="${idx}">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+
+      $('pageInfo').textContent = `Showing 1 to ${list.length} of ${list.length} entries`;
+    }
+
+    $('rowsBody').onclick = (e) => {
+      const delIdx = e.target.dataset.del;
+      if (delIdx !== undefined) {
+        if (confirm('Delete this loan entry?')) {
+          loans.splice(Number(delIdx), 1);
+          savePersisted();
+          renderTable();
+          toast('Loan record deleted');
+        }
+      }
+    };
+
+    $('searchInput').oninput = renderTable;
+
+    $('btnExport').onclick = () => {
+      downloadCSV('loans.csv', [['LOAN #', 'Lender', 'Principal', 'Outstanding', 'Status']].concat(
+        loans.map(l => [l.loan_no, l.lender, l.principal, l.outstanding, l.status])
+      ));
+    };
+
+    // Modal
+    const modal = $('loanModal');
+    function openModal() {
+      $('loanLender').value = '';
+      $('loanAmount').value = '0.00';
+      modal.classList.add('open');
+      $('loanLender').focus();
+    }
+    function closeModal() { modal.classList.remove('open'); }
+
+    $('btnOpenLoan').onclick = openModal;
+    $('btnCloseModal').onclick = closeModal;
+    $('btnCancelModal').onclick = closeModal;
+
+    $('btnSaveLoan').onclick = () => {
+      const lender = $('loanLender').value.trim();
+      const principal = parseFloat($('loanAmount').value);
+
+      if (!lender) return toast('Please enter a lender name');
+      if (isNaN(principal) || principal <= 0) return toast('Please enter a valid principal amount');
+
+      const newLoan = {
+        loan_no: 'LN-' + String(loans.length + 101).padStart(4, '0'),
+        lender,
+        principal,
+        outstanding: principal,
+        status: 'Active',
+        date: new Date().toISOString().slice(0, 10),
+        created_at: new Date().toISOString()
+      };
+
+      loans.unshift(newLoan);
+      savePersisted();
+      closeModal();
+      renderTable();
+      toast('Loan facility recorded');
+    };
+
+    loadPersisted();
+    renderTable();
+  })();
+  </script>
+</body>
+</html>

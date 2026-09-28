@@ -26,18 +26,34 @@
 
   // Single source of truth for every page in the app. Add a page here and it
   // shows up in the nav grid on every other page automatically.
-  const BUILT = { dashboard: true, catalog: true, purchases: true, customers: true, expenses: true, reports: true, sell: true, team: true, settings: true };
+  const BUILT = {
+    dashboard: true,
+    customers: true,
+    catalog: true,
+    purchases: true,
+    sell: true,
+    inventory: true,
+    expenses: true,
+    reports: true,
+    fixedassets: true,
+    loans: true,
+    equity: true,
+    settings: true
+  };
   // NOTE: 'Legacy Modules' link is added to the nav panel below
   const LEGACY = 'index.html?legacy=1';
   const NAV_ITEMS_RAW = [
     { id: 'dashboard', label: 'Overview', href: 'dashboard.html', icon: 'overview' },
     { id: 'customers', label: 'Contacts', href: 'customers.html', icon: 'contacts' },
-    { id: 'catalog', label: 'Products & Inventory', href: 'catalog.html', icon: 'products' },
+    { id: 'catalog', label: 'Products', href: 'catalog.html', icon: 'products' },
     { id: 'purchases', label: 'Purchases', href: 'purchases.html', icon: 'purchases' },
     { id: 'sell', label: 'Sales', href: 'sell.html', icon: 'sales' },
+    { id: 'inventory', label: 'Inventory', href: 'inventory.html', icon: 'inventory' },
     { id: 'expenses', label: 'Expenses', href: 'expenses.html', icon: 'expenses' },
     { id: 'reports', label: 'Reports', href: 'reports.html', icon: 'reports' },
-    { id: 'team', label: 'Team', href: 'team.html', icon: 'fixedassets' },
+    { id: 'fixedassets', label: 'Fixed Assets', href: 'fixedassets.html', icon: 'fixedassets' },
+    { id: 'loans', label: 'Loans', href: 'loans.html', icon: 'loans' },
+    { id: 'equity', label: 'Equity', href: 'equity.html', icon: 'equity' },
     { id: 'settings', label: 'Settings', href: 'settings.html', icon: 'settings' }
   ];
   // Pages not yet migrated open the existing app so no nav link is ever a dead end.
