@@ -2,6 +2,20 @@
 
 Newest first. Each entry lists what changed and why, so nothing has to be rediscovered from the git log.
 
+## 2026-09-29 — Clear Bill on Menu & Tables; new accounts no longer see demo products
+
+**Clear Bill (`tables.html`)**
+- "Checkout (cash)" replaced with **Clear Bill**: a payment screen with the same method choices as the Sales page (Cash, M-Pesa, plus KCB/Paystack/Airtel when an Express API is configured).
+- Digital payments send a real request and only clear the table once the gateway confirms the exact amount — identical engine to `sell.html` (72s wait with countdown, resumes if the page is closed mid-payment, one payment can't be recorded twice, a paid-but-unrecorded failure keeps the reference and offers Retry).
+- Requires an open shift, same as the classic app's checkout — points to the Sales page if none is open, and no longer offers an unauthenticated cash shortcut.
+- Tested with mocked data: cash, confirmed M-Pesa, cancelled M-Pesa, and the no-open-shift case all behave correctly (see repo history for the manual test transcript). Not yet tested against a real M-Pesa sandbox or Supabase data.
+
+**New accounts no longer get demo data**
+- Found the cause of the sample products (Ajab Flour, Claw Hammer, etc.) appearing in a brand-new account: `index.html`'s `getEffectiveCatalog()` silently substituted a hardcoded starter catalog (`DEFAULT_RETAIL_PRODUCTS` / `INDUSTRY_CONFIG[type].products`) into the Sell screen whenever the business's real `products` table was empty. Nothing was ever written to the database — this was a display-only substitution — but it made an empty account look pre-populated, and `posCardClick`/barcode lookup could "sell" one of these fake items.
+- Removed the fallback: `getEffectiveCatalog()` now always returns the business's real products, empty or not. A genuinely empty catalog now shows an honest "No products yet — add your first product" state with a button straight to Add Product, instead of fake inventory.
+- The logged-out marketing landing page's own interactive demo widget (`getActiveDemoProducts`, `demoAddToCart`) is untouched — it never touched real account data and still shows sample products to visitors before they sign up, which is the right place for demo data to live.
+- The new multipage pages (`catalog.html`, `sell.html`, `tables.html`) were never affected by this — they only ever read the real `products` table and already showed a genuine empty state.
+
 ## 2026-09-29 — Team: branches, managers; Restaurant/Hotel on the new layout
 
 **Team & Branches (`team.html`, rewritten)**

@@ -8946,10 +8946,10 @@ function applyIndustryCustomizations(bizType) {
 }
 
 function getEffectiveCatalog() {
-  if (CATALOG && CATALOG.length > 0) return CATALOG;
-  const bType = normalizeBizType(business ? business.business_type : 'Retail');
-  const cfg = INDUSTRY_CONFIG[bType] || INDUSTRY_CONFIG['Retail'];
-  return cfg.products || DEFAULT_RETAIL_PRODUCTS;
+  // New/empty accounts get a real empty state, never a fake starter catalog —
+  // DEFAULT_RETAIL_PRODUCTS / INDUSTRY_CONFIG[...].products exist only for the
+  // logged-out marketing demo widget (getActiveDemoProducts), not for real accounts.
+  return CATALOG || [];
 }
 
 function renderPosProductsGrid(filterText) {
@@ -8981,9 +8981,9 @@ function renderPosProductsGrid(filterText) {
   if (filtered.length === 0) {
     grid.innerHTML = `
       <div style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; color: var(--text-secondary);">
-        <i class="fa-solid fa-magnifying-glass" style="font-size: 32px; opacity: 0.4; margin-bottom: 12px; display: block;"></i>
-        <div style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">No matching products found</div>
-        <p style="font-size: 13px; margin: 0 0 16px;">Try searching with a different keyword or barcode.</p>
+        <i class="fa-solid ${list.length === 0 ? 'fa-box-open' : 'fa-magnifying-glass'}" style="font-size: 32px; opacity: 0.4; margin-bottom: 12px; display: block;"></i>
+        <div style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">${list.length === 0 ? 'No products yet' : 'No matching products found'}</div>
+        <p style="font-size: 13px; margin: 0 0 16px;">${list.length === 0 ? 'Add your first product to start selling.' : 'Try searching with a different keyword or barcode.'}</p>
         <button class="btn-green btn-small" onclick="switchTab('product-create')">+ Add New Product</button>
       </div>`;
     return;
