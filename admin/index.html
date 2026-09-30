@@ -1640,18 +1640,35 @@ const DEFAULT_PLATFORM_SETTINGS = {
   broadcast_message: ''
 };
 
-function getStoredPlatformSettings() {
+// Platform settings now live in the database (table: platform_settings, one row,
+// readable/writable only by the super admin account) so they're real across every
+// device Allen uses, not just whichever browser last saved to localStorage. This
+// in-memory cache keeps every existing synchronous getStoredPlatformSettings() call
+// in this file working unchanged; loadPlatformSettingsFromDB() below fills it once
+// on page load, and every save writes through to the database first.
+let platformSettingsCache = { ...DEFAULT_PLATFORM_SETTINGS };
+
+async function loadPlatformSettingsFromDB() {
   try {
-    const raw = localStorage.getItem('dogo_platform_settings');
-    if (raw) return { ...DEFAULT_PLATFORM_SETTINGS, ...JSON.parse(raw) };
-  } catch (e) {}
-  return { ...DEFAULT_PLATFORM_SETTINGS };
+    const { data, error } = await sb.from('platform_settings').select('*').eq('id', true).maybeSingle();
+    if (!error && data) {
+      platformSettingsCache = { ...DEFAULT_PLATFORM_SETTINGS, ...data };
+      localStorage.setItem('dogo_platform_settings', JSON.stringify(platformSettingsCache));
+    }
+  } catch (e) { console.warn('platform_settings not available yet (run the 20260930 migration):', e.message); }
+  try { loadPayoutFields(); } catch (e) {}
 }
 
-function saveStoredPlatformSettings(newCfg) {
-  try {
-    localStorage.setItem('dogo_platform_settings', JSON.stringify(newCfg));
-  } catch (e) {}
+function getStoredPlatformSettings() {
+  return { ...platformSettingsCache };
+}
+
+async function saveStoredPlatformSettings(newCfg) {
+  platformSettingsCache = { ...platformSettingsCache, ...newCfg };
+  try { localStorage.setItem('dogo_platform_settings', JSON.stringify(platformSettingsCache)); } catch (e) {}
+  const { id, updated_at, ...writable } = platformSettingsCache;
+  const { error } = await sb.from('platform_settings').update(writable).eq('id', true);
+  if (error) showToast('Saved locally, but the database save failed: ' + error.message);
 }
 
 function showToast(msg) {
@@ -1732,7 +1749,7 @@ async function callPlatformFn(action, payload) {
 }
 
 async function loadDashboard() {
-  loadPayoutFields();
+  await loadPlatformSettingsFromDB();
   loadAnalyticsFields();
   loadBroadcastFields();
 
@@ -1780,7 +1797,7 @@ async function loadDashboard() {
     if (countEl) countEl.textContent = allBusinessesCache.length;
     renderBusinessesTable(allBusinessesCache);
     populatePlanBizDropdown(allBusinessesCache);
-    renderSubscriptionsViews(allBusinessesCache);
+    await renderSubscriptionsViews(allBusinessesCache);
   }
 
   // 3. Super Admins
@@ -1921,62 +1938,63 @@ function saveStoredSubscriptionsLedger(ledger) {
   } catch(e) {}
 }
 
-function renderSubscriptionsViews(businesses) {
-  const ledger = getStoredSubscriptionsLedger();
-  const plansMap = getStoredBusinessPlans();
+async function renderSubscriptionsViews(businesses) {
+  // Pending verifications and each business's real plan now come straight from the
+  // database (subscription_claims / businesses.subscription_plan) — not localStorage,
+  // which only ever existed on one browser and granted plans with no real check at all.
+  const { data: claims, error: claimsErr } = await sb.from('subscription_claims')
+    .select('*').eq('status', 'pending').order('created_at', { ascending: false });
+  if (claimsErr) console.warn('subscription_claims not available yet (run the 20260930 migration):', claimsErr.message);
+  const pendingList = claims || [];
+  const bizName = id => (allBusinessesCache.find(b => b.id === id) || {}).name || id;
 
-  let paidCount = 0;
-  let totalMrr = 0;
-
+  let paidCount = 0, totalMrr = 0;
   businesses.forEach(b => {
-    const p = plansMap[b.id] || { plan: 'Free' };
-    if (p.plan === 'Core') { paidCount++; totalMrr += 999; }
-    if (p.plan === 'Control') { paidCount++; totalMrr += 1999; }
+    if (b.subscription_plan && b.subscription_plan !== 'Free' && b.subscription_status === 'active') {
+      paidCount++;
+      totalMrr += Number(b.subscription_plan === 'Control Group' ? 7999 : b.subscription_plan === 'Control' ? 1999
+        : b.subscription_plan === 'Core Group' ? 3999 : b.subscription_plan === 'Core' ? 999 : 0);
+    }
   });
-
-  const pendingList = ledger.filter(x => x.status === 'Pending');
 
   const sp = document.getElementById('subStatPaid'); if (sp) sp.textContent = paidCount;
   const sr = document.getElementById('subStatRevenue'); if (sr) sr.textContent = `KES ${totalMrr.toLocaleString()}`;
   const sn = document.getElementById('subStatPending'); if (sn) sn.textContent = pendingList.length;
 
-  // Render Pending Verifications table
   const pBody = document.getElementById('pendingSubsBody');
   if (pBody) {
-    if (pendingList.length === 0) {
-      pBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888; padding:20px;">No pending payment verifications.</td></tr>';
-    } else {
-      pBody.innerHTML = pendingList.map(item => `
+    pBody.innerHTML = pendingList.length === 0
+      ? '<tr><td colspan="6" style="text-align:center; color:#888; padding:20px;">No pending payment verifications.</td></tr>'
+      : pendingList.map(item => `
         <tr>
-          <td>${item.date}</td>
-          <td><strong>${escapeHtml(item.bizName)}</strong></td>
-          <td><span class="tag tag-plan-${item.plan.toLowerCase()}">${item.plan} POS</span></td>
-          <td><strong>KES ${item.amount.toLocaleString()}</strong></td>
-          <td><span style="font-family:monospace; background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:6px; color:var(--gold);">${item.mpesaRef}</span></td>
+          <td>${new Date(item.created_at).toLocaleDateString()}</td>
+          <td><strong>${escapeHtml(bizName(item.business_id))}</strong></td>
+          <td><span class="tag tag-plan-${item.plan.toLowerCase().replace(/\s+/g,'-')}">${escapeHtml(item.plan)}</span></td>
+          <td><strong>KES ${Number(item.amount || 0).toLocaleString()}</strong></td>
+          <td><span style="font-family:monospace; background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:6px; color:var(--gold);">${escapeHtml(item.mpesa_code)}</span></td>
           <td class="actions">
             <button class="btn-reactivate" onclick="approveSubscriptionPayment('${item.id}')"><i class="fa-solid fa-check"></i> Approve</button>
             <button class="btn-delete" onclick="rejectSubscriptionPayment('${item.id}')"><i class="fa-solid fa-xmark"></i></button>
           </td>
         </tr>
       `).join('');
-    }
   }
 
-  // Render Subscriptions History table
   const hBody = document.getElementById('subsHistoryBody');
   if (hBody) {
     hBody.innerHTML = businesses.map(b => {
-      const p = plansMap[b.id] || { plan: 'Free', status: 'Active', renews: 'Never' };
-      const amount = p.plan === 'Control' ? 1999 : (p.plan === 'Core' ? 999 : 0);
+      const plan = b.subscription_plan || 'Free';
+      const amount = { 'Control Group': 7999, 'Control': 1999, 'Core Group': 3999, 'Core': 999 }[plan] || 0;
+      const renews = b.subscription_renews_at ? new Date(b.subscription_renews_at).toLocaleDateString() : (plan === 'Free' ? 'Never' : '—');
       return `
         <tr>
           <td><strong>${escapeHtml(b.name)}</strong></td>
-          <td><span class="tag tag-plan-${p.plan.toLowerCase()}">${p.plan} POS</span></td>
-          <td><span class="tag ${p.plan !== 'Free' ? 'tag-active' : 'tag-plan-free'}">${p.plan !== 'Free' ? 'Subscribed' : 'Trial'}</span></td>
+          <td><span class="tag tag-plan-${plan.toLowerCase().replace(/\s+/g,'-')}">${escapeHtml(plan)}</span></td>
+          <td><span class="tag ${b.subscription_status === 'active' ? 'tag-active' : 'tag-plan-free'}">${escapeHtml(b.subscription_status || 'free')}</span></td>
           <td>KES ${amount.toLocaleString()}/mo</td>
-          <td>${p.renews || '30 days remaining'}</td>
+          <td>${renews}</td>
           <td class="actions">
-            <button class="btn-invoice" onclick="printSubscriptionInvoice('${b.id}', '${escapeHtml(b.name).replace(/'/g,"")}', '${p.plan}', ${amount})"><i class="fa-solid fa-file-invoice"></i> Invoice</button>
+            <button class="btn-invoice" onclick="printSubscriptionInvoice('${b.id}', '${escapeHtml(b.name).replace(/'/g,"")}', '${plan}', ${amount})"><i class="fa-solid fa-file-invoice"></i> Invoice</button>
             <button class="btn-plan" onclick="openGrantPlanModal('${b.id}')"><i class="fa-solid fa-pen-to-square"></i> Modify</button>
           </td>
         </tr>
@@ -1985,40 +2003,25 @@ function renderSubscriptionsViews(businesses) {
   }
 }
 
-function approveSubscriptionPayment(subId) {
-  const ledger = getStoredSubscriptionsLedger();
-  const sub = ledger.find(x => x.id === subId);
-  if (!sub) return;
-
-  sub.status = 'Paid';
-  saveStoredSubscriptionsLedger(ledger);
-
-  const plans = getStoredBusinessPlans();
-  const matchedBiz = allBusinessesCache.find(b => b.name.toLowerCase() === sub.bizName.toLowerCase());
-  if (matchedBiz) {
-    plans[matchedBiz.id] = {
-      plan: sub.plan,
-      renews: 'In 30 days',
-      grantedAt: new Date().toISOString()
-    };
-    saveStoredBusinessPlans(plans);
-  }
-
-  showToast(`Subscription approved for ${sub.bizName}! Plan activated.`);
-  sendTelegramAlert(`✅ <b>Dogo POS: Payment Approved!</b>\n\nStore: <b>${escapeHtml(sub.bizName)}</b>\nPlan: <b>${sub.plan} POS</b>\nAmount: KES ${Number(sub.amount).toLocaleString()}\nM-Pesa Ref: <code>${sub.mpesaRef}</code>`);
+async function approveSubscriptionPayment(claimId) {
+  // The apply_subscription_claim() trigger activates the business's plan in the same
+  // transaction as this update, so "approved" and "actually on the plan" can't drift.
+  const { data: claim, error: fetchErr } = await sb.from('subscription_claims').select('*').eq('id', claimId).maybeSingle();
+  if (fetchErr || !claim) return showToast('Could not load that claim: ' + (fetchErr ? fetchErr.message : 'not found'));
+  const { error } = await sb.from('subscription_claims').update({ status: 'approved' }).eq('id', claimId);
+  if (error) return showToast('Could not approve: ' + error.message);
+  const bizName = (allBusinessesCache.find(b => b.id === claim.business_id) || {}).name || claim.business_id;
+  showToast(`Subscription approved for ${bizName}! Plan activated.`);
+  sendTelegramAlert(`✅ <b>Dogo POS: Payment Approved!</b>\n\nStore: <b>${escapeHtml(bizName)}</b>\nPlan: <b>${escapeHtml(claim.plan)}</b>\nAmount: KES ${Number(claim.amount || 0).toLocaleString()}\nM-Pesa Code: <code>${escapeHtml(claim.mpesa_code)}</code>`);
   loadDashboard();
 }
 
-function rejectSubscriptionPayment(subId) {
+async function rejectSubscriptionPayment(claimId) {
   if (!confirm('Reject this payment submission?')) return;
-  const ledger = getStoredSubscriptionsLedger();
-  const idx = ledger.findIndex(x => x.id === subId);
-  if (idx !== -1) {
-    ledger.splice(idx, 1);
-    saveStoredSubscriptionsLedger(ledger);
-    showToast('Payment rejected.');
-    loadDashboard();
-  }
+  const { error } = await sb.from('subscription_claims').update({ status: 'rejected' }).eq('id', claimId);
+  if (error) return showToast('Could not reject: ' + error.message);
+  showToast('Payment claim rejected.');
+  loadDashboard();
 }
 
 // 2. Printable Tax Invoice Generator
@@ -2068,26 +2071,26 @@ function closePlanModal() {
   if (modal) modal.classList.remove('show');
 }
 
-function confirmGrantPlan() {
+async function confirmGrantPlan() {
   const bizId = document.getElementById('planBizSelect')?.value;
   const plan = document.getElementById('planSelect')?.value || 'Core';
   const days = parseInt(document.getElementById('planDays')?.value || '30', 10);
 
   if (!bizId) { showToast('Select a business'); return; }
 
-  const plans = getStoredBusinessPlans();
-  plans[bizId] = {
-    plan: plan,
-    renews: `In ${days} days`,
-    grantedAt: new Date().toISOString()
-  };
-  saveStoredBusinessPlans(plans);
+  const { error } = await sb.from('businesses').update({
+    subscription_plan: plan,
+    subscription_status: 'active',
+    subscription_started_at: new Date().toISOString(),
+    subscription_renews_at: new Date(Date.now() + days * 86400000).toISOString()
+  }).eq('id', bizId);
+  if (error) return showToast('Could not assign plan: ' + error.message);
 
   closePlanModal();
   const matchedBiz = allBusinessesCache.find(b => b.id === bizId);
   const bizName = matchedBiz ? matchedBiz.name : bizId;
-  sendTelegramAlert(`📦 <b>Dogo POS Alert: Plan Assigned</b>\n\nStore: <b>${escapeHtml(bizName)}</b>\nPlan: <b>${plan} POS</b> (${days} days)`);
-  showToast(`Assigned ${plan} POS plan (${days} days) successfully!`);
+  sendTelegramAlert(`📦 <b>Dogo POS Alert: Plan Assigned</b>\n\nStore: <b>${escapeHtml(bizName)}</b>\nPlan: <b>${plan}</b> (${days} days)`);
+  showToast(`Assigned ${plan} plan (${days} days) successfully!`);
   loadDashboard();
 }
 
@@ -2173,31 +2176,16 @@ async function savePayoutSettings() {
   cfg.price_core = parseFloat(document.getElementById('setPriceCore')?.value || '999');
   cfg.price_control = parseFloat(document.getElementById('setPriceControl')?.value || '1999');
 
-  saveStoredPlatformSettings(cfg);
-
-  // Sync to Supabase cloud mpesa-settings edge function if Daraja keys are provided
-  if (cfg.daraja_consumer_key && cfg.daraja_consumer_secret) {
-    try {
-      const { data: { session } } = await sb.auth.getSession();
-      const shortcode = cfg.mpesa_till || cfg.mpesa_paybill || '174379';
-      await sb.functions.invoke('mpesa-settings', {
-        body: {
-          action: 'save',
-          payment_type: cfg.mpesa_paybill ? 'paybill' : 'till',
-          shortcode,
-          consumer_key: cfg.daraja_consumer_key,
-          consumer_secret: cfg.daraja_consumer_secret,
-          passkey: cfg.daraja_passkey || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919',
-          is_production: cfg.daraja_env === 'production'
-        },
-        headers: { Authorization: 'Bearer ' + (session ? session.access_token : '') }
-      });
-      showToast('Payout & Daraja settings saved and synced to cloud successfully!');
-      return;
-    } catch (e) {
-      console.warn('Edge function sync notice:', e);
-    }
-  }
+  // NOTE: this used to also call the 'mpesa-settings' edge function — the same one a
+  // business uses to configure ITS OWN till for its own sales. Calling it from here
+  // risked attaching these Daraja credentials to whatever business happened to be
+  // "active" for the admin session, not to a genuinely separate platform-level
+  // destination. Removed until there's a dedicated subscription-payment edge function
+  // that is not shared with any business's own gateway config. Until then, the STK
+  // Push button on the subscription screen is not guaranteed to charge to these
+  // credentials — the manual M-Pesa code box (which you verify yourself here) is the
+  // reliable path.
+  await saveStoredPlatformSettings(cfg);
 
   showToast('Payout & Gateway settings saved successfully!');
 }

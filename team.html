@@ -76,8 +76,12 @@
     }
     $('addBranchBtn').onclick = async () => {
       const name = $('bName').value.trim(); if (!name) return toast('Enter a branch name');
+      const lim = window.DogoData.planLimitsFor(ctx.business);
+      if (branches.filter(b => b.active !== false).length >= lim.maxBranches) {
+        return toast(`Your ${lim.name} plan supports up to ${lim.maxBranches} branch${lim.maxBranches === 1 ? '' : 'es'}. Upgrade in Settings to add more.`);
+      }
       const { error } = await sb.from('branches').insert({ business_id: ctx.businessId, name, location: $('bLoc').value.trim() || null });
-      if (error) return toast('Could not add branch: ' + error.message);
+      if (error) return toast(/limit reached/i.test(error.message) ? error.message : 'Could not add branch: ' + error.message);
       $('bName').value = ''; $('bLoc').value = ''; toast('Branch added'); loadBranches();
     };
     $('branchRows').onclick = async e => { const id = e.target.dataset && e.target.dataset.toggleBranch; if (!id) return;
@@ -114,11 +118,16 @@
       const role = $('tRole').value, branch_id = $('tBranch').value || null;
       if (!full_name || !email || !password) return toast('Fill in name, email and password');
       if (password.length < 8) return toast('Password must be at least 8 characters');
+      const lim = window.DogoData.planLimitsFor(ctx.business);
+      if (team.length >= lim.maxUsers) return toast(`Your ${lim.name} plan supports up to ${lim.maxUsers} team member${lim.maxUsers === 1 ? '' : 's'}. Upgrade in Settings to add more.`);
       $('addTellerBtn').disabled = true; $('addTellerBtn').textContent = 'Creating…';
       const resp = await sb.functions.invoke('create-teller', { body: { email, password, full_name } });
       const data = resp.error ? null : resp.data;
       $('addTellerBtn').disabled = false; $('addTellerBtn').textContent = 'Create account';
-      if (resp.error || (data && data.error)) return toast('Could not create account: ' + (resp.error ? resp.error.message : data.error));
+      if (resp.error || (data && data.error)) {
+        const msg = resp.error ? resp.error.message : data.error;
+        return toast(/team size limit/i.test(msg) ? msg : 'Could not create account: ' + msg);
+      }
       toast('Account created for ' + full_name);
       $('tName').value = ''; $('tEmail').value = ''; $('tPass').value = '';
       // create-teller only sets up the login + a default 'teller' row — apply the chosen role/branch as a follow-up.

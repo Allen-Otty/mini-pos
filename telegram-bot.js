@@ -47,7 +47,12 @@ loadLocalEnv();
 
 const BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://uzwomzkzqrpiumtnniik.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D';
+const SUPABASE_ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
+if (!SUPABASE_ANON_KEY) {
+  console.error('\n❌ ERROR: SUPABASE_ANON_KEY is not set!');
+  console.error('   Add it to .env or config/secrets/.env — see config/secrets/.env.example\n');
+  process.exit(1);
+}
 
 if (!BOT_TOKEN) {
   console.error('\n❌ ERROR: TELEGRAM_BOT_TOKEN is not set!');

@@ -21,6 +21,29 @@ import { requireBusinessAdmin } from './auth.js';
 
 export const paymentRouter = express.Router();
 
+// Minimal in-memory sliding-window rate limiter — no extra dependency needed for a
+// single-process dev/local server. Not a substitute for rate limiting at a real
+// production edge/CDN if this server is ever deployed publicly, but stops naive
+// brute-force/spam against payment initiation and webhook endpoints.
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 30; // requests per IP per window, per limited route group
+const rateBuckets = new Map();
+function rateLimit(maxPerMinute = RATE_LIMIT_MAX) {
+  return (req, res, next) => {
+    const key = (req.ip || req.socket?.remoteAddress || 'unknown') + ':' + maxPerMinute;
+    const now = Date.now();
+    const bucket = rateBuckets.get(key) || [];
+    const fresh = bucket.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+    if (fresh.length >= maxPerMinute) {
+      return res.status(429).json({ success: false, error: 'Too many requests — please slow down and try again shortly.' });
+    }
+    fresh.push(now);
+    rateBuckets.set(key, fresh);
+    next();
+  };
+}
+paymentRouter.use(rateLimit());
+
 /**
  * GET /api/payments/gateways
  * Returns all supported payment gateways and their configuration status

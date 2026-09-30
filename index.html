@@ -6319,7 +6319,6 @@
         <a href="#demo" style="color:inherit; text-decoration:none;">Demo</a>
         <a href="#capabilities" style="color:inherit; text-decoration:none;">Features</a>
         <a href="#pricing" style="color:inherit; text-decoration:none;">Pricing</a>
-        <a href="admin/index.html" style="color:inherit; text-decoration:none;">Console</a>
       </div>
 
       <div style="font-size:12px; color:var(--text-secondary);">
@@ -6438,7 +6437,7 @@
           <button class="nav-sub-btn" data-tab="settings" data-admin-only="1" onclick="switchTab('settings')">
             <i class="fa-solid fa-sliders"></i> <span>Settings</span>
           </button>
-          <a href="admin/index.html" class="nav-sub-btn" data-admin-only="1" style="text-decoration:none;" title="Open Super Admin Platform Console">
+          <a href="admin/index.html" class="nav-sub-btn" data-super-admin-only="1" style="text-decoration:none;display:none;" title="Open Super Admin Platform Console">
             <i class="fa-solid fa-shield-halved" style="color:#2563eb;"></i> <span>Platform Console</span>
           </a>
         </div>
@@ -8954,6 +8953,19 @@ function getEffectiveCatalog() {
 
 function renderPosProductsGrid(filterText) {
   const grid = document.getElementById('rcProductsGrid');
+  // Delegated click handler (added once): reads the product code from a data
+  // attribute instead of building an inline onclick="..." string from product data.
+  // A product code containing a quote or backslash could otherwise break out of the
+  // inline handler's JS-string context even after HTML-escaping it, because an
+  // onclick attribute is parsed as HTML *and then* as JS — escaping for one context
+  // does not protect the other.
+  if (grid && !grid.dataset.clickBound) {
+    grid.dataset.clickBound = '1';
+    grid.addEventListener('click', (e) => {
+      const card = e.target.closest('[data-code]');
+      if (card) posCardClick(card.dataset.code);
+    });
+  }
   if (!grid) return;
 
   const list = getEffectiveCatalog();
@@ -8995,10 +9007,8 @@ function renderPosProductsGrid(filterText) {
     const name = escapeHtml(p.name);
     const price = Number(p.price || 0).toFixed(2);
     const stock = p.stock || 0;
-    const safeCode = (p.code || '').replace(/'/g, "\\'");
-
     return `
-      <div class="rc-prod-card" onclick="posCardClick('${safeCode}')" title="Tap to add ${name}">
+      <div class="rc-prod-card" data-code="${escapeHtml(p.code)}" title="Tap to add ${name}">
         <div class="rc-prod-img-wrap">
           ${imgUrl
             ? `<img src="${imgUrl}" alt="${name}" class="rc-prod-img" loading="lazy">`
@@ -9407,6 +9417,11 @@ let business = null;  // { id, name, business_type, theme_color, logo_url, kra_p
 let activeBusinessId = null;  // profile.business_id normally; overridden while a platform admin is testing another business
 let isPlatformAdmin = false;
 let platformBusinessList = [];
+// The Platform Console link (admin/index.html) — the ability to switch into any business's data — is
+// restricted to this one account, never to a business's own Owner/Admin role. isPlatformAdmin alone
+// comes from a server-side check (platform-switch-business), but this link is Allen's personal tool,
+// not a feature other platform admins added later should see by default.
+const PLATFORM_SUPER_ADMIN_EMAIL = 'allanotiende1998@gmail.com';
 
 let CATALOG = [];
 let products = []; // synchronized alias with CATALOG
@@ -9727,14 +9742,14 @@ function checkoutPosfitiSelection() {
   openUpgradePlanModal(posfitiSelectedFeature === 'control' ? 'Control' : 'Core', billingCfg.price, branchCfg.title, posfitiSelectedBranches, posfitiSelectedBilling);
 }
 
-function startInstantTrialSelection() {
+async function startInstantTrialSelection() {
   const cfgGroup = POSFITI_PRICING[posfitiSelectedFeature] || POSFITI_PRICING['control'];
   const branchCfg = cfgGroup[posfitiSelectedBranches] || cfgGroup['1'];
-  applySubscriptionSuccess(branchCfg.title, 'TRIAL-7DAYS', profile?.phone || '', true, posfitiSelectedBranches, posfitiSelectedBilling);
+  await applySubscriptionSuccess(branchCfg.title, 'TRIAL-7DAYS', profile?.phone || '', true, posfitiSelectedBranches, posfitiSelectedBilling);
 }
 
 function getCurrentBusinessPlan() {
-  if (isPlatformAdmin || (profile && profile.email === 'allanotiende1998@gmail.com')) {
+  if (isPlatformAdmin && profile && profile.email === PLATFORM_SUPER_ADMIN_EMAIL) {
     return {
       plan: 'Control Group',
       tier: 'Control',
@@ -9746,32 +9761,31 @@ function getCurrentBusinessPlan() {
     };
   }
 
-  const bId = activeBusinessId || (business ? business.id : (profile?.email || 'default_tenant'));
-  let saved = null;
-  try {
-    const raw = localStorage.getItem('dogo_biz_plans');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      saved = parsed[bId] || (profile?.email ? parsed[profile.email] : null);
-    }
-  } catch (e) {}
-
-  let rawPlan = saved?.plan || business?.subscription_plan || 'Free';
+  // The plan is decided ONLY by what's actually stored on the business's row in the
+  // database (subscription_plan / subscription_status / subscription_renews_at).
+  // A previous version of this trusted a localStorage cache too, which meant anyone
+  // could grant themselves any plan for free by editing it in their browser console.
+  // Real limits are also enforced in the database itself (see
+  // supabase/migrations/20260930_subscription_enforcement.sql) — this function only
+  // controls what the UI shows/hides, not what the server will actually allow.
+  const rawPlan = business?.subscription_plan || 'Free';
   let planKey = 'Free';
   if (/control.*group/i.test(rawPlan)) planKey = 'Control Group';
-  else if (/control/i.test(rawPlan)) planKey = (saved?.branches === 5 || saved?.branches === '5') ? 'Control Group' : 'Control';
+  else if (/control/i.test(rawPlan)) planKey = 'Control';
   else if (/core.*group/i.test(rawPlan)) planKey = 'Core Group';
-  else if (/core/i.test(rawPlan)) planKey = (saved?.branches === 5 || saved?.branches === '5') ? 'Core Group' : 'Core';
+  else if (/core/i.test(rawPlan)) planKey = 'Core';
   else planKey = 'Free';
 
   const cfg = PLAN_FEATURES[planKey] || PLAN_FEATURES['Free'];
+  const status = business?.subscription_status || (planKey === 'Free' ? 'free' : 'active');
+  const renewsAt = business?.subscription_renews_at ? new Date(business.subscription_renews_at) : null;
   return {
     plan: planKey,
     tier: cfg.tier || planKey,
     name: cfg.name,
-    status: saved?.status || (planKey === 'Free' ? 'Free Plan' : 'Active'),
-    renews: saved?.renews || (planKey === 'Free' ? 'Lifetime Free' : '30 days remaining'),
-    trialEnds: saved?.trialEnds || null,
+    status: status === 'trial' ? 'Trial' : (status === 'active' ? 'Active' : 'Free Plan'),
+    renews: renewsAt ? renewsAt.toLocaleDateString() : (planKey === 'Free' ? 'Lifetime Free' : '—'),
+    trialEnds: status === 'trial' && renewsAt ? renewsAt.toISOString() : null,
     features: cfg
   };
 }
@@ -9881,8 +9895,8 @@ function closePlanUpgradePrompt() {
   if (modal) modal.style.display = 'none';
 }
 
-function activateFreeTrial(planName) {
-  applySubscriptionSuccess(planName, 'TRIAL-7DAYS', profile?.phone || '', true);
+async function activateFreeTrial(planName) {
+  await applySubscriptionSuccess(planName, 'TRIAL-7DAYS', profile?.phone || '', true);
 }
 
 function applyPlanFeaturesVisibility() {
@@ -10292,10 +10306,16 @@ async function callEdgeFunction(name, body) {
 
 async function checkPlatformAdminStatus() {
   const resp = await callEdgeFunction('platform-switch-business', { action: 'list' });
-  if (resp.error) { isPlatformAdmin = false; return; }
+  if (resp.error) { isPlatformAdmin = false; applySuperAdminLinkVisibility(); return; }
   isPlatformAdmin = true;
+  applySuperAdminLinkVisibility();
   platformBusinessList = resp.businesses || [];
   if (resp.active_business_id) activeBusinessId = resp.active_business_id;
+}
+
+function applySuperAdminLinkVisibility() {
+  const show = isPlatformAdmin && !!profile && profile.email === PLATFORM_SUPER_ADMIN_EMAIL;
+  document.querySelectorAll('[data-super-admin-only]').forEach(el => { el.style.display = show ? '' : 'none'; });
 }
 
 function renderPlatformSwitcher() {
@@ -10413,6 +10433,7 @@ async function afterLogin() {
   }
 
   profile = prof;
+  applySuperAdminLinkVisibility();
   activeBusinessId = prof.business_id;
 
   // 5. Fetch or synthesize active business
@@ -13037,6 +13058,16 @@ async function addTeller() {
   if (!full_name || !email || !password) { showToast('Fill in all fields'); return; }
   if (!isStrongPassword(password)) { showToast(PASSWORD_HINT); return; }
 
+  const planInfo = getCurrentBusinessPlan();
+  const maxUsers = planInfo.features && planInfo.features.maxUsers;
+  if (Number.isFinite(maxUsers)) {
+    const { count } = await sb.from('profiles').select('id', { count: 'exact', head: true }).eq('business_id', activeBusinessId);
+    if ((count || 0) >= maxUsers) {
+      showPlanUpgradePrompt('Team Size Limit Reached', `Your ${planInfo.name} plan supports up to ${maxUsers} team member${maxUsers === 1 ? '' : 's'} (including you). Upgrade to add more.`, planInfo.plan.includes('Control') ? 'Control Group' : 'Core Group');
+      return;
+    }
+  }
+
   const resp = await callEdgeFunction('create-teller', { email, password, full_name });
   if (resp.error) { showToast('Could not create teller: ' + resp.error); return; }
 
@@ -13149,6 +13180,17 @@ function renderOrderItems() {
   if (!t) return;
   const items = CATALOG.filter(p => (p.category || 'Uncategorized') === activeOrderCat);
   const grid = document.getElementById('orderItemGrid');
+  // Delegated listener (see the rcProductsGrid comment above for why: escaping a
+  // product code for HTML doesn't also make it safe inside an inline onclick's JS).
+  if (grid && !grid.dataset.clickBound) {
+    grid.dataset.clickBound = '1';
+    grid.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-delta]');
+      if (!btn) return;
+      const card = btn.closest('[data-code]');
+      if (card) changeOrderQty(card.dataset.code, parseInt(btn.dataset.delta, 10));
+    });
+  }
   const empty = document.getElementById('orderItemEmpty');
   if (items.length === 0) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
@@ -13156,15 +13198,14 @@ function renderOrderItems() {
   grid.innerHTML = items.map(p => {
     const line = order.find(li => li.code === p.code);
     const qty = line ? line.qty : 0;
-    const safeCode = String(p.code).replace(/'/g, "\\'");
     return `
-    <div class="order-item-card">
+    <div class="order-item-card" data-code="${escapeHtml(p.code)}">
       <div class="oi-name">${escapeHtml(p.name)}</div>
       <div class="oi-price">KES ${p.price.toFixed(2)}</div>
       <div class="qty-stepper">
-        <button onclick="changeOrderQty('${safeCode}', -1)">−</button>
+        <button data-delta="-1">−</button>
         <select onchange="setOrderQty('${safeCode}', this.value)">${qtyOptionsHtml(p.unit || 'piece', qty)}</select>
-        <button onclick="changeOrderQty('${safeCode}', 1)">+</button>
+        <button data-delta="1">+</button>
       </div>
     </div>`;
   }).join('');
@@ -14702,9 +14743,9 @@ function updatePortalHeaderState(tabName) {
 function renderRestProducts() {
   const grid = document.getElementById('restProductGrid');
   if (!grid) return;
-  const list = (typeof CATALOG !== 'undefined' && CATALOG && CATALOG.length > 0)
-    ? CATALOG
-    : ((typeof products !== 'undefined' && products && products.length > 0) ? products : (INDUSTRY_CONFIG['Hotel']?.products || []));
+  // Real menu items only — never a fallback demo catalog (see getEffectiveCatalog's
+  // comment: a business's real, possibly-empty product list is always the truth).
+  const list = (typeof CATALOG !== 'undefined' && CATALOG) || (typeof products !== 'undefined' && products) || [];
 
   // Dynamically synchronize category strip with requested food categories
   const catStrip = document.getElementById('restCategoryStrip');
@@ -14715,10 +14756,19 @@ function renderRestProducts() {
     const currActive = catStrip.querySelector('.rest-cat-pill.active')?.getAttribute('data-cat') || 'ALL';
 
     catStrip.innerHTML = mergedCats.map(cat => `
-      <button class="rest-cat-pill ${cat === currActive ? 'active' : ''}" data-cat="${escapeHtml(cat)}" onclick="filterRestCat('${escapeHtml(cat)}', this)">
+      <button class="rest-cat-pill ${cat === currActive ? 'active' : ''}" data-cat="${escapeHtml(cat)}">
         ${escapeHtml(cat)}
       </button>
     `).join('');
+    // Delegated listener (added once) instead of an inline onclick built from a
+    // free-text category name, which a product's own category field can contain.
+    if (!catStrip.dataset.clickBound) {
+      catStrip.dataset.clickBound = '1';
+      catStrip.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-cat]');
+        if (btn) filterRestCat(btn.dataset.cat, btn);
+      });
+    }
   }
 
   grid.innerHTML = list.map(p => `
@@ -14730,10 +14780,21 @@ function renderRestProducts() {
       </div>
       <div class="rest-prod-footer">
         <span class="rest-stock-pill">${p.stock || 0} Stock</span>
-        <button class="rest-add-btn" onclick="restAddToCart('${p.id}', '${escapeHtml(p.name)}', ${p.price})">+ ADD</button>
+        <button class="rest-add-btn" data-id="${escapeHtml(p.id)}" data-name="${escapeHtml(p.name)}" data-price="${p.price}">+ ADD</button>
       </div>
     </div>
   `).join('');
+
+  // Delegated listener (added once) instead of an inline onclick built from the
+  // product's name, which is free text an admin can set to anything — HTML-escaping
+  // it is not enough to make it safe inside an onclick attribute's JS-string context.
+  if (!grid.dataset.clickBound) {
+    grid.dataset.clickBound = '1';
+    grid.addEventListener('click', (e) => {
+      const btn = e.target.closest('.rest-add-btn');
+      if (btn) restAddToCart(btn.dataset.id, btn.dataset.name, parseFloat(btn.dataset.price));
+    });
+  }
 }
 
 function filterRestMenu() {
@@ -15313,8 +15374,8 @@ async function submitModalStkPush() {
             `;
           }
 
-          setTimeout(() => {
-            applySubscriptionSuccess(currentSelectedPlan, realMpesaRef, phone, false, currentSelectedBranches, currentSelectedBilling);
+          setTimeout(async () => {
+            await applySubscriptionSuccess(currentSelectedPlan, realMpesaRef, phone, false, currentSelectedBranches, currentSelectedBilling);
             if (btn) {
               btn.disabled = false;
               btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send M-Pesa STK Push';
@@ -15377,16 +15438,70 @@ async function submitModalStkPush() {
   }
 }
 
-function submitModalManualCode() {
+async function submitModalManualCode() {
   const code = (document.getElementById('modalMpesaCodeInput')?.value || '').trim().toUpperCase();
   if (!code || code.length < 6) {
     showToast('Please enter a valid M-Pesa confirmation code');
     return;
   }
-  applySubscriptionSuccess(currentSelectedPlan, code, profile?.phone || '', false, currentSelectedBranches, currentSelectedBilling);
+  await submitSubscriptionClaim(currentSelectedPlan, code, profile?.phone || '', currentSelectedBranches, currentSelectedBilling);
 }
 
-function applySubscriptionSuccess(planName, refCode, phone, isTrial = false, branches = 1, billing = 'monthly') {
+// A manually-typed M-Pesa code is NOT proof of payment on its own — anyone could type
+// any string here. This records a pending claim instead of granting the plan; the
+// plan only activates once the platform admin approves the claim against the real
+// M-Pesa statement (supabase/migrations/20260930_subscription_enforcement.sql).
+async function submitSubscriptionClaim(planName, code, phone, branches, billing) {
+  if (!business || !business.id) { showToast('No business loaded — refresh and try again.'); return; }
+  let planKey = 'Free';
+  if (/control.*group/i.test(planName)) planKey = 'Control Group';
+  else if (/control/i.test(planName)) planKey = 'Control';
+  else if (/core.*group/i.test(planName)) planKey = 'Core Group';
+  else if (/core/i.test(planName)) planKey = 'Core';
+
+  const { error } = await sb.from('subscription_claims').insert({
+    business_id: business.id,
+    submitted_by: profile?.id || null,
+    plan: planKey,
+    branches: Number(branches) || 1,
+    billing: billing || 'monthly',
+    amount: currentSelectedPrice || null,
+    phone: phone || '',
+    mpesa_code: code
+  });
+  if (error) {
+    showToast((error.message || '').includes('relation') ? 'Payment verification isn\'t set up yet on this database — please contact support.' : 'Could not submit for verification: ' + error.message);
+    return;
+  }
+
+  closeUpgradePlanModal();
+  showToast('Got it — we\'ll verify ' + code + ' against the M-Pesa statement and activate your plan shortly.');
+
+  try {
+    const rawCfg = localStorage.getItem('dogo_platform_settings');
+    const cfg = rawCfg ? JSON.parse(rawCfg) : {};
+    const botToken = cfg.telegram_bot_token || '';
+    const chatId = cfg.alert_telegram;
+    if (botToken && chatId) {
+      const nowStr = new Date().toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' });
+      const storeName = business ? business.name : (profile?.email ? profile.email.split('@')[0] + ' Store' : 'New Merchant');
+      const tgMsg = `⚠️ <b>Dogo POS: Subscription payment needs verification</b>\n\n` +
+        `🏪 <b>Store:</b> ${storeName}\n` +
+        `📦 <b>Plan claimed:</b> ${planName}\n` +
+        `💰 <b>Amount:</b> KES ${Number(currentSelectedPrice || 0).toLocaleString()}\n` +
+        `📱 <b>M-Pesa code entered:</b> <code>${code}</code> (not yet verified)\n` +
+        `📞 <b>Contact:</b> ${phone || profile?.phone || 'Not provided'}\n` +
+        `⏰ ${nowStr} EAT\n\n` +
+        `👉 <i>Check your M-Pesa statement for this code, then approve or reject the claim in the Platform Console.</i>`;
+      fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: tgMsg, parse_mode: 'HTML', disable_web_page_preview: true })
+      }).catch(e => console.warn('Telegram notify error:', e));
+    }
+  } catch (e) {}
+}
+
+async function applySubscriptionSuccess(planName, refCode, phone, isTrial = false, branches = 1, billing = 'monthly') {
   closeUpgradePlanModal();
 
   let planKey = 'Free';
@@ -15439,8 +15554,27 @@ function applySubscriptionSuccess(planName, refCode, phone, isTrial = false, bra
     localStorage.setItem('dogo_biz_plans', JSON.stringify(plans));
   } catch(e) {}
 
-  if (business) {
-    business.subscription_plan = planKey;
+  // Persist the grant to the database — this, not localStorage, is what the app
+  // and the server-side plan-limit triggers actually trust from now on. Only called
+  // for a genuinely verified grant: a free trial, or an M-Pesa payment Safaricom
+  // itself confirmed via the STK push poll. The manual-code box below does NOT call
+  // this function — see submitSubscriptionClaim().
+  if (business && business.id) {
+    const renewsAt = isTrial
+      ? new Date(Date.now() + 7 * 86400000)
+      : new Date(Date.now() + (isYearly ? 365 : 30) * 86400000);
+    const updates = {
+      subscription_plan: planKey,
+      subscription_status: isTrial ? 'trial' : 'active',
+      subscription_started_at: business.subscription_started_at || new Date().toISOString(),
+      subscription_renews_at: renewsAt.toISOString()
+    };
+    const { error: subErr } = await sb.from('businesses').update(updates).eq('id', business.id);
+    if (subErr) {
+      showToast('Payment confirmed, but saving your plan failed: ' + subErr.message + '. Contact support with reference ' + refCode + '.');
+    } else {
+      Object.assign(business, updates);
+    }
   }
 
   // Instant Telegram Push Notification to Super Admin with Real Payment Reference

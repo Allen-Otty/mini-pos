@@ -69,5 +69,27 @@
     document.body.appendChild(a); a.click(); a.remove();
   }
 
-  window.DogoData = { sb, kes, esc, requireSession, logout, toast, boot, downloadCSV };
+  // Mirrors PLAN_FEATURES in index.html — kept in sync manually (small, rarely-changed
+  // table). This is a friendly pre-check only; the real, unbypassable limit lives in
+  // the database (supabase/migrations/20260930_subscription_enforcement.sql), so even
+  // if this drifts or a request skips this check entirely, the database still refuses
+  // an insert that goes over plan.
+  const PLAN_LIMITS = {
+    'Free':          { maxUsers: 1,      maxBranches: 1, maxProducts: 5,        name: 'Free (Starter)' },
+    'Core':          { maxUsers: 5,      maxBranches: 1, maxProducts: Infinity, name: 'Core POS (1 Branch)' },
+    'Core Group':    { maxUsers: 25,     maxBranches: 5, maxProducts: Infinity, name: 'Core Group (Up to 5 Branches)' },
+    'Control':       { maxUsers: Infinity, maxBranches: 1, maxProducts: Infinity, name: 'Control POS (1 Branch)' },
+    'Control Group': { maxUsers: Infinity, maxBranches: 5, maxProducts: Infinity, name: 'Control Group (Up to 5 Branches)' }
+  };
+  function planKeyFor(business) {
+    const raw = (business && business.subscription_plan) || 'Free';
+    if (/control.*group/i.test(raw)) return 'Control Group';
+    if (/control/i.test(raw)) return 'Control';
+    if (/core.*group/i.test(raw)) return 'Core Group';
+    if (/core/i.test(raw)) return 'Core';
+    return 'Free';
+  }
+  function planLimitsFor(business) { const key = planKeyFor(business); return Object.assign({ key }, PLAN_LIMITS[key]); }
+
+  window.DogoData = { sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor };
 })();
