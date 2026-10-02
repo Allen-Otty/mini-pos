@@ -4469,6 +4469,17 @@
   }
 }
 
+/* Restaurant "Clear Bill" mode: hotel-style running check instead of the retail product grid */
+.rc-bill-panel { display: none; }
+.retail-checkout-container.bill-mode { grid-template-columns: minmax(0, 560px); justify-content: center; }
+.retail-checkout-container.bill-mode .rc-products-panel { display: none; }
+.retail-checkout-container.bill-mode .rc-bill-panel { display: block; }
+.retail-checkout-container.bill-mode .rc-sale-panel { position: static; max-height: none; }
+.retail-checkout-container.bill-mode .rc-sale-header,
+.retail-checkout-container.bill-mode #cartBox,
+.retail-checkout-container.bill-mode #clearBtn { display: none !important; }
+.retail-checkout-container.bill-mode.bill-list .rc-sale-panel { display: none; }
+
 .rc-products-panel {
   background: var(--card);
   border: 1px solid var(--border);
@@ -6689,6 +6700,7 @@
         <div class="rest-hint-box">
           <p>Order sent to kitchen. Payment can be settled later.</p>
           <button onclick="switchTab('kitchen')">Open kitchen</button>
+          <button onclick="openRestBillList()">Clear bill</button>
         </div>
       </div>
     </div>
@@ -7353,6 +7365,31 @@
 
     <div class="panel active" id="tab-sell">
     <div class="retail-checkout-container">
+      <!-- Restaurant Clear Bill (hotel-style running check) -->
+      <div class="rc-bill-panel" id="restBillPanel">
+        <div id="restBillListView">
+          <div class="cart-box">
+            <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-receipt"></i> Open bills — tap one to clear it</div>
+            <div id="restBillList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+            <div class="empty-note" id="restBillEmpty">No open bills. Orders appear here once they are sent to the kitchen.</div>
+            <button class="btn-yellow" style="margin-top:12px;" onclick="exitRestBillMode()"><i class="fa-solid fa-bolt"></i> Walk-in quick sale</button>
+          </div>
+        </div>
+        <div id="restBillDetailView" style="display:none;">
+          <div class="cart-box">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+              <button class="btn-yellow" onclick="backToRestBills()">← Back</button>
+              <div style="font-weight:bold;" id="restBillTitle"></div>
+            </div>
+            <div style="font-weight:bold; margin-bottom:8px;">Clear bill</div>
+            <div id="restBillLines" style="font-size:13px; margin-bottom:8px;"></div>
+            <div style="display:flex; justify-content:space-between; font-weight:bold; border-top:1px solid #eee; padding-top:8px;">
+              <span>Total (VAT incl.)</span><span id="restBillTotal">KES 0.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Left Column: Products Panel -->
       <div class="rc-products-panel">
         <!-- Products Header -->
@@ -10582,7 +10619,11 @@ function switchTab(name) {
   if (targetPanel) targetPanel.classList.add('active');
   if (targetTabBtn) targetTabBtn.classList.add('active');
 
-  if (name === 'sell') renderShiftBanner();
+  if (name === 'sell') {
+    renderShiftBanner();
+    if (isRestaurantBiz() && !activeBillTicketId) showRestBillList();
+    else if (!isRestaurantBiz()) { const c = document.querySelector('.retail-checkout-container'); if (c) c.classList.remove('bill-mode', 'bill-list'); }
+  }
   if (name === 'log') renderLog();
   if (name === 'expenses') renderExpenses();
   if (name === 'dash') renderDashboard();
@@ -11310,6 +11351,7 @@ window.addEventListener('offline', () => { isOnline = false; document.getElement
 ===================================================================== */
 function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaReceipt, gatewayName) {
   lastReceiptPayload = { receiptNo, items, subtotal, vatTotal, grand, now, mpesaReceipt, gatewayName };
+  if (typeof finalizeRestBill === 'function') finalizeRestBill();
 
   let linesHtml = '';
   items.forEach(item => {
@@ -15007,7 +15049,10 @@ function renderKitchenBoard() {
           <button class="kds-btn-cancel" onclick="cancelKitchenTicket('${t.id}')">Cancel order</button>
         ` : ''}
         ${t.status === 'ready' ? `
-          <button class="kds-btn-start" onclick="openKdsConfirmModal('${t.id}', 'served')">Mark served &amp; close</button>
+          <button class="kds-btn-start" onclick="openKdsConfirmModal('${t.id}', 'served')">Mark served &amp; clear bill</button>
+        ` : ''}
+        ${(t.status !== 'served' && !t.paid) ? `
+          <button class="kds-btn-start" onclick="openRestBill('${t.id}')">Clear bill</button>
         ` : ''}
       </div>
     </div>
@@ -15039,7 +15084,7 @@ function openKdsConfirmModal(ticketId, nextStatus) {
   const statusDisplayNames = {
     'preparing': 'Preparing',
     'ready': 'Ready',
-    'served': 'Served & Closed'
+    'served': 'Served & Clear Bill'
   };
   const targetLabel = statusDisplayNames[nextStatus] || (nextStatus.charAt(0).toUpperCase() + nextStatus.slice(1));
 
@@ -15075,9 +15120,18 @@ function advanceTicket(id, nextStatus) {
   const t = tickets.find(x => x.id === id);
   if (t) {
     if (nextStatus === 'served') {
-      const idx = tickets.findIndex(x => x.id === id);
-      tickets.splice(idx, 1);
-      showToast(`Ticket ${t.shortId} served and closed!`);
+      if (t.paid) {
+        const idx = tickets.findIndex(x => x.id === id);
+        tickets.splice(idx, 1);
+        showToast(`Ticket ${t.shortId} served and closed!`);
+      } else {
+        t.status = 'served';
+        saveKitchenTickets(tickets);
+        renderKitchenBoard();
+        showToast(`Ticket ${t.shortId} served - clear the bill.`);
+        openRestBill(t.id);
+        return;
+      }
     } else {
       t.status = nextStatus;
       showToast(`Ticket ${t.shortId} moved to ${nextStatus}!`);
@@ -15097,6 +15151,140 @@ function cancelKitchenTicket(id) {
     showToast('Order cancelled.');
     renderKitchenBoard();
   }
+}
+
+
+/* =====================================================================
+   RESTAURANT CLEAR BILL (hotel-style running check, reuses the Sell tab's
+   payment engine: cash, M-Pesa, KCB, Paystack, Airtel)
+===================================================================== */
+let activeBillTicketId = null;
+
+function isRestaurantBiz() {
+  return !!(business && normalizeBizType(business.business_type) === 'Hotel');
+}
+
+function restTicketTotal(t) {
+  return (t.items || []).reduce((s, i) => s + (i.price * i.qty), 0);
+}
+
+function openBillTickets() {
+  return getKitchenTickets().filter(t => !t.paid);
+}
+
+// Convert a kitchen ticket's items to checkout cart lines (VAT/code/unit
+// resolved from the catalog so stock and VAT stay correct).
+function ticketToCart(t) {
+  return (t.items || []).map(i => {
+    const prod = (i.id && CATALOG.find(p => p.id === i.id)) || CATALOG.find(p => p.name === i.name) || null;
+    return {
+      id: prod ? prod.id : (i.id || null),
+      code: prod ? prod.code : (i.code || ''),
+      name: i.name,
+      price: i.price,
+      vat: prod && typeof prod.vat === 'number' ? prod.vat : (typeof i.vat === 'number' ? i.vat : 0.16),
+      unit: (prod && prod.unit) || i.unit || 'piece',
+      qty: i.qty
+    };
+  });
+}
+
+function enterRestBillMode(listOnly) {
+  const c = document.querySelector('.retail-checkout-container');
+  if (!c) return;
+  c.classList.add('bill-mode');
+  c.classList.toggle('bill-list', !!listOnly);
+}
+
+function exitRestBillMode() {
+  activeBillTicketId = null;
+  const c = document.querySelector('.retail-checkout-container');
+  if (c) c.classList.remove('bill-mode', 'bill-list');
+  cart = [];
+  renderCart();
+}
+
+// Settle Bills nav / "Clear bill" shortcuts: list of unpaid tickets
+function openRestBillList() {
+  activeBillTicketId = null;
+  cart = [];
+  renderCart();
+  switchTab('sell');
+  showRestBillList();
+}
+
+function showRestBillList() {
+  enterRestBillMode(true);
+  document.getElementById('restBillListView').style.display = 'block';
+  document.getElementById('restBillDetailView').style.display = 'none';
+  const tickets = openBillTickets();
+  const list = document.getElementById('restBillList');
+  const empty = document.getElementById('restBillEmpty');
+  if (tickets.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  list.innerHTML = tickets.map(t => `
+    <div class="table-tile occupied" data-bill-id="${escapeHtml(t.id)}">
+      <div class="t-name">${escapeHtml(t.shortId)}</div>
+      <div class="t-status">${escapeHtml(t.orderType || '')}</div>
+      <div class="t-total">KES ${restTicketTotal(t).toFixed(2)}</div>
+    </div>`).join('');
+  if (!list.dataset.clickBound) {
+    list.dataset.clickBound = '1';
+    list.addEventListener('click', (e) => {
+      const tile = e.target.closest('[data-bill-id]');
+      if (tile) openRestBill(tile.dataset.billId);
+    });
+  }
+}
+
+function backToRestBills() {
+  activeBillTicketId = null;
+  cart = [];
+  renderCart();
+  showRestBillList();
+}
+
+// Go straight to the Clear Bill screen for one ticket
+function openRestBill(ticketId) {
+  const t = getKitchenTickets().find(x => x.id === ticketId);
+  if (!t) { showToast('That bill is no longer open.'); return; }
+  if (t.paid) { showToast('That bill is already paid.'); return; }
+  if (!currentShift) {
+    showToast('Open a shift before clearing a bill.');
+  }
+  activeBillTicketId = ticketId;
+  cart = ticketToCart(t);
+  switchTab('sell');
+  enterRestBillMode(false);
+  document.getElementById('restBillListView').style.display = 'none';
+  document.getElementById('restBillDetailView').style.display = 'block';
+  document.getElementById('restBillTitle').textContent = `${t.shortId} · ${t.orderType || ''}`;
+  document.getElementById('restBillLines').innerHTML = (t.items || []).map(i =>
+    `<div style="display:flex; justify-content:space-between; padding:2px 0;"><span>${escapeHtml(i.name)} x${i.qty}</span><span>KES ${(i.price * i.qty).toFixed(2)}</span></div>`
+  ).join('');
+  document.getElementById('restBillTotal').textContent = 'KES ' + restTicketTotal(t).toFixed(2);
+  renderCart();
+}
+
+// Called from showReceipt() once a sale has gone through
+function finalizeRestBill() {
+  if (!activeBillTicketId) return;
+  const id = activeBillTicketId;
+  activeBillTicketId = null;
+  const tickets = getKitchenTickets();
+  const idx = tickets.findIndex(x => x.id === id);
+  if (idx !== -1) {
+    const t = tickets[idx];
+    if (t.status === 'served') {
+      tickets.splice(idx, 1);
+    } else {
+      t.paid = true;
+      t.paymentStatus = `Paid KES ${restTicketTotal(t).toFixed(2)}`;
+    }
+    saveKitchenTickets(tickets);
+  }
+  showRestBillList();
+  if (document.getElementById('tab-kitchen')?.classList.contains('active')) renderKitchenBoard();
 }
 
 // QUICK CASH TENDER & CHANGE DUE

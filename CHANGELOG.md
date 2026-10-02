@@ -2,6 +2,19 @@
 
 Newest first. Each entry lists what changed and why, so nothing has to be rediscovered from the git log.
 
+## 2026-10-02 — Restaurant: kitchen confirmation now goes straight to a hotel-style Clear Bill
+
+You asked that, after the kitchen is confirmed, checkout should take the user directly to the bill and stop showing the retail-style "Settle Bills" screen (product grid plus "Current sale"), and that the bill should look like the hotel/table UI.
+
+**What changed (`index.html`, Hotel/Restaurant businesses only):**
+- **Mark served now opens Clear Bill.** On the Kitchen Board, confirming "Served & Clear Bill" no longer just deletes the ticket (which silently dropped an unpaid order). The ticket stays as an open bill and the app jumps straight to its Clear Bill screen.
+- **Settle Bills is now a hotel-style screen.** It shows a list of open bills as tiles (same look as Floor Tables). Tapping one (or arriving from the kitchen) shows the same "Running check" card the table order screen uses: lines, then Total (VAT incl.). The retail product grid and the "Current sale" cart list are hidden in this mode.
+- **Payment is unchanged.** Below the running check it reuses the existing shift banner, cash tender, and M-Pesa / KCB / Paystack / Airtel flow, with the ticket's items loaded as the cart (VAT, code and unit resolved from the catalog).
+- **Paid tickets tidy themselves.** A served ticket is removed once paid. A ticket paid before serving is marked Paid and removed when it is served.
+- **Shortcuts.** A "Clear bill" button was added on Kitchen Board tickets and on the Take Orders panel. A "Walk-in quick sale" button on the bill list gives access to the old retail layout when needed.
+
+**Not done / caveats:** syntax-checked and the bill logic was tested in isolation (jsdom); the full screen has not been clicked through in a real browser or with a live M-Pesa payment. Kitchen tickets are still stored in browser localStorage (`dogopos_kitchen_tickets_v1`), so open bills are per device, not shared between devices.
+
 ## 2026-09-30 — Subscription plans are now actually enforced; security fixes from a code review
 
 You asked to add 5 subscription tiers, lock businesses to them, route subscription payments to you, and restrict the Platform Console link to your account only. Investigating that surfaced a real, serious problem worth fixing before anything else: **the plan a business was on lived almost entirely in that browser's localStorage, which anyone could edit in their own browser console to grant themselves any plan for free** — and a "manual M-Pesa code" box on the upgrade screen accepted any 6+ character string as proof of payment and upgraded the account instantly, with zero verification. Five tiers already existed in the code (Free, Core, Core Group, Control, Control Group) — the real gap was that none of them were actually locked to anything.

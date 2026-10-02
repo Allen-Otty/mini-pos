@@ -16,6 +16,7 @@ A multi-business point-of-sale web app: cloud sync, role-based Admin/Teller acco
 - **Sell tab**: camera barcode scanning, manual entry, cart, VAT-inclusive pricing
 - **Checkout**: Cash, or M-Pesa via STK Push — wired to the real Supabase project (`mpesa-stk-push`, `mpesa-callback`, `mpesa-settings` edge functions; `payment_requests` table)
 - **Shift management**: `openShift()`/`closeShift()`, opening float, expected vs actual cash, variance tracking, shifts history table
+- **Restaurant Clear Bill** (Hotel/Restaurant only, classic app): marking a kitchen ticket served opens its bill directly in a hotel-style running-check screen; Settle Bills lists open bills instead of the retail product grid (2026-10-02)
 - **Menu & Tables** (Hotel/Restaurant only): **redesigned to a table-first order flow** — tap a table → category-chip menu → running check → Send to Kitchen (prints a KOT) / Checkout Table (clears the table back to Free). Live — see Section 2 for reconciliation notes
 - **Signup/Login hardening**: duplicate-email detection with a link to Sign In, Confirm Password field, show/hide password toggle (login + signup), password rules checklist (8+ chars, upper/lower/number) — live
 - **Neon Dusk theme** (`#00d4ff` / `#020024`) applied as the new default palette — live
