@@ -13940,6 +13940,16 @@ async function sendDigitalPrompt() {
     }
 
     mpesaCurrentRequestId = initResult.payment_request_id;
+
+    // Paystack uses a hosted checkout page, not a phone prompt: hand the customer
+    // to Paystack and come back to /payment-complete.html, which resumes the poll.
+    if (currentPaymentMethod === 'paystack' && initResult.authorization_url) {
+      try { sessionStorage.setItem('dogopos_pending_payment', JSON.stringify({ id: initResult.payment_request_id, amount: grand, gateway: 'paystack', customer_id: custId })); } catch (e) {}
+      if (waitingBox) waitingBox.style.display = 'none';
+      window.location.href = initResult.authorization_url;
+      return;
+    }
+
     pollDigitalStatus(initResult.payment_request_id, currentPaymentMethod, grand, custId, initResult.channel);
   } catch (err) {
     if (window._posStkCountdown) clearInterval(window._posStkCountdown);

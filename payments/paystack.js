@@ -16,6 +16,11 @@ export async function initiatePaystackPayment({ email, phone, amount, customerId
   const numericAmount = Math.max(1, Number(amount));
   const customerEmail = email && email.includes('@') ? email : `customer-${Date.now()}@dogopos.app`;
 
+  const secretKey = config.secret_key;
+  if (!secretKey) {
+    throw new Error('Paystack is not configured. Save your Paystack Secret Key in Settings > Integrations first.');
+  }
+
   const request = createPaymentRequest({
     gateway: 'paystack',
     amount: numericAmount,
@@ -29,22 +34,115 @@ export async function initiatePaystackPayment({ email, phone, amount, customerId
     }
   });
 
-  const paystackRef = `PSTK-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const callbackBase = process.env.APP_URL || 'http://localhost:3000';
+
+  // Ask Paystack for a real hosted checkout page. Without this call no money moves.
+  let authorizationUrl = null;
+  let paystackRef = null;
+  let accessCode = null;
+  const apiBase = config.is_production ? 'https://api.paystack.co' : 'https://api.paystack.co'; // test and live share one API host; the key decides the mode
+  try {
+    const psResp = await fetch(`${apiBase}/transaction/initialize`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: customerEmail,
+        amount: Math.round(numericAmount * 100), // Paystack expects kobo (subunits)
+        currency: 'KES',
+        reference: request.checkout_request_id,
+        callback_url: `${callbackBase}/payment-complete.html`,
+        metadata: { ...request.metadata, phone: phone || '' }
+      })
+    });
+    const psData = await psResp.json();
+    if (psData.status && psData.data) {
+      authorizationUrl = psData.data.authorization_url;
+      accessCode = psData.data.access_code;
+      paystackRef = psData.data.reference;
+    } else {
+      updatePaymentRequest(request.id, {
+        status: 'failed',
+        result_desc: `Paystack initialize failed: ${psData.message || 'unknown error'}`
+      });
+      throw new Error(`Paystack initialize failed: ${psData.message || 'unknown error'}`);
+    }
+  } catch (err) {
+    if (err.message && err.message.startsWith('Paystack initialize failed')) throw err;
+    updatePaymentRequest(request.id, {
+      status: 'failed',
+      result_desc: `Paystack unreachable: ${err.message}`
+    });
+    throw new Error(`Could not reach Paystack: ${err.message}`);
+  }
+
   updatePaymentRequest(request.id, {
     checkout_request_id: paystackRef,
     merchant_request_id: paystackRef,
-    result_desc: `Paystack charge initialized. Waiting for customer completion.`
+    result_desc: 'Paystack checkout page opened. Waiting for customer completion.'
   });
 
   return {
     success: true,
     payment_request_id: request.id,
     checkout_request_id: paystackRef,
+    authorization_url: authorizationUrl,
+    access_code: accessCode,
     amount: numericAmount,
     gateway: 'paystack',
     email: customerEmail,
-    message: `Paystack transaction reference ${paystackRef} initialized for KES ${numericAmount.toFixed(2)}.`
+    message: `Paystack checkout opened for KES ${numericAmount.toFixed(2)}.`
   };
+}
+
+/**
+ * Re-checks a payment directly with Paystack (server-to-server). This is the
+ * authoritative confirmation used by /status - the webhook is a convenience, not the source of truth.
+ */
+export async function verifyPaystackPayment(paymentRequestId) {
+  const config = getInternalConfig('paystack');
+  const secretKey = config.secret_key;
+  const request = getPaymentRequest(paymentRequestId);
+  if (!request || !request.checkout_request_id) return request || null;
+  if (!secretKey) return request; // cannot verify without a key; leave status untouched
+
+  try {
+    const resp = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(request.checkout_request_id)}`, {
+      headers: { Authorization: `Bearer ${secretKey}` }
+    });
+    const data = await resp.json();
+    if (data.status && data.data) {
+      const tx = data.data;
+      if (tx.status === 'success') {
+        const paidAmount = Number(tx.amount) / 100;
+        if (paidAmount + 0.01 < request.amount) {
+          updatePaymentRequest(request.id, {
+            status: 'failed',
+            result_desc: `Paystack underpayment: paid KES ${paidAmount.toFixed(2)}, expected KES ${request.amount}`,
+            raw_callback: tx
+          });
+        } else if (request.status === 'pending') {
+          updatePaymentRequest(request.id, {
+            status: 'success',
+            receipt_reference: tx.reference,
+            amount_paid: paidAmount,
+            result_desc: `Paystack payment confirmed via ${tx.channel || 'card/mobile'}.`,
+            raw_callback: tx
+          });
+        }
+      } else if (['failed', 'abandoned', 'reversed'].includes(tx.status) && request.status === 'pending') {
+        updatePaymentRequest(request.id, {
+          status: tx.status === 'failed' ? 'failed' : 'pending', // abandoned stays pending (customer may still pay)
+          result_desc: `Paystack reports ${tx.status}.`
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('[Paystack verify] network error:', err.message);
+  }
+  return getPaymentRequest(paymentRequestId);
 }
 
 /**

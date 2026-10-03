@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dogo POS — Payment status</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; background: #0b1020; color: #e5e7eb;
+         display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+  .card { background: #111832; border: 1px solid #1e2a4a; border-radius: 16px; padding: 36px 40px;
+          text-align: center; max-width: 440px; }
+  .icon { font-size: 42px; margin-bottom: 12px; }
+  h1 { font-size: 20px; margin: 8px 0; }
+  p { font-size: 14px; color: #9ca3af; margin: 6px 0; }
+  .ref { font-family: monospace; background: #0b1020; padding: 4px 10px; border-radius: 6px; display: inline-block; }
+  a { color: #34d399; font-weight: 700; text-decoration: none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon" id="ico">⏳</div>
+    <h1 id="title">Verifying your payment…</h1>
+    <p id="msg">Checking with the payment provider. Do not close this page.</p>
+    <p class="ref" id="ref" style="display:none;"></p>
+    <p style="margin-top:18px;"><a href="index.html?legacy=1">← Back to POS</a></p>
+  </div>
+<script>
+  // Paystack (and later other hosted-checkout gateways) land here after the customer
+  // pays. The server — not this page — decides whether the payment is real: the page
+  // only polls the authenticated /status endpoint until it reports a final state.
+  (function () {
+    var pending = null;
+    try { pending = JSON.parse(sessionStorage.getItem('dogopos_pending_payment') || 'null'); } catch (e) {}
+    var ico = document.getElementById('ico');
+    var title = document.getElementById('title');
+    var msg = document.getElementById('msg');
+    var refEl = document.getElementById('ref');
+
+    var SUPABASE_URL = 'https://uzwomzkzqrpiumtnniik.supabase.co';
+    var SUPABASE_ANON_KEY = 'sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D';
+    var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function apiBase() {
+      var custom = localStorage.getItem('dogo_api_url') || (window.DOGO_CONFIG && window.DOGO_CONFIG.api_url);
+      if (custom) return custom.replace(/\/+$/, '');
+      if (['localhost', '127.0.0.1'].indexOf(window.location.hostname) !== -1) return '';
+      return null;
+    }
+
+    function show(icon, t, m, ref) {
+      ico.textContent = icon; title.textContent = t; msg.textContent = m;
+      if (ref) { refEl.textContent = 'Ref: ' + ref; refEl.style.display = 'inline-block'; }
+    }
+
+    if (!pending || !pending.id) {
+      show('❓', 'No payment in progress', 'This page opens automatically after checkout. Start a sale in the POS first.');
+      return;
+    }
+
+    var attempts = 0;
+    var timer = setInterval(async function () {
+      attempts++;
+      if (attempts > 60) { // ~3 minutes
+        clearInterval(timer);
+        show('⚠️', 'Verification is taking too long', 'The payment may still complete. Check the Gateway Transactions ledger in the POS before retrying.');
+        return;
+      }
+      try {
+        var base = apiBase();
+        if (base === null) {
+          clearInterval(timer);
+          show('⚠️', 'Cannot verify here', 'The payment API runs on the POS server host. Open the POS there to confirm this payment.');
+          return;
+        }
+        var session = null;
+        try { var r = await sb.auth.getSession(); session = r && r.data && r.data.session; } catch (e) {}
+        if (!session || !session.access_token) {
+          clearInterval(timer);
+          show('🔒', 'Sign in to confirm', 'Your session expired during checkout. Sign in to the POS — if the payment completed, it is already in the ledger.');
+          return;
+        }
+        var res = await fetch(base + '/api/payments/status/' + encodeURIComponent(pending.id), {
+          headers: { 'Authorization': 'Bearer ' + session.access_token }
+        });
+        var body = await res.json();
+        var d = body && body.data;
+        if (!d) return;
+        if (d.status === 'success') {
+          clearInterval(timer);
+          show('✅', 'Payment confirmed', 'The sale is complete. You can close this page.', d.receipt_reference);
+          try { sessionStorage.removeItem('dogopos_pending_payment'); } catch (e) {}
+        } else if (d.status === 'failed') {
+          clearInterval(timer);
+          show('❌', 'Payment failed', (d.result_desc || 'The provider reported a failure.') + ' Start a new checkout to try again.');
+        } else if (d.status === 'cancelled') {
+          clearInterval(timer);
+          show('🚫', 'Payment cancelled', 'No money moved. Start a new checkout when ready.');
+        }
+      } catch (e) { /* transient network error; retry */ }
+    }, 3000);
+  })();
+</script>
+</body>
+</html>

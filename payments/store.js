@@ -409,7 +409,11 @@ function seedDemoTransactions() {
 
   sampleData.forEach(d => paymentRequests.set(d.id, d));
 }
-seedDemoTransactions();
+// Fabricated "success" receipts must never appear in a real merchant's ledger.
+// Seeding now happens only when DEMO_MODE is explicitly set (DEMO_MODE=1).
+if (process.env.DEMO_MODE === '1' || process.env.DEMO_MODE === 'true') {
+  seedDemoTransactions();
+}
 
 /**
  * Creates a new payment request record in pending state

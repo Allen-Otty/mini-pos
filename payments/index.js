@@ -1,7 +1,7 @@
 import express from 'express';
 import { initiateMpesaStkPush, verifyAndProcessMpesaCallback, confirmAndProcessMpesaCallback, formatDarajaTimestamp, queryDarajaStkStatus } from './mpesa.js';
 import { initiateKcbPayment, verifyAndProcessKcbCallback, generateKcbSignature } from './kcb.js';
-import { initiatePaystackPayment, verifyAndProcessPaystackCallback } from './paystack.js';
+import { initiatePaystackPayment, verifyAndProcessPaystackCallback, verifyPaystackPayment } from './paystack.js';
 import { initiateAirtelPayment, verifyAndProcessAirtelCallback } from './airtel.js';
 import {
   getPaymentRequest,
@@ -149,6 +149,13 @@ paymentRouter.get('/status/:id', requireSession, async (req, res) => {
     } catch (e) {}
   }
 
+  // Actively confirm with Paystack if still pending (the webhook alone is not trusted)
+  if (request.gateway === 'paystack' && request.status === 'pending' && request.checkout_request_id) {
+    try {
+      request = (await verifyPaystackPayment(id)) || request;
+    } catch (e) {}
+  }
+
   res.json({
     success: true,
     data: {
@@ -290,6 +297,11 @@ paymentRouter.post('/callbacks/airtel', (req, res) => {
  * Dedicated sandbox simulation endpoint that runs through the exact callback verification engine!
  */
 paymentRouter.post('/simulate/:id', requireBusinessAdmin, (req, res) => {
+  // The simulator fabricates provider-signed callbacks. In production it is a payment
+  // forgery tool, so it only exists when the process is not running in production mode.
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ success: false, error: 'Not available in production.' });
+  }
   const { id } = req.params;
   const { action = 'approve', receipt } = req.body;
   const request = getPaymentRequest(id);

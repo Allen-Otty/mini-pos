@@ -83,6 +83,12 @@ export async function initiateMpesaStkPush({ phone, amount, customerId, cart, me
   // Check if live Daraja API credentials are configured
   const hasLiveCredentials = config.consumer_key && config.consumer_secret && !config.consumer_key.includes('mock');
 
+  // Production must never fake a prompt: without live credentials there is no way a real
+  // payment can happen, and the callback layer would reject any success claim anyway.
+  if (!hasLiveCredentials && config.is_production) {
+    throw new Error('M-Pesa production mode is on but Daraja credentials are missing. Set MPESA_CONSUMER_KEY and MPESA_CONSUMER_SECRET (and MPESA_PASSKEY) before accepting live payments.');
+  }
+
   if (hasLiveCredentials) {
     try {
       const authHeader = Buffer.from(`${config.consumer_key}:${config.consumer_secret}`).toString('base64');
