@@ -2117,7 +2117,17 @@ async function confirmGrantPlan() {
     subscription_started_at: new Date().toISOString(),
     subscription_renews_at: new Date(Date.now() + days * 86400000).toISOString()
   }).eq('id', bizId);
-  if (error) return showToast('Could not assign plan: ' + error.message);
+  if (error) {
+    const msg = error.message || '';
+    // Missing migration: the schema is behind the console. Tell the operator
+    // exactly what to run instead of a cryptic schema-cache error.
+    if (/subscription_plan|schema cache|column .* does not exist/i.test(msg)) {
+      showToast('Database migration missing. Run supabase/migrations/20260930_subscription_enforcement.sql in the Supabase SQL Editor, then retry.', 8000);
+    } else {
+      showToast('Could not assign plan: ' + msg);
+    }
+    return;
+  }
 
   closePlanModal();
   const matchedBiz = allBusinessesCache.find(b => b.id === bizId);
