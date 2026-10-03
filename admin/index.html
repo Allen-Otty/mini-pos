@@ -760,6 +760,9 @@
     <button class="admin-nav-btn" data-tab="health" id="navHealthBtn" onclick="switchAdminTab('health', this)">
       <i class="fa-solid fa-shield-virus"></i> Diagnostics
     </button>
+    <button class="admin-nav-btn" data-tab="threats" onclick="switchAdminTab('threats', this)">
+      <i class="fa-solid fa-shield-halved"></i> Threat Scan <span class="pill-count" id="navThreatCount" style="display:none;">!</span>
+    </button>
     <button class="admin-nav-btn" data-tab="businesses" onclick="switchAdminTab('businesses', this)">
       <i class="fa-solid fa-store"></i> Stores <span class="pill-count" id="navBizCount">0</span>
     </button>
@@ -1030,6 +1033,24 @@
       </div>
     </div>
 
+    <!-- TAB 4b: THREAT SCAN -->
+    <div class="tab-view" id="tab-threats">
+      <div class="admin-card">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title"><i class="fa-solid fa-shield-halved"></i> AI Threat Detection &amp; Anti-Hacking Scan</h3>
+            <p class="card-sub">Heuristic analysis of payment traffic, login history and the audit trail. Every finding links to evidence — no hardcoded status text.</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn-secondary" onclick="exportThreatCSV()"><i class="fa-solid fa-file-csv"></i> Export Findings</button>
+            <button class="btn-primary" onclick="runThreatScan()"><i class="fa-solid fa-radar"></i> Run Full Scan</button>
+          </div>
+        </div>
+        <div id="threatSummary" style="display:flex; gap:12px; flex-wrap:wrap; margin:16px 0;"></div>
+        <div id="threatFindings"><div style="padding:24px; text-align:center; color:var(--text-muted);">Press <strong>Run Full Scan</strong> to analyse platform activity.</div></div>
+      </div>
+    </div>
+
     <!-- TAB 5: BUSINESSES -->
     <div class="tab-view" id="tab-businesses">
       <div class="admin-card">
@@ -1159,6 +1180,15 @@
           <button class="btn-primary" onclick="savePayoutSettings()">
             <i class="fa-solid fa-floppy-disk"></i> Save Payout Settings
           </button>
+        </div>
+
+        <!-- Express Payment Server — Live Gateway Control -->
+        <h4 style="color:var(--blue); font-size:14px; font-weight:800; margin:8px 0 10px;">
+          <i class="fa-solid fa-sliders"></i> Express Payment Server — Live Gateway Control
+        </h4>
+        <div style="background:rgba(56,189,248,0.05); border:1px solid rgba(56,189,248,0.2); border-radius:14px; padding:16px; margin-bottom:16px;">
+          <p class="card-sub" style="margin:0 0 10px;">Controls talk directly to the Express payment API (<code>server.js</code>): enable/disable gateways and flip sandbox/production at runtime. Secrets stay in the server environment — never displayed or stored here.</p>
+          <div id="expressGatewayPanel"><div style="padding:10px; color:var(--text-muted); font-size:13px;"><i class="fa-solid fa-spinner fa-spin"></i> Checking payment server...</div></div>
         </div>
 
         <!-- M-Pesa Settings -->
@@ -1834,6 +1864,9 @@ async function loadDashboard() {
 
   // Start Telegram bot listener for live admin commands & auto-detect
   startTelegramBotListener();
+
+  // Live gateway status (Express payment server) for the Payouts tab
+  refreshExpressGatewayStatus();
 }
 
 function escapeHtml(s) {
@@ -2517,38 +2550,27 @@ function generateAiSystemResponse(query) {
   }
 
   if (q.includes('hack') || q.includes('vulnerabilit') || q.includes('penetrat') || q.includes('exploit') || q.includes('injection') || q.includes('xss') || q.includes('csrf') || q.includes('scan platform') || (q.includes('security') && q.includes('audit'))) {
+    runThreatScan({ silent: true });
     return `
-      🛡️ <strong>Live Platform Security Diagnostic &amp; Anti-Hacking Scan:</strong><br><br>
-      <div style="background:rgba(16,185,129,0.08); border:1px solid #10b981; border-radius:10px; padding:10px; margin-bottom:12px;">
-        <strong style="color:#059669;"><i class="fa-solid fa-circle-check"></i> Overall Security Status: GRADE A+ (0 Critical Vulnerabilities Detected)</strong>
-      </div>
-      • <strong>1. Secrets Isolation &amp; Git Leakage Protection:</strong><br>
-        &nbsp;&nbsp;✅ Secrets quarantined in <code>config/secrets/.env</code> and excluded in <code>.gitignore</code>.<br>
-        &nbsp;&nbsp;✅ Telegram Bot Tokens, Safaricom Daraja Consumer Secrets, and Supabase Service Role keys purged from client-side bundles.<br><br>
-      • <strong>2. SQL Injection &amp; Multi-Tenant Database Isolation:</strong><br>
-        &nbsp;&nbsp;✅ Supabase Row Level Security (RLS) policies strictly enforce tenant boundary. Cross-store data leakage impossible.<br>
-        &nbsp;&nbsp;✅ PostgREST parameterized queries prevent arbitrary SQL injection attacks.<br><br>
-      • <strong>3. Cross-Site Scripting (XSS) Sanitization:</strong><br>
-        &nbsp;&nbsp;✅ All user-supplied inputs (product names, receipt memos, KOT notes, client names) sanitized via <code>escapeHtml()</code> before DOM insertion.<br><br>
-      • <strong>4. Rate Limiting &amp; STK Push Abuse Prevention:</strong><br>
-        &nbsp;&nbsp;✅ Server-side throttling on <code>/api/payments/initiate</code> limits requests to 10 per minute per IP, preventing Daraja STK push harassment and denial-of-service wallet drain.<br><br>
-      • <strong>5. Webhook Cryptographic Verification:</strong><br>
-        &nbsp;&nbsp;✅ Safaricom Daraja IP/Header verification active.<br>
-        &nbsp;&nbsp;✅ Paystack webhooks cryptographically verified via HMAC-SHA512 signature matching.<br><br>
-      • <strong>6. Transport Security:</strong><br>
-        &nbsp;&nbsp;✅ HSTS &amp; Strict SSL/TLS enabled, encrypting all till-to-cloud traffic against MITM packet sniffing on public store Wi-Fi.<br><br>
-      🔒 <em>Hardening Tip:</em> Enable 2FA on Super Admin credentials and rotate API tokens quarterly in <code>config/secrets/.env</code>.
+      🛡️ <strong>AI Threat Detection — real scan launched</strong><br><br>
+      No hardcoded "Grade A+" answers: every claim is checked against live data. The full scan (with evidence) is filling the <strong>Threat Scan</strong> tab right now.<br><br>
+      • <strong>Payment tampering:</strong> successful-but-underpaid payments, duplicate receipts (replay/forgery signature), zero-amount requests — across the latest payment requests.<br>
+      • <strong>STK harassment / API probing:</strong> bursts of 4+ failed/pending requests from one phone within 10 minutes.<br>
+      • <strong>Credential attacks:</strong> login spikes (25+ events/hour) and off-hours (00:00–05:00) access.<br>
+      • <strong>Privilege changes:</strong> every promote/demote/suspend/delete in the audit trail from the last 7 days.<br><br>
+      <strong>Verified in current code:</strong> KCB &amp; Paystack webhooks require valid HMAC signatures (missing = 401); M-Pesa success claims are confirmed with Safaricom's own status query before anything is marked paid; payment endpoints require a signed-in session, with per-business scoping on records.<br>
+      <strong>Open items:</strong> no rate limiter on the Express API yet; super-admin MFA not verifiable from here; the <code>platform-admin</code> Supabase function needs a manual review (not in the repo).<br><br>
+      <em>See the <strong>Threat Scan</strong> tab for evidence-backed results.</em>
     `;
   }
 
   if (q.includes('security') || q.includes('health') || q.includes('diagnostic')) {
     return `
-      🛡️ <strong>Security & System Health Snapshot:</strong><br><br>
-      • <strong>Infrastructure Latency:</strong> 24ms (Optimal response)<br>
-      • <strong>Client Key Isolation:</strong> Verified (Service role key is NOT exposed)<br>
-      • <strong>Super Admin Authentication:</strong> Verified JWT session<br>
-      • <strong>Suspended Store Access:</strong> Fully isolated from live till checkouts<br>
-      • <strong>System Health Score:</strong> 99% Operational · Grade A+
+      🛡️ <strong>Security &amp; System Health Snapshot</strong><br><br>
+      Run <strong>Run Live Diagnostic Test</strong> (Diagnostics tab) for measured database latency, and <strong>Run Full Scan</strong> (Threat Scan tab) for evidence-based security findings.<br>
+      • <strong>Client key isolation:</strong> the browser only ever holds publishable keys; secrets live in server env / edge functions.<br>
+      • <strong>Gateway webhooks:</strong> KCB &amp; Paystack signature-mandatory; M-Pesa confirmed via Safaricom query.<br>
+      • <strong>Open:</strong> rate limiting, super-admin MFA verification, platform-admin function review.
     `;
   }
 
@@ -2834,6 +2856,236 @@ function renderFunnelChart() {
 }
 
 // 5. System Health & Security Diagnostics
+/* ================= AI THREAT DETECTION ENGINE ================= */
+let _threatFindings = [];
+
+function _tEsc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function _tAdd(level, title, detail, evidence) {
+  _threatFindings.push({ level: level, title: title, detail: detail, evidence: evidence || [] });
+}
+
+async function runThreatScan(opts) {
+  opts = opts || {};
+  const box = document.getElementById('threatFindings');
+  _threatFindings = [];
+  if (!opts.silent) showToast('AI threat scan running — analysing payments, logins and audit trail...');
+  if (box) box.innerHTML = '<div style="padding:24px; text-align:center; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Analysing platform activity...</div>';
+
+  const stats = { payments: 0, logins: 0, audit: 0, skipped: [] };
+
+  try {
+    const { data: pays, error } = await sb.from('payment_requests').select('*').order('created_at', { ascending: false }).limit(400);
+    if (error) throw error;
+    stats.payments = (pays || []).length;
+    analysePayments(pays || []);
+  } catch (e) { stats.skipped.push('payment_requests not readable (' + (e.message || 'RLS') + ') — payment heuristics skipped'); }
+
+  try {
+    const { data: logins, error } = await sb.from('login_history').select('*').order('created_at', { ascending: false }).limit(300);
+    if (error) throw error;
+    stats.logins = (logins || []).length;
+    analyseLogins(logins || []);
+  } catch (e) { stats.skipped.push('login_history not readable — login heuristics skipped'); }
+
+  try {
+    const audit = await callPlatformFn('audit_log', {});
+    if (audit && audit.error) throw new Error(audit.error);
+    stats.audit = (audit || []).length;
+    analyseAudit(audit || []);
+  } catch (e) { stats.skipped.push('audit_log not readable — audit heuristics skipped'); }
+
+  stats.skipped.forEach(s => _tAdd('low', 'Data source skipped', s, []));
+  renderThreatFindings(!opts.silent);
+  const badge = document.getElementById('navThreatCount');
+  if (badge) {
+    const hot = _threatFindings.filter(f => f.level === 'critical' || f.level === 'high').length;
+    badge.style.display = hot ? 'inline-block' : 'none';
+    badge.textContent = String(hot);
+  }
+  return _threatFindings;
+}
+
+function analysePayments(pays) {
+  const now = Date.now();
+  const byPhone = {};
+  pays.forEach(p => {
+    const phone = p.phone || (p.metadata && p.metadata.phone) || 'unknown';
+    (byPhone[phone] = byPhone[phone] || []).push(p);
+  });
+  Object.keys(byPhone).forEach(phone => {
+    const recent = byPhone[phone].filter(p => now - new Date(p.created_at).getTime() < 10 * 60 * 1000);
+    const troubled = recent.filter(p => ['pending', 'failed', 'cancelled'].indexOf(p.status) !== -1);
+    if (troubled.length >= 4) {
+      _tAdd('high', 'Payment request burst (possible STK harassment / API probing)',
+        phone + ': ' + troubled.length + ' non-success requests in 10 minutes. Could be a customer retrying — or someone spamming STK pushes / probing the payment API.',
+        troubled.slice(0, 5).map(p => p.created_at + ' — ' + p.gateway + ' — ' + p.status));
+    }
+  });
+  pays.filter(p => p.status === 'success' && p.amount_paid !== null && p.amount_paid !== undefined && (Number(p.amount_paid) + 0.01) < Number(p.amount))
+    .forEach(p => _tAdd('critical', 'Successful payment paid less than billed',
+      'Request ' + (p.id || '') + ' marked SUCCESS with paid KES ' + p.amount_paid + ' < billed KES ' + p.amount + '. Impossible after the verification fixes — treat as tampering or a bug.',
+      [p.created_at + ' — ' + p.gateway + ' — ref ' + (p.receipt_reference || '')]));
+  const byReceipt = {};
+  pays.forEach(p => { if (p.receipt_reference) (byReceipt[p.receipt_reference] = byReceipt[p.receipt_reference] || []).push(p); });
+  Object.keys(byReceipt).forEach(r => {
+    if (byReceipt[r].length > 1) _tAdd('critical', 'Duplicate payment receipt across requests',
+      'Receipt ' + r + ' appears on ' + byReceipt[r].length + ' different payment requests — classic replay/forgery signature.',
+      byReceipt[r].map(p => p.created_at + ' — ' + p.gateway + ' — ' + p.status));
+  });
+  const stale = pays.filter(p => p.status === 'pending' && now - new Date(p.created_at).getTime() > 30 * 60 * 1000);
+  if (stale.length) _tAdd('low', stale.length + ' payment requests stuck pending >30 min',
+    'Usually abandoned checkouts. Clean periodically so the ledger stays readable.',
+    stale.slice(0, 5).map(p => p.created_at + ' — ' + p.gateway + ' — ' + (p.phone || '')));
+  pays.filter(p => !(Number(p.amount) > 0))
+    .forEach(p => _tAdd('critical', 'Payment request with zero/invalid amount', 'Request ' + (p.id || ''), [p.created_at + ' — ' + p.gateway]));
+}
+
+function analyseLogins(logins) {
+  if (!logins.length) return;
+  const fieldFor = r => r.created_at || r.login_at || r.timestamp || r.time;
+  const odd = logins.filter(r => {
+    const t = new Date(fieldFor(r) || 0);
+    const h = isNaN(t.getTime()) ? -1 : t.getHours();
+    return h >= 0 && h < 5;
+  });
+  if (odd.length) _tAdd('medium', odd.length + ' logins between 00:00–05:00',
+    'Off-hours access is not always bad (late-night shops), but review who and from where.',
+    odd.slice(0, 6).map(r => JSON.stringify(r).substring(0, 140)));
+  const perHour = {};
+  logins.forEach(r => { const k = (fieldFor(r) || '').toString().substring(0, 13); perHour[k] = (perHour[k] || 0) + 1; });
+  Object.keys(perHour).forEach(k => {
+    if (perHour[k] >= 25) _tAdd('high', 'Login spike: ' + perHour[k] + ' events in hour ' + k,
+      'Possible credential-stuffing or bot activity against the login endpoint.', []);
+  });
+}
+
+function analyseAudit(audit) {
+  const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;
+  const priv = audit.filter(a => /promote|demote|role|platform[_-]?admin|suspend|reactivate|delete/i.test(a.action || '') && new Date(a.created_at).getTime() > weekAgo);
+  if (priv.length) _tAdd('medium', priv.length + ' privilege/lifecycle changes in the last 7 days',
+    'Promotions, demotions, suspensions or deletions. Confirm each one was you.',
+    priv.slice(0, 8).map(a => a.created_at + ' — ' + a.action + ' — ' + (a.actor_role || '')));
+}
+
+function renderThreatFindings(flushToast) {
+  const box = document.getElementById('threatFindings');
+  const sum = document.getElementById('threatSummary');
+  const counts = { critical: 0, high: 0, medium: 0, low: 0 };
+  _threatFindings.forEach(f => counts[f.level]++);
+  const sevColor = { critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#64748b' };
+  if (sum) {
+    sum.innerHTML = ['critical', 'high', 'medium', 'low'].map(l =>
+      '<div style="background:var(--card); border:1px solid ' + sevColor[l] + '55; border-radius:12px; padding:12px 20px; min-width:110px;">' +
+      '<div style="font-size:22px; font-weight:900; color:' + sevColor[l] + ';">' + counts[l] + '</div>' +
+      '<div style="font-size:11px; text-transform:uppercase; color:var(--text-muted);">' + l + '</div></div>').join('') +
+      '<div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 20px;">' +
+      '<div style="font-size:13px; color:var(--text-muted);">Verdict</div>' +
+      '<div style="font-weight:800; color:' + (counts.critical ? '#ef4444' : counts.high ? '#f97316' : '#4ade80') + ';">' +
+      (counts.critical ? 'Action required' : counts.high ? 'Review advised' : 'No active threats detected') + '</div></div>';
+  }
+  if (!box) return;
+  if (!_threatFindings.length) {
+    box.innerHTML = '<div style="padding:24px; text-align:center; color:#4ade80;"><i class="fa-solid fa-circle-check"></i> Nothing to report.</div>';
+    return;
+  }
+  box.innerHTML = _threatFindings.map(f =>
+    '<div style="background:var(--card); border:1px solid ' + sevColor[f.level] + '44; border-left:4px solid ' + sevColor[f.level] + '; border-radius:12px; padding:14px 18px; margin-bottom:12px;">' +
+    '<strong style="color:' + sevColor[f.level] + ';">[' + f.level.toUpperCase() + '] ' + _tEsc(f.title) + '</strong>' +
+    '<div style="font-size:13px; color:var(--text); margin-top:6px;">' + _tEsc(f.detail) + '</div>' +
+    (f.evidence && f.evidence.length ?
+      '<details style="margin-top:8px;"><summary style="cursor:pointer; font-size:12px; color:var(--blue);">Evidence (' + f.evidence.length + ')</summary>' +
+      '<pre style="font-size:11px; background:var(--bg); padding:10px; border-radius:8px; overflow-x:auto; white-space:pre-wrap;">' + _tEsc(f.evidence.join('\n')) + '</pre></details>' : '') +
+    '</div>').join('');
+  if (flushToast) showToast('Threat scan complete: ' + counts.critical + ' critical, ' + counts.high + ' high, ' + counts.medium + ' medium, ' + counts.low + ' low.');
+}
+
+function exportThreatCSV() {
+  let csv = 'Severity,Finding,Detail,Evidence\n';
+  _threatFindings.forEach(f => {
+    csv += '"' + f.level + '","' + f.title.replace(/"/g, '""') + '","' + f.detail.replace(/"/g, '""') + '","' + (f.evidence || []).join(' | ').replace(/"/g, '""') + '"\n';
+  });
+  downloadFile(csv, 'dogopos_threat_scan_' + Date.now() + '.csv', 'text/csv');
+  showToast('Downloaded threat findings CSV');
+}
+
+/* ================= EXPRESS GATEWAY LIVE CONTROL ================= */
+function getExpressBase() {
+  const custom = localStorage.getItem('dogo_api_url') || (window.DOGO_CONFIG && window.DOGO_CONFIG.api_url);
+  if (custom) return custom.replace(/\/+$/, '');
+  if (['localhost', '127.0.0.1'].indexOf(window.location.hostname) !== -1) return '';
+  return null;
+}
+
+async function expressAuthHeaders() {
+  const { data } = await sb.auth.getSession();
+  const token = data && data.session ? data.session.access_token : '';
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+}
+
+async function refreshExpressGatewayStatus() {
+  const wrap = document.getElementById('expressGatewayPanel');
+  if (!wrap) return;
+  const base = getExpressBase();
+  if (base === null) {
+    wrap.innerHTML = '<div style="padding:14px; color:var(--text-muted); font-size:13px;"><i class="fa-solid fa-plug-circle-xmark"></i> Express payment server not reachable from this host. Open the console on the POS server host (or set <code>dogo_api_url</code> in that browser) to control gateways live.</div>';
+    return;
+  }
+  try {
+    const res = await fetch(base + '/api/payments/gateways', { headers: await expressAuthHeaders() });
+    const body = await res.json();
+    if (!body.success) throw new Error(body.error || 'unavailable');
+    renderExpressGateways(body.gateways, base);
+  } catch (e) {
+    wrap.innerHTML = '<div style="padding:14px; color:#f97316; font-size:13px;"><i class="fa-solid fa-triangle-exclamation"></i> Express gateway API not reachable (' + _tEsc(e.message) + '). Controls activate once the server is running.</div>';
+  }
+}
+
+function renderExpressGateways(gateways, base) {
+  const wrap = document.getElementById('expressGatewayPanel');
+  wrap.innerHTML = gateways.map(g =>
+    '<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:10px;">' +
+    '<div><strong style="text-transform:uppercase;">' + _tEsc(g.gateway) + '</strong>' +
+    '<span class="tag" style="margin-left:8px; background:' + (g.enabled ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)') + '; color:' + (g.enabled ? '#4ade80' : '#ef4444') + ';">' + (g.enabled ? 'Enabled' : 'Disabled') + '</span>' +
+    '<span class="tag" style="margin-left:6px; background:' + (g.is_production ? 'rgba(250,204,21,.12)' : 'rgba(56,189,248,.12)') + '; color:' + (g.is_production ? '#facc15' : '#38bdf8') + ';">' + (g.is_production ? 'PRODUCTION' : 'Sandbox') + '</span>' +
+    '<div style="font-size:12px; color:var(--text-muted); margin-top:4px;">key configured: ' + (g.has_key ? 'yes' : 'no') + ' · secret configured: ' + (g.has_secret ? 'yes' : 'no') + '</div></div>' +
+    '<div style="display:flex; gap:8px; align-items:center;">' +
+    '<select id="gwMode_' + _tEsc(g.gateway) + '" class="form-control" style="width:auto; padding:6px 10px;" onchange="setGatewayMode(\'' + _tEsc(g.gateway) + '\', this.value)">' +
+    '<option value="sandbox" ' + (g.is_production ? '' : 'selected') + '>Sandbox</option>' +
+    '<option value="production" ' + (g.is_production ? 'selected' : '') + '>Production</option></select>' +
+    '<button class="btn-secondary" onclick="toggleGatewayEnabled(\'' + _tEsc(g.gateway) + '\')">' + (g.enabled ? 'Disable' : 'Enable') + '</button>' +
+    '</div></div>').join('') +
+    '<div style="font-size:12px; color:var(--text-muted); margin-top:8px;">Mode changes apply to the running Express process; keep the server env (<code>*_ENVIRONMENT</code>) in sync for restarts. Secrets are only ever set on the server. API base: <code>' + _tEsc(base || '(same host)') + '</code></div>';
+}
+
+async function toggleGatewayEnabled(gateway) {
+  const base = getExpressBase();
+  if (base === null) return;
+  try {
+    const gRes = await (await fetch(base + '/api/payments/gateways', { headers: await expressAuthHeaders() })).json();
+    const g = (gRes.gateways || []).find(x => x.gateway === gateway);
+    if (!g) return;
+    const res = await fetch(base + '/api/payments/config/' + gateway, { method: 'POST', headers: await expressAuthHeaders(), body: JSON.stringify({ enabled: !g.enabled }) });
+    const body = await res.json();
+    showToast(body.success ? gateway.toUpperCase() + (g.enabled ? ' disabled.' : ' enabled.') : 'Failed: ' + (body.error || ''));
+    refreshExpressGatewayStatus();
+  } catch (e) { showToast('Gateway control failed: ' + e.message); }
+}
+
+async function setGatewayMode(gateway, mode) {
+  const base = getExpressBase();
+  if (base === null) return;
+  try {
+    const res = await fetch(base + '/api/payments/config/' + gateway, { method: 'POST', headers: await expressAuthHeaders(), body: JSON.stringify({ is_production: mode === 'production' }) });
+    const body = await res.json();
+    showToast(body.success ? gateway.toUpperCase() + ' set to ' + mode + '. Keep the server env in sync for restarts.' : 'Failed: ' + (body.error || ''));
+  } catch (e) { showToast('Gateway control failed: ' + e.message); }
+  refreshExpressGatewayStatus();
+}
+
 function runDiagnostics() {
   showToast('Running comprehensive platform diagnostics...');
   const overall = document.getElementById('diagOverallScore');

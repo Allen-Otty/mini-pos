@@ -641,13 +641,29 @@ export function findRequestByAnyRef(ref) {
 export function getGatewayConfig(gateway) {
   const cfg = gatewayConfigs[gateway];
   if (!cfg) return null;
-  // Return safe copy with sensitive secrets masked
+  // SECURITY: return an explicit whitelist — never spread the config, or secrets
+  // (consumer_secret, secret_key, shared_secret, passkey, encryption_key) leak to
+  // any GET /gateways /config caller. UI shows the two booleans only.
   return {
-    ...cfg,
-    has_secret: Boolean(cfg.consumer_secret || cfg.app_secret || cfg.secret_key || cfg.client_secret),
+    gateway,
+    enabled: Boolean(cfg.enabled),
+    is_production: Boolean(cfg.is_production),
+    payment_type: cfg.payment_type,
+    shortcode: cfg.shortcode,
+    merchant_code: cfg.merchant_code,
+    account_number: cfg.account_number,
+    merchant_number: cfg.merchant_number,
+    public_key: cfg.public_key,
+    callback_url: cfg.callback_url,
+    has_secret: Boolean(cfg.consumer_secret || cfg.app_secret || cfg.secret_key || cfg.client_secret || cfg.shared_secret || cfg.encryption_key),
     has_key: Boolean(cfg.consumer_key || cfg.app_key || cfg.public_key || cfg.client_id)
   };
 }
+
+// Fields an admin is allowed to change via POST /config/:gateway — everything
+// else (especially secrets arriving from a browser) is ignored; secrets belong
+// in the server environment only.
+const CONFIGURABLE_FIELDS = ['enabled', 'is_production', 'payment_type', 'shortcode', 'merchant_code', 'account_number', 'merchant_number', 'public_key'];
 
 /**
  * Gets internal full config (for server crypto/api execution)
@@ -663,7 +679,13 @@ export function updateGatewayConfig(gateway, updates) {
   if (!gatewayConfigs[gateway]) {
     gatewayConfigs[gateway] = { enabled: true };
   }
-  Object.assign(gatewayConfigs[gateway], updates);
+  // SECURITY: whitelist — an unauthenticated/arbitrary object must not be able to
+  // plant a secret_key, passkey, or any other key into the running config.
+  for (const k of Object.keys(updates || {})) {
+    if (CONFIGURABLE_FIELDS.includes(k)) {
+      gatewayConfigs[gateway][k] = updates[k];
+    }
+  }
   return getGatewayConfig(gateway);
 }
 

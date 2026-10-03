@@ -3,6 +3,15 @@
 Newest first. Each entry lists what changed and why, so nothing has to be rediscovered from the git log.
 
 
+
+## 2026-10-03 — Admin console: AI Threat Scan, live gateway control, honest AI answers
+
+**New "Threat Scan" tab (AI anti-hacking):** a real heuristic engine over live data — payment tampering (success-with-underpayment, duplicate receipts, zero amounts), STK harassment bursts (4+ failed/pending per phone in 10 min), login spikes (25+/hour) and off-hours access (00:00–05:00), and every privilege change (promote/demote/suspend/delete) from the last 7 days. Each finding carries severity, explanation and expandable evidence; counts + verdict cards at the top; findings export to CSV; the nav badge flags critical/high counts. Unreadable data sources (RLS) are reported honestly as skipped, not silently passed.
+
+**Payouts tab: live Express gateway control:** enable/disable each gateway and flip sandbox/production at runtime against the running `server.js`, with configured key/secret indicators. Secrets are never displayed or stored in the console.
+
+**AI Copilot honesty fix:** the hardcoded "Grade A+ / rate limiting active / HSTS enabled" answers (which described controls that did not exist) were replaced with real, verified statements plus known open items; security questions now launch the live Threat Scan.
+
 ## 2026-10-03 — Paystack now collects real money; production guards for M-Pesa, simulator and demo data
 
 **Paystack is wired to the real Paystack API.** `initiatePaystackPayment` now calls `POST /transaction/initialize` with the configured secret key and returns Paystack's hosted `authorization_url`; the POS sends the customer to that page (`payment-complete.html` is the return URL). The poll endpoint re-verifies every pending Paystack payment with `GET /transaction/verify/:ref` before marking it success — the webhook is convenience, the verify call is the source of truth. Amounts are checked against our own request (kobo conversion, small tolerance).
