@@ -2,6 +2,20 @@
 
 Newest first. Each entry lists what changed and why, so nothing has to be rediscovered from the git log.
 
+## 2026-10-03 — Security fixes from an external code review (webhooks, payment API auth, Telegram bot)
+
+An outside review of this repo listed ten concerns. I checked each against the real code; several were already fixed or were not real problems (the Supabase publishable key is meant to be public, the API uses bearer tokens so CSRF barely applies, the service worker only caches static pages). These five were real and are fixed here:
+
+- **KCB webhook (the serious one):** the HMAC signature was only checked *if the caller sent a signature header*, so an attacker could omit it and forge a "payment succeeded" callback. The signature is now mandatory (missing or wrong = 401), the shared secret must be configured, and a callback whose timestamp is missing/invalid or older than 10 minutes is rejected (it used to only log a warning).
+- **Paystack webhook:** a missing signature was accepted outside production, and a signature without a raw body skipped the check entirely. Both are now rejected in every environment.
+- **Unauthenticated payment endpoints:** `/initiate`, `/status/:id`, `/link-sale`, `/gateways` and `/config` now need a signed-in business user; `/transactions`, `/recent` and `/transaction/:ref` need a business admin. The webhook callback routes stay open (the gateways call them) and rely on their signatures. `index.html`'s `safeFetchJson()` now attaches the Supabase token to every `/api/payments/` call automatically.
+- **`payments/auth.js` hardcoded fallback key removed:** with no `SUPABASE_ANON_KEY` the protected endpoints now answer 503 instead of authenticating against an embedded key.
+- **`telegram-bot.js` crashed on start** (`require()` in a `"type": "module"` package). Renamed to `telegram-bot.cjs`; run it with `node telegram-bot.cjs`.
+
+**Tested** with Node scripts: KCB and Paystack accept a valid signed callback and reject missing/bad/stale ones; every protected route returns 401/503 without a session; callbacks stay reachable. **Not tested:** with a real browser session against a running Express server, or with real KCB/Paystack traffic. **Still open:** M-Pesa and Airtel callbacks have no signature (Safaricom does not sign; the fix is to confirm with Safaricom's status query before marking paid); payment records are not scoped per business, so one business's admin could read another's transactions on a shared Express server; the offline-login flag (`dogopos_is_logged_in`); and I did not read the `platform-admin` function that gates `/admin`.
+
+**Deploy note:** set `SUPABASE_ANON_KEY`, `KCB_SHARED_SECRET` and `PAYSTACK_SECRET_KEY` on the Express server. KCB must send `x-kcb-signature` and a timestamp, or its callbacks will now be rejected.
+
 ## 2026-09-30 — Subscription plans are now actually enforced; security fixes from a code review
 
 You asked to add 5 subscription tiers, lock businesses to them, route subscription payments to you, and restrict the Platform Console link to your account only. Investigating that surfaced a real, serious problem worth fixing before anything else: **the plan a business was on lived almost entirely in that browser's localStorage, which anyone could edit in their own browser console to grant themselves any plan for free** — and a "manual M-Pesa code" box on the upgrade screen accepted any 6+ character string as proof of payment and upgraded the account instantly, with zero verification. Five tiers already existed in the code (Free, Core, Core Group, Control, Control Group) — the real gap was that none of them were actually locked to anything.
