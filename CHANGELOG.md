@@ -4,6 +4,21 @@ Newest first. Each entry lists what changed and why, so nothing has to be redisc
 
 
 
+
+## 2026-10-03 — Restaurant module: hotel-only menus, hotel-style receipts, lost-order fix
+
+**Menus are food-only.** The restaurant order page now filters the catalog to real food categories (Breakfast, Drinks, Lunch, Dinner/Supper, Snacks, and similar). Non-food entries — General Store, Retail, Hardware, etc. — no longer appear on the menu or its category chips for Hotel/Restaurant businesses; other business types are unchanged.
+
+**You choose the course for each item.** The Menu Items quick-add category field is now a food-course picker (Breakfast / Drinks / Lunch / Dinner/Supper / Snacks / Other) for Hotel businesses, so every menu item is classifiable and the chips stay consistent.
+
+**Hotel-style receipts.** Restaurant receipts now print the order type (and table, for Dine In) under the business header, and each line shows its course in brackets. Retail receipts are unchanged.
+
+**Table orders can no longer be silently destroyed.** Checking out a table previously cleared the table even when checkout was blocked (e.g. no open shift) — the order was lost. The table now only clears after the sale actually completes.
+
+**Kitchen board data honesty.** The two fake demo tickets that shipped to every fresh device are gone; elapsed minutes now come from a real `createdAt` timestamp and tick up live (30s refresh) instead of being a static number; locations on Take Orders come from the business profile instead of hardcoded "luanda"/"Main Branch".
+
+**Sold-out items.** Items with 0 stock show a disabled SOLD OUT chip (and are refused server-side of the UI) instead of being addable.
+
 ## 2026-10-03 — Admin console: AI Threat Scan, live gateway control, honest AI answers
 
 **New "Threat Scan" tab (AI anti-hacking):** a real heuristic engine over live data — payment tampering (success-with-underpayment, duplicate receipts, zero amounts), STK harassment bursts (4+ failed/pending per phone in 10 min), login spikes (25+/hour) and off-hours access (00:00–05:00), and every privilege change (promote/demote/suspend/delete) from the last 7 days. Each finding carries severity, explanation and expandable evidence; counts + verdict cards at the top; findings export to CSV; the nav badge flags critical/high counts. Unreadable data sources (RLS) are reported honestly as skipped, not silently passed.

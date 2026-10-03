@@ -6696,10 +6696,7 @@
         <div class="rest-order-controls">
           <div class="rest-control-group">
             <label><i class="fa-solid fa-store"></i> Location <span>*</span></label>
-            <select id="restLocationSelect">
-              <option value="luanda">luanda</option>
-              <option value="main">Main Branch</option>
-            </select>
+            <select id="restLocationSelect"><!-- populated from the business profile by renderRestLocation() --></select>
           </div>
           <div class="rest-control-group">
             <label><i class="fa-solid fa-utensils"></i> Order type <span>*</span></label>
@@ -9041,6 +9038,31 @@ function applyIndustryCustomizations(bizType) {
     if (indCats.includes(curVal)) pcCatSelect.value = curVal;
   }
 
+  // Hotel mode: the Menu Items quick-add category becomes a food-course picker
+  // (Breakfast / Lunch / Dinner/Supper / Snacks / Drinks / Other) instead of
+  // free text, so menu categories stay consistent with the restaurant chips.
+  const capInput = document.getElementById('capCategory');
+  if (capInput) {
+    if (norm === 'Hotel') {
+      let capSel = document.getElementById('capCategorySelect');
+      if (!capSel) {
+        capSel = document.createElement('select');
+        capSel.id = 'capCategorySelect';
+        capInput.parentNode.insertBefore(capSel, capInput);
+      }
+      const foodCats = ['Breakfast', 'Drinks', 'Lunch', 'Dinner/Supper', 'Snacks', 'Other'];
+      const curCap = capInput.value;
+      capSel.innerHTML = foodCats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      if (foodCats.includes(curCap)) capSel.value = curCap;
+      capSel.style.display = '';
+      capInput.style.display = 'none';
+    } else {
+      capInput.style.display = '';
+      const capSel = document.getElementById('capCategorySelect');
+      if (capSel) capSel.remove();
+    }
+  }
+
   // 5. Update primary navigation in sidebar
   renderSidebarNav(norm);
 
@@ -10673,7 +10695,7 @@ function switchTab(name) {
   }
 
   updatePortalHeaderState(name);
-  if (name === 'restaurant-order') { renderRestProducts(); renderRestTicket(); }
+  if (name === 'restaurant-order') { renderRestLocation(); renderRestProducts(); renderRestTicket(); }
   if (name === 'kitchen') { renderKitchenBoard(); }
   if (name === 'subscription') { renderSubscriptionTab(); }
   if (name === 'branches') {
@@ -11221,11 +11243,11 @@ async function handleTableCheckoutClick(btn) {
 }
 
 async function checkout() {
-  if (cart.length === 0) return;
+  if (cart.length === 0) return false;
   if (!currentShift) {
     showToast('Open a shift before making a sale — see the Sell tab.');
     switchTab('sell');
-    return;
+    return false;
   }
   const now = new Date();
   const custId = document.getElementById('cartCustomerPick').value || null;
@@ -11299,6 +11321,7 @@ async function checkout() {
   renderCart();
   document.getElementById('cartCustomerPick').value = '';
   updatePendingSyncBanner();
+  return true;
 }
 
 
@@ -11428,12 +11451,18 @@ function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaRece
   lastReceiptPayload = { receiptNo, items, subtotal, vatTotal, grand, now, mpesaReceipt, gatewayName };
   if (typeof finalizeRestBill === 'function') finalizeRestBill();
 
+  const hotelReceipt = typeof isRestaurantBiz === 'function' && isRestaurantBiz();
   let linesHtml = '';
   items.forEach(item => {
     const lineTotal = item.price * item.qty;
+    // Hotels: show the meal course (Breakfast, Lunch, Dinner/Supper, Snacks...) under each item.
+    const cat = (item.category
+      || ((typeof CATALOG !== 'undefined' && CATALOG)
+        ? (CATALOG.find(pp => pp.code === item.code || pp.id === item.id) || {}).category
+        : '') || '');
     linesHtml += `
       <div class="receipt-line item-name"><span>${escapeHtml(item.name)}</span><span></span></div>
-      <div class="receipt-line"><span>${item.qty}${item.unit && item.unit !== 'piece' ? ' ' + escapeHtml(item.unit) : ''} x ${item.price.toFixed(2)}</span><span>${lineTotal.toFixed(2)}</span></div>`;
+      <div class="receipt-line"><span>${item.qty}${item.unit && item.unit !== 'piece' ? ' ' + escapeHtml(item.unit) : ''} x ${item.price.toFixed(2)}${hotelReceipt && cat ? ` <span style="color:#888; font-size:10px;">(${escapeHtml(cat)})</span>` : ''}</span><span>${lineTotal.toFixed(2)}</span></div>`;
   });
   const showLogo = business.receipt_show_logo !== false;
   const showVat = business.receipt_show_vat_breakdown !== false;
@@ -11446,6 +11475,7 @@ function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaRece
     <div class="sub">${escapeHtml(business.location || '')} ${business.kra_pin ? '| PIN: ' + escapeHtml(business.kra_pin) : ''}</div>
     ${business.receipt_phone ? `<div class="sub">Tel: ${escapeHtml(business.receipt_phone)}</div>` : ''}
     <div class="sub">Receipt ${receiptNo} · ${now.toLocaleDateString()} ${now.toLocaleTimeString()}</div>
+    ${hotelReceipt && currentOrderContext ? `<div class="sub"><strong>${escapeHtml(currentOrderContext.type || 'Order')}</strong>${currentOrderContext.table ? ' · Table ' + escapeHtml(currentOrderContext.table) : ''}</div>` : ''}
     <hr>
     ${linesHtml}
     <hr>
@@ -11460,6 +11490,10 @@ function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaRece
   document.getElementById('receiptModal').classList.add('show');
 }
 function closeReceipt() { document.getElementById('receiptModal').classList.remove('show'); }
+
+// Order context printed on hotel receipts (set by table checkout / Clear Bill,
+// cleared after the sale so retail receipts are unaffected).
+let currentOrderContext = null;
 
 /* =====================================================================
    SALES LOG & DIGITAL PAYMENTS STATUS
@@ -13100,7 +13134,8 @@ function cancelEditProduct() {
 async function addProductManually() {
   const code = document.getElementById('capCode').value.trim();
   const name = document.getElementById('capName').value.trim();
-  const category = document.getElementById('capCategory').value.trim() || 'Other';
+  const capSelEl = document.getElementById('capCategorySelect');
+  const category = ((capSelEl && capSelEl.style.display !== 'none') ? capSelEl.value : document.getElementById('capCategory').value.trim()) || 'Other';
   const price = parseFloat(document.getElementById('capPrice').value);
   const vat = parseFloat(document.getElementById('capVat').value);
   const unit = document.getElementById('capUnit').value;
@@ -13425,7 +13460,10 @@ async function checkoutTableOrder() {
 
   cart = t.current_order.map(li => ({ code: li.code, name: li.name, price: li.price, vat: li.vat, unit: li.unit, qty: li.qty }));
   const savedTableId = t.id;
-  await checkout();
+  currentOrderContext = { type: 'Dine In', table: t.name };
+  const ok = await checkout();
+  currentOrderContext = null;
+  if (ok === false) return; // checkout was blocked (e.g. shift closed) — keep the table's order intact
 
   const { error } = await sb.from('tables').update({ current_order: [], status: 'free' }).eq('id', savedTableId);
   if (error) { showToast('Sale completed, but could not clear table: ' + error.message); }
@@ -14752,41 +14790,13 @@ let lastReceiptPayload = null;
 // Kitchen tickets state - seed with default if empty
 const KITCHEN_STORAGE_KEY = 'dogopos_kitchen_tickets_v1';
 function getKitchenTickets() {
+  // Real orders only. The old code seeded two fake demo tickets on every fresh
+  // device, which could be mistaken for live orders during service.
   try {
     const raw = localStorage.getItem(KITCHEN_STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch(e) {}
-  return [
-    {
-      id: 'POS-9SCVWG97O9',
-      shortId: '#3993',
-      orderType: 'DINE IN · TABLE 3',
-      priority: 'MEDIUM PRIORITY',
-      location: 'luanda',
-      status: 'pending',
-      timeMin: 4,
-      paymentStatus: 'Unpaid KES 1,200.00',
-      items: [
-        { name: 'Nyama Choma 1kg', qty: 1, price: 900 },
-        { name: 'Ugali & Greens', qty: 2, price: 100 },
-        { name: 'Passion Juice 500ml', qty: 2, price: 100 }
-      ]
-    },
-    {
-      id: 'POS-8KD34Z21A4',
-      shortId: '#3994',
-      orderType: 'TAKEAWAY',
-      priority: 'HIGH PRIORITY',
-      location: 'luanda',
-      status: 'preparing',
-      timeMin: 12,
-      paymentStatus: 'Paid KES 850.00',
-      items: [
-        { name: 'Chicken Biryani', qty: 1, price: 650 },
-        { name: 'French Fries', qty: 1, price: 200 }
-      ]
-    }
-  ];
+  } catch (e) {}
+  return [];
 }
 function saveKitchenTickets(tickets) {
   try { localStorage.setItem(KITCHEN_STORAGE_KEY, JSON.stringify(tickets)); } catch(e) {}
@@ -14883,17 +14893,55 @@ function updatePortalHeaderState(tabName) {
 }
 
 // RESTAURANT ORDER LOGIC
+// Food categories allowed on the restaurant order page. Anything else in the
+// catalog (General Store, Retail, Hardware...) belongs to other business
+// types and must never show up on a hotel/restaurant menu.
+const RESTAURANT_FOOD_CATS = ['BREAKFAST', 'DRINKS', 'LUNCH', 'DINNER/SUPPER', 'SNACKS', 'OTHER',
+  'BEVERAGES', 'JUICES', 'SOFT DRINKS', 'HOT BEVERAGES', 'DESSERTS', 'STARTERS', 'SOUPS', 'SPECIALS', 'COMBOS'];
+function isFoodCategory(cat) {
+  const c = (cat || '').toUpperCase().trim();
+  if (!c) return false;
+  return RESTAURANT_FOOD_CATS.includes(c);
+}
+function restElapsedMinutes(t) {
+  if (t.createdAt) {
+    const ms = Date.now() - new Date(t.createdAt).getTime();
+    return Math.max(0, Math.round(ms / 60000));
+  }
+  return t.timeMin || 0;
+}
+// Locations come from the business's own profile (Settings > Business Info),
+// not a hardcoded list. Falls back to the saved business.location only.
+function renderRestLocation() {
+  const sel = document.getElementById('restLocationSelect');
+  if (!sel) return;
+  const opts = new Set();
+  if (business && business.location) opts.add(business.location);
+  if (opts.size === 0) opts.add('Main');
+  const prev = sel.dataset.prev || '';
+  sel.innerHTML = Array.from(opts).map(l => `<option value="${escapeHtml(l)}"${l === prev ? ' selected' : ''}>${escapeHtml(l)}</option>`).join('');
+  sel.dataset.prev = sel.value;
+}
+
 function renderRestProducts() {
   const grid = document.getElementById('restProductGrid');
   if (!grid) return;
   // Real menu items only — never a fallback demo catalog (see getEffectiveCatalog's
   // comment: a business's real, possibly-empty product list is always the truth).
-  const list = (typeof CATALOG !== 'undefined' && CATALOG) || (typeof products !== 'undefined' && products) || [];
+  let list = (typeof CATALOG !== 'undefined' && CATALOG) || (typeof products !== 'undefined' && products) || [];
+  const hotelMode = typeof isRestaurantBiz === 'function' && isRestaurantBiz();
+  if (hotelMode) {
+    // Hide non-food catalog entries (General Store, Retail, Hardware...) from
+    // the restaurant menu — they belong to other business types.
+    list = list.filter(p => isFoodCategory(p.category));
+  }
 
-  // Dynamically synchronize category strip with requested food categories
+  // Category strip: fixed food courses + any food categories actually in use.
   const catStrip = document.getElementById('restCategoryStrip');
   if (catStrip) {
-    const defaultCats = ['ALL', 'BREAKFAST', 'DRINKS', 'LUNCH', 'DINNER/SUPPER', 'SNACKS'];
+    const defaultCats = hotelMode
+      ? ['ALL', 'BREAKFAST', 'DRINKS', 'LUNCH', 'DINNER/SUPPER', 'SNACKS', 'OTHER']
+      : ['ALL'];
     const prodCats = Array.from(new Set(list.map(p => (p.category || '').toUpperCase()).filter(Boolean)));
     const mergedCats = Array.from(new Set([...defaultCats, ...prodCats]));
     const currActive = catStrip.querySelector('.rest-cat-pill.active')?.getAttribute('data-cat') || 'ALL';
@@ -14914,8 +14962,10 @@ function renderRestProducts() {
     }
   }
 
-  grid.innerHTML = list.map(p => `
-    <div class="rest-prod-card" data-name="${escapeHtml(p.name).toLowerCase()}" data-cat="${escapeHtml(p.category || 'ALL')}">
+  grid.innerHTML = list.map(p => {
+    const out = !(p.stock > 0);
+    return `
+    <div class="rest-prod-card" data-name="${escapeHtml(p.name).toLowerCase()}" data-cat="${escapeHtml(p.category || 'ALL')}"${out ? ' style="opacity:.55;"' : ''}>
       <div class="rest-prod-thumb">No Image</div>
       <div>
         <div class="rest-prod-name">${escapeHtml(p.name)}</div>
@@ -14923,10 +14973,12 @@ function renderRestProducts() {
       </div>
       <div class="rest-prod-footer">
         <span class="rest-stock-pill">${p.stock || 0} Stock</span>
-        <button class="rest-add-btn" data-id="${escapeHtml(p.id)}" data-name="${escapeHtml(p.name)}" data-price="${p.price}">+ ADD</button>
+        ${out
+          ? '<span class="rest-add-btn" style="cursor:not-allowed; background:#e5e7eb; color:#9ca3af;">SOLD OUT</span>'
+          : `<button class="rest-add-btn" data-id="${escapeHtml(p.id)}" data-name="${escapeHtml(p.name)}" data-price="${p.price}">+ ADD</button>`}
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   // Delegated listener (added once) instead of an inline onclick built from the
   // product's name, which is free text an admin can set to anything — HTML-escaping
@@ -14966,6 +15018,8 @@ function filterRestCat(cat, btn) {
 }
 
 function restAddToCart(id, name, price) {
+  const prod = (typeof CATALOG !== 'undefined' && CATALOG) ? CATALOG.find(x => x.id === id) : null;
+  if (prod && !(prod.stock > 0)) { showToast('"' + name + '" is out of stock.'); return; }
   const existing = activeRestOrderItems.find(i => i.id === id);
   if (existing) {
     existing.qty += 1;
@@ -15059,8 +15113,9 @@ function sendOrderToKitchen() {
     shortId: '#' + randNum,
     orderType: orderType.toUpperCase(),
     priority: 'MEDIUM PRIORITY',
-    location: document.getElementById('restLocationSelect')?.value || 'luanda',
+    location: document.getElementById('restLocationSelect')?.value || (business && business.location) || 'Main',
     status: 'pending',
+    createdAt: new Date().toISOString(), // real clock: the board computes elapsed minutes
     timeMin: 0,
     paymentStatus: `Unpaid KES ${totalCost.toFixed(2)}`,
     items: JSON.parse(JSON.stringify(activeRestOrderItems))
@@ -15083,6 +15138,12 @@ function switchKdsStatus(status) {
   if (status === 'preparing') document.getElementById('kdsTabPreparing')?.classList.add('active');
   if (status === 'ready') document.getElementById('kdsTabReady')?.classList.add('active');
   renderKitchenBoard();
+}
+
+if (typeof window !== 'undefined' && !window._kdsTicker) {
+  window._kdsTicker = setInterval(() => {
+    if (document.getElementById('tab-kitchen')?.classList.contains('active')) renderKitchenBoard();
+  }, 30000);
 }
 
 function renderKitchenBoard() {
@@ -15126,7 +15187,7 @@ function renderKitchenBoard() {
               <span class="kds-pill-type">${t.orderType}</span>
               <span class="kds-pill-priority">${t.priority}</span>
             </div>
-            <div class="kds-ticket-meta">${t.location} &middot; ${t.timeMin} min &middot; ${t.paymentStatus}</div>
+            <div class="kds-ticket-meta">${escapeHtml(t.location || '')} &middot; ${restElapsedMinutes(t)} min &middot; ${escapeHtml(t.paymentStatus || '')}</div>
           </div>
         </div>
 
@@ -15299,6 +15360,7 @@ function enterRestBillMode(listOnly) {
 
 function exitRestBillMode() {
   activeBillTicketId = null;
+  currentOrderContext = null;
   const c = document.querySelector('.retail-checkout-container');
   if (c) c.classList.remove('bill-mode', 'bill-list');
   cart = [];
@@ -15347,6 +15409,8 @@ function backToRestBills() {
 
 // Go straight to the Clear Bill screen for one ticket
 function openRestBill(ticketId) {
+  const tk = getKitchenTickets().find(x => x.id === ticketId);
+  if (tk) currentOrderContext = { type: (tk.orderType || 'Order').replace(/\s*·\s*TABLE\s*/i, ' · Table ') };
   const t = getKitchenTickets().find(x => x.id === ticketId);
   if (!t) { showToast('That bill is no longer open.'); return; }
   if (t.paid) { showToast('That bill is already paid.'); return; }
@@ -15369,6 +15433,7 @@ function openRestBill(ticketId) {
 
 // Called from showReceipt() once a sale has gone through
 function finalizeRestBill() {
+  currentOrderContext = null;
   if (!activeBillTicketId) return;
   const id = activeBillTicketId;
   activeBillTicketId = null;
