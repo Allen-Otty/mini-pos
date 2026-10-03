@@ -2,6 +2,16 @@
 
 Newest first. Each entry lists what changed and why, so nothing has to be rediscovered from the git log.
 
+## 2026-10-03 — Gateway simulator hidden from the public page; all 5 subscription tiers shown
+
+**Bug: the "Gateway Webhook & Callback Simulator" and "M-Pesa Transaction Inspector" were visible at the bottom of the public landing page on phones.** Cause: the CSS that hides those two modals (and styles the whole gateway ledger) had been nested by mistake inside the `@media (min-width: 1024px)` "collapsed sidebar" block, so on any screen narrower than 1024px the modals had no `display:none` and rendered as plain unstyled blocks under the footer. Fixed by closing that desktop block right after the sidebar rules; the gateway styles now apply at every screen size.
+
+**The simulator is now a platform-admin-only tool.** The "Simulate Webhook" button is hidden for everyone except the platform super admin, and `openSimulateTxModal()` refuses to open for anyone else, so a business user can no longer inject fake payment callbacks even by calling it from the console.
+
+**Pricing now shows all 5 tiers** (it only showed Free, Core and Control): Free, Core POS (KES 999), **Core Group (KES 3,999, up to 5 branches)**, Control POS (KES 1,999), **Control Group (KES 7,999, up to 5 branches)**. The Monthly/Yearly toggle updates all four paid tiers (yearly: 9,999 / 39,999 / 19,999 / 79,999), and the sign-up plan picker offers the two group tiers too.
+
+**Not done / caveats:** checked with jsdom tests (5 cards, toggle, plan picker) and syntax checks, not in a real browser, so please look at the landing page on your phone. A plan chosen at sign-up is still only a cosmetic/local hint: the plan the app actually enforces comes from the business's database row, and a 7-day trial is only written to the database from the in-app upgrade flow. The Free plan card and the sign-up flow itself are unchanged.
+
 ## 2026-10-02 — Restaurant: kitchen confirmation now goes straight to a hotel-style Clear Bill
 
 You asked that, after the kitchen is confirmed, checkout should take the user directly to the bill and stop showing the retail-style "Settle Bills" screen (product grid plus "Current sale"), and that the bill should look like the hotel/table UI.

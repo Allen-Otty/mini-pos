@@ -1176,9 +1176,9 @@
 
   .pricing-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-    max-width: 1040px;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 16px;
+    max-width: 1280px;
     margin: 0 auto;
   }
   .pricing-card {
@@ -5012,9 +5012,14 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: #facc15;
   }
-  /* =====================================================================
-     DIGITAL PAYMENTS & GATEWAY TRANSACTIONS STYLES
-  ===================================================================== */
+}
+
+/* =====================================================================
+   DIGITAL PAYMENTS & GATEWAY TRANSACTIONS STYLES
+   (previously nested inside the min-width:1024px block above, so on phones
+   the gateway modals had no display:none and rendered on the public page)
+===================================================================== */
+@media all {
   .status-badge {
     display: inline-flex;
     align-items: center;
@@ -6102,6 +6107,32 @@
         </button>
       </div>
 
+      <!-- Core Group Plan -->
+      <div class="pricing-card">
+        <div>
+          <div class="pricing-eyebrow">Multi-branch growth</div>
+          <h3 class="pricing-plan-name">Core Group</h3>
+          <p style="font-size:13px; color:var(--text-secondary); margin:0;">Core POS for up to five branches under one business account.</p>
+
+          <div class="pricing-price-wrap">
+            <span class="pricing-amount" id="coreGroupPriceAmount">KES 3,999</span>
+            <span class="pricing-period" id="coreGroupPricePeriod">/ month</span>
+          </div>
+
+          <ul class="pricing-features">
+            <li><i class="fa-solid fa-circle-check"></i> Everything in Core POS</li>
+            <li><i class="fa-solid fa-circle-check"></i> <strong>Up to 5 branches</strong></li>
+            <li><i class="fa-solid fa-circle-check"></i> Staff accounts (up to 25)</li>
+            <li><i class="fa-solid fa-circle-check"></i> Central sales overview</li>
+            <li><i class="fa-solid fa-circle-check"></i> Shared owner billing</li>
+          </ul>
+        </div>
+
+        <button class="hero-btn-secondary" style="width:100%; border-radius:999px;" onclick="selectPlanAndSignup('Core Group')">
+          Start 7-day free trial
+        </button>
+      </div>
+
       <!-- Control POS Plan -->
       <div class="pricing-card">
         <div class="pricing-badge" style="background:#0f172a; color:#fff;">Pro store</div>
@@ -6125,6 +6156,33 @@
         </div>
 
         <button class="hero-btn-secondary" style="width:100%; border-radius:999px;" onclick="selectPlanAndSignup('Control')">
+          Start 7-day free trial
+        </button>
+      </div>
+
+      <!-- Control Group Plan -->
+      <div class="pricing-card">
+        <div class="pricing-badge" style="background:#0f172a; color:#fff;">Enterprise</div>
+        <div>
+          <div class="pricing-eyebrow">Multi-branch compliance</div>
+          <h3 class="pricing-plan-name">Control Group</h3>
+          <p style="font-size:13px; color:var(--text-secondary); margin:0;">Control POS and advanced management for up to five branches.</p>
+
+          <div class="pricing-price-wrap">
+            <span class="pricing-amount" id="controlGroupPriceAmount">KES 7,999</span>
+            <span class="pricing-period" id="controlGroupPricePeriod">/ month</span>
+          </div>
+
+          <ul class="pricing-features">
+            <li><i class="fa-solid fa-circle-check"></i> Everything in Control POS</li>
+            <li><i class="fa-solid fa-circle-check"></i> <strong>Up to 5 branches</strong></li>
+            <li><i class="fa-solid fa-circle-check"></i> KRA eTIMS support</li>
+            <li><i class="fa-solid fa-circle-check"></i> Multi-store stock transfers</li>
+            <li><i class="fa-solid fa-circle-check"></i> VIP 24/7 dedicated support</li>
+          </ul>
+        </div>
+
+        <button class="hero-btn-secondary" style="width:100%; border-radius:999px;" onclick="selectPlanAndSignup('Control Group')">
           Start 7-day free trial
         </button>
       </div>
@@ -6248,6 +6306,16 @@
             <div class="su-plan-badge" style="background:#0f172a; color:#fff;">Pro</div>
             <div class="su-plan-title">Control POS</div>
             <div class="su-plan-sub">KES 1,999/mo · eTIMS &amp; Multi-Branch</div>
+          </div>
+          <div class="su-plan-option" id="suPlanOptCoreGroup" onclick="setSignupPlan('Core Group')">
+            <div class="su-plan-badge">7-Day Trial</div>
+            <div class="su-plan-title">Core Group</div>
+            <div class="su-plan-sub">KES 3,999/mo · Core POS, up to 5 branches</div>
+          </div>
+          <div class="su-plan-option" id="suPlanOptControlGroup" onclick="setSignupPlan('Control Group')">
+            <div class="su-plan-badge" style="background:#0f172a; color:#fff;">Enterprise</div>
+            <div class="su-plan-title">Control Group</div>
+            <div class="su-plan-sub">KES 7,999/mo · Control POS, up to 5 branches</div>
           </div>
         </div>
         <input type="hidden" id="suSelectedPlan" value="Free">
@@ -7013,7 +7081,7 @@
           <button class="btn-small btn-green" id="gwExportCsvBtn" onclick="exportGatewayTransactionsCSV()" title="Export filtered gateway transactions to CSV report">
             <i class="fa-solid fa-file-arrow-down"></i> <span>Export</span>
           </button>
-          <button class="btn-small" style="background:#0f172a; color:#ffffff;" onclick="openSimulateTxModal()" title="Simulate payment or test webhook">
+          <button class="btn-small" id="gwSimulateBtn" style="background:#0f172a; color:#ffffff; display:none;" onclick="openSimulateTxModal()" title="Simulate payment or test webhook (platform admin only)">
             <i class="fa-solid fa-flask"></i> <span>Simulate Webhook</span>
           </button>
         </div>
@@ -9391,22 +9459,18 @@ function setBillingCycle(cycle) {
     mBtn.classList.toggle('active', !isYearly);
     yBtn.classList.toggle('active', isYearly);
   }
-  const coreEl = document.getElementById('corePriceAmount');
-  const corePeriod = document.getElementById('corePricePeriod');
-  const controlEl = document.getElementById('controlPriceAmount');
-  const controlPeriod = document.getElementById('controlPricePeriod');
-
-  if (isYearly) {
-    if (coreEl) coreEl.textContent = 'KES 9,999';
-    if (corePeriod) corePeriod.textContent = '/ year (Save KES 1,989)';
-    if (controlEl) controlEl.textContent = 'KES 19,999';
-    if (controlPeriod) controlPeriod.textContent = '/ year (Save KES 3,989)';
-  } else {
-    if (coreEl) coreEl.textContent = 'KES 999';
-    if (corePeriod) corePeriod.textContent = '/ month';
-    if (controlEl) controlEl.textContent = 'KES 1,999';
-    if (controlPeriod) controlPeriod.textContent = '/ month';
-  }
+  const tiers = [
+    { amt: 'corePriceAmount', per: 'corePricePeriod', m: 'KES 999', y: 'KES 9,999', save: 'KES 1,989' },
+    { amt: 'coreGroupPriceAmount', per: 'coreGroupPricePeriod', m: 'KES 3,999', y: 'KES 39,999', save: 'KES 7,989' },
+    { amt: 'controlPriceAmount', per: 'controlPricePeriod', m: 'KES 1,999', y: 'KES 19,999', save: 'KES 3,989' },
+    { amt: 'controlGroupPriceAmount', per: 'controlGroupPricePeriod', m: 'KES 7,999', y: 'KES 79,999', save: 'KES 15,989' }
+  ];
+  tiers.forEach(t => {
+    const a = document.getElementById(t.amt);
+    const pr = document.getElementById(t.per);
+    if (a) a.textContent = isYearly ? t.y : t.m;
+    if (pr) pr.textContent = isYearly ? `/ year (Save ${t.save})` : '/ month';
+  });
 }
 
 /* FAQ Accordion Toggle */
@@ -9831,8 +9895,8 @@ function setSignupPlan(plan) {
   const hidden = document.getElementById('suSelectedPlan');
   if (hidden) hidden.value = plan;
 
-  ['Free', 'Core', 'Control'].forEach(p => {
-    const el = document.getElementById('suPlanOpt' + p);
+  ['Free', 'Core', 'Control', 'Core Group', 'Control Group'].forEach(p => {
+    const el = document.getElementById('suPlanOpt' + p.replace(' ', ''));
     if (el) el.classList.toggle('active', p === plan);
   });
 }
@@ -10351,6 +10415,8 @@ async function checkPlatformAdminStatus() {
 }
 
 function applySuperAdminLinkVisibility() {
+  const simBtn = document.getElementById('gwSimulateBtn');
+  if (simBtn) simBtn.style.display = (typeof canUseGatewaySimulator === 'function' && canUseGatewaySimulator()) ? '' : 'none';
   const show = isPlatformAdmin && !!profile && profile.email === PLATFORM_SUPER_ADMIN_EMAIL;
   document.querySelectorAll('[data-super-admin-only]').forEach(el => { el.style.display = show ? '' : 'none'; });
 }
@@ -10633,7 +10699,7 @@ function switchTab(name) {
   if (name === 'team') renderTeam();
   if (name === 'menu') renderMenuTab();
   if (name === 'settings') { renderSettingsForm(); loadMpesaStatus(); loadEtimsStatus(); renderPlatformSwitcher(); }
-  if (name === 'integrations') { loadAllGatewaySettings().catch(() => {}); loadGatewayTransactions().catch(() => {}); }
+  if (name === 'integrations') { applySuperAdminLinkVisibility(); loadAllGatewaySettings().catch(() => {}); loadGatewayTransactions().catch(() => {}); }
 }
 
 /* =====================================================================
@@ -12381,7 +12447,13 @@ function openLinkedReceiptFromDetail() {
   openSaleReceiptFromLog(receiptNo);
 }
 
+function canUseGatewaySimulator() {
+  return !!(isPlatformAdmin && profile && profile.email === PLATFORM_SUPER_ADMIN_EMAIL);
+}
+
 function openSimulateTxModal() {
+  // Internal test tool - never available to businesses or the public.
+  if (!canUseGatewaySimulator()) { showToast('The webhook simulator is restricted to the platform admin.'); return; }
   const modal = document.getElementById('gwSimulateModal');
   if (modal) modal.classList.add('show');
 }
