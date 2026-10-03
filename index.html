@@ -10680,7 +10680,9 @@ async function loadAllData() {
 function saveToLocalCache() {
   try {
     localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({
-      CATALOG, customers, business, team, hotelTables, allShifts, salesLog, receiptCounter
+      CATALOG, customers, business, team, hotelTables, allShifts, salesLog, receiptCounter,
+      // the signed-in user's own identity, so an offline restore never has to invent one
+      profile: (profile && profile.id) ? { id: profile.id, full_name: profile.full_name, role: profile.role, business_id: profile.business_id } : null
     }));
   } catch (e) {}
 }
@@ -15866,10 +15868,15 @@ async function saveNewProductFromPage() {
   if (!hasValidSession) {
     const wasLoggedIn = localStorage.getItem('dogopos_is_logged_in') === 'true';
     const cached = localStorage.getItem(LOCAL_CACHE_KEY);
-    if (wasLoggedIn && cached) {
+    // Offline restore only works for a real, previously signed-in user. The old code invented an
+    // admin ("Allen Otiende", business "default") when no profile was cached, so setting the flag
+    // by hand opened an admin screen. Without a cached identity we now show the login instead.
+    let cachedProfile = null;
+    try { cachedProfile = JSON.parse(cached || 'null')?.profile || null; } catch(e) {}
+    if (wasLoggedIn && cached && cachedProfile && cachedProfile.id && cachedProfile.business_id) {
       try {
+        profile = cachedProfile;
         loadFromLocalCache();
-        profile = profile || { full_name: 'Allen Otiende', role: 'admin', business_id: 'default' };
         setAppLoggedIn(true);
         applyRoleVisibility();
         applyBusinessTheme();

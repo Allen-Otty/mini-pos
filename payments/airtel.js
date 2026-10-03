@@ -57,6 +57,13 @@ export async function initiateAirtelPayment({ phone, amount, customerId, cart, m
  * Securely verifies and processes Airtel Money callback
  */
 export function verifyAndProcessAirtelCallback(payload, headers = {}) {
+  // initiateAirtelPayment() above never calls Airtel's API - it only creates a local record - so
+  // there is no genuine Airtel payment to confirm and Airtel does not sign callbacks. Accepting
+  // callbacks in production would let anyone mark a payment as paid, so they are refused until a
+  // real Airtel collection + transaction-enquiry integration exists.
+  if (getInternalConfig('airtel')?.is_production) {
+    return { verified: false, statusCode: 503, response: { status: 'FAILED', message: 'Airtel live integration not enabled' } };
+  }
   if (!payload || typeof payload !== 'object') {
     return { verified: false, statusCode: 400, response: { status: 'FAILED', message: 'Invalid payload' } };
   }

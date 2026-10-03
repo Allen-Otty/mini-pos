@@ -252,6 +252,59 @@ export function verifyAndProcessMpesaCallback(payload, headers = {}) {
   };
 }
 
+export function hasLiveMpesaCredentials() {
+  const config = getInternalConfig('mpesa');
+  return !!(config && config.consumer_key && config.consumer_secret && !config.consumer_key.includes('mock'));
+}
+
+/**
+ * Real callback entry point. Safaricom does not sign callbacks, so the payload alone proves
+ * nothing: anyone who knows a CheckoutRequestID could POST "ResultCode 0". Therefore:
+ *   - callbacks for a payment that is no longer pending are ignored (no replay / no flipping
+ *     a paid request to failed);
+ *   - a success claim is only accepted after Safaricom's own stkpushquery confirms it, and the
+ *     amount is taken from our request, never from the (forgeable) payload;
+ *   - in production mode without live credentials a success claim cannot be confirmed, so it is rejected.
+ * Sandbox/demo mode (no live credentials) behaves as before so local testing still works.
+ */
+export async function confirmAndProcessMpesaCallback(payload, headers = {}) {
+  const callback = payload && payload.Body && payload.Body.stkCallback;
+  if (!callback) return verifyAndProcessMpesaCallback(payload, headers);
+
+  const request = findRequestByCheckoutId(callback.CheckoutRequestID) || findRequestByCheckoutId(callback.MerchantRequestID);
+  if (!request) return verifyAndProcessMpesaCallback(payload, headers); // acknowledges, changes nothing
+
+  if (request.status !== 'pending') {
+    return { verified: false, statusCode: 200, response: { ResultCode: 0, ResultDesc: 'Already processed' } };
+  }
+
+  if (Number(callback.ResultCode) !== 0) {
+    return verifyAndProcessMpesaCallback(payload, headers); // failure/cancel claims: low risk, request still pending
+  }
+
+  const config = getInternalConfig('mpesa');
+  if (hasLiveMpesaCredentials()) {
+    const checked = await queryDarajaStkStatus(request.id);
+    if (!checked || checked.status !== 'success') {
+      console.warn(`[M-Pesa Callback] Success claim for ${request.id} NOT confirmed by Safaricom - ignored`);
+      return { verified: false, statusCode: 200, response: { ResultCode: 0, ResultDesc: 'Received, awaiting confirmation' } };
+    }
+    // Confirmed by Safaricom: record the receipt from the callback but trust OUR amount.
+    const items = ((callback.CallbackMetadata && callback.CallbackMetadata.Item) || [])
+      .filter(i => i.Name !== 'Amount')
+      .concat([{ Name: 'Amount', Value: request.amount }]);
+    const trusted = { Body: { stkCallback: { ...callback, CallbackMetadata: { Item: items } } } };
+    return verifyAndProcessMpesaCallback(trusted, headers);
+  }
+
+  if (config && config.is_production) {
+    console.error('[M-Pesa Callback] Production mode but no live credentials - cannot confirm; rejected');
+    return { verified: false, statusCode: 503, response: { ResultCode: 1, ResultDesc: 'Cannot verify callback' } };
+  }
+
+  return verifyAndProcessMpesaCallback(payload, headers); // sandbox/demo only
+}
+
 /**
   * Actively queries Safaricom Daraja STK Push status via stkpushquery API
   */
