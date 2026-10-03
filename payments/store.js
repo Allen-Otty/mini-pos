@@ -499,8 +499,9 @@ export function findRequestByGatewayRef(gateway, ref) {
 /**
  * Returns latest payment requests
  */
-export function listRecentRequests(limit = 25) {
+export function listRecentRequests(limit = 25, businessId = null) {
   return Array.from(paymentRequests.values())
+    .filter(r => !businessId || r.metadata?.business_id === businessId)
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .slice(0, limit);
 }
@@ -508,8 +509,10 @@ export function listRecentRequests(limit = 25) {
 /**
  * Lists all requests with flexible filtering by gateway, status, search query, and date range
  */
-export function listAllRequests({ gateway = 'all', status = 'all', search = '', startDate = '', endDate = '', limit = 100 } = {}) {
+export function listAllRequests({ gateway = 'all', status = 'all', search = '', startDate = '', endDate = '', limit = 100, businessId = null } = {}) {
   let list = Array.from(paymentRequests.values())
+    // Tenant isolation: when a businessId is given, only that business's own payments are visible.
+    .filter(r => !businessId || r.metadata?.business_id === businessId)
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   if (gateway && gateway !== 'all') {

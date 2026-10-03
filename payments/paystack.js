@@ -60,7 +60,17 @@ export function verifyAndProcessPaystackCallback(payload, rawBody, headers = {})
   }
 
   // 1. Signature Verification with HMAC-SHA512
-  if (signature && rawBody) {
+  // Paystack always signs its webhooks, so the signature is required in every environment
+  // (previously a request with no header was accepted outside production, and a header with no
+  // raw body skipped the check entirely).
+  if (!secretKey) {
+    return { verified: false, statusCode: 503, response: { message: 'Webhook secret not configured' } };
+  }
+  if (!signature || !rawBody) {
+    console.warn('[Paystack Webhook] Missing signature or raw body - rejected');
+    return { verified: false, statusCode: 401, response: { message: 'Signature required' } };
+  }
+  {
     try {
       const hash = crypto.createHmac('sha512', secretKey).update(rawBody).digest('hex');
       const signatureBuffer = Buffer.from(signature, 'hex');
@@ -74,8 +84,6 @@ export function verifyAndProcessPaystackCallback(payload, rawBody, headers = {})
       console.warn('[Paystack Webhook] Signature verification error:', e.message);
       return { verified: false, statusCode: 401, response: { message: 'Invalid signature format' } };
     }
-  } else if (config.is_production && !signature) {
-    return { verified: false, statusCode: 401, response: { message: 'Signature header required in production' } };
   }
 
   const event = payload.event;

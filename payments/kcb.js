@@ -87,7 +87,17 @@ export function verifyAndProcessKcbCallback(payload, rawBody, headers = {}) {
   const incomingSignature = headers['x-kcb-signature'] || headers['x-buni-signature'] || headers['x-signature'];
   const sharedSecret = config.shared_secret;
 
-  if (incomingSignature && sharedSecret) {
+  // The signature is MANDATORY. Previously the check only ran when the caller chose to send a
+  // signature header, so an attacker could simply omit it and forge a "payment succeeded" callback.
+  if (!sharedSecret) {
+    console.error('[KCB Callback] KCB_SHARED_SECRET is not configured - rejecting callback');
+    return { verified: false, statusCode: 503, response: { statusCode: '503', message: 'Webhook secret not configured' } };
+  }
+  if (!incomingSignature) {
+    console.warn('[KCB Callback] Missing signature header - rejected');
+    return { verified: false, statusCode: 401, response: { statusCode: '401', message: 'Signature required' } };
+  }
+  {
     const timestamp = headers['x-timestamp'] || '';
     const dataToSign = timestamp ? `${timestamp}.${rawBody ? rawBody.toString('utf8') : JSON.stringify(payload)}` : (rawBody ? rawBody.toString('utf8') : JSON.stringify(payload));
     const expectedSignature = generateKcbSignature(dataToSign, sharedSecret);
@@ -119,8 +129,9 @@ export function verifyAndProcessKcbCallback(payload, rawBody, headers = {}) {
     const eventMs = new Date(eventTime).getTime();
     const nowMs = Date.now();
     // If older than 10 minutes, suspect replay
-    if (!isNaN(eventMs) && Math.abs(nowMs - eventMs) > 10 * 60 * 1000) {
-      console.warn('[KCB Callback] Event timestamp is outside acceptable 10-minute window');
+    if (isNaN(eventMs) || Math.abs(nowMs - eventMs) > 10 * 60 * 1000) {
+      console.warn('[KCB Callback] Event timestamp invalid or outside the 10-minute window - rejected (possible replay)');
+      return { verified: false, statusCode: 401, response: { statusCode: '401', message: 'Stale or invalid timestamp' } };
     }
   }
 

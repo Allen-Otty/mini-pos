@@ -1,5 +1,5 @@
 import express from 'express';
-import { initiateMpesaStkPush, verifyAndProcessMpesaCallback, formatDarajaTimestamp, queryDarajaStkStatus } from './mpesa.js';
+import { initiateMpesaStkPush, verifyAndProcessMpesaCallback, confirmAndProcessMpesaCallback, formatDarajaTimestamp, queryDarajaStkStatus } from './mpesa.js';
 import { initiateKcbPayment, verifyAndProcessKcbCallback, generateKcbSignature } from './kcb.js';
 import { initiatePaystackPayment, verifyAndProcessPaystackCallback } from './paystack.js';
 import { initiateAirtelPayment, verifyAndProcessAirtelCallback } from './airtel.js';
@@ -17,7 +17,7 @@ import {
   getInternalConfig
 } from './store.js';
 import crypto from 'crypto';
-import { requireBusinessAdmin } from './auth.js';
+import { requireBusinessAdmin, requireSession } from './auth.js';
 
 export const paymentRouter = express.Router();
 
@@ -48,7 +48,7 @@ paymentRouter.use(rateLimit());
  * GET /api/payments/gateways
  * Returns all supported payment gateways and their configuration status
  */
-paymentRouter.get('/gateways', (req, res) => {
+paymentRouter.get('/gateways', requireSession, (req, res) => {
   const statuses = getAllGatewayStatuses();
   res.json({ success: true, gateways: statuses });
 });
@@ -56,7 +56,7 @@ paymentRouter.get('/gateways', (req, res) => {
 /**
  * GET /api/payments/config/:gateway?
  */
-paymentRouter.get('/config', (req, res) => {
+paymentRouter.get('/config', requireSession, (req, res) => {
   const statuses = getAllGatewayStatuses();
   res.json({ success: true, configs: statuses });
 });
@@ -79,9 +79,16 @@ paymentRouter.post('/config/:gateway', requireBusinessAdmin, (req, res) => {
  * POST /api/payments/initiate
  * Unified endpoint to initiate payment on any supported gateway
  */
-paymentRouter.post('/initiate', async (req, res) => {
+// Tenant isolation: a payment belongs to the business that created it.
+function ownsPayment(req, request) {
+  return !!(request && req.admin && request.metadata && request.metadata.business_id === req.admin.business_id);
+}
+
+paymentRouter.post('/initiate', requireSession, async (req, res) => {
   try {
-    const { gateway, phone, account, email, amount, customerId, cart, metadata } = req.body;
+    const { gateway, phone, account, email, amount, customerId, cart } = req.body;
+    // business_id is stamped from the verified login and overrides anything the client sent.
+    const metadata = { ...(req.body.metadata || {}), business_id: req.admin.business_id, initiated_by: req.admin.id };
 
     if (!gateway) {
       return res.status(400).json({ success: false, error: 'Payment gateway is required (mpesa, kcb, paystack, airtel).' });
@@ -127,11 +134,11 @@ paymentRouter.post('/initiate', async (req, res) => {
  * GET /api/payments/status/:id
  * Polling endpoint used by the POS checkout UI
  */
-paymentRouter.get('/status/:id', async (req, res) => {
+paymentRouter.get('/status/:id', requireSession, async (req, res) => {
   const { id } = req.params;
   let request = getPaymentRequest(id);
 
-  if (!request) {
+  if (!request || !ownsPayment(req, request)) {
     return res.status(404).json({ success: false, error: 'Payment request not found or expired.' });
   }
 
@@ -164,16 +171,16 @@ paymentRouter.get('/status/:id', async (req, res) => {
  * GET /api/payments/recent
  * Returns recent transactions for platform dashboard & audit
  */
-paymentRouter.get('/recent', (req, res) => {
+paymentRouter.get('/recent', requireBusinessAdmin, (req, res) => {
   const limit = Math.min(50, Number(req.query.limit) || 20);
-  res.json({ success: true, transactions: listRecentRequests(limit) });
+  res.json({ success: true, transactions: listRecentRequests(limit, req.admin.business_id) });
 });
 
 /**
  * GET /api/payments/transactions
  * Comprehensive ledger endpoint for Gateway Transactions table view with search, filter, date range, and stats
  */
-paymentRouter.get('/transactions', (req, res) => {
+paymentRouter.get('/transactions', requireBusinessAdmin, (req, res) => {
   const { gateway = 'all', status = 'all', search = '', startDate = '', endDate = '', limit = 100 } = req.query;
   const transactions = listAllRequests({
     gateway,
@@ -181,7 +188,8 @@ paymentRouter.get('/transactions', (req, res) => {
     search,
     startDate,
     endDate,
-    limit: Math.min(200, Number(limit) || 100)
+    limit: Math.min(200, Number(limit) || 100),
+    businessId: req.admin.business_id
   });
   const stats = getTransactionStats(transactions);
 
@@ -197,11 +205,11 @@ paymentRouter.get('/transactions', (req, res) => {
  * GET /api/payments/transaction/:ref
  * Looks up a transaction by external reference, checkout ID, or internal receipt number
  */
-paymentRouter.get('/transaction/:ref', (req, res) => {
+paymentRouter.get('/transaction/:ref', requireBusinessAdmin, (req, res) => {
   const { ref } = req.params;
   const transaction = findRequestByAnyRef(ref);
 
-  if (!transaction) {
+  if (!transaction || !ownsPayment(req, transaction)) {
     return res.status(404).json({ success: false, error: 'Transaction not found for reference: ' + ref });
   }
 
@@ -212,10 +220,14 @@ paymentRouter.get('/transaction/:ref', (req, res) => {
  * POST /api/payments/link-sale
  * Links an external payment request to an internal sale receipt number
  */
-paymentRouter.post('/link-sale', (req, res) => {
+paymentRouter.post('/link-sale', requireSession, (req, res) => {
   const { payment_request_id, receipt_no, sale_id } = req.body;
   if (!payment_request_id || !receipt_no) {
     return res.status(400).json({ success: false, error: 'payment_request_id and receipt_no are required' });
+  }
+
+  if (!ownsPayment(req, getPaymentRequest(payment_request_id))) {
+    return res.status(404).json({ success: false, error: 'Payment request not found: ' + payment_request_id });
   }
 
   const linked = linkPaymentToSale(payment_request_id, receipt_no, sale_id);
@@ -230,10 +242,17 @@ paymentRouter.post('/link-sale', (req, res) => {
  * POST /api/payments/callbacks/mpesa
  * Safaricom Daraja Webhook
  */
-paymentRouter.post('/callbacks/mpesa', (req, res) => {
+paymentRouter.post('/callbacks/mpesa', async (req, res) => {
   console.log('[M-Pesa Webhook Received]');
-  const outcome = verifyAndProcessMpesaCallback(req.body, req.headers);
-  res.status(outcome.statusCode).json(outcome.response);
+  try {
+    // Safaricom does not sign callbacks, so a success claim is confirmed with Safaricom's
+    // own STK status query before any payment is marked paid.
+    const outcome = await confirmAndProcessMpesaCallback(req.body, req.headers);
+    res.status(outcome.statusCode).json(outcome.response);
+  } catch (err) {
+    console.error('[M-Pesa Callback Error]', err);
+    res.status(500).json({ ResultCode: 1, ResultDesc: 'Callback processing error' });
+  }
 });
 
 /**
@@ -275,7 +294,7 @@ paymentRouter.post('/simulate/:id', requireBusinessAdmin, (req, res) => {
   const { action = 'approve', receipt } = req.body;
   const request = getPaymentRequest(id);
 
-  if (!request) {
+  if (!request || !ownsPayment(req, request)) {
     return res.status(404).json({ success: false, error: 'Payment request not found.' });
   }
 
