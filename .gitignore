@@ -35,3 +35,6 @@ Thumbs.db
 *.swp
 *.tmp
 temp_*
+
+# Payment records written by the Express server (contain customer phone numbers)
+data/

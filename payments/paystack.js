@@ -231,3 +231,41 @@ export function verifyAndProcessPaystackCallback(payload, rawBody, headers = {})
     response: { message: 'Webhook verified and processed' }
   };
 }
+
+/** A real Paystack key looks like sk_test_... or sk_live_... (the dev fallback is random hex). */
+export function paystackIsLive() {
+  const c = getInternalConfig('paystack');
+  return !!(c && /^sk_(test|live)_/.test(c.secret_key || ''));
+}
+
+/**
+ * Real webhook entry point: HMAC-SHA512 signature first (reusing the verifier below), then - for
+ * a real Paystack payment - Paystack's own Verify API decides, never the webhook body.
+ */
+export async function confirmAndProcessPaystackCallback(payload, rawBody, headers = {}) {
+  // Signature + matching is done by the existing verifier; we only add server-to-server confirmation.
+  const preview = payload && payload.event === 'charge.success' ? (payload.data || {}).reference : null;
+  const request = preview ? (findRequestByCheckoutId(preview) || findRequestByGatewayRef('paystack', preview)) : null;
+
+  if (request && !request.simulated && paystackIsLive() && request.status === 'pending') {
+    // Authenticate the webhook first, then ask Paystack.
+    const secretKey = getInternalConfig('paystack').secret_key;
+    const sig = headers['x-paystack-signature'];
+    if (!secretKey) return { verified: false, statusCode: 503, response: { message: 'Webhook secret not configured' } };
+    if (!sig || !rawBody) return { verified: false, statusCode: 401, response: { message: 'Signature required' } };
+    try {
+      const hash = crypto.createHmac('sha512', secretKey).update(rawBody).digest('hex');
+      const a = Buffer.from(sig, 'hex'), b = Buffer.from(hash, 'hex');
+      if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+        return { verified: false, statusCode: 401, response: { message: 'Invalid signature' } };
+      }
+    } catch { return { verified: false, statusCode: 401, response: { message: 'Invalid signature format' } }; }
+    const confirmed = await verifyPaystackPayment(request.id);
+    const ok = confirmed && confirmed.status === 'success';
+    return {
+      verified: !!ok, statusCode: 200, paymentRequestId: request.id, status: confirmed ? confirmed.status : 'pending',
+      response: { message: ok ? 'Webhook verified and processed' : 'Not confirmed by Paystack' }
+    };
+  }
+  return verifyAndProcessPaystackCallback(payload, rawBody, headers);
+}

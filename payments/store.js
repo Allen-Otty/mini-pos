@@ -1,7 +1,51 @@
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
-// In-memory persistent store for active and completed payment requests
+// Payment requests live in memory for speed but are WRITTEN THROUGH to a JSON file, so a restart
+// or redeploy cannot lose a pending payment (a late provider callback would otherwise find no
+// matching request and the customer's money would be taken with no sale recorded).
+// Single-instance storage: run ONE server process, on a host with a persistent disk.
+// Override the location with PAYMENTS_DB_PATH (e.g. a mounted volume).
 const paymentRequests = new Map();
+const DB_PATH = process.env.PAYMENTS_DB_PATH || path.join(process.cwd(), 'data', 'payments.json');
+let persistTimer = null;
+
+function loadPersisted() {
+  try {
+    if (!fs.existsSync(DB_PATH)) return;
+    const rows = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+    if (Array.isArray(rows)) rows.forEach(r => r && r.id && paymentRequests.set(r.id, r));
+    console.log(`[payments store] restored ${paymentRequests.size} payment record(s) from ${DB_PATH}`);
+  } catch (e) {
+    console.error('[payments store] could not read ' + DB_PATH + ': ' + e.message);
+  }
+}
+
+function writeNow() {
+  try {
+    fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+    const tmp = DB_PATH + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(Array.from(paymentRequests.values())), { mode: 0o600 });
+    fs.renameSync(tmp, DB_PATH); // atomic replace: a crash mid-write can't corrupt the file
+  } catch (e) {
+    console.error('[payments store] PERSIST FAILED: ' + e.message);
+  }
+}
+
+function persist() {
+  if (process.env.PAYMENTS_PERSIST === 'off') return;
+  if (persistTimer) return;
+  persistTimer = setTimeout(() => { persistTimer = null; writeNow(); }, 50);
+  if (persistTimer.unref) persistTimer.unref();
+}
+
+/** Flush immediately (used on shutdown and in tests). */
+export function flushPaymentStore() {
+  if (persistTimer) { clearTimeout(persistTimer); persistTimer = null; }
+  if (process.env.PAYMENTS_PERSIST !== 'off') writeNow();
+}
+process.on('exit', () => { if (persistTimer && process.env.PAYMENTS_PERSIST !== 'off') writeNow(); });
 
 // SECURITY: no gateway secret ever ships with a hardcoded fallback value.
 // Missing secrets generate a random per-boot value (dev/sandbox only, logged loudly)
@@ -26,6 +70,8 @@ const gatewayConfigs = {
     enabled: true,
     payment_type: 'till', // 'till', 'paybill', 'pochi'
     shortcode: process.env.MPESA_SHORTCODE || '174379',
+    // Buy Goods: BusinessShortCode is the store/head-office number, PartyB is the till. Leave unset for Paybill.
+    till_number: process.env.MPESA_TILL_NUMBER || '',
     consumer_key: process.env.MPESA_CONSUMER_KEY || '',
     consumer_secret: process.env.MPESA_CONSUMER_SECRET || '',
     // Safaricom's published sandbox passkey is public by design (not a secret) — safe as the only
@@ -41,6 +87,12 @@ const gatewayConfigs = {
     app_secret: process.env.KCB_APP_SECRET || '',
     shared_secret: requireSecret('KCB_SHARED_SECRET', { devDefaultLabel: 'KCB webhook shared secret' }),
     account_number: process.env.KCB_ACCOUNT || '1234567890',
+    org_short_code: process.env.KCB_ORG_SHORT_CODE || '522522',
+    org_pass_key: process.env.KCB_ORG_PASS_KEY || '',
+    shared_short_code: process.env.KCB_SHARED_SHORT_CODE !== 'false',
+    // Confirm both URLs against KCB's Buni portal / Postman collection before going live.
+    token_url: process.env.KCB_TOKEN_URL || 'https://accounts.buni.kcbgroup.com/oauth2/token',
+    base_url: process.env.KCB_BASE_URL || (process.env.KCB_ENVIRONMENT === 'production' ? 'https://buni.kcbgroup.com' : 'https://uat.buni.kcbgroup.com'),
     is_production: process.env.KCB_ENVIRONMENT === 'production',
     callback_url: '/api/payments/callbacks/kcb'
   },
@@ -56,6 +108,9 @@ const gatewayConfigs = {
     client_id: process.env.AIRTEL_CLIENT_ID || '',
     client_secret: process.env.AIRTEL_CLIENT_SECRET || '',
     merchant_number: process.env.AIRTEL_MERCHANT_NUMBER || 'AIRTEL_TILL_882',
+    country: process.env.AIRTEL_COUNTRY || 'KE',
+    currency: process.env.AIRTEL_CURRENCY || 'KES',
+    base_url: process.env.AIRTEL_BASE_URL || (process.env.AIRTEL_ENVIRONMENT === 'production' ? 'https://openapi.airtel.africa' : 'https://openapiuat.airtel.africa'),
     encryption_key: requireSecret('AIRTEL_ENCRYPTION_KEY', { devDefaultLabel: 'Airtel encryption key' }),
     is_production: process.env.AIRTEL_ENVIRONMENT === 'production',
     callback_url: '/api/payments/callbacks/airtel'
@@ -67,6 +122,8 @@ const gatewayConfigs = {
  * linked directly to internal sales records.
  */
 function seedDemoTransactions() {
+  // Never put fake transactions next to real money.
+  if (isAnyGatewayProduction()) return;
   if (paymentRequests.size > 0) return;
   const now = Date.now();
   const sampleData = [
@@ -409,6 +466,7 @@ function seedDemoTransactions() {
 
   sampleData.forEach(d => paymentRequests.set(d.id, d));
 }
+loadPersisted();
 // Fabricated "success" receipts must never appear in a real merchant's ledger.
 // Seeding now happens only when DEMO_MODE is explicitly set (DEMO_MODE=1).
 if (process.env.DEMO_MODE === '1' || process.env.DEMO_MODE === 'true') {
@@ -435,6 +493,10 @@ export function createPaymentRequest({ gateway, amount, phone = '', account = ''
     status: 'pending', // 'pending' | 'success' | 'failed' | 'cancelled' | 'expired'
     merchant_request_id: `${gateway.toUpperCase()}-REQ-${Date.now().toString(36).toUpperCase()}`,
     checkout_request_id: `CHK-${crypto.randomBytes(6).toString('hex').toUpperCase()}`,
+    // Secret embedded in the callback URL we give the provider. Providers that do not sign their
+    // callbacks (Safaricom, KCB Buni) can only reach the right URL if they were handed this one.
+    callback_token: crypto.randomBytes(24).toString('hex'),
+    simulated: false,
     receipt_reference: null,
     result_desc: 'Payment prompt initiated, waiting for customer confirmation.',
     metadata: { ...metadata },
@@ -444,7 +506,16 @@ export function createPaymentRequest({ gateway, amount, phone = '', account = ''
   };
 
   paymentRequests.set(id, record);
+  persist();
   return record;
+}
+
+/** True when the callback token in a webhook URL matches the one issued for this payment. */
+export function callbackTokenValid(request, token) {
+  if (!request || !request.callback_token || !token) return false;
+  const a = Buffer.from(String(request.callback_token));
+  const b = Buffer.from(String(token));
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 /**
@@ -473,6 +544,7 @@ export function updatePaymentRequest(id, updates) {
   if (!req) return null;
 
   Object.assign(req, updates, { updated_at: new Date().toISOString() });
+  persist();
   return req;
 }
 
@@ -612,6 +684,7 @@ export function linkPaymentToSale(paymentRequestId, receiptNo, saleId = null) {
   if (saleId) req.internal_sale_id = saleId;
   req.linked_at = new Date().toISOString();
   req.updated_at = new Date().toISOString();
+  persist();
 
   return req;
 }
@@ -668,6 +741,10 @@ const CONFIGURABLE_FIELDS = ['enabled', 'is_production', 'payment_type', 'shortc
 /**
  * Gets internal full config (for server crypto/api execution)
  */
+export function isAnyGatewayProduction() {
+  return Object.values(gatewayConfigs).some(c => c && c.is_production);
+}
+
 export function getInternalConfig(gateway) {
   return gatewayConfigs[gateway] || null;
 }

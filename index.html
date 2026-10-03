@@ -13778,6 +13778,10 @@ async function initiatePaymentRequest(payload) {
           success: true,
           payment_request_id: res.data.payment_request_id,
           checkout_request_id: res.data.checkout_request_id,
+          // Paystack hosted checkout page (previously dropped here, so the redirect never fired)
+          authorization_url: res.data.authorization_url || null,
+          simulated: !!res.data.simulated,
+          message: res.data.message || '',
           channel: 'express'
         };
       }
@@ -13857,6 +13861,10 @@ async function initiatePaymentRequest(payload) {
           success: true,
           payment_request_id: res.data.payment_request_id,
           checkout_request_id: res.data.checkout_request_id,
+          // Paystack hosted checkout page (previously dropped here, so the redirect never fired)
+          authorization_url: res.data.authorization_url || null,
+          simulated: !!res.data.simulated,
+          message: res.data.message || '',
           channel: 'express'
         };
       }
@@ -13985,6 +13993,10 @@ async function sendDigitalPrompt() {
     }
 
     mpesaCurrentRequestId = initResult.payment_request_id;
+
+    if (initResult.simulated) {
+      showToast(`DEMO MODE: ${gwName} is not connected to the provider. No real money will move.`);
+    }
 
     // Paystack uses a hosted checkout page, not a phone prompt: hand the customer
     // to Paystack and come back to /payment-complete.html, which resumes the poll.
@@ -14342,6 +14354,19 @@ async function loadAllGatewaySettings() {
             if (document.getElementById('airtelMerchantNumber')) document.getElementById('airtelMerchantNumber').value = gw.merchant_number || '';
             if (document.getElementById('airtelEnv')) document.getElementById('airtelEnv').value = String(gw.is_production);
           }
+        });
+        // Be honest about what each gateway will really do: the server reports its mode.
+        //   live = real money | sandbox = provider test environment | simulated = demo, nothing is sent
+        const MODE_BADGE = {
+          live:      { text: 'LIVE - REAL MONEY', color: '#16a34a' },
+          sandbox:   { text: 'TEST MODE',         color: '#d97706' },
+          simulated: { text: 'NOT CONNECTED (DEMO)', color: '#dc2626' }
+        };
+        const BADGE_IDS = { mpesa: 'badgeMpesaConfig', kcb: 'badgeKcbConfig', paystack: 'badgePaystackConfig', airtel: 'badgeAirtelConfig' };
+        res.data.gateways.forEach(gw => {
+          const el = document.getElementById(BADGE_IDS[gw.gateway]);
+          const m = MODE_BADGE[gw.mode];
+          if (el && m) { el.textContent = m.text; el.style.color = m.color; el.title = 'Server mode: ' + gw.mode; }
         });
       }
     } catch (e) {}

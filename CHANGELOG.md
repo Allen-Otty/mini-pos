@@ -5,6 +5,23 @@ Newest first. Each entry lists what changed and why, so nothing has to be redisc
 
 
 
+## 2026-10-03 — Real-money gateways: M-Pesa, KCB Buni and Airtel now call the providers; honest demo mode
+
+The goal: make every gateway able to collect real money. Before this, only M-Pesa called a provider; KCB and Airtel just created a local record, and Paystack's hosted checkout (added earlier today on `main`) is kept as is. Details and the go-live checklist are in `PAYMENTS.md`.
+
+- **KCB Buni (M-PESA Express) is now a real integration:** OAuth token, `POST /mm/api/request/1.0.0/stkpush`, per-payment secret callback URL, idempotent callbacks, amount taken from our own request. The old invented "HMAC shared secret" callback format (which real KCB never sends) is gone.
+- **Airtel Money is now a real integration:** OAuth token, `POST /merchant/v1/payments/` USSD push, and every callback is confirmed with Airtel's transaction-enquiry API before anything is marked paid.
+- **M-Pesa:** `initiate` no longer returns "prompt sent" when Safaricom rejected or never received the request (it used to swallow the error and pretend); it throws, and the payment is marked failed. Callbacks use a secret per-payment URL, OAuth tokens are cached, a late callback after our 5-minute timeout still counts, and Buy Goods tills work (`MPESA_TILL_NUMBER`).
+- **Paystack:** kept the hosted-checkout flow already on `main`; added `confirmAndProcessPaystackCallback` so a signed webhook is re-checked with Paystack's Verify API before a payment is marked paid, plus `paystackIsLive()`.
+- **Payments survive restarts:** payment records are written to `PAYMENTS_DB_PATH` (default `data/payments.json`, git-ignored) on every change and flushed on SIGTERM/SIGINT. Previously a restart lost every pending payment, so a customer who paid just after a deploy could never be matched to a sale.
+- **No more fake money next to real money:** a gateway without credentials runs in clearly labelled *simulated* mode (till shows "DEMO MODE", Settings badge shows "NOT CONNECTED (DEMO)"); production mode with no credentials refuses to start a payment. The webhook simulator can only act on simulated payments, never on one sent to a real provider.
+- **Settings badges tell the truth:** the server reports each gateway as `live`, `sandbox` or `simulated` and the badges follow it (they used to say "READY"/"Active" regardless).
+- **Fixed a bug on `main`:** the app dropped Paystack's `authorization_url` from the initiate result, so the redirect to Paystack's checkout page never fired. It is now passed through.
+- **Fixed `.env` load order:** `server.js` read the `.env` file *after* the payment modules had already read their settings, so values in `.env` were ignored. Moved to `load-env.js`, imported first.
+- Expanded `.env.example` with every setting the payments server reads.
+
+**Not tested against live provider servers** (mocked responses only), so field names may need adjusting on first contact with KCB and Airtel in particular. No refunds or automatic reconciliation yet. See `PAYMENTS.md` section 5.
+
 ## 2026-10-03 — Restaurant module: hotel-only menus, hotel-style receipts, lost-order fix
 
 **Menus are food-only.** The restaurant order page now filters the catalog to real food categories (Breakfast, Drinks, Lunch, Dinner/Supper, Snacks, and similar). Non-food entries — General Store, Retail, Hardware, etc. — no longer appear on the menu or its category chips for Hotel/Restaurant businesses; other business types are unchanged.

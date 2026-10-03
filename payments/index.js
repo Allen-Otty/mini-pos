@@ -1,8 +1,8 @@
 import express from 'express';
-import { initiateMpesaStkPush, verifyAndProcessMpesaCallback, confirmAndProcessMpesaCallback, formatDarajaTimestamp, queryDarajaStkStatus } from './mpesa.js';
-import { initiateKcbPayment, verifyAndProcessKcbCallback, generateKcbSignature } from './kcb.js';
-import { initiatePaystackPayment, verifyAndProcessPaystackCallback, verifyPaystackPayment } from './paystack.js';
-import { initiateAirtelPayment, verifyAndProcessAirtelCallback } from './airtel.js';
+import { initiateMpesaStkPush, verifyAndProcessMpesaCallback, confirmAndProcessMpesaCallback, hasLiveMpesaCredentials, formatDarajaTimestamp, queryDarajaStkStatus } from './mpesa.js';
+import { initiateKcbPayment, processKcbCallback, buildSimulatedKcbCallback, kcbIsLive } from './kcb.js';
+import { initiatePaystackPayment, verifyAndProcessPaystackCallback, confirmAndProcessPaystackCallback, verifyPaystackPayment, paystackIsLive } from './paystack.js';
+import { initiateAirtelPayment, verifyAndProcessAirtelCallback, confirmAndProcessAirtelCallback, confirmAirtelRequest, airtelIsLive } from './airtel.js';
 import {
   getPaymentRequest,
   updatePaymentRequest,
@@ -48,17 +48,28 @@ paymentRouter.use(rateLimit());
  * GET /api/payments/gateways
  * Returns all supported payment gateways and their configuration status
  */
+// What each gateway will actually do right now:
+//   live       = production credentials set -> REAL money
+//   sandbox    = provider test credentials set -> provider's test environment
+//   simulated  = no credentials -> demo only, nothing is sent to any provider
+const LIVE_CHECK = { mpesa: hasLiveMpesaCredentials, kcb: kcbIsLive, paystack: paystackIsLive, airtel: airtelIsLive };
+function withMode(statuses) {
+  return statuses.map(s => {
+    const hasCreds = LIVE_CHECK[s.gateway] ? LIVE_CHECK[s.gateway]() : false;
+    const prod = !!(getInternalConfig(s.gateway) || {}).is_production;
+    return { ...s, mode: !hasCreds ? 'simulated' : (prod ? 'live' : 'sandbox') };
+  });
+}
+
 paymentRouter.get('/gateways', requireSession, (req, res) => {
-  const statuses = getAllGatewayStatuses();
-  res.json({ success: true, gateways: statuses });
+  res.json({ success: true, gateways: withMode(getAllGatewayStatuses()) });
 });
 
 /**
  * GET /api/payments/config/:gateway?
  */
 paymentRouter.get('/config', requireSession, (req, res) => {
-  const statuses = getAllGatewayStatuses();
-  res.json({ success: true, configs: statuses });
+  res.json({ success: true, configs: withMode(getAllGatewayStatuses()) });
 });
 
 /**
@@ -142,19 +153,15 @@ paymentRouter.get('/status/:id', requireSession, async (req, res) => {
     return res.status(404).json({ success: false, error: 'Payment request not found or expired.' });
   }
 
-  // Actively query Safaricom Daraja STK status if still pending
-  if (request.gateway === 'mpesa' && request.status === 'pending' && request.checkout_request_id) {
+  // Actively ask the provider for the truth while a payment is still pending (callbacks can be late or lost)
+  if (request.status === 'pending' && request.checkout_request_id && !request.simulated) {
     try {
-      request = (await queryDarajaStkStatus(id)) || request;
+      if (request.gateway === 'mpesa') request = (await queryDarajaStkStatus(id)) || request;
+      else if (request.gateway === 'paystack') request = (await verifyPaystackPayment(id)) || request;
+      else if (request.gateway === 'airtel') request = (await confirmAirtelRequest(id)) || request;
     } catch (e) {}
   }
 
-  // Actively confirm with Paystack if still pending (the webhook alone is not trusted)
-  if (request.gateway === 'paystack' && request.status === 'pending' && request.checkout_request_id) {
-    try {
-      request = (await verifyPaystackPayment(id)) || request;
-    } catch (e) {}
-  }
 
   res.json({
     success: true,
@@ -249,36 +256,40 @@ paymentRouter.post('/link-sale', requireSession, (req, res) => {
  * POST /api/payments/callbacks/mpesa
  * Safaricom Daraja Webhook
  */
-paymentRouter.post('/callbacks/mpesa', async (req, res) => {
+const mpesaCallback = async (req, res) => {
   console.log('[M-Pesa Webhook Received]');
   try {
-    // Safaricom does not sign callbacks, so a success claim is confirmed with Safaricom's
-    // own STK status query before any payment is marked paid.
-    const outcome = await confirmAndProcessMpesaCallback(req.body, req.headers);
+    // Safaricom does not sign callbacks: the URL carries a secret per-payment token, and a success
+    // claim is confirmed with Safaricom's own STK status query before any payment is marked paid.
+    const outcome = await confirmAndProcessMpesaCallback(req.body, req.headers, req.params.token);
     res.status(outcome.statusCode).json(outcome.response);
   } catch (err) {
     console.error('[M-Pesa Callback Error]', err);
     res.status(500).json({ ResultCode: 1, ResultDesc: 'Callback processing error' });
   }
-});
+};
+paymentRouter.post('/callbacks/mpesa/:token', mpesaCallback);
+paymentRouter.post('/callbacks/mpesa', mpesaCallback); // legacy untokenized URL: only works for simulated payments
 
 /**
  * POST /api/payments/callbacks/kcb
  * KCB Buni Webhook
  */
-paymentRouter.post('/callbacks/kcb', (req, res) => {
+const kcbCallback = (req, res) => {
   console.log('[KCB Webhook Received]');
-  const outcome = verifyAndProcessKcbCallback(req.body, req.rawBody, req.headers);
+  const outcome = processKcbCallback(req.body, req.params.token);
   res.status(outcome.statusCode).json(outcome.response);
-});
+};
+paymentRouter.post('/callbacks/kcb/:token', kcbCallback);
+paymentRouter.post('/callbacks/kcb', kcbCallback); // untokenized: only works for simulated payments
 
 /**
  * POST /api/payments/callbacks/paystack
  * Paystack Webhook
  */
-paymentRouter.post('/callbacks/paystack', (req, res) => {
+paymentRouter.post('/callbacks/paystack', async (req, res) => {
   console.log('[Paystack Webhook Received]');
-  const outcome = verifyAndProcessPaystackCallback(req.body, req.rawBody, req.headers);
+  const outcome = await confirmAndProcessPaystackCallback(req.body, req.rawBody, req.headers);
   res.status(outcome.statusCode).json(outcome.response);
 });
 
@@ -286,9 +297,9 @@ paymentRouter.post('/callbacks/paystack', (req, res) => {
  * POST /api/payments/callbacks/airtel
  * Airtel Money Webhook
  */
-paymentRouter.post('/callbacks/airtel', (req, res) => {
+paymentRouter.post('/callbacks/airtel', async (req, res) => {
   console.log('[Airtel Webhook Received]');
-  const outcome = verifyAndProcessAirtelCallback(req.body, req.headers);
+  const outcome = await confirmAndProcessAirtelCallback(req.body, req.headers);
   res.status(outcome.statusCode).json(outcome.response);
 });
 
@@ -316,6 +327,15 @@ paymentRouter.post('/simulate/:id', requireBusinessAdmin, (req, res) => {
 
   const gateway = request.gateway;
   const gwConfig = getInternalConfig(gateway) || {};
+
+  // SECURITY: only payments that were never sent to a provider can be "approved" by hand.
+  // A real provider request (sandbox or live) must be completed by the provider itself.
+  if (!request.simulated) {
+    return res.status(403).json({
+      success: false,
+      error: 'This payment was sent to the real provider and cannot be simulated. It completes when the provider confirms it.'
+    });
+  }
 
   // SECURITY: never allow a simulated "successful payment" to be injected against a
   // gateway that is configured for real production money — sandbox/test mode only,
@@ -352,28 +372,7 @@ paymentRouter.post('/simulate/:id', requireBusinessAdmin, (req, res) => {
     simulatedOutcome = verifyAndProcessMpesaCallback(payload, {});
   } else if (gateway === 'kcb') {
     const isSuccess = action === 'approve';
-    const fakeReceipt = receipt || `KCB-${Math.floor(100000 + Math.random() * 900000)}`;
-    const payload = {
-      transactionReference: request.checkout_request_id,
-      merchantCode: 'KCB-DEMO-001',
-      status: isSuccess ? 'SUCCESS' : 'FAILED',
-      amount: request.amount,
-      currency: 'KES',
-      kcbReference: fakeReceipt,
-      channel: 'VOOMA',
-      customerMsisdn: request.phone || '254712345678',
-      timestamp: new Date().toISOString()
-    };
-
-    const kcbConfig = getInternalConfig('kcb');
-    const rawBuf = Buffer.from(JSON.stringify(payload));
-    const toSign = `${payload.timestamp}.${rawBuf.toString('utf8')}`;
-    const sig = generateKcbSignature(toSign, kcbConfig.shared_secret);
-
-    simulatedOutcome = verifyAndProcessKcbCallback(payload, rawBuf, {
-      'x-kcb-signature': sig,
-      'x-timestamp': payload.timestamp
-    });
+    simulatedOutcome = processKcbCallback(buildSimulatedKcbCallback(request, { success: isSuccess, receipt }), undefined);
   } else if (gateway === 'paystack') {
     const isSuccess = action === 'approve';
     const fakeReceipt = receipt || `PSTK_${Date.now().toString(36).toUpperCase()}`;
