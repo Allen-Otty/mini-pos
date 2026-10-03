@@ -1176,9 +1176,9 @@
 
   .pricing-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-    max-width: 1040px;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 16px;
+    max-width: 1280px;
     margin: 0 auto;
   }
   .pricing-card {
@@ -4469,6 +4469,17 @@
   }
 }
 
+/* Restaurant "Clear Bill" mode: hotel-style running check instead of the retail product grid */
+.rc-bill-panel { display: none; }
+.retail-checkout-container.bill-mode { grid-template-columns: minmax(0, 560px); justify-content: center; }
+.retail-checkout-container.bill-mode .rc-products-panel { display: none; }
+.retail-checkout-container.bill-mode .rc-bill-panel { display: block; }
+.retail-checkout-container.bill-mode .rc-sale-panel { position: static; max-height: none; }
+.retail-checkout-container.bill-mode .rc-sale-header,
+.retail-checkout-container.bill-mode #cartBox,
+.retail-checkout-container.bill-mode #clearBtn { display: none !important; }
+.retail-checkout-container.bill-mode.bill-list .rc-sale-panel { display: none; }
+
 .rc-products-panel {
   background: var(--card);
   border: 1px solid var(--border);
@@ -5001,9 +5012,14 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: #facc15;
   }
-  /* =====================================================================
-     DIGITAL PAYMENTS & GATEWAY TRANSACTIONS STYLES
-  ===================================================================== */
+}
+
+/* =====================================================================
+   DIGITAL PAYMENTS & GATEWAY TRANSACTIONS STYLES
+   (previously nested inside the min-width:1024px block above, so on phones
+   the gateway modals had no display:none and rendered on the public page)
+===================================================================== */
+@media all {
   .status-badge {
     display: inline-flex;
     align-items: center;
@@ -6091,6 +6107,32 @@
         </button>
       </div>
 
+      <!-- Core Group Plan -->
+      <div class="pricing-card">
+        <div>
+          <div class="pricing-eyebrow">Multi-branch growth</div>
+          <h3 class="pricing-plan-name">Core Group</h3>
+          <p style="font-size:13px; color:var(--text-secondary); margin:0;">Core POS for up to five branches under one business account.</p>
+
+          <div class="pricing-price-wrap">
+            <span class="pricing-amount" id="coreGroupPriceAmount">KES 3,999</span>
+            <span class="pricing-period" id="coreGroupPricePeriod">/ month</span>
+          </div>
+
+          <ul class="pricing-features">
+            <li><i class="fa-solid fa-circle-check"></i> Everything in Core POS</li>
+            <li><i class="fa-solid fa-circle-check"></i> <strong>Up to 5 branches</strong></li>
+            <li><i class="fa-solid fa-circle-check"></i> Staff accounts (up to 25)</li>
+            <li><i class="fa-solid fa-circle-check"></i> Central sales overview</li>
+            <li><i class="fa-solid fa-circle-check"></i> Shared owner billing</li>
+          </ul>
+        </div>
+
+        <button class="hero-btn-secondary" style="width:100%; border-radius:999px;" onclick="selectPlanAndSignup('Core Group')">
+          Start 7-day free trial
+        </button>
+      </div>
+
       <!-- Control POS Plan -->
       <div class="pricing-card">
         <div class="pricing-badge" style="background:#0f172a; color:#fff;">Pro store</div>
@@ -6114,6 +6156,33 @@
         </div>
 
         <button class="hero-btn-secondary" style="width:100%; border-radius:999px;" onclick="selectPlanAndSignup('Control')">
+          Start 7-day free trial
+        </button>
+      </div>
+
+      <!-- Control Group Plan -->
+      <div class="pricing-card">
+        <div class="pricing-badge" style="background:#0f172a; color:#fff;">Enterprise</div>
+        <div>
+          <div class="pricing-eyebrow">Multi-branch compliance</div>
+          <h3 class="pricing-plan-name">Control Group</h3>
+          <p style="font-size:13px; color:var(--text-secondary); margin:0;">Control POS and advanced management for up to five branches.</p>
+
+          <div class="pricing-price-wrap">
+            <span class="pricing-amount" id="controlGroupPriceAmount">KES 7,999</span>
+            <span class="pricing-period" id="controlGroupPricePeriod">/ month</span>
+          </div>
+
+          <ul class="pricing-features">
+            <li><i class="fa-solid fa-circle-check"></i> Everything in Control POS</li>
+            <li><i class="fa-solid fa-circle-check"></i> <strong>Up to 5 branches</strong></li>
+            <li><i class="fa-solid fa-circle-check"></i> KRA eTIMS support</li>
+            <li><i class="fa-solid fa-circle-check"></i> Multi-store stock transfers</li>
+            <li><i class="fa-solid fa-circle-check"></i> VIP 24/7 dedicated support</li>
+          </ul>
+        </div>
+
+        <button class="hero-btn-secondary" style="width:100%; border-radius:999px;" onclick="selectPlanAndSignup('Control Group')">
           Start 7-day free trial
         </button>
       </div>
@@ -6237,6 +6306,16 @@
             <div class="su-plan-badge" style="background:#0f172a; color:#fff;">Pro</div>
             <div class="su-plan-title">Control POS</div>
             <div class="su-plan-sub">KES 1,999/mo · eTIMS &amp; Multi-Branch</div>
+          </div>
+          <div class="su-plan-option" id="suPlanOptCoreGroup" onclick="setSignupPlan('Core Group')">
+            <div class="su-plan-badge">7-Day Trial</div>
+            <div class="su-plan-title">Core Group</div>
+            <div class="su-plan-sub">KES 3,999/mo · Core POS, up to 5 branches</div>
+          </div>
+          <div class="su-plan-option" id="suPlanOptControlGroup" onclick="setSignupPlan('Control Group')">
+            <div class="su-plan-badge" style="background:#0f172a; color:#fff;">Enterprise</div>
+            <div class="su-plan-title">Control Group</div>
+            <div class="su-plan-sub">KES 7,999/mo · Control POS, up to 5 branches</div>
           </div>
         </div>
         <input type="hidden" id="suSelectedPlan" value="Free">
@@ -6689,6 +6768,7 @@
         <div class="rest-hint-box">
           <p>Order sent to kitchen. Payment can be settled later.</p>
           <button onclick="switchTab('kitchen')">Open kitchen</button>
+          <button onclick="openRestBillList()">Clear bill</button>
         </div>
       </div>
     </div>
@@ -7001,7 +7081,7 @@
           <button class="btn-small btn-green" id="gwExportCsvBtn" onclick="exportGatewayTransactionsCSV()" title="Export filtered gateway transactions to CSV report">
             <i class="fa-solid fa-file-arrow-down"></i> <span>Export</span>
           </button>
-          <button class="btn-small" style="background:#0f172a; color:#ffffff;" onclick="openSimulateTxModal()" title="Simulate payment or test webhook">
+          <button class="btn-small" id="gwSimulateBtn" style="background:#0f172a; color:#ffffff; display:none;" onclick="openSimulateTxModal()" title="Simulate payment or test webhook (platform admin only)">
             <i class="fa-solid fa-flask"></i> <span>Simulate Webhook</span>
           </button>
         </div>
@@ -7353,6 +7433,31 @@
 
     <div class="panel active" id="tab-sell">
     <div class="retail-checkout-container">
+      <!-- Restaurant Clear Bill (hotel-style running check) -->
+      <div class="rc-bill-panel" id="restBillPanel">
+        <div id="restBillListView">
+          <div class="cart-box">
+            <div style="font-weight:bold; margin-bottom:8px;"><i class="fa-solid fa-receipt"></i> Open bills — tap one to clear it</div>
+            <div id="restBillList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+            <div class="empty-note" id="restBillEmpty">No open bills. Orders appear here once they are sent to the kitchen.</div>
+            <button class="btn-yellow" style="margin-top:12px;" onclick="exitRestBillMode()"><i class="fa-solid fa-bolt"></i> Walk-in quick sale</button>
+          </div>
+        </div>
+        <div id="restBillDetailView" style="display:none;">
+          <div class="cart-box">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+              <button class="btn-yellow" onclick="backToRestBills()">← Back</button>
+              <div style="font-weight:bold;" id="restBillTitle"></div>
+            </div>
+            <div style="font-weight:bold; margin-bottom:8px;">Clear bill</div>
+            <div id="restBillLines" style="font-size:13px; margin-bottom:8px;"></div>
+            <div style="display:flex; justify-content:space-between; font-weight:bold; border-top:1px solid #eee; padding-top:8px;">
+              <span>Total (VAT incl.)</span><span id="restBillTotal">KES 0.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Left Column: Products Panel -->
       <div class="rc-products-panel">
         <!-- Products Header -->
@@ -9354,22 +9459,18 @@ function setBillingCycle(cycle) {
     mBtn.classList.toggle('active', !isYearly);
     yBtn.classList.toggle('active', isYearly);
   }
-  const coreEl = document.getElementById('corePriceAmount');
-  const corePeriod = document.getElementById('corePricePeriod');
-  const controlEl = document.getElementById('controlPriceAmount');
-  const controlPeriod = document.getElementById('controlPricePeriod');
-
-  if (isYearly) {
-    if (coreEl) coreEl.textContent = 'KES 9,999';
-    if (corePeriod) corePeriod.textContent = '/ year (Save KES 1,989)';
-    if (controlEl) controlEl.textContent = 'KES 19,999';
-    if (controlPeriod) controlPeriod.textContent = '/ year (Save KES 3,989)';
-  } else {
-    if (coreEl) coreEl.textContent = 'KES 999';
-    if (corePeriod) corePeriod.textContent = '/ month';
-    if (controlEl) controlEl.textContent = 'KES 1,999';
-    if (controlPeriod) controlPeriod.textContent = '/ month';
-  }
+  const tiers = [
+    { amt: 'corePriceAmount', per: 'corePricePeriod', m: 'KES 999', y: 'KES 9,999', save: 'KES 1,989' },
+    { amt: 'coreGroupPriceAmount', per: 'coreGroupPricePeriod', m: 'KES 3,999', y: 'KES 39,999', save: 'KES 7,989' },
+    { amt: 'controlPriceAmount', per: 'controlPricePeriod', m: 'KES 1,999', y: 'KES 19,999', save: 'KES 3,989' },
+    { amt: 'controlGroupPriceAmount', per: 'controlGroupPricePeriod', m: 'KES 7,999', y: 'KES 79,999', save: 'KES 15,989' }
+  ];
+  tiers.forEach(t => {
+    const a = document.getElementById(t.amt);
+    const pr = document.getElementById(t.per);
+    if (a) a.textContent = isYearly ? t.y : t.m;
+    if (pr) pr.textContent = isYearly ? `/ year (Save ${t.save})` : '/ month';
+  });
 }
 
 /* FAQ Accordion Toggle */
@@ -9794,8 +9895,8 @@ function setSignupPlan(plan) {
   const hidden = document.getElementById('suSelectedPlan');
   if (hidden) hidden.value = plan;
 
-  ['Free', 'Core', 'Control'].forEach(p => {
-    const el = document.getElementById('suPlanOpt' + p);
+  ['Free', 'Core', 'Control', 'Core Group', 'Control Group'].forEach(p => {
+    const el = document.getElementById('suPlanOpt' + p.replace(' ', ''));
     if (el) el.classList.toggle('active', p === plan);
   });
 }
@@ -10314,6 +10415,8 @@ async function checkPlatformAdminStatus() {
 }
 
 function applySuperAdminLinkVisibility() {
+  const simBtn = document.getElementById('gwSimulateBtn');
+  if (simBtn) simBtn.style.display = (typeof canUseGatewaySimulator === 'function' && canUseGatewaySimulator()) ? '' : 'none';
   const show = isPlatformAdmin && !!profile && profile.email === PLATFORM_SUPER_ADMIN_EMAIL;
   document.querySelectorAll('[data-super-admin-only]').forEach(el => { el.style.display = show ? '' : 'none'; });
 }
@@ -10582,7 +10685,11 @@ function switchTab(name) {
   if (targetPanel) targetPanel.classList.add('active');
   if (targetTabBtn) targetTabBtn.classList.add('active');
 
-  if (name === 'sell') renderShiftBanner();
+  if (name === 'sell') {
+    renderShiftBanner();
+    if (isRestaurantBiz() && !activeBillTicketId) showRestBillList();
+    else if (!isRestaurantBiz()) { const c = document.querySelector('.retail-checkout-container'); if (c) c.classList.remove('bill-mode', 'bill-list'); }
+  }
   if (name === 'log') renderLog();
   if (name === 'expenses') renderExpenses();
   if (name === 'dash') renderDashboard();
@@ -10592,7 +10699,7 @@ function switchTab(name) {
   if (name === 'team') renderTeam();
   if (name === 'menu') renderMenuTab();
   if (name === 'settings') { renderSettingsForm(); loadMpesaStatus(); loadEtimsStatus(); renderPlatformSwitcher(); }
-  if (name === 'integrations') { loadAllGatewaySettings().catch(() => {}); loadGatewayTransactions().catch(() => {}); }
+  if (name === 'integrations') { applySuperAdminLinkVisibility(); loadAllGatewaySettings().catch(() => {}); loadGatewayTransactions().catch(() => {}); }
 }
 
 /* =====================================================================
@@ -11312,6 +11419,7 @@ window.addEventListener('offline', () => { isOnline = false; document.getElement
 ===================================================================== */
 function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaReceipt, gatewayName) {
   lastReceiptPayload = { receiptNo, items, subtotal, vatTotal, grand, now, mpesaReceipt, gatewayName };
+  if (typeof finalizeRestBill === 'function') finalizeRestBill();
 
   let linesHtml = '';
   items.forEach(item => {
@@ -12341,7 +12449,13 @@ function openLinkedReceiptFromDetail() {
   openSaleReceiptFromLog(receiptNo);
 }
 
+function canUseGatewaySimulator() {
+  return !!(isPlatformAdmin && profile && profile.email === PLATFORM_SUPER_ADMIN_EMAIL);
+}
+
 function openSimulateTxModal() {
+  // Internal test tool - never available to businesses or the public.
+  if (!canUseGatewaySimulator()) { showToast('The webhook simulator is restricted to the platform admin.'); return; }
   const modal = document.getElementById('gwSimulateModal');
   if (modal) modal.classList.add('show');
 }
@@ -15019,7 +15133,10 @@ function renderKitchenBoard() {
           <button class="kds-btn-cancel" onclick="cancelKitchenTicket('${t.id}')">Cancel order</button>
         ` : ''}
         ${t.status === 'ready' ? `
-          <button class="kds-btn-start" onclick="openKdsConfirmModal('${t.id}', 'served')">Mark served &amp; close</button>
+          <button class="kds-btn-start" onclick="openKdsConfirmModal('${t.id}', 'served')">Mark served &amp; clear bill</button>
+        ` : ''}
+        ${(t.status !== 'served' && !t.paid) ? `
+          <button class="kds-btn-start" onclick="openRestBill('${t.id}')">Clear bill</button>
         ` : ''}
       </div>
     </div>
@@ -15051,7 +15168,7 @@ function openKdsConfirmModal(ticketId, nextStatus) {
   const statusDisplayNames = {
     'preparing': 'Preparing',
     'ready': 'Ready',
-    'served': 'Served & Closed'
+    'served': 'Served & Clear Bill'
   };
   const targetLabel = statusDisplayNames[nextStatus] || (nextStatus.charAt(0).toUpperCase() + nextStatus.slice(1));
 
@@ -15087,9 +15204,18 @@ function advanceTicket(id, nextStatus) {
   const t = tickets.find(x => x.id === id);
   if (t) {
     if (nextStatus === 'served') {
-      const idx = tickets.findIndex(x => x.id === id);
-      tickets.splice(idx, 1);
-      showToast(`Ticket ${t.shortId} served and closed!`);
+      if (t.paid) {
+        const idx = tickets.findIndex(x => x.id === id);
+        tickets.splice(idx, 1);
+        showToast(`Ticket ${t.shortId} served and closed!`);
+      } else {
+        t.status = 'served';
+        saveKitchenTickets(tickets);
+        renderKitchenBoard();
+        showToast(`Ticket ${t.shortId} served - clear the bill.`);
+        openRestBill(t.id);
+        return;
+      }
     } else {
       t.status = nextStatus;
       showToast(`Ticket ${t.shortId} moved to ${nextStatus}!`);
@@ -15109,6 +15235,140 @@ function cancelKitchenTicket(id) {
     showToast('Order cancelled.');
     renderKitchenBoard();
   }
+}
+
+
+/* =====================================================================
+   RESTAURANT CLEAR BILL (hotel-style running check, reuses the Sell tab's
+   payment engine: cash, M-Pesa, KCB, Paystack, Airtel)
+===================================================================== */
+let activeBillTicketId = null;
+
+function isRestaurantBiz() {
+  return !!(business && normalizeBizType(business.business_type) === 'Hotel');
+}
+
+function restTicketTotal(t) {
+  return (t.items || []).reduce((s, i) => s + (i.price * i.qty), 0);
+}
+
+function openBillTickets() {
+  return getKitchenTickets().filter(t => !t.paid);
+}
+
+// Convert a kitchen ticket's items to checkout cart lines (VAT/code/unit
+// resolved from the catalog so stock and VAT stay correct).
+function ticketToCart(t) {
+  return (t.items || []).map(i => {
+    const prod = (i.id && CATALOG.find(p => p.id === i.id)) || CATALOG.find(p => p.name === i.name) || null;
+    return {
+      id: prod ? prod.id : (i.id || null),
+      code: prod ? prod.code : (i.code || ''),
+      name: i.name,
+      price: i.price,
+      vat: prod && typeof prod.vat === 'number' ? prod.vat : (typeof i.vat === 'number' ? i.vat : 0.16),
+      unit: (prod && prod.unit) || i.unit || 'piece',
+      qty: i.qty
+    };
+  });
+}
+
+function enterRestBillMode(listOnly) {
+  const c = document.querySelector('.retail-checkout-container');
+  if (!c) return;
+  c.classList.add('bill-mode');
+  c.classList.toggle('bill-list', !!listOnly);
+}
+
+function exitRestBillMode() {
+  activeBillTicketId = null;
+  const c = document.querySelector('.retail-checkout-container');
+  if (c) c.classList.remove('bill-mode', 'bill-list');
+  cart = [];
+  renderCart();
+}
+
+// Settle Bills nav / "Clear bill" shortcuts: list of unpaid tickets
+function openRestBillList() {
+  activeBillTicketId = null;
+  cart = [];
+  renderCart();
+  switchTab('sell');
+  showRestBillList();
+}
+
+function showRestBillList() {
+  enterRestBillMode(true);
+  document.getElementById('restBillListView').style.display = 'block';
+  document.getElementById('restBillDetailView').style.display = 'none';
+  const tickets = openBillTickets();
+  const list = document.getElementById('restBillList');
+  const empty = document.getElementById('restBillEmpty');
+  if (tickets.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  list.innerHTML = tickets.map(t => `
+    <div class="table-tile occupied" data-bill-id="${escapeHtml(t.id)}">
+      <div class="t-name">${escapeHtml(t.shortId)}</div>
+      <div class="t-status">${escapeHtml(t.orderType || '')}</div>
+      <div class="t-total">KES ${restTicketTotal(t).toFixed(2)}</div>
+    </div>`).join('');
+  if (!list.dataset.clickBound) {
+    list.dataset.clickBound = '1';
+    list.addEventListener('click', (e) => {
+      const tile = e.target.closest('[data-bill-id]');
+      if (tile) openRestBill(tile.dataset.billId);
+    });
+  }
+}
+
+function backToRestBills() {
+  activeBillTicketId = null;
+  cart = [];
+  renderCart();
+  showRestBillList();
+}
+
+// Go straight to the Clear Bill screen for one ticket
+function openRestBill(ticketId) {
+  const t = getKitchenTickets().find(x => x.id === ticketId);
+  if (!t) { showToast('That bill is no longer open.'); return; }
+  if (t.paid) { showToast('That bill is already paid.'); return; }
+  if (!currentShift) {
+    showToast('Open a shift before clearing a bill.');
+  }
+  activeBillTicketId = ticketId;
+  cart = ticketToCart(t);
+  switchTab('sell');
+  enterRestBillMode(false);
+  document.getElementById('restBillListView').style.display = 'none';
+  document.getElementById('restBillDetailView').style.display = 'block';
+  document.getElementById('restBillTitle').textContent = `${t.shortId} · ${t.orderType || ''}`;
+  document.getElementById('restBillLines').innerHTML = (t.items || []).map(i =>
+    `<div style="display:flex; justify-content:space-between; padding:2px 0;"><span>${escapeHtml(i.name)} x${i.qty}</span><span>KES ${(i.price * i.qty).toFixed(2)}</span></div>`
+  ).join('');
+  document.getElementById('restBillTotal').textContent = 'KES ' + restTicketTotal(t).toFixed(2);
+  renderCart();
+}
+
+// Called from showReceipt() once a sale has gone through
+function finalizeRestBill() {
+  if (!activeBillTicketId) return;
+  const id = activeBillTicketId;
+  activeBillTicketId = null;
+  const tickets = getKitchenTickets();
+  const idx = tickets.findIndex(x => x.id === id);
+  if (idx !== -1) {
+    const t = tickets[idx];
+    if (t.status === 'served') {
+      tickets.splice(idx, 1);
+    } else {
+      t.paid = true;
+      t.paymentStatus = `Paid KES ${restTicketTotal(t).toFixed(2)}`;
+    }
+    saveKitchenTickets(tickets);
+  }
+  showRestBillList();
+  if (document.getElementById('tab-kitchen')?.classList.contains('active')) renderKitchenBoard();
 }
 
 // QUICK CASH TENDER & CHANGE DUE
