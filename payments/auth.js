@@ -7,7 +7,12 @@
 // either endpoint will do anything.
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://uzwomzkzqrpiumtnniik.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D';
+// No embedded fallback key: if this is missing the middleware below refuses every request
+// (fails closed) instead of silently authenticating against a key baked into the source.
+const SUPABASE_ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
+if (!SUPABASE_ANON_KEY) {
+  console.error('[payments/auth] SUPABASE_ANON_KEY is not set - all authenticated payment endpoints will return 503 until it is.');
+}
 
 /**
  * Validates the bearer token against Supabase Auth, then confirms the matching
@@ -15,7 +20,23 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_wt1aY
  * on success.
  */
 export async function requireBusinessAdmin(req, res, next) {
+  return authorize(req, res, next, true);
+}
+
+/**
+ * Same session validation, but any signed-in member of a business (admin or teller) is
+ * allowed. Used for the endpoints a cashier needs at checkout (initiate / status).
+ * Attaches { id, email, business_id, role } to req.admin.
+ */
+export async function requireSession(req, res, next) {
+  return authorize(req, res, next, false);
+}
+
+async function authorize(req, res, next, adminOnly) {
   try {
+    if (!SUPABASE_ANON_KEY) {
+      return res.status(503).json({ success: false, error: 'Server auth is not configured (SUPABASE_ANON_KEY missing).' });
+    }
     const authHeader = req.headers.authorization || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
 
@@ -59,7 +80,10 @@ export async function requireBusinessAdmin(req, res, next) {
     const rows = await profileResp.json();
     const profile = Array.isArray(rows) ? rows[0] : null;
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile) {
+      return res.status(403).json({ success: false, error: 'No business account is linked to this login.' });
+    }
+    if (adminOnly && profile.role !== 'admin') {
       return res.status(403).json({ success: false, error: 'Admin access required for this action.' });
     }
 
@@ -67,6 +91,7 @@ export async function requireBusinessAdmin(req, res, next) {
       id: user.id,
       email: user.email,
       business_id: profile.business_id,
+      role: profile.role,
       full_name: profile.full_name
     };
 

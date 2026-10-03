@@ -8,7 +8,7 @@
  *   (Do not hardcode API tokens directly in source code)
  * 
  * Usage:
- *   node telegram-bot.js
+ *   node telegram-bot.cjs
  */
 
 const https = require('https');

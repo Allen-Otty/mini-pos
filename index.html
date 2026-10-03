@@ -13546,6 +13546,16 @@ function getPaymentApiBaseUrl() {
 
 async function safeFetchJson(url, options = {}) {
   try {
+    // The payments API now requires a signed-in session. Attach the Supabase token to every
+    // /api/payments call unless the caller already supplied an Authorization header.
+    if (typeof url === 'string' && url.includes('/api/payments/')) {
+      const hdrs = options.headers || {};
+      const hasAuth = Object.keys(hdrs).some(k => k.toLowerCase() === 'authorization');
+      if (!hasAuth) {
+        const authHdr = await getAuthHeader();
+        options = { ...options, headers: { ...hdrs, ...authHdr } };
+      }
+    }
     const res = await fetch(url, options);
     const ct = res.headers.get('content-type') || '';
     if (!ct.includes('application/json')) {
