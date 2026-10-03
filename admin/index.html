@@ -1343,6 +1343,14 @@
             <label>Control POS + eTIMS Monthly Price (KES)</label>
             <input type="number" id="setPriceControl" class="form-control" value="1999">
           </div>
+          <div class="form-group">
+            <label>Core Group Monthly Price (KES)</label>
+            <input type="number" id="setPriceCoreGroup" class="form-control" value="3999">
+          </div>
+          <div class="form-group">
+            <label>Control Group Monthly Price (KES)</label>
+            <input type="number" id="setPriceControlGroup" class="form-control" value="7999">
+          </div>
         </div>
 
         <div style="margin-top:18px; text-align:right;">
@@ -1548,7 +1556,9 @@
       <select id="planSelect" class="form-control">
         <option value="Free">Free (Starter Store)</option>
         <option value="Core">Core POS (KES 999/mo)</option>
+        <option value="Core Group">Core Group — up to 5 branches (KES 3,999/mo)</option>
         <option value="Control">Control POS + eTIMS (KES 1,999/mo)</option>
+        <option value="Control Group">Control Group — up to 5 branches (KES 7,999/mo)</option>
       </select>
     </div>
     <div class="form-group" style="margin-bottom:16px;">
@@ -1659,6 +1669,8 @@ const DEFAULT_PLATFORM_SETTINGS = {
   paystack_secret_key: '',
   price_core: 999,
   price_control: 1999,
+  price_core_group: 3999,
+  price_control_group: 7999,
   alert_whatsapp: '+254712345678',
   alert_telegram: '',
   telegram_bot_token: '',
@@ -2164,6 +2176,8 @@ function loadPayoutFields() {
 
   const prCore = document.getElementById('setPriceCore'); if (prCore) prCore.value = cfg.price_core;
   const prCtrl = document.getElementById('setPriceControl'); if (prCtrl) prCtrl.value = cfg.price_control;
+  const prCoreG = document.getElementById('setPriceCoreGroup'); if (prCoreG) prCoreG.value = cfg.price_core_group;
+  const prCtrlG = document.getElementById('setPriceControlGroup'); if (prCtrlG) prCtrlG.value = cfg.price_control_group;
 
   toggleMpesaModeFields();
 }
@@ -2218,6 +2232,8 @@ async function savePayoutSettings() {
 
   cfg.price_core = parseFloat(document.getElementById('setPriceCore')?.value || '999');
   cfg.price_control = parseFloat(document.getElementById('setPriceControl')?.value || '1999');
+  cfg.price_core_group = parseFloat(document.getElementById('setPriceCoreGroup')?.value || '3999');
+  cfg.price_control_group = parseFloat(document.getElementById('setPriceControlGroup')?.value || '7999');
 
   // NOTE: this used to also call the 'mpesa-settings' edge function — the same one a
   // business uses to configure ITS OWN till for its own sales. Calling it from here
