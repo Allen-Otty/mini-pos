@@ -1,4 +1,4 @@
-const CACHE_NAME = "dogo-pos-cache-v6";
+﻿const CACHE_NAME = "dogo-pos-cache-v7";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",

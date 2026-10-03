@@ -31,7 +31,7 @@
   })();
 </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Dogo POS">
@@ -1735,10 +1735,17 @@
     box-shadow: 0 2px 10px var(--accent-glow);
   }
   .panel {
-    max-width: 780px;
+    /* Fluid: fill the viewport (with comfortable gutters) on any screen size.
+       Wide views (orders, kitchen, catalog, reports) stretch; form-style pages
+       cap themselves via .panel-narrow below. */
+    max-width: 1680px;
     margin: 16px auto 40px;
-    padding: 0 16px;
+    padding: 0 clamp(12px, 2.5vw, 32px);
     display: none;
+    width: 100%;
+  }
+  .panel-narrow {
+    max-width: 860px;
   }
   .panel.active { display: block; animation: panelFadeIn .2s ease; }
   @keyframes panelFadeIn {
@@ -2875,7 +2882,7 @@
 
 .rest-product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
   gap: 14px;
 }
 
@@ -3356,7 +3363,7 @@
 
 .kds-ticket-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
   gap: 18px;
 }
 
@@ -7230,7 +7237,7 @@
 
   <!-- ================= VIEW: SUBSCRIPTION (/subscription) ================= -->
   <!-- ================= VIEW: SUBSCRIPTION (/subscription) ================= -->
-  <div class="panel" id="tab-subscription">
+  <div class="panel panel-narrow" id="tab-subscription">
     <!-- Active Status Bar -->
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
       <div>
@@ -7400,7 +7407,7 @@
   </div>
 
   <!-- ================= VIEW: REFER & EARN (/referrals) ================= -->
-  <div class="panel" id="tab-referrals">
+  <div class="panel panel-narrow" id="tab-referrals">
     <div class="referral-hero-banner">
       <div style="max-width:580px;">
         <span class="rest-hub-badge">DOGO POS PARTNER PROGRAMME</span>
@@ -7967,7 +7974,7 @@
   <!-- ================= CATALOG TAB (admin only) ================= -->
   
   <!-- ================= VIEW: ADD PRODUCT (/products/create) ================= -->
-  <div class="panel" id="tab-product-create">
+  <div class="panel panel-narrow" id="tab-product-create">
     <div style="margin-bottom:20px;">
       <button type="button" onclick="switchTab('catalog')" style="background:var(--card); border:1px solid var(--border); color:var(--text-primary); border-radius:999px; padding:8px 18px; font-weight:700; margin-bottom:14px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
         <i class="fa-solid fa-arrow-left"></i> <span>Back to products</span>
