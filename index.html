@@ -9,9 +9,9 @@
 (function () {
   try {
     var q = new URLSearchParams(location.search);
-    if (q.get('legacy') === '1') sessionStorage.setItem('dogo_legacy', '1');
     if (q.get('signin') === '1') { localStorage.removeItem('dogo_new_ui_ok'); return; }
-    if (sessionStorage.getItem('dogo_legacy') === '1') return;
+    // Signed-in users always land on the new portal. The classic in-page app is
+    // retained ONLY as the post-login fallback UI, not as a separate destination.
     if (localStorage.getItem('dogo_new_ui_ok') === '1') location.replace('dashboard.html');
   } catch (e) {}
 })();
@@ -16347,11 +16347,8 @@ async function saveNewProductFromPage() {
         applyRoleVisibility();
         applyBusinessTheme();
         renderCatalog();
-        if (!location.search.includes('legacy=1') && sessionStorage.getItem('dogo_legacy') !== '1') {
-          window.location.replace('dashboard.html');
-          return;
-        }
-        switchTab('sell');
+        window.location.replace('dashboard.html');
+        return;
         hasValidSession = true;
       } catch(e) {}
     }

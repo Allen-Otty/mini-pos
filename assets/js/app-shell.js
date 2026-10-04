@@ -90,7 +90,7 @@
               ${ICONS[item.icon] || ''}<span>${item.label}</span>
             </a>
           `).join('')}
-          <a class="dogo-nav-item" href="index.html?legacy=1" style="margin-left:auto;color:var(--dogo-gold-dark);font-weight:700;"><span>Legacy Modules &rarr;</span></a>
+          
         </div>
       </nav>
     `;

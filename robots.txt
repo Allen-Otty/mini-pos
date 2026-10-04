@@ -1,3 +1,23 @@
+# Dogo POS — search engines welcome. The app itself is behind login and must stay
+# out of indexes; only the marketing/landing surface is public.
 User-agent: *
-Disallow: /admin/
+Allow: /
 Disallow: /admin
+Disallow: /admin/
+Disallow: /dashboard.html
+Disallow: /sell.html
+Disallow: /catalog.html
+Disallow: /customers.html
+Disallow: /expenses.html
+Disallow: /inventory.html
+Disallow: /purchases.html
+Disallow: /reports.html
+Disallow: /settings.html
+Disallow: /tables.html
+Disallow: /team.html
+Disallow: /equity.html
+Disallow: /loans.html
+Disallow: /fixedassets.html
+Disallow: /payment-complete.html
+
+Sitemap: https://dogo-pos-app.netlify.app/sitemap.xml

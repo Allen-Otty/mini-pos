@@ -128,6 +128,13 @@
             <option value="">Search and select variant</option>
           </select>
         </div>
+        <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+          <button id="invScanBtn" type="button" title="Scan barcode to look up stock" style="background:#fff;border:1.5px solid var(--dogo-border,#e5e7eb);border-radius:999px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;">📷 Scan barcode</button>
+        </div>
+        <div id="invScanPanel" style="display:none; margin:10px 0;">
+          <div id="invScanReader" style="border-radius:12px; overflow:hidden; max-width:360px;"></div>
+          <div id="invScanMsg" style="font-size:12px; color:var(--dogo-text-muted); margin-top:4px;">Point the camera at a product barcode.</div>
+        </div>
         <button style="background:#d97706;color:#fff;border:none;border-radius:var(--dogo-radius-pill);padding:11px 26px;font-size:14px;font-weight:700;cursor:pointer;" id="btnCheckBalance">
           Check Balance
         </button>
@@ -202,6 +209,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="assets/js/dogo-data.js"></script>
   <script src="assets/js/app-shell.js"></script>
   <script>
@@ -254,6 +262,53 @@
       $('cogsStockVal').textContent = ksh(val);
       $('cogsMonthly').textContent = ksh(val * 0.4);
     }
+
+    // Scan-to-lookup: point the camera at a barcode to pull up its stock card.
+    let invScanner = null, invRunning = false, invLast = '', invLastAt = 0;
+
+    function invOnScan(decodedText) {
+      const now = Date.now();
+      if (decodedText === invLast && now - invLastAt < 1500) return;
+      invLast = decodedText; invLastAt = now;
+      const prod = products.find(x => (x.barcode || '') === decodedText || (x.code || '') === decodedText);
+      const msg = $('invScanMsg');
+      if (!prod) {
+        if (msg) { msg.textContent = 'Unknown code: ' + decodedText; msg.style.color = '#dc2626'; }
+        return;
+      }
+      $('selectVariant').value = prod.id;
+      $('btnCheckBalance').click();
+      if (msg) { msg.textContent = 'Showing: ' + prod.name; msg.style.color = 'var(--dogo-neon-dark)'; }
+      if (navigator.vibrate) navigator.vibrate(80);
+    }
+
+    $('invScanBtn').onclick = async () => {
+      const panel = $('invScanPanel'), msg = $('invScanMsg');
+      if (invRunning) {
+        invRunning = false;
+        try { if (invScanner) await invScanner.stop(); } catch (e) {}
+        panel.style.display = 'none'; $('invScanBtn').textContent = '📷';
+        return;
+      }
+      panel.style.display = 'block';
+      try {
+        if (!invScanner) invScanner = new Html5Qrcode('invScanReader');
+        const cams = await Html5Qrcode.getCameras();
+        if (!cams || !cams.length) throw new Error('No camera found');
+        let camId = cams[0].id;
+        const back = cams.find(c => /back|rear|environment/i.test(c.label || ''));
+        if (back) camId = back.id;
+        await invScanner.start(camId, { fps: 10, qrbox: { width: 220, height: 140 },
+          formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.QR_CODE]
+        }, invOnScan, () => {});
+        invRunning = true;
+        $('invScanBtn').textContent = '✕';
+      } catch (err) {
+        if (msg) msg.textContent = 'Camera error: ' + String(err && err.message || err);
+      }
+    };
 
     $('btnCheckBalance').onclick = () => {
       const pId = $('selectVariant').value;

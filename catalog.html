@@ -74,7 +74,14 @@
             </div>
             <div class="dogo-field" style="margin:0;">
               <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">BARCODE</label>
-              <input class="dogo-input" id="fBarcode" placeholder="Optional" style="background:#f8fafc;">
+              <div style="display:flex; gap:6px;">
+                <input class="dogo-input" id="fBarcode" placeholder="Scan or type" style="background:#f8fafc;">
+                <button class="dogo-btn dogo-btn--outline" id="barcodeScanBtn" type="button" title="Scan barcode with camera" style="padding:0 12px; white-space:nowrap;">📷</button>
+              </div>
+            </div>
+            <div id="barcodeScanPanel" style="display:none; margin:8px 0;">
+              <div id="barcodeReader" style="border-radius:12px; overflow:hidden; max-width:360px;"></div>
+              <div id="barcodeScanMsg" style="font-size:12px; color:var(--dogo-text-muted); margin-top:4px;">Point the camera at the product barcode.</div>
             </div>
           </div>
 
@@ -136,6 +143,7 @@
     </div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="assets/js/dogo-data.js"></script>
   <script src="assets/js/app-shell.js"></script>
   <script>
@@ -149,6 +157,67 @@
     let products = [], page = 1; const PER = 10; let editing = null;
     const $ = id => document.getElementById(id);
     if (isAdmin) $('addBtn').style.display = '';
+
+    // ---------- Barcode scanner (camera) for product add/edit ----------
+    // Scanning fills the BARCODE field; if the scanned code already belongs to a
+    // product, offer to edit that product instead of creating a duplicate.
+    let bcScanner = null, bcRunning = false, bcLast = '', bcLastAt = 0;
+
+    function bcOnScan(decodedText) {
+      const now = Date.now();
+      if (decodedText === bcLast && now - bcLastAt < 1500) return;
+      bcLast = decodedText; bcLastAt = now;
+      const known = products.find(x => (x.barcode || '') === decodedText || (x.code || '') === decodedText);
+      const msg = $('barcodeScanMsg');
+      if (known) {
+        if (msg) { msg.innerHTML = '<strong>' + esc(known.name) + '</strong> already has this barcode — opening it for editing.'; msg.style.color = 'var(--dogo-gold-dark)'; }
+        stopBcScan();
+        openModal(known); // reuse the existing edit flow
+        return;
+      }
+      $('fBarcode').value = decodedText;
+      if (msg) { msg.textContent = 'Barcode captured: ' + decodedText; msg.style.color = 'var(--dogo-neon-dark)'; }
+      if (navigator.vibrate) navigator.vibrate(80);
+      stopBcScan();
+    }
+
+    async function stopBcScan() {
+      bcRunning = false;
+      try { if (bcScanner) await bcScanner.stop(); } catch (e) {}
+      $('barcodeScanPanel').style.display = 'none';
+      $('barcodeScanBtn').textContent = '📷';
+    }
+
+    $('barcodeScanBtn').onclick = async () => {
+      if (bcRunning) { stopBcScan(); return; }
+      const panel = $('barcodeScanPanel'), msg = $('barcodeScanMsg');
+      panel.style.display = 'block';
+      if (msg) { msg.textContent = 'Starting camera…'; msg.style.color = ''; }
+      try {
+        if (!bcScanner) bcScanner = new Html5Qrcode('barcodeReader');
+        const cams = await Html5Qrcode.getCameras();
+        if (!cams || !cams.length) throw new Error('No camera found');
+        let camId = cams[0].id;
+        const back = cams.find(c => /back|rear|environment/i.test(c.label || ''));
+        if (back) camId = back.id;
+        await bcScanner.start(camId, {
+          fps: 10, qrbox: { width: 220, height: 140 },
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.QR_CODE
+          ]
+        }, bcOnScan, () => {});
+        bcRunning = true;
+        $('barcodeScanBtn').textContent = '✕';
+      } catch (err) {
+        const denied = err && (err.name === 'NotAllowedError' || /denied|permission/i.test(String(err)));
+        if (msg) msg.innerHTML = denied
+          ? 'Camera blocked. Address bar → Permissions → Camera → Allow, then retry.'
+          : 'Could not start camera: ' + esc(String(err && err.message || err));
+      }
+    };
 
     async function load() {
       const { data, error } = await sb.from('products').select('*').order('name');
