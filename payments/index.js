@@ -17,6 +17,7 @@ import {
   getInternalConfig
 } from './store.js';
 import crypto from 'crypto';
+import { rateLimit as scopedRateLimit, clientIp } from './rate-limit.js';
 import { requireBusinessAdmin, requireSession } from './auth.js';
 
 export const paymentRouter = express.Router();
@@ -84,7 +85,27 @@ function ownsPayment(req, request) {
   return !!(request && req.admin && request.metadata && request.metadata.business_id === req.admin.business_id);
 }
 
-paymentRouter.post('/initiate', requireSession, async (req, res) => {
+// STK-push abuse prevention: each business may start at most 10 payment
+// prompts per minute — enough for any real till, painful for harassment.
+// (The blanket per-IP limiter above stays as the outer layer.)
+const initiateLimiter = scopedRateLimit({
+  max: 10,
+  windowMs: 60 * 1000,
+  keyFn: (req) => (req.admin && req.admin.business_id) || clientIp(req),
+  message: 'Too many payment requests. Wait a moment before retrying.'
+});
+const statusLimiter = scopedRateLimit({
+  max: 120,
+  windowMs: 60 * 1000,
+  keyFn: (req) => (req.admin && req.admin.business_id) || clientIp(req)
+});
+const callbackLimiter = scopedRateLimit({
+  max: 300,
+  windowMs: 60 * 1000,
+  message: 'Webhook rate limit exceeded'
+});
+
+paymentRouter.post('/initiate', requireSession, initiateLimiter, async (req, res) => {
   try {
     const { gateway, phone, account, email, amount, customerId, cart } = req.body;
     // business_id is stamped from the verified login and overrides anything the client sent.
@@ -134,7 +155,7 @@ paymentRouter.post('/initiate', requireSession, async (req, res) => {
  * GET /api/payments/status/:id
  * Polling endpoint used by the POS checkout UI
  */
-paymentRouter.get('/status/:id', requireSession, async (req, res) => {
+paymentRouter.get('/status/:id', requireSession, statusLimiter, async (req, res) => {
   const { id } = req.params;
   let request = getPaymentRequest(id);
 
@@ -249,7 +270,7 @@ paymentRouter.post('/link-sale', requireSession, (req, res) => {
  * POST /api/payments/callbacks/mpesa
  * Safaricom Daraja Webhook
  */
-paymentRouter.post('/callbacks/mpesa', async (req, res) => {
+paymentRouter.post('/callbacks/mpesa', callbackLimiter, async (req, res) => {
   console.log('[M-Pesa Webhook Received]');
   try {
     // Safaricom does not sign callbacks, so a success claim is confirmed with Safaricom's
@@ -266,7 +287,7 @@ paymentRouter.post('/callbacks/mpesa', async (req, res) => {
  * POST /api/payments/callbacks/kcb
  * KCB Buni Webhook
  */
-paymentRouter.post('/callbacks/kcb', (req, res) => {
+paymentRouter.post('/callbacks/kcb', callbackLimiter, (req, res) => {
   console.log('[KCB Webhook Received]');
   const outcome = verifyAndProcessKcbCallback(req.body, req.rawBody, req.headers);
   res.status(outcome.statusCode).json(outcome.response);
@@ -276,7 +297,7 @@ paymentRouter.post('/callbacks/kcb', (req, res) => {
  * POST /api/payments/callbacks/paystack
  * Paystack Webhook
  */
-paymentRouter.post('/callbacks/paystack', (req, res) => {
+paymentRouter.post('/callbacks/paystack', callbackLimiter, (req, res) => {
   console.log('[Paystack Webhook Received]');
   const outcome = verifyAndProcessPaystackCallback(req.body, req.rawBody, req.headers);
   res.status(outcome.statusCode).json(outcome.response);
@@ -286,7 +307,7 @@ paymentRouter.post('/callbacks/paystack', (req, res) => {
  * POST /api/payments/callbacks/airtel
  * Airtel Money Webhook
  */
-paymentRouter.post('/callbacks/airtel', (req, res) => {
+paymentRouter.post('/callbacks/airtel', callbackLimiter, (req, res) => {
   console.log('[Airtel Webhook Received]');
   const outcome = verifyAndProcessAirtelCallback(req.body, req.headers);
   res.status(outcome.statusCode).json(outcome.response);

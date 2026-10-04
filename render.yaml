@@ -1,0 +1,48 @@
+services:
+  # Dogo POS payment server (Express). Deploys the whole repo; the web service
+  # runs server.js which serves the static POS + the /api/payments routes.
+  - type: web
+    name: dogo-pos-api
+    runtime: node
+    plan: free          # upgrade to "starter" or higher for production traffic
+    region: frankfurt   # closest free region to Kenya with good Daraja latency
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/payments/gateways
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        value: https://uzwomzkzqrpiumtnniik.supabase.co
+      - key: SUPABASE_ANON_KEY
+        sync: false     # set in Render dashboard: publishable key from Supabase
+      - key: APP_URL
+        sync: false     # set to https://dogo-pos-api.onrender.com (or your custom domain)
+      # M-Pesa Daraja — set these in the dashboard, never commit them
+      - key: MPESA_ENVIRONMENT
+        sync: false     # "production" when Daraja go-live is approved
+      - key: MPESA_SHORTCODE
+        sync: false
+      - key: MPESA_PASSKEY
+        sync: false
+      - key: MPESA_CONSUMER_KEY
+        sync: false
+      - key: MPESA_CONSUMER_SECRET
+        sync: false
+      # Paystack
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_ENVIRONMENT
+        sync: false     # "production" with sk_live_...
+      # KCB / Airtel (leave empty until merchant onboarding is done)
+      - key: KCB_SHARED_SECRET
+        sync: false
+      - key: AIRTEL_CLIENT_ID
+        sync: false
+      - key: AIRTEL_CLIENT_SECRET
+        sync: false
+      # Telegram bot (optional)
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ADMIN_CHAT_ID
+        sync: false

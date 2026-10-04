@@ -80,7 +80,45 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
 
+function startupCheck() {
+  const has = (k) => Boolean(process.env[k] && process.env[k].trim());
+  const mask = (k) => has(k) ? 'set' : 'MISSING';
+  const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY'];
+  const gateway = {
+    'M-Pesa Daraja': ['MPESA_CONSUMER_KEY', 'MPESA_CONSUMER_SECRET', 'MPESA_PASSKEY', 'MPESA_SHORTCODE'],
+    'Paystack': ['PAYSTACK_SECRET_KEY'],
+    'KCB Buni': ['KCB_SHARED_SECRET'],
+    'Airtel Money': ['AIRTEL_CLIENT_ID', 'AIRTEL_CLIENT_SECRET']
+  };
+
+  console.log('\n================ Dogo POS startup check ================');
+  let missingRequired = [];
+  for (const k of required) if (!has(k)) missingRequired.push(k);
+  console.log(`Auth (Supabase):  ${missingRequired.length === 0 ? 'OK' : 'BROKEN — ' + missingRequired.join(', ') + ' missing; authenticated endpoints will 503'}`);
+
+  const mpesaProd = process.env.MPESA_ENVIRONMENT === 'production';
+  for (const [name, keys] of Object.entries(gateway)) {
+    const missing = keys.filter(k => !has(k));
+    const prodEnv = process.env[keys[0].replace(/_CONSUMER_KEY$/, '_ENVIRONMENT')] === 'production' ||
+                    process.env.MPESA_ENVIRONMENT === 'production';
+    if (missing.length === 0) {
+      console.log(`${name.padEnd(16)} ${prodEnv ? 'PRODUCTION' : 'sandbox'} — ready`);
+    } else {
+      console.log(`${name.padEnd(16)} ${prodEnv ? '!! PRODUCTION BUT INCOMPLETE — missing: ' + missing.join(', ') : 'sandbox only (missing: ' + missing.join(', ') + ')'}`);
+    }
+  }
+
+  if (!process.env.APP_URL) {
+    console.log('APP_URL:          MISSING — Paystack callback + Daraja registration need your public HTTPS URL');
+  }
+  if (process.env.NODE_ENV === 'production' && mpesaProd && !has('MPESA_CONSUMER_KEY')) {
+    console.log('\n*** PRODUCTION MODE BUT M-PESA CREDENTIALS MISSING — live payments WILL FAIL. ***');
+  }
+  console.log('=========================================================\n');
+}
+
 app.listen(PORT, HOST, () => {
   console.log(`Dogo POS server running at http://${HOST}:${PORT}`);
+  startupCheck();
 });
 

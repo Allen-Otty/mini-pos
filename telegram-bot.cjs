@@ -46,6 +46,13 @@ function loadLocalEnv() {
 loadLocalEnv();
 
 const BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
+// SECURITY: only these chat IDs may use data commands. Without an allowlist
+// anyone on Telegram could pull your merchant list, store names and MRR just
+// by messaging @DogoPOSbot. Set TELEGRAM_ADMIN_CHAT_ID (comma-separate for
+// several admins). /start, /help and /id still answer strangers so a new
+// admin can discover their chat ID; everything else is refused.
+const ADMIN_CHAT_IDS = (process.env.TELEGRAM_ADMIN_CHAT_ID || '')
+  .split(',').map(s => s.trim()).filter(Boolean);
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://uzwomzkzqrpiumtnniik.supabase.co';
 const SUPABASE_ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
 if (!SUPABASE_ANON_KEY) {
@@ -138,6 +145,20 @@ async function handleCommand(msg) {
   const text = (msg.text || '').trim();
   const userName = msg.from.first_name || msg.from.username || 'Admin';
   const cmd = text.split(' ')[0].toLowerCase();
+  // Allowlist gate: /start, /help and /id are safe (they only echo the
+  // caller's own chat ID for onboarding); every data command requires a
+  // listed admin chat.
+  const isAllowed = ADMIN_CHAT_IDS.includes(String(chatId));
+  const isOpenCommand = (cmd === '/start' || cmd === '/help' || cmd === '/id');
+  if (!isAllowed && !isOpenCommand) {
+    console.warn(`[Telegram] REFUSED ${cmd} from unlisted chat ${chatId} (${userName})`);
+    if (ADMIN_CHAT_IDS.length === 0) {
+      await sendTelegramMessage(chatId,
+        '\u26d4 Bot commands are locked. Set TELEGRAM_ADMIN_CHAT_ID on the server ' +
+        '(your chat ID: <code>' + chatId + '</code>) and restart the bot.');
+    }
+    return;
+  }
 
   console.log(`[Telegram] Command received: ${cmd} from ${userName} (${chatId})`);
 
@@ -162,16 +183,22 @@ async function handleCommand(msg) {
   }
 
   if (cmd === '/health') {
+    // Measured facts only: DB latency + how this process is configured.
     const tStart = Date.now();
     const res = await fetchSupabase('/rest/v1/businesses?select=count');
     const latency = Date.now() - tStart;
-    const ok = res !== null;
+    const ok = Array.isArray(res);
+
+    const mpesaLive = !!(process.env.MPESA_CONSUMER_KEY && process.env.MPESA_CONSUMER_SECRET);
+    const paystackLive = !!process.env.PAYSTACK_SECRET_KEY;
+    const darajaMode = process.env.MPESA_ENVIRONMENT === 'production' ? 'production' : 'sandbox';
 
     const reply = `🩺 <b>Dogo POS Infrastructure Health</b>\n\n` +
-      `• <b>Database Ping:</b> ${ok ? '🟢 Connected' : '🔴 Unreachable'} (${latency}ms)\n` +
-      `• <b>M-Pesa Gateways:</b> 🟢 Active (Till & Daraja)\n` +
-      `• <b>Security Isolation:</b> 🟢 Verified\n` +
-      `• <b>Overall Status:</b> 99% Operational`;
+      `• <b>Database:</b> ${ok ? '🟢 Connected' : '🔴 Unreachable'} (${latency}ms)\n` +
+      `• <b>M-Pesa Daraja:</b> ${mpesaLive ? '🟢 Credentials set (' + darajaMode + ')' : '🟠 No credentials — sandbox/local only'}\n` +
+      `• <b>Paystack:</b> ${paystackLive ? '🟢 Secret key set' : '🟠 No secret key'}\n` +
+      `• <b>Bot allowlist:</b> ${ADMIN_CHAT_IDS.length} admin chat(s)\n` +
+      `• <b>Uptime:</b> ${Math.floor(process.uptime() / 60)} min`;
     await sendTelegramMessage(chatId, reply);
     return;
   }
@@ -186,9 +213,7 @@ async function handleCommand(msg) {
       const reply = `📊 <b>Dogo POS Live Platform Overview</b>\n\n` +
         `🏪 <b>Total Stores:</b> ${totalStores}\n` +
         `🟢 <b>Active Stores:</b> ${activeCount}\n` +
-        `⚡ <b>Platform Health:</b> 99% Operational\n` +
-        `🛡️ <b>Security Grade:</b> A+ Enforced\n\n` +
-        `<i>Send /stores to view store list or /mrr for revenue breakdown.</i>`;
+        `\n` +        `<i>Send /stores to view store list or /mrr for revenue breakdown.</i>`;
       await sendTelegramMessage(chatId, reply);
       return;
     }
