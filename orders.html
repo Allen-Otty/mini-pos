@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Take Orders · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Take Orders</span></div>
+    <div class="dogo-page-title"><h1>Take Orders</h1></div>
+    <p class="dogo-page-subtitle" id="bizName">Dine-in, takeaway and delivery orders</p>
+    <div id="modeBanner" class="dogo-card" style="display:none;margin-bottom:14px;background:var(--dogo-amber-bg);box-shadow:none;"></div>
+
+    <div class="dogo-pos">
+      <section class="dogo-card">
+        <div class="dogo-toolbar" style="margin-bottom:12px;">
+          <input class="dogo-input" id="search" placeholder="Search menu…">
+        </div>
+        <div class="dogo-seg" id="catChips" style="margin-bottom:14px;flex-wrap:wrap;"></div>
+        <div class="dogo-prod-grid" id="itemGrid"></div>
+      </section>
+
+      <aside class="dogo-card dogo-pos__cart">
+        <div class="dogo-card__title" style="margin-bottom:10px;">New order</div>
+        <div class="dogo-field"><label>Order type</label>
+          <select class="dogo-select" id="orderType">
+            <option value="">Select order type</option>
+            <option>Dine In</option><option>Takeaway</option><option>Delivery</option>
+          </select>
+        </div>
+        <div class="dogo-field" id="tableField" style="display:none;"><label>Table (optional)</label>
+          <select class="dogo-select" id="tableSel"><option value="">No table</option></select>
+        </div>
+        <div id="lines"><div class="dogo-card__empty">No items yet</div></div>
+        <div class="dogo-total-row"><span>Total</span><span id="total">KES 0.00</span></div>
+        <div class="dogo-btn-row" style="flex-direction:column;">
+          <button class="dogo-btn dogo-btn--primary dogo-btn--block" id="sendBtn">Send to kitchen</button>
+          <button class="dogo-btn dogo-btn--ghost dogo-btn--block" id="clearBtn">Clear order</button>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script src="assets/js/kitchen-store.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast } = window.DogoData;
+    const ctx = await boot('orders'); if (!ctx) return;
+    const $ = id => document.getElementById(id);
+    if (!ctx.isHotelOrRestaurant) {
+      document.querySelector('main').innerHTML = '<div class="dogo-card"><div class="dogo-card__empty">Take Orders is for Hotel and Restaurant businesses.</div></div>';
+      return;
+    }
+
+    const FOOD = ['BREAKFAST', 'DRINKS', 'LUNCH', 'DINNER/SUPPER', 'SNACKS', 'BEVERAGES', 'JUICES', 'SOFT DRINKS', 'HOT BEVERAGES', 'DESSERTS', 'STARTERS', 'SOUPS', 'SPECIALS', 'COMBOS'];
+    const COURSES = ['BREAKFAST', 'DRINKS', 'LUNCH', 'DINNER/SUPPER', 'SNACKS'];
+    const isFood = c => FOOD.includes(String(c || '').toUpperCase().trim());
+
+    const mode = await DogoKitchen.init(sb, ctx.businessId);
+    if (mode === 'local') {
+      $('modeBanner').style.display = '';
+      $('modeBanner').innerHTML = '<strong>Shared kitchen is not switched on.</strong> Orders are kept on this device only, so a kitchen screen on another phone will not see them. Ask your administrator to run the <code>20261004_kitchen_tickets.sql</code> migration.';
+    }
+
+    const [p, t] = await Promise.all([sb.from('products').select('*').order('name'), sb.from('tables').select('*').order('created_at')]);
+    const menu = (p.data || []).filter(x => isFood(x.category));
+    const floor = t.data || [];
+    if (floor.length) { $('tableField').style.display = ''; $('tableSel').innerHTML += floor.map(x => `<option value="${esc(x.name)}">${esc(x.name)}</option>`).join(''); }
+    $('orderType').onchange = () => { $('tableField').style.display = ($('orderType').value === 'Dine In' && floor.length) ? '' : 'none'; };
+
+    const cats = ['ALL'].concat(COURSES.concat([...new Set(menu.map(x => String(x.category || '').toUpperCase()))]).filter((c, i, a) => c && a.indexOf(c) === i));
+    let cat = 'ALL', q = '', order = [];
+
+    const drawCats = () => { $('catChips').innerHTML = cats.map(c => `<button data-cat="${esc(c)}" class="${c === cat ? 'is-active' : ''}">${esc(c)}</button>`).join(''); };
+    const matches = p => {
+      const pc = String(p.category || '').toUpperCase();
+      const okCat = cat === 'ALL' || pc === cat || (cat.includes('/') && cat.split('/').some(s => pc.includes(s.trim())));
+      return okCat && (!q || String(p.name).toLowerCase().includes(q));
+    };
+    const drawItems = () => {
+      const list = menu.filter(matches);
+      $('itemGrid').innerHTML = list.length ? list.map(p => { const line = order.find(l => l.id === p.id); const out = !(Number(p.stock) > 0);
+        return `<button class="dogo-prod" data-add="${esc(p.id)}" ${out ? 'disabled style="opacity:.5;"' : ''}><span class="dogo-prod__name">${esc(p.name)}</span><span class="dogo-prod__price">${kes(p.price)}</span>${out ? '<span class="dogo-badge dogo-badge--danger">Sold out</span>' : (line ? `<span class="dogo-badge">${line.qty} added</span>` : '')}</button>`; }).join('')
+        : '<div class="dogo-card__empty">No menu items here. Add food items under Products with a course category (e.g. LUNCH).</div>';
+    };
+    const drawOrder = () => {
+      const total = order.reduce((s, l) => s + l.price * l.qty, 0);
+      $('lines').innerHTML = order.length ? order.map((l, i) => `<div class="dogo-cart-line"><div><strong>${esc(l.name)}</strong></div><div style="text-align:right;">${kes(l.price * l.qty)}</div><div class="dogo-qty"><button data-less="${i}">−</button><span>${l.qty}</span><button data-more="${i}">+</button></div><div></div></div>`).join('') : '<div class="dogo-card__empty">No items yet</div>';
+      $('total').textContent = kes(total);
+    };
+
+    $('catChips').onclick = e => { const b = e.target.closest('[data-cat]'); if (!b) return; cat = b.dataset.cat; drawCats(); drawItems(); };
+    $('search').oninput = () => { q = $('search').value.toLowerCase().trim(); drawItems(); };
+    $('itemGrid').onclick = e => {
+      const b = e.target.closest('[data-add]'); if (!b || b.disabled) return;
+      const p = menu.find(x => String(x.id) === b.dataset.add); if (!p) return;
+      const line = order.find(l => l.id === p.id);
+      if (line) line.qty++; else order.push({ id: p.id, code: p.code, name: p.name, price: Number(p.price), vat: Number(p.vat_rate || 0), unit: p.unit || 'piece', qty: 1 });
+      drawItems(); drawOrder();
+    };
+    $('lines').onclick = e => {
+      const d = e.target.dataset || {};
+      if (d.less !== undefined) { const i = +d.less; order[i].qty--; if (order[i].qty <= 0) order.splice(i, 1); }
+      if (d.more !== undefined) order[+d.more].qty++;
+      drawItems(); drawOrder();
+    };
+    $('clearBtn').onclick = () => { order = []; drawItems(); drawOrder(); };
+
+    let sending = false;
+    $('sendBtn').onclick = async () => {
+      if (sending) return;
+      if (!$('orderType').value) return toast('Select an order type before sending to the kitchen.');
+      if (!order.length) return toast('Your order is empty. Tap items to add first.');
+      sending = true; $('sendBtn').disabled = true;
+      try {
+        const tk = await DogoKitchen.create({ orderType: $('orderType').value.toUpperCase(), table: $('tableSel').value, location: (ctx.business && ctx.business.location) || '', items: order });
+        toast('Order ' + tk.shortId + ' sent to the kitchen');
+        order = []; $('tableSel').value = ''; drawItems(); drawOrder();
+      } catch (err) { toast('Could not send order: ' + (err.message || err)); }
+      sending = false; $('sendBtn').disabled = false;
+    };
+
+    drawCats(); drawItems(); drawOrder();
+  })();
+  </script>
+</body>
+</html>

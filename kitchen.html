@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Kitchen Board · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Kitchen Board</span></div>
+    <div class="dogo-page-title"><h1>Kitchen Board</h1></div>
+    <p class="dogo-page-subtitle" id="bizName">Live kitchen tickets</p>
+    <div id="modeBanner" class="dogo-card" style="display:none;margin-bottom:14px;background:var(--dogo-amber-bg);box-shadow:none;"></div>
+
+    <section class="dogo-stat-grid dogo-stat-grid--3" aria-label="Ticket counts" style="margin-bottom:14px;">
+      <button class="dogo-stat-card" data-tab="pending" style="text-align:left;cursor:pointer;"><div class="dogo-stat-card__label">New</div><div class="dogo-stat-card__value" id="cPending">0</div></button>
+      <button class="dogo-stat-card" data-tab="preparing" style="text-align:left;cursor:pointer;"><div class="dogo-stat-card__label">Preparing</div><div class="dogo-stat-card__value" id="cPreparing">0</div></button>
+      <button class="dogo-stat-card" data-tab="ready" style="text-align:left;cursor:pointer;"><div class="dogo-stat-card__label">Ready</div><div class="dogo-stat-card__value" id="cReady">0</div></button>
+    </section>
+
+    <div class="dogo-seg" id="tabs" style="margin-bottom:14px;">
+      <button data-tab="pending" class="is-active">New</button>
+      <button data-tab="preparing">Preparing</button>
+      <button data-tab="ready">Ready</button>
+    </div>
+
+    <div class="dogo-prod-grid" id="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));"></div>
+
+    <div class="dogo-modal" id="confirmModal"><div class="dogo-modal__box" id="confirmBox"></div></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script src="assets/js/kitchen-store.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast } = window.DogoData;
+    const ctx = await boot('kitchen'); if (!ctx) return;
+    const $ = id => document.getElementById(id);
+    if (!ctx.isHotelOrRestaurant) {
+      document.querySelector('main').innerHTML = '<div class="dogo-card"><div class="dogo-card__empty">The Kitchen Board is for Hotel and Restaurant businesses.</div></div>';
+      return;
+    }
+    const mode = await DogoKitchen.init(sb, ctx.businessId);
+    if (mode === 'local') {
+      $('modeBanner').style.display = '';
+      $('modeBanner').innerHTML = '<strong>Shared kitchen is not switched on.</strong> This board only shows orders taken on THIS device. Ask your administrator to run the <code>20261004_kitchen_tickets.sql</code> migration so every phone and tablet sees the same orders.';
+    }
+
+    let tickets = [], tab = 'pending', loading = false;
+    const NEXT = { pending: ['preparing', 'Start preparing'], preparing: ['ready', 'Mark ready'], ready: ['served', 'Served & clear bill'] };
+
+    async function refresh() {
+      if (loading) return; loading = true;
+      try { tickets = await DogoKitchen.list(); } catch (e) { toast('Could not load tickets: ' + (e.message || e)); }
+      loading = false; draw();
+    }
+    function draw() {
+      ['pending', 'preparing', 'ready'].forEach(s => $('c' + s[0].toUpperCase() + s.slice(1)).textContent = tickets.filter(t => t.status === s).length);
+      document.querySelectorAll('#tabs [data-tab]').forEach(b => b.classList.toggle('is-active', b.dataset.tab === tab));
+      const list = tickets.filter(t => t.status === tab).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      $('grid').innerHTML = list.length ? list.map(t => {
+        const mins = DogoKitchen.elapsedMin(t); const late = mins >= 20 && t.status !== 'ready';
+        const [nxt, label] = NEXT[t.status];
+        return `<div class="dogo-card" style="box-shadow:none;border:1px solid var(--dogo-border, #e5e7eb);">
+          <div class="dogo-card__header"><div class="dogo-card__title">${esc(t.shortId)}</div>
+            <span class="dogo-badge ${late ? 'dogo-badge--danger' : 'dogo-badge--ok'}">${mins} min</span></div>
+          <div style="margin-bottom:8px;"><span class="dogo-badge">${esc(t.orderType)}</span>${t.table ? ` <span class="dogo-badge dogo-badge--warn">${esc(t.table)}</span>` : ''}${t.paid ? ' <span class="dogo-badge dogo-badge--ok">Paid</span>' : ''}</div>
+          ${t.items.map(i => `<div class="dogo-list-row"><span>${esc(i.qty)}× ${esc(i.name)}</span><span>${kes(i.price * i.qty)}</span></div>`).join('')}
+          <div class="dogo-total-row"><span>Total</span><span>${kes(t.total)}</span></div>
+          <div class="dogo-btn-row" style="flex-direction:column;margin-top:10px;">
+            <button class="dogo-btn dogo-btn--primary dogo-btn--block" data-adv="${esc(t.id)}" data-to="${nxt}" data-label="${esc(label)}">${esc(label)}</button>
+            ${(t.status !== 'ready' && !t.paid) ? `<button class="dogo-btn dogo-btn--outline dogo-btn--block" data-bill="${esc(t.id)}">Clear bill</button>` : ''}
+            ${t.status !== 'ready' ? `<button class="dogo-btn dogo-btn--ghost dogo-btn--block" data-cancel="${esc(t.id)}">Cancel order</button>` : ''}
+          </div></div>`; }).join('')
+        : `<div class="dogo-card"><div class="dogo-card__empty">No ${esc({ pending: 'new', preparing: 'preparing', ready: 'ready' }[tab])} tickets. New orders appear here automatically.</div></div>`;
+    }
+
+    document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; draw(); }));
+
+    let pendingAdv = null;
+    $('grid').onclick = e => {
+      const adv = e.target.closest('[data-adv]'), bill = e.target.closest('[data-bill]'), cx = e.target.closest('[data-cancel]');
+      if (adv) {
+        const t = tickets.find(x => x.id === adv.dataset.adv); if (!t) return;
+        pendingAdv = { id: t.id, to: adv.dataset.to };
+        $('confirmBox').innerHTML = `<h2>Confirm: ${esc(adv.dataset.label)}</h2><p class="dogo-muted" style="margin:4px 0 12px;">Ticket ${esc(t.shortId)} · ${esc(t.orderType)}${t.table ? ' · ' + esc(t.table) : ''} · ${t.items.reduce((a, i) => a + Number(i.qty), 0)} item(s)</p>
+          <div class="dogo-btn-row" style="justify-content:flex-end;"><button class="dogo-btn dogo-btn--ghost" id="cxNo">Not yet</button><button class="dogo-btn dogo-btn--primary" id="cxYes">Confirm</button></div>`;
+        $('confirmModal').classList.add('open');
+        $('cxNo').onclick = () => $('confirmModal').classList.remove('open');
+        $('cxYes').onclick = async () => {
+          $('cxYes').disabled = true;
+          try {
+            await DogoKitchen.setStatus(pendingAdv.id, pendingAdv.to);
+            $('confirmModal').classList.remove('open');
+            if (pendingAdv.to === 'served' && !t.paid) { location.href = 'bills.html?ticket=' + encodeURIComponent(pendingAdv.id); return; }   // straight to the bill
+            toast('Ticket ' + t.shortId + ' → ' + pendingAdv.to);
+            await refresh();
+          } catch (err) { toast('Could not update: ' + (err.message || err)); $('cxYes').disabled = false; }
+        };
+      }
+      if (bill) location.href = 'bills.html?ticket=' + encodeURIComponent(bill.dataset.bill);
+      if (cx && confirm('Cancel this kitchen order?')) DogoKitchen.setStatus(cx.dataset.cancel, 'cancelled').then(refresh).catch(err => toast('Could not cancel: ' + (err.message || err)));
+    };
+
+    await refresh();
+    DogoKitchen.subscribe(refresh);
+    setInterval(draw, 30000);   // keep the minute counters moving
+  })();
+  </script>
+</body>
+</html>

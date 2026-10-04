@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Settle Bills · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Settle Bills</span></div>
+    <div class="dogo-page-title"><h1>Settle Bills</h1></div>
+    <p class="dogo-page-subtitle" id="bizName">Open bills waiting for payment</p>
+    <div id="modeBanner" class="dogo-card" style="display:none;margin-bottom:14px;background:var(--dogo-amber-bg);box-shadow:none;"></div>
+
+    <section class="dogo-stat-grid dogo-stat-grid--2" style="margin-bottom:14px;">
+      <div class="dogo-stat-card"><div class="dogo-stat-card__label">Open bills</div><div class="dogo-stat-card__value" id="kCount">0</div></div>
+      <div class="dogo-stat-card"><div class="dogo-stat-card__label">Waiting to be paid</div><div class="dogo-stat-card__value" id="kTotal">KES 0.00</div></div>
+    </section>
+
+    <p class="dogo-muted" id="noShiftNote" style="font-size:12.5px;margin:0 0 12px;display:none;">No open shift - <a class="dogo-link" href="sell.html">open one on the Sales page</a> before clearing a bill.</p>
+
+    <section class="dogo-card">
+      <div class="dogo-card__header"><div class="dogo-card__title">Orders from the kitchen</div><span class="dogo-badge" id="listBadge">0 open</span></div>
+      <div id="billList"><div class="dogo-card__empty">No open bills</div></div>
+    </section>
+
+    <section class="dogo-card" style="margin-top:16px;display:none;" id="tableBillsCard">
+      <div class="dogo-card__header"><div class="dogo-card__title">Table bills</div><a class="dogo-link" href="tables.html">Open Menu &amp; Tables</a></div>
+      <div id="tableBills"></div>
+    </section>
+
+    <div class="dogo-modal" id="billModal"><div class="dogo-modal__box">
+      <h2 style="margin-bottom:4px;">Clear Bill</h2>
+      <p class="dogo-muted" id="billTableName" style="font-size:13px;margin:0 0 16px;"></p>
+      <div id="billLines"></div>
+      <div class="dogo-total-row"><span>Total due</span><span id="billTotal">KES 0.00</span></div>
+      <div class="dogo-seg" id="billMethods" style="margin:14px 0 4px;"></div>
+      <div id="billPayFields"></div>
+      <div id="billWaiting" style="display:none;margin-top:8px;"></div>
+      <div class="dogo-btn-row" style="justify-content:flex-end;margin-top:14px;">
+        <button class="dogo-btn dogo-btn--ghost" id="billCancel">Back</button>
+        <button class="dogo-btn dogo-btn--primary" id="billPayBtn">Complete cash payment</button>
+      </div>
+    </div></div>
+
+    <div class="dogo-modal" id="receiptModal"><div class="dogo-modal__box" id="receiptBox"></div></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script src="assets/js/kitchen-store.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast } = window.DogoData;
+    const ctx = await boot('bills'); if (!ctx) return;
+    const $ = id => document.getElementById(id);
+    if (!ctx.isHotelOrRestaurant) {
+      document.querySelector('main').innerHTML = '<div class="dogo-card"><div class="dogo-card__empty">Settle Bills is for Hotel and Restaurant businesses.</div></div>';
+      return;
+    }
+    const mode = await DogoKitchen.init(sb, ctx.businessId);
+    if (mode === 'local') {
+      $('modeBanner').style.display = '';
+      $('modeBanner').innerHTML = '<strong>Shared kitchen is not switched on.</strong> Only bills from orders taken on THIS device are listed. Ask your administrator to run the <code>20261004_kitchen_tickets.sql</code> migration.';
+    }
+
+    let products = [], tickets = [], tablesWithOrders = [], activeId = null, currentShift = null, busy = false, pollTimer = null, tickTimer = null;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const [p, sh, tb] = await Promise.all([
+      sb.from('products').select('*').order('name'),
+      sb.from('shift_sessions').select('*').eq('user_id', ctx.profile.id).eq('status', 'OPEN').order('created_at', { ascending: false }),
+      sb.from('tables').select('*').order('created_at')
+    ]);
+    products = p.data || [];
+    currentShift = (sh.data || []).find(s => (s.created_at || '').slice(0, 10) === todayStr) || null;
+    tablesWithOrders = (tb.data || []).filter(t => (t.current_order || []).length);
+    $('noShiftNote').style.display = currentShift ? 'none' : '';
+
+    // Ticket items from the classic app may lack vat/code/unit: resolve them from the product list.
+    function enrich(items) {
+      return (items || []).map(i => {
+        const prod = products.find(x => String(x.id) === String(i.id)) || products.find(x => x.code && x.code === i.code) || products.find(x => x.name === i.name) || null;
+        return { code: i.code || (prod && prod.code) || '', name: i.name, price: Number(i.price), qty: Number(i.qty),
+          vat: i.vat != null ? Number(i.vat) : Number((prod && prod.vat_rate) || 0), unit: i.unit || (prod && prod.unit) || 'piece' };
+      });
+    }
+    const ticket = () => tickets.find(t => t.id === activeId);
+    // The payment engine below was written for floor tables; this adapter lets it settle kitchen tickets unchanged.
+    function table() { const t = ticket(); return { id: t.id, name: t.shortId + ' · ' + t.orderType + (t.table ? ' · ' + t.table : ''), current_order: enrich(t.items) }; }
+
+    async function loadList() {
+      try { tickets = (await DogoKitchen.list()).filter(t => !t.paid); } catch (e) { toast('Could not load bills: ' + (e.message || e)); }
+      drawList();
+    }
+    const showList = async () => { activeId = null; $('billModal').classList.remove('open'); await loadList(); };
+    function drawList() {
+      const total = tickets.reduce((a, t) => a + Number(t.total || 0), 0);
+      $('kCount').textContent = tickets.length; $('kTotal').textContent = kes(total); $('listBadge').textContent = tickets.length + ' open';
+      const STATUS = { pending: 'New', preparing: 'Preparing', ready: 'Ready', served: 'Served' };
+      $('billList').innerHTML = tickets.length ? tickets.map(t => `<button class="dogo-list-row" data-open="${esc(t.id)}" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;font:inherit;color:inherit;">
+        <span>${esc(t.shortId)} <span class="dogo-badge">${esc(t.orderType)}</span>${t.table ? ` <span class="dogo-badge dogo-badge--warn">${esc(t.table)}</span>` : ''}<br><small class="dogo-muted">${esc(STATUS[t.status] || t.status)} · ${DogoKitchen.elapsedMin(t)} min · ${t.items.reduce((a, i) => a + Number(i.qty), 0)} item(s)</small></span>
+        <strong>${kes(t.total)}</strong></button>`).join('')
+        : '<div class="dogo-card__empty">No open bills. Orders appear here when they are sent to the kitchen.</div>';
+      $('tableBillsCard').style.display = tablesWithOrders.length ? '' : 'none';
+      $('tableBills').innerHTML = tablesWithOrders.map(t => `<a class="dogo-list-row" href="tables.html" style="text-decoration:none;color:inherit;"><span>${esc(t.name)}</span><strong>${kes((t.current_order || []).reduce((a, l) => a + l.price * l.qty, 0))}</strong></a>`).join('');
+    }
+    $('billList').onclick = e => { const b = e.target.closest('[data-open]'); if (b) openBill(b.dataset.open); };
+
+    function openBill(id) {
+      activeId = id; const t = ticket(); if (!t) return toast('That bill is no longer open.');
+      if (!currentShift) return toast('Open a shift on the Sales page first.');
+      const order = table().current_order;
+      if (!order.length) return toast('This ticket has no items.');
+      $('billTableName').textContent = table().name;
+      $('billLines').innerHTML = order.map(l => `<div class="dogo-list-row"><span>${esc(l.name)} × ${l.qty}</span><span>${kes(l.price * l.qty)}</span></div>`).join('');
+      $('billTotal').textContent = kes(billTotal());
+      billMethod = 'cash'; drawBillMethods(); setBillWaiting('');
+      $('billModal').classList.add('open');
+    }
+
+    /* ------------------------------------------------------------------
+       Clear Bill: cash records immediately; M-Pesa (and KCB/Paystack/Airtel
+       when an Express API is configured) send a real request and only clear
+       the table once the gateway confirms the exact amount. Same engine as
+       the Sales page's checkout.
+    ------------------------------------------------------------------- */
+    const apiBase = (() => { const c = localStorage.getItem('dogo_api_url') || (window.DOGO_CONFIG && window.DOGO_CONFIG.api_url);
+      if (c) return c.replace(/\/+$/, ''); return ['localhost', '127.0.0.1'].includes(location.hostname) ? '' : null; })();
+    const DIGITAL = { mpesa: { name: 'M-Pesa', label: 'Customer phone (Safaricom)', ph: '07XX XXX XXX' },
+      kcb: { name: 'KCB Buni', label: 'Customer phone', ph: '07XX XXX XXX' },
+      paystack: { name: 'Paystack', label: 'Customer email or phone', ph: 'name@email.com' },
+      airtel: { name: 'Airtel Money', label: 'Customer Airtel phone', ph: '073X XXX XXX' } };
+    const NAMES = Object.assign({ cash: 'Cash' }, Object.fromEntries(Object.entries(DIGITAL).map(([k, v]) => [k, v.name])));
+    const billMethods = ['cash'].concat(apiBase === null ? ['mpesa'] : ['mpesa', 'kcb', 'paystack', 'airtel']);
+    let billMethod = 'cash';
+    const PENDING_PREFIX = 'dogo_pending_bill_v1_', TIMEOUT_S = 72;
+
+    function billTotal() { const order = table().current_order || []; return order.reduce((s, l) => s + l.price * l.qty, 0); }
+    function drawBillMethods() {
+      $('billMethods').innerHTML = billMethods.map(m => `<button data-m="${m}" class="${m === billMethod ? 'is-active' : ''}">${esc(NAMES[m])}</button>`).join('');
+      const m = DIGITAL[billMethod];
+      $('billPayFields').innerHTML = m ? `<div class="dogo-field"><label>${esc(m.label)}</label><input class="dogo-input" id="billContact" placeholder="${esc(m.ph)}" inputmode="${billMethod === 'paystack' ? 'email' : 'tel'}"></div>` : '';
+      $('billPayBtn').textContent = m ? 'Send ' + m.name + ' request' : 'Complete cash payment';
+    }
+    $('billMethods').onclick = e => { const b = e.target.closest('[data-m]'); if (!b || busy) return; billMethod = b.dataset.m; drawBillMethods(); };
+    $('billCancel').onclick = () => { if (busy) return toast('A payment is in progress — cancel it first.'); $('billModal').classList.remove('open'); };
+
+    function openBill() {
+      const t = table(); const order = t.current_order || [];
+      if (!order.length) return toast('No items to bill');
+      if (!currentShift) return toast('Open a shift on the Sales page first.');
+      $('billTableName').textContent = t.name;
+      $('billLines').innerHTML = order.map(l => `<div class="dogo-list-row"><span>${esc(l.name)} × ${l.qty}</span><span>${kes(l.price * l.qty)}</span></div>`).join('');
+      $('billTotal').textContent = kes(billTotal());
+      billMethod = 'cash'; drawBillMethods(); setBillWaiting('');
+      $('billModal').classList.add('open');
+    }
+    $('clearBillBtn').onclick = openBill;
+
+    function billItems() {
+      const order = table().current_order || [];
+      let sub = 0, vat = 0, grand = 0;
+      const items = order.map(l => { const prod = products.find(p => p.code === l.code); const lt = +(l.qty * l.price).toFixed(2), lv = lt - lt / (1 + l.vat);
+        sub += lt - lv; vat += lv; grand += lt;
+        return { product_id: prod ? prod.id : null, code: l.code, name: l.name, qty: l.qty, price: l.price, vat_rate: l.vat, unit: l.unit, line_total: lt }; });
+      return { items, sub, vat, grand };
+    }
+    async function recordBill(ref, pay) {
+      const t = table(); const { items, sub, vat, grand } = billItems();
+      const { count } = await sb.from('sales').select('id', { count: 'exact', head: true });
+      const receipt = 'RC-' + String((count || 0) + 1).padStart(4, '0');
+      const { data, error } = await sb.rpc('process_sale', { p_business_id: ctx.businessId, p_cashier_id: ctx.profile.id, p_receipt_no: receipt, p_customer_id: null,
+        p_subtotal_excl_vat: +sub.toFixed(2), p_vat_total: +vat.toFixed(2), p_total: +grand.toFixed(2), p_offline_uuid: ref || crypto.randomUUID(), p_items: items,
+        p_payment_method: pay, p_shift_id: currentShift.id, p_mpesa_receipt_no: pay === 'cash' ? null : ref });
+      if (error) return { error };
+      if (pay !== 'cash') sb.functions.invoke('etims-submit', { body: { sale_id: data } }).catch(() => {});
+      return { id: data, receipt, grand, vat, items, tableId: t.id, tableName: t.name };
+    }
+    async function settleTicket(ticketId, rec) {
+      await DogoKitchen.markPaid(ticketId, rec && rec.id ? rec.id : null);
+      const r = await sb.from('products').select('*').order('name'); products = r.data || products;
+    }
+    function showBillReceipt(r, pay, ref) {
+      $('billModal').classList.remove('open');
+      $('receiptBox').innerHTML = `<h2>Bill settled</h2><div class="dogo-muted" style="margin-bottom:10px;">${esc(r.receipt)} · ${esc(r.tableName)} · ${esc(new Date().toLocaleString())}</div>
+        ${r.items.map(i => `<div class="dogo-list-row"><span>${esc(i.name)} × ${i.qty}</span><span>${kes(i.line_total)}</span></div>`).join('')}
+        <div class="dogo-list-row"><span class="dogo-muted">VAT included</span><span>${kes(r.vat)}</span></div>
+        <div class="dogo-total-row"><span>Total</span><span>${kes(r.grand)}</span></div>
+        <div class="dogo-list-row"><span class="dogo-muted">Paid by</span><strong>${esc(NAMES[pay])}</strong></div>
+        ${ref && pay !== 'cash' ? `<div class="dogo-list-row"><span class="dogo-muted">Reference</span><strong>${esc(ref)}</strong></div>` : ''}
+        <div class="dogo-btn-row" style="justify-content:flex-end;margin-top:16px;"><button class="dogo-btn dogo-btn--outline" onclick="window.print()">Print</button><button class="dogo-btn dogo-btn--primary" id="rcClose">Done</button></div>`;
+      $('receiptModal').classList.add('open');
+      $('rcClose').onclick = () => { $('receiptModal').classList.remove('open'); showList(); };
+    }
+
+    const fnError = async err => { let m = err.message || 'Payment request failed'; try { const t = await err.context.text(); const j = JSON.parse(t); m = j.error || j.message || m; } catch (_) {} return m; };
+    async function initiate(m, grand, contact) {
+      if (m === 'mpesa') {
+        const { data, error } = await sb.functions.invoke('mpesa-stk-push', { body: { phone: contact, amount: grand, customer_id: null, plan: null, metadata: { table: table().name },
+          cart: (table().current_order || []).map(l => ({ code: l.code, name: l.name, price: l.price, qty: l.qty, vat: l.vat, unit: l.unit })) } });
+        if (error) return { error: await fnError(error) };
+        if (data && data.error) return { error: /credentials|not set up|Settings/i.test(data.error) ? 'M-Pesa is not set up for this business yet. Add your Till/Paybill in Settings.' : data.error };
+        const id = data && (data.payment_request_id || data.id); return id ? { id, channel: 'supabase' } : { error: 'M-Pesa did not return a payment request.' };
+      }
+      const r = await fetch(apiBase + '/api/payments/initiate', { method: 'POST', headers: await window.DogoData.apiAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ gateway: m, amount: grand, phone: contact, email: contact.includes('@') ? contact : '', account: contact, customerId: null, cart: table().current_order }) })
+        .then(x => x.json()).catch(e => ({ error: e.message }));
+      if (r.success && r.authorization_url) { try { window.open(r.authorization_url, '_blank', 'noopener'); } catch (_) {} }
+      return r.success ? { id: r.payment_request_id, channel: 'express', note: r.simulated ? 'DEMO MODE - this gateway is not connected to the provider, no real money moves.' : '' } : { error: r.error || 'Could not reach the payments server.' };
+    }
+    async function statusOf(pd) {
+      if (pd.channel === 'express') { const r = await fetch(apiBase + '/api/payments/status/' + pd.id, { headers: await window.DogoData.apiAuthHeaders() }).then(x => x.json()).catch(() => null); const d = r && r.data; return d ? { status: d.status, ref: d.receipt_reference, desc: d.result_desc, amount: d.amount } : null; }
+      const { data: row } = await sb.from('payment_requests').select('*').eq('id', pd.id).maybeSingle();
+      return row ? { status: row.status, ref: row.mpesa_receipt || row.receipt_reference || row.checkout_request_id, desc: row.result_desc, amount: row.amount } : null;
+    }
+    const stopTimers = () => { clearInterval(pollTimer); clearInterval(tickTimer); };
+    function setBillWaiting(html) { $('billWaiting').innerHTML = html; $('billWaiting').style.display = html ? '' : 'none'; $('billPayBtn').style.display = html ? 'none' : ''; $('billCancel').style.display = html ? 'none' : ''; }
+    function endBusy(tableId) { busy = false; if (tableId) localStorage.removeItem(PENDING_PREFIX + tableId); stopTimers(); setBillWaiting(''); }
+    function failPanel(msg, tableId) { stopTimers(); localStorage.removeItem(PENDING_PREFIX + tableId);
+      setBillWaiting(`<div class="dogo-card" style="background:var(--dogo-red-bg, #fdecec);box-shadow:none;"><strong style="color:var(--dogo-red, #dc2626);">Payment not completed</strong><p style="margin:6px 0 12px;font-size:13.5px;">${esc(String(msg).replace(/[.\s]+$/, ''))}. The bill was not cleared.</p><button class="dogo-btn dogo-btn--primary dogo-btn--block" id="billTryAgain">Try again</button></div>`);
+      $('billTryAgain').onclick = () => { busy = false; setBillWaiting(''); };
+    }
+    async function finalizeBill(pd) {
+      const st = await statusOf(pd);
+      if (!st) return;
+      if (st.status === 'success') {
+        stopTimers();
+        if (st.amount != null && Math.abs(Number(st.amount) - pd.grand) > 0.01) return failPanel(`The confirmed amount (${kes(st.amount)}) does not match this bill (${kes(pd.grand)})`, pd.tableId);
+        const ref = st.ref || ('REF-' + pd.id.slice(0, 8));
+        setBillWaiting(`<div class="dogo-card" style="background:var(--dogo-green-bg, #e9f9ef);box-shadow:none;"><strong style="color:var(--dogo-green, #16a34a);">Payment confirmed</strong><div style="font-size:13px;">Ref ${esc(ref)}. Clearing bill…</div></div>`);
+        const r = await recordBill(pd.id, pd.method);
+        if (r.error && /duplicate|already exists|unique/i.test(r.error.message || '')) { toast('That payment was already recorded.'); endBusy(pd.tableId); return $('billModal').classList.remove('open'); }
+        if (r.error) { setBillWaiting(`<div class="dogo-card" style="background:var(--dogo-amber-bg, #fef3e2);box-shadow:none;"><strong style="color:var(--dogo-amber, #d97706);">Paid, but the bill was not recorded</strong><p style="font-size:13.5px;margin:6px 0 12px;">${esc(r.error.message)}<br>Payment reference: <strong>${esc(ref)}</strong></p><button class="dogo-btn dogo-btn--primary dogo-btn--block" id="billRetryRec">Retry recording</button></div>`);
+          $('billRetryRec').onclick = () => finalizeRecord(pd, ref); return; }
+        await settleTicket(pd.tableId, r); endBusy(pd.tableId); showBillReceipt(r, pd.method, ref);
+      } else if (st.status === 'failed' || st.status === 'cancelled') failPanel(st.desc || 'The customer cancelled or entered a wrong PIN.', pd.tableId);
+    }
+    async function finalizeRecord(pd, ref) {
+      const r = await recordBill(ref, pd.method);
+      if (r.error) return toast('Still could not record: ' + r.error.message);
+      await settleTicket(pd.tableId, r); endBusy(pd.tableId); showBillReceipt(r, pd.method, ref);
+    }
+    function startPolling(pd) {
+      const left = () => Math.max(0, TIMEOUT_S - Math.floor((Date.now() - pd.startedAt) / 1000));
+      setBillWaiting(`<div class="dogo-card" style="background:var(--dogo-orange-light, #fdf1e7);box-shadow:none;"><strong>Waiting for ${esc(NAMES[pd.method])} confirmation…</strong><div style="font-size:13.5px;margin:6px 0 12px;">${kes(pd.grand)} requested. Ask the customer to enter their PIN. <span id="billSecs">${left()}</span>s left.</div><button class="dogo-btn dogo-btn--outline dogo-btn--block" id="billCancelWait">Cancel</button></div>`);
+      $('billCancelWait').onclick = () => { toast('Cancelled. If the customer was already charged, check the ' + NAMES[pd.method] + ' statement.'); endBusy(pd.tableId); };
+      tickTimer = setInterval(() => { const el = $('billSecs'); if (el) el.textContent = left(); }, 1000);
+      let checking = false;
+      pollTimer = setInterval(async () => { if (checking) return; checking = true;
+        try { if (left() <= 0) { const st = await statusOf(pd); if (!st || st.status !== 'success') return failPanel('No confirmation within ' + TIMEOUT_S + ' seconds.', pd.tableId); }
+          await finalizeBill(pd);
+        } finally { checking = false; } }, 2000);
+    }
+    async function startDigitalBill(method) {
+      let contact = ($('billContact') && $('billContact').value.trim()) || '';
+      if (method !== 'paystack') contact = contact.replace(/\s+/g, '');
+      if (!contact) return toast('Enter the customer contact first');
+      if (method === 'mpesa' && !/^(\+?254|0)?[71]\d{8}$/.test(contact)) return toast('Enter a valid Safaricom number, e.g. 0712345678');
+      const t = table(), grand = +billTotal().toFixed(2);
+      busy = true; setBillWaiting('<div class="dogo-card__empty">Sending request…</div>');
+      const init = await initiate(method, grand, contact);
+      if (init.error) { busy = false; setBillWaiting(''); return toast(init.error); }
+      const pd = { id: String(init.id), channel: init.channel, method, grand, tableId: t.id, startedAt: Date.now() };
+      localStorage.setItem(PENDING_PREFIX + t.id, JSON.stringify(pd)); startPolling(pd);
+    }
+    $('billPayBtn').onclick = async () => {
+      if (busy) return;
+      if (billMethod !== 'cash') return startDigitalBill(billMethod);
+      busy = true; $('billPayBtn').disabled = true;
+      const r = await recordBill(null, 'cash');
+      busy = false; $('billPayBtn').disabled = false;
+      if (r.error) return toast(r.error.message.includes('Insufficient stock') ? r.error.message : 'Could not complete sale: ' + r.error.message);
+      await settleTicket(r.tableId, r); showBillReceipt(r, 'cash', null);
+    };
+
+
+    // Resume a payment left waiting when the page was closed or refreshed.
+    await loadList();
+    for (const t of tickets) { try { const saved = JSON.parse(localStorage.getItem(PENDING_PREFIX + t.id) || 'null');
+      if (saved && saved.id && currentShift) { busy = true; activeId = t.id; billMethod = saved.method; drawBillMethods(); $('billModal').classList.add('open'); startPolling(saved); toast('Resumed a payment for ' + t.shortId); break; }
+      else if (saved) localStorage.removeItem(PENDING_PREFIX + t.id);
+    } catch (_) { localStorage.removeItem(PENDING_PREFIX + t.id); } }
+
+    // Arriving from the Kitchen Board ("Served & clear bill" / "Clear bill") goes straight to the bill.
+    const want = new URLSearchParams(location.search).get('ticket');
+    if (want && !busy) { if (tickets.find(t => t.id === want)) openBill(want); else toast('That bill is already settled or cancelled.'); history.replaceState(null, '', 'bills.html'); }
+
+    DogoKitchen.subscribe(() => { if (!busy && !$('billModal').classList.contains('open')) loadList(); });
+  })();
+  </script>
+</body>
+</html>
