@@ -152,17 +152,6 @@
     $('billMethods').onclick = e => { const b = e.target.closest('[data-m]'); if (!b || busy) return; billMethod = b.dataset.m; drawBillMethods(); };
     $('billCancel').onclick = () => { if (busy) return toast('A payment is in progress — cancel it first.'); $('billModal').classList.remove('open'); };
 
-    function openBill() {
-      const t = table(); const order = t.current_order || [];
-      if (!order.length) return toast('No items to bill');
-      if (!currentShift) return toast('Open a shift on the Sales page first.');
-      $('billTableName').textContent = t.name;
-      $('billLines').innerHTML = order.map(l => `<div class="dogo-list-row"><span>${esc(l.name)} × ${l.qty}</span><span>${kes(l.price * l.qty)}</span></div>`).join('');
-      $('billTotal').textContent = kes(billTotal());
-      billMethod = 'cash'; drawBillMethods(); setBillWaiting('');
-      $('billModal').classList.add('open');
-    }
-    $('clearBillBtn').onclick = openBill;
 
     function billItems() {
       const order = table().current_order || [];

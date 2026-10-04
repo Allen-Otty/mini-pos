@@ -155,6 +155,10 @@
     if (!ctx) return;
     const { businessId, isAdmin, profile } = ctx;
     let products = [], page = 1; const PER = 10; let editing = null;
+    // The products table only has a barcode column once supabase/migrations/20261004_product_barcode.sql
+    // has been run. Probe once so saving works either way (without it, the scanned barcode is used as the SKU).
+    let hasBarcodeCol = false;
+    sb.from('products').select('barcode').limit(1).then(r => { hasBarcodeCol = !r.error; });
     const $ = id => document.getElementById(id);
     if (isAdmin) $('addBtn').style.display = '';
 
@@ -272,8 +276,9 @@
 
     $('rows').onclick = e => { const id = e.target.dataset && e.target.dataset.edit; if (id) openModal(products.find(p => String(p.id) === id)); };
     $('mSave').onclick = async () => {
+      const typedBarcode = ($('fBarcode').value || '').trim();
       const rec = {
-        code: $('fCode').value.trim() || 'SKU-' + Date.now().toString().slice(-4),
+        code: $('fCode').value.trim() || typedBarcode || 'SKU-' + Date.now().toString().slice(-4),
         name: $('fName').value.trim(),
         price: parseFloat($('fPrice').value) || 0,
         category: $('fCat').value || 'General',
@@ -281,6 +286,7 @@
         stock: parseFloat($('fStock').value) || 0,
         reorder_level: parseFloat($('fReorder').value) || 0
       };
+      if (hasBarcodeCol) rec.barcode = typedBarcode || null;
       if (!rec.name) return toast('Please enter a product name');
       if (isNaN(rec.price) || rec.price < 0) return toast('Please enter a valid price');
 

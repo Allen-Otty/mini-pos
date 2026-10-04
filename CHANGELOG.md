@@ -5,6 +5,20 @@ Newest first. Each entry lists what changed and why, so nothing has to be redisc
 
 
 
+## 2026-10-04 — Restaurant Take Orders, Kitchen Board and Settle Bills in the new layout (shared across devices)
+
+After the classic app stopped being a destination, restaurant staff had no kitchen board: Menu & Tables only prints a kitchen slip. Three new pages, in the same layout and style as the rest of the portal, close that gap. The menu items appear for Hotel/Restaurant businesses only.
+
+- **Take Orders (`orders.html`):** food-only menu with course chips (Breakfast, Drinks, Lunch, Dinner/Supper, Snacks), search, sold-out items disabled, order type (Dine In / Takeaway / Delivery) required, optional floor table, quantity steppers. "Send to kitchen" creates a ticket.
+- **Kitchen Board (`kitchen.html`):** New / Preparing / Ready columns with live counts and minute counters (turns red after 20 min), confirm step before each move, cancel for tickets not yet ready. Updates live on every device (Supabase realtime, with a polling safety net). Choosing **"Served & clear bill" goes straight to the bill** for that ticket, which was your original request.
+- **Settle Bills (`bills.html`):** the bill opens in the same Clear Bill popup as Menu & Tables (cash, M-Pesa, KCB, Paystack, Airtel) using the same payment engine, so VAT per item, shift linking, receipt numbers and the "confirm the exact amount before recording" rule all behave identically. Also lists occupied-table bills with a link to Menu & Tables. Resumes a payment left waiting if the page is refreshed.
+- **Shared tickets (database):** new `kitchen_tickets` table (per-business row-level security, realtime on). Applied to production. Until now tickets lived in each browser, so a kitchen tablet never saw orders taken on another phone. If the table is ever missing, the pages fall back to this-device-only and show a yellow warning banner instead of silently splitting orders.
+- **Database fix applied to production: payment methods.** `sales.payment_method` only accepted `cash` and `mpesa`, so a KCB, Paystack or Airtel payment would have charged the customer and then failed to save the sale. It now accepts `kcb`, `paystack` and `airtel` too.
+- **Product barcode saving (catalog.html):** a scanned or typed barcode was shown in the form but never saved. It now saves to a `barcode` column when that column exists (probed once, so saving works either way), and otherwise is used as the SKU when no SKU is typed. The column itself is in `supabase/migrations/20261004_product_barcode.sql`, **not yet applied**.
+- Service-worker cache v9.
+
+**Tested** end to end in a simulated browser with an in-memory database (menu filtering, validation, order → kitchen → ready → bill → cash payment → sale recorded with per-item VAT → ticket paid and linked, local fallback, nav visibility for restaurant vs retail). **Not tested** on a real phone, with a real printer, or with a real digital payment. **Still open:** classic-app-only leftovers (the sign-in path in `index.html` still honours `?legacy=1`; platform admins "testing as" another business still land in the classic app); no kitchen printer slip from these pages; no inventory deduction by recipe.
+
 ## 2026-10-04 — Restaurant gets the same dashboard layout as the main POS; fixes payments broken in the new pages
 
 **You asked** for the restaurant dashboard to look like the main POS dashboard.
