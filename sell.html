@@ -157,6 +157,14 @@
             <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--dogo-text-muted);" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </div>
           <div class="dogo-hide-mobile" id="prodCountBadge" style="font-size:12.5px;font-weight:700;color:var(--dogo-text-muted);">0 products</div>
+          <button class="dogo-btn dogo-btn--outline" id="scanBtn" type="button" style="display:inline-flex;align-items:center;gap:6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+            Scan
+          </button>
+        </div>
+        <div id="scannerPanel" style="display:none;margin-bottom:14px;">
+          <div id="scanReader" style="border-radius:12px;overflow:hidden;max-width:420px;"></div>
+          <div id="scanMsg" style="font-size:12.5px;color:var(--dogo-text-muted);margin-top:6px;">Point the camera at a barcode.</div>
         </div>
         <div class="dogo-prod-grid" id="grid"></div>
       </section>
@@ -345,6 +353,7 @@
   <div class="dogo-modal" id="receiptModal"><div class="dogo-modal__box" id="receiptBox"></div></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="assets/js/dogo-data.js"></script>
   <script src="assets/js/app-shell.js"></script>
   <script>
@@ -366,6 +375,22 @@
     ]);
 
     products = pRes.data || [];
+
+    // Restaurant mode: same till, food-only catalog + restaurant wording.
+    const FOOD_CATS = ['BREAKFAST', 'DRINKS', 'LUNCH', 'DINNER/SUPPER', 'SNACKS',
+      'BEVERAGES', 'JUICES', 'SOFT DRINKS', 'HOT BEVERAGES', 'DESSERTS', 'STARTERS', 'SOUPS', 'SPECIALS', 'COMBOS'];
+    const isFoodCat = c => FOOD_CATS.includes(String(c || '').toUpperCase().trim());
+    const isRestaurant = !!ctx.isHotelOrRestaurant;
+    if (isRestaurant) {
+      const foodCount = products.filter(x => isFoodCat(x.category)).length;
+      if (foodCount > 0) products = products.filter(x => isFoodCat(x.category));
+      const pgTitle = document.querySelector('.dogo-page-title');
+      if (pgTitle) pgTitle.textContent = 'Restaurant Till & Cashier';
+      const pgSub = document.getElementById('bizName');
+      if (pgSub) pgSub.textContent = 'Tap food dishes and drinks to add them, or pick a table under Menu & Tables.';
+      const search = document.getElementById('q');
+      if (search) search.placeholder = 'Search dishes, drinks or barcode...';
+    }
     $('cust').innerHTML += (cRes.data || []).map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('');
 
     // Determine active open shift
@@ -621,6 +646,104 @@
       }
     };
 
+    // ---------- Barcode / camera scanner ----------
+    // Same engine as the classic app (html5-qrcode), scoped to this page:
+    // a scanned code adds the matching product to the cart. USB laser scanners
+    // need no camera at all — they "type" into the search box ending with Enter,
+    // which the search handler below resolves the same way.
+    let qrScanner = null, scanRunning = false, scanStarting = false;
+    let lastScan = '', lastScanAt = 0;
+
+    function onScan(decodedText) {
+      const now = Date.now();
+      if (decodedText === lastScan && now - lastScanAt < 1500) return;
+      lastScan = decodedText; lastScanAt = now;
+      const prod = products.find(x => (x.code || '').toLowerCase() === decodedText.toLowerCase()) ||
+                   products.find(x => (x.code || '').length === 13 && x.code.slice(1) === decodedText && /^\d{12}$/.test(decodedText));
+      const msg = $('scanMsg');
+      if (!prod) {
+        if (msg) { msg.textContent = 'Unknown code: ' + decodedText + ' — no product with that barcode.'; msg.style.color = '#dc2626'; }
+        return;
+      }
+      if (Number(prod.stock) <= 0) {
+        if (msg) { msg.textContent = prod.name + ' is out of stock.'; msg.style.color = '#dc2626'; }
+        return;
+      }
+      const l = cart.find(x => x.p.id === prod.id);
+      if (l) { if (l.qty < Number(prod.stock)) l.qty++; else { toast('No more stock for ' + prod.name); return; } }
+      else cart.push({ p: prod, qty: 1 });
+      drawCart();
+      if (msg) { msg.textContent = 'Added: ' + prod.name + ' × ' + (l ? l.qty : 1); msg.style.color = 'var(--dogo-neon-dark)'; }
+      if (navigator.vibrate) navigator.vibrate(80);
+    }
+
+    async function toggleScan() {
+      const panel = $('scannerPanel'), btn = $('scanBtn'), msg = $('scanMsg');
+      if (scanRunning) {
+        scanRunning = false;
+        try { await qrScanner.stop(); } catch (e) {}
+        panel.style.display = 'none';
+        btn.innerHTML = btn.innerHTML.replace('Stop', 'Scan');
+        return;
+      }
+      if (scanStarting) return;
+      scanStarting = true;
+      panel.style.display = 'block';
+      if (msg) { msg.textContent = 'Starting camera…'; msg.style.color = 'var(--dogo-text-muted)'; }
+      try {
+        if (!qrScanner) qrScanner = new Html5Qrcode('scanReader');
+        const cams = await Html5Qrcode.getCameras();
+        if (!cams || !cams.length) throw new Error('No camera found on this device');
+        let camId = cams[0].id;
+        const back = cams.find(c => /back|rear|environment/i.test(c.label || ''));
+        if (back) camId = back.id;
+        await qrScanner.start(camId, {
+          fps: 10, qrbox: { width: 220, height: 140 },
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.QR_CODE
+          ]
+        }, onScan, () => {});
+        scanRunning = true; scanStarting = false;
+        btn.innerHTML = btn.innerHTML.replace('>Scan<', '>Stop<') || btn.innerHTML;
+        if (!btn.textContent.includes('Stop')) btn.innerHTML = btn.innerHTML.replace('Scan', 'Stop');
+        if (msg) msg.textContent = 'Point the camera at a barcode.';
+      } catch (err) {
+        scanStarting = false;
+        const name = err && err.name;
+        if (name === 'NotAllowedError' || /denied|permission/i.test(String(err))) {
+          if (msg) msg.innerHTML = 'Camera blocked. Tap the lock icon in the address bar → Permissions → Camera → Allow, then retry.';
+        } else if (msg) {
+          msg.textContent = 'Could not start camera: ' + (err && err.message ? err.message : err);
+        }
+      }
+    }
+
+    $('scanBtn').onclick = () => { if (!busy) toggleScan(); };
+
+    // USB laser scanners type the code + Enter into the search box; resolve it.
+    const _origQKey = null;
+    $('q').addEventListener('keydown', async (e) => {
+      if (e.key !== 'Enter') return;
+      const code = $('q').value.trim();
+      if (!code) return;
+      const prod = products.find(x => (x.code || '').toLowerCase() === code.toLowerCase());
+      if (prod) {
+        e.preventDefault();
+        if (Number(prod.stock) > 0) {
+          const l = cart.find(x => x.p.id === prod.id);
+          if (l) { if (l.qty < Number(prod.stock)) l.qty++; else { toast('No more stock'); return; } }
+          else cart.push({ p: prod, qty: 1 });
+          drawCart();
+          toast('Added ' + prod.name);
+        } else toast(prod.name + ' is out of stock');
+        $('q').value = '';
+      }
+      // no exact code match → leave text for the normal search filter
+    });
+
     function drawGrid() {
       const q = $('q').value.trim().toLowerCase();
       const list = products.filter(x => !q || (x.name || '').toLowerCase().includes(q) || (x.code || '').toLowerCase().includes(q));
@@ -630,7 +753,7 @@
         <button class="dogo-prod" data-id="${esc(x.id)}" ${Number(x.stock) <= 0 ? 'disabled' : ''}>
           <span class="dogo-prod__name">${esc(x.name)}</span>
           <span class="dogo-prod__price">${kes(x.price)}</span>
-          <span class="dogo-muted" style="font-size:12px;">${Number(x.stock) <= 0 ? 'Out of stock' : x.stock + ' in stock'}</span>
+          <span class="dogo-muted" style="font-size:12px;">${Number(x.stock) <= 0 ? 'Out of stock' : x.stock + ' in stock'}${isRestaurant && x.category ? ' · ' + esc(String(x.category).toUpperCase()) : ''}</span>
         </button>
       `).join('') : '<div class="dogo-card__empty" style="grid-column:1/-1;">No products found matching query.</div>';
     }

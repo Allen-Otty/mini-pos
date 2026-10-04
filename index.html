@@ -10627,8 +10627,9 @@ async function afterLogin() {
   business = biz;
 
   // NEW-LOOK DEFAULT: hand eligible accounts to the multipage UI.
-  // Stay in the classic app for: ?legacy=1 tabs, Hotel/Restaurant businesses (their modules are not migrated),
-  // and platform admins currently "testing as" another business.
+  // Stay in the classic app for: ?legacy=1 tabs and platform admins currently
+  // "testing as" another business. Hotel/Restaurant businesses are migrated to
+  // the new look (sell.html is restaurant-aware; Menu & Tables is tables.html).
   try {
     const legacyTab = sessionStorage.getItem('dogo_legacy') === '1' || location.search.includes('legacy=1');
     const realProfile = !!(prof && profile && profile.business_id && !String(profile.business_id).startsWith('biz-'));
