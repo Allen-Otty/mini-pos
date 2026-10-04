@@ -231,13 +231,13 @@
         if (data && data.error) return { error: /credentials|not set up|Settings/i.test(data.error) ? 'M-Pesa is not set up for this business yet. Add your Till/Paybill in Settings.' : data.error };
         const id = data && (data.payment_request_id || data.id); return id ? { id, channel: 'supabase' } : { error: 'M-Pesa did not return a payment request.' };
       }
-      const r = await fetch(apiBase + '/api/payments/initiate', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const r = await fetch(apiBase + '/api/payments/initiate', { method: 'POST', headers: await window.DogoData.apiAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ gateway: m, amount: grand, phone: contact, email: contact.includes('@') ? contact : '', account: contact, customerId: null, cart: table().current_order }) })
         .then(x => x.json()).catch(e => ({ error: e.message }));
       return r.success ? { id: r.payment_request_id, channel: 'express' } : { error: r.error || 'Could not reach the payments server.' };
     }
     async function statusOf(pd) {
-      if (pd.channel === 'express') { const r = await fetch(apiBase + '/api/payments/status/' + pd.id).then(x => x.json()).catch(() => null); const d = r && r.data; return d ? { status: d.status, ref: d.receipt_reference, desc: d.result_desc, amount: d.amount } : null; }
+      if (pd.channel === 'express') { const r = await fetch(apiBase + '/api/payments/status/' + pd.id, { headers: await window.DogoData.apiAuthHeaders() }).then(x => x.json()).catch(() => null); const d = r && r.data; return d ? { status: d.status, ref: d.receipt_reference, desc: d.result_desc, amount: d.amount } : null; }
       const { data: row } = await sb.from('payment_requests').select('*').eq('id', pd.id).maybeSingle();
       return row ? { status: row.status, ref: row.mpesa_receipt || row.receipt_reference || row.checkout_request_id, desc: row.result_desc, amount: row.amount } : null;
     }

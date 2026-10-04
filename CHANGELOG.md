@@ -5,6 +5,17 @@ Newest first. Each entry lists what changed and why, so nothing has to be redisc
 
 
 
+## 2026-10-04 — Restaurant gets the same dashboard layout as the main POS; fixes payments broken in the new pages
+
+**You asked** for the restaurant dashboard to look like the main POS dashboard.
+
+- **Overview page is now restaurant-aware, in the same layout.** `dashboard.html` keeps the exact same cards, tiles and lists, but for Hotel/Restaurant businesses it swaps the retail-only parts: title "Restaurant Overview"; the "Stock value" card becomes **Open bills** (running total of all occupied tables, with "2 of 3 tables occupied"); the "Products" tile becomes **Menu items** and an **Open tables** tile is added; the "Stock health" card becomes **Open tables** (each with its running bill). Today's sales, This month, Monthly profit and Recent sales are calculated exactly as on the main dashboard. Retail businesses see no change.
+- **"Menu & Tables" now appears in the menu on the Overview page and opens the new Menu & Tables page.** Two bugs caused restaurant owners to be bounced into the old classic app: the Overview page never told the menu the business was a restaurant (so the link was missing there), and `app-shell.js` did not list Menu & Tables as a built page, so even where the link showed it pointed to `index.html?legacy=1`.
+- **Fixed a regression from the security update: card/mobile payments from the new Sales and Menu & Tables pages.** After the payments API started requiring a signed-in user, `sell.html` and `tables.html` kept calling `/api/payments/initiate` and `/status/...` without a login token, so KCB, Paystack and Airtel payments from those pages would have been refused (401). They now send the token (`DogoData.apiAuthHeaders()`).
+- Service-worker cache bumped to v8 so phones pick up the new pages.
+
+**Not done:** the classic app's **Take Orders**, **Kitchen Board** and **Settle Bills** screens are still only in the classic app (`index.html?legacy=1`); the new Menu & Tables page sends orders to a printed kitchen slip, not a kitchen board. Moving those into the new layout is the next step. Platform admins "testing as" another business are still sent to the classic app. Checked with a simulated page for a restaurant and a retail business; not opened on a real phone.
+
 ## 2026-10-03 — Restaurant module: hotel-only menus, hotel-style receipts, lost-order fix
 
 **Menus are food-only.** The restaurant order page now filters the catalog to real food categories (Breakfast, Drinks, Lunch, Dinner/Supper, Snacks, and similar). Non-food entries — General Store, Retail, Hardware, etc. — no longer appear on the menu or its category chips for Hotel/Restaurant businesses; other business types are unchanged.

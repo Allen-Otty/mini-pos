@@ -14,8 +14,8 @@
   <div id="dogoNavRoot"></div>
 
   <main class="dogo-page">
-    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Analytics</span></div>
-    <div class="dogo-page-title"><h1>Business Analytics &amp; Management</h1></div>
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current" id="crumbCur">Analytics</span></div>
+    <div class="dogo-page-title"><h1 id="pageTitle">Business Analytics &amp; Management</h1></div>
     <p class="dogo-page-subtitle" id="bizName">Loading…</p>
 
     <section class="dogo-stat-grid dogo-stat-grid--4" aria-label="Key figures">
@@ -35,9 +35,9 @@
         <span class="dogo-badge dogo-badge--ok dogo-stat-card__foot">Sales − expenses</span>
       </div>
       <div class="dogo-stat-card">
-        <div class="dogo-stat-card__label">Stock value</div>
+        <div class="dogo-stat-card__label" id="stat4Label">Stock value</div>
         <div class="dogo-stat-card__value" id="kpiStock">KES 0.00</div>
-        <div class="dogo-stat-card__foot dogo-muted" style="font-size:12.5px;font-weight:700;gap:6px;">
+        <div class="dogo-stat-card__foot dogo-muted" style="font-size:12.5px;font-weight:700;gap:6px;" id="stat4Foot">
           <span id="kpiOut">0</span> out · <span id="kpiLow">0</span> low
         </div>
       </div>
@@ -47,7 +47,8 @@
       <div class="dogo-card__header"><div class="dogo-card__title">Analytics summary</div></div>
       <div class="dogo-tile-grid">
         <a href="customers.html" class="dogo-tile dogo-tile--blue"><div class="dogo-tile__icon" data-i="contacts"></div><div class="dogo-tile__label">Customers</div><div class="dogo-tile__value" id="tCustomers">0</div></a>
-        <a href="catalog.html" class="dogo-tile dogo-tile--purple"><div class="dogo-tile__icon" data-i="products"></div><div class="dogo-tile__label">Products</div><div class="dogo-tile__value" id="tProducts">0</div></a>
+        <a href="catalog.html" class="dogo-tile dogo-tile--purple" id="tileProducts"><div class="dogo-tile__icon" data-i="products"></div><div class="dogo-tile__label" id="tileProductsLabel">Products</div><div class="dogo-tile__value" id="tProducts">0</div></a>
+        <a href="tables.html" class="dogo-tile dogo-tile--amber" id="tileTables" style="display:none;"><div class="dogo-tile__icon" data-i="inventory"></div><div class="dogo-tile__label">Open tables</div><div class="dogo-tile__value" id="tTables">0</div></a>
         <a href="sell.html" class="dogo-tile dogo-tile--green"><div class="dogo-tile__icon" data-i="sales"></div><div class="dogo-tile__label">Sales</div><div class="dogo-tile__value" id="tSales">0</div></a>
         <a href="expenses.html" class="dogo-tile dogo-tile--red"><div class="dogo-tile__icon" data-i="expenses"></div><div class="dogo-tile__label">Expenses</div><div class="dogo-tile__value" id="tExpenses">0</div></a>
       </div>
@@ -65,11 +66,11 @@
 
       <section class="dogo-card">
         <div class="dogo-card__header">
-          <div class="dogo-card__title">Stock health</div>
+          <div class="dogo-card__title" id="rightTitle">Stock health</div>
           <span class="dogo-badge dogo-badge--warn" id="lowBadge">0 items</span>
         </div>
         <div id="lowStock"><div class="dogo-card__empty">All products are well stocked</div></div>
-        <div style="text-align:center;margin-top:8px;"><a class="dogo-link" href="catalog.html#inventory">Manage products &amp; inventory</a></div>
+        <div style="text-align:center;margin-top:8px;"><a class="dogo-link" id="rightLink" href="catalog.html#inventory">Manage products &amp; inventory</a></div>
       </section>
     </div>
   </main>
@@ -86,18 +87,21 @@
     const ctx = await requireSession();
     if (!ctx) return;
     const { profile, business } = ctx;
+    const rawType = ((business && business.business_type) || '').toLowerCase();
+    const isRest = rawType.includes('hotel') || rawType.includes('restaurant');
     if (business && business.name) {
       document.getElementById('bizName').textContent = business.name;
-      DogoShell.render({ active: 'dashboard', businessName: business.name, onLogout: logout });
+      DogoShell.render({ active: 'dashboard', businessName: business.name, onLogout: logout, showTables: isRest });
     }
     const isAdmin = profile && profile.role === 'admin';
 
-    const [prod, cust, sales, items, exp] = await Promise.all([
+    const [prod, cust, sales, items, exp, tbl] = await Promise.all([
       sb.from('products').select('*'),
       sb.from('customers').select('id'),
       sb.from('sales').select('*').order('created_at', { ascending: false }),
       sb.from('sale_items').select('sale_id,name,qty,line_total'),
-      isAdmin ? sb.from('expenses').select('amount,created_at') : Promise.resolve({ data: [] })
+      isAdmin ? sb.from('expenses').select('amount,created_at') : Promise.resolve({ data: [] }),
+      isRest ? sb.from('tables').select('*').order('created_at') : Promise.resolve({ data: [] })
     ]);
 
     const products = prod.data || [], saleRows = sales.data || [], lines = items.data || [], expenses = exp.data || [];
@@ -132,11 +136,34 @@
       document.getElementById('recentSales').innerHTML = recent.map(s =>
         `<div class="dogo-list-row"><span>${esc(s.receipt_no || 'Sale')}<br><small class="dogo-muted">${esc((s.created_at || '').slice(0, 10))} · ${esc(s.payment_method || 'cash')}</small></span><strong>${kes(totalBySale[s.id] || 0)}</strong></div>`).join('');
     }
-    const attention = out.concat(low).slice(0, 6);
-    set('lowBadge', (out.length + low.length) + ' items');
-    if (attention.length) {
-      document.getElementById('lowStock').innerHTML = attention.map(p =>
-        `<div class="dogo-list-row"><span>${esc(p.name)}</span><span class="dogo-badge ${Number(p.stock) <= 0 ? 'dogo-badge--danger' : 'dogo-badge--warn'}">${Number(p.stock) <= 0 ? 'Out' : p.stock + ' left'}</span></div>`).join('');
+    if (isRest) {
+      // Same dashboard, restaurant numbers: tables and running bills replace stock.
+      const tablesAll = tbl.data || [];
+      const lineTotal = o => (o || []).reduce((a, l) => a + Number(l.price || 0) * Number(l.qty || 0), 0);
+      const openTables = tablesAll.filter(t => (t.current_order || []).length > 0);
+      const openValue = openTables.reduce((a, t) => a + lineTotal(t.current_order), 0);
+      document.getElementById('pageTitle').textContent = 'Restaurant Overview';
+      document.getElementById('crumbCur').textContent = 'Restaurant';
+      set('stat4Label', 'Open bills');
+      set('kpiStock', kes(openValue));
+      document.getElementById('stat4Foot').innerHTML = `<span>${openTables.length}</span> of <span>${tablesAll.length}</span> tables occupied`;
+      document.getElementById('tileProductsLabel').textContent = 'Menu items';
+      document.getElementById('tileTables').style.display = '';
+      set('tTables', openTables.length);
+      set('rightTitle', 'Open tables');
+      set('lowBadge', openTables.length + ' occupied');
+      document.getElementById('rightLink').textContent = 'Open Menu & Tables';
+      document.getElementById('rightLink').href = 'tables.html';
+      document.getElementById('lowStock').innerHTML = openTables.length
+        ? openTables.slice(0, 8).map(t => `<a class="dogo-list-row" href="tables.html" style="text-decoration:none;color:inherit;"><span>${esc(t.name)}<br><small class="dogo-muted">${(t.current_order || []).reduce((a, l) => a + Number(l.qty || 0), 0)} item(s)</small></span><strong>${kes(lineTotal(t.current_order))}</strong></a>`).join('')
+        : '<div class="dogo-card__empty">No open tables right now</div>';
+    } else {
+      const attention = out.concat(low).slice(0, 6);
+      set('lowBadge', (out.length + low.length) + ' items');
+      if (attention.length) {
+        document.getElementById('lowStock').innerHTML = attention.map(p =>
+          `<div class="dogo-list-row"><span>${esc(p.name)}</span><span class="dogo-badge ${Number(p.stock) <= 0 ? 'dogo-badge--danger' : 'dogo-badge--warn'}">${Number(p.stock) <= 0 ? 'Out' : p.stock + ' left'}</span></div>`).join('');
+      }
     }
   })();
   </script>

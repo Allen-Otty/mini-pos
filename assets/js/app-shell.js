@@ -32,6 +32,7 @@
     catalog: true,
     purchases: true,
     sell: true,
+    tables: true,
     inventory: true,
     expenses: true,
     reports: true,

@@ -91,5 +91,13 @@
   }
   function planLimitsFor(business) { const key = planKeyFor(business); return Object.assign({ key }, PLAN_LIMITS[key]); }
 
-  window.DogoData = { sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor };
+  // The Express payments API requires a signed-in session. Pages that call it add these headers.
+  async function apiAuthHeaders(extra) {
+    const { data: { session } } = await sb.auth.getSession();
+    const h = Object.assign({}, extra || {});
+    if (session && session.access_token) h.Authorization = 'Bearer ' + session.access_token;
+    return h;
+  }
+
+  window.DogoData = { sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor, apiAuthHeaders };
 })();
