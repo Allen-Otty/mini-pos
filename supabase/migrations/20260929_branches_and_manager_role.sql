@@ -1,3 +1,4 @@
+-- APPLIED to production 2026-10-05 (with is_admin() in the branches policy and no extra profiles policy).
 -- Dogo POS — branches + manager role
 -- Run this once in the Supabase SQL editor (or `supabase db push` if you use the CLI).
 -- Nothing in this repo can run it automatically: the app only ever holds the
@@ -24,13 +25,8 @@ create policy "branches_select_own_business" on public.branches
 
 drop policy if exists "branches_admin_write" on public.branches;
 create policy "branches_admin_write" on public.branches
-  for all using (
-    business_id = current_business_id()
-    and exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
-  ) with check (
-    business_id = current_business_id()
-    and exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
-  );
+  for all using (business_id = current_business_id() and is_admin())
+  with check (business_id = current_business_id() and is_admin());
 
 -- 2. Which branch a team member is assigned to. Nullable — an unassigned
 --    teller/manager can still work exactly as they do today.
@@ -46,11 +42,5 @@ alter table public.profiles add column if not exists branch_id uuid references p
 --    want per-branch data isolation — that is a larger, separate change
 --    touching most tables' RLS policies, not just team management.
 
--- 4. Let an Admin see every profile in their business (needed for the Team
---    page's list/edit/deactivate — matches the existing pattern used elsewhere).
-drop policy if exists "profiles_admin_manage_own_business" on public.profiles;
-create policy "profiles_admin_manage_own_business" on public.profiles
-  for update using (
-    business_id = current_business_id()
-    and exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
-  ) with check (business_id = current_business_id());
+-- 4. (Not needed) The production database already has profiles_update_admin_or_self, which lets an
+--    admin update profiles in their own business, so no extra profiles policy is added here.

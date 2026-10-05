@@ -1,3 +1,6 @@
+-- NOT APPLIED to production yet (as of 2026-10-05). Applying it would cap every Free-plan business at 5 NEW
+-- products and 1 team member: Brenda Shop is on Free with 156 products and could no longer add products.
+-- Decide on grandfathering existing businesses before running it.
 -- Dogo POS — subscription plans: make them real and enforced server-side
 -- Run this once in the Supabase SQL editor after 20260929_branches_and_manager_role.sql.
 -- Safe to re-run: every statement is guarded.
