@@ -80,32 +80,51 @@
     const failed = uid => lsGet(k('failed', uid), []);
     const saveQueue = (uid, q) => lsSet(k('sales', uid), q);
     const saveFailed = (uid, q) => lsSet(k('failed', uid), q);
-    let syncing = false;
+    const shiftQ = uid => lsGet(k('shifts', uid), []);
+    const saveShiftQ = (uid, q) => lsSet(k('shifts', uid), q);
+    let syncing = false, lastError = '';
 
+    function enqueueShift(uid, row) { const q = shiftQ(uid); q.push(row); return saveShiftQ(uid, q); }
     function enqueueSale(uid, entry) { const q = queue(uid); q.push(entry); return saveQueue(uid, q); }
 
     async function syncSales(ctx) {
       const uid = ctx && ctx.profile && ctx.profile.id;
-      if (!uid || syncing || !isOnline()) return { synced: 0, failed: 0, remaining: uid ? queue(uid).length : 0 };
-      const { data: { session } } = await sb.auth.getSession();
-      if (!session) return { synced: 0, failed: 0, remaining: queue(uid).length };   // needs a live sign-in to write
-      syncing = true;
+      const pendingCount = () => (uid ? queue(uid).length : 0);
+      if (!uid || syncing || !isOnline()) return { synced: 0, failed: 0, remaining: pendingCount() };
+      // an offline-restored page may hold an expired token: try to refresh it before giving up
+      let { data: { session } } = await sb.auth.getSession();
+      if (!session) { try { const r = await sb.auth.refreshSession(); session = r.data && r.data.session; } catch (e) {} }
+      if (!session) { lastError = 'Sign in again (while online) to sync.'; refreshBar(); return { synced: 0, failed: 0, remaining: pendingCount() }; }
+      syncing = true; lastError = '';
       let synced = 0, rejected = 0;
       try {
-        let q = queue(uid);
+        // 1) shifts opened offline must exist on the server before the sales that point at them
+        let sq = shiftQ(uid);
+        while (sq.length) {
+          const { error } = await sb.from('shift_sessions').insert(sq[0]);
+          if (error && error.code !== '23505') {            // 23505 = already there from an earlier try: fine
+            lastError = isNetworkErr(error) ? 'Connection dropped - will retry.' : 'Could not sync the shift: ' + error.message;
+            break;
+          }
+          sq = sq.slice(1); saveShiftQ(uid, sq);
+        }
+        // 2) sales
+        let q = sq.length ? [] : queue(uid);
         while (q.length) {
           const e = q[0];
           const { count } = await sb.from('sales').select('id', { count: 'exact', head: true });
           const receipt = 'RC-' + String((count || 0) + 1).padStart(4, '0');
           const { error } = await sb.rpc('process_sale', Object.assign({}, e.args, { p_receipt_no: receipt }));
           if (error) {
-            if (isNetworkErr(error) || !isOnline()) break;               // connection dropped again: keep the rest, try later
+            if (isNetworkErr(error) || !isOnline()) { lastError = 'Connection dropped - will retry.'; break; }
             const f = failed(uid); f.push({ entry: e, reason: error.message, at: Date.now() }); saveFailed(uid, f);
+            lastError = 'Server rejected a sale: ' + error.message;
             rejected++;
           } else synced++;
           q = q.slice(1); saveQueue(uid, q);
         }
-      } finally { syncing = false; }
+      } catch (err) { lastError = 'Sync error: ' + (err && err.message || err); }
+      finally { syncing = false; }
       const remaining = queue(uid).length;
       window.dispatchEvent(new CustomEvent('dogo:synced', { detail: { synced, rejected, remaining } }));
       refreshBar();
@@ -117,18 +136,22 @@
     function refreshBar() {
       if (!barCtx) return;
       const uid = barCtx.profile.id, n = queue(uid).length, bad = failed(uid).length, off = !isOnline();
-      if (!off && !n && !bad) { if (bar) bar.style.display = 'none'; return; }
+      const sh = shiftQ(uid).length;
+      if (!off && !n && !bad && !sh) { if (bar) bar.style.display = 'none'; return; }
       if (!bar) {
         bar = document.createElement('div');
         bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;padding:9px 14px;font:600 13px system-ui,sans-serif;text-align:center;cursor:pointer;padding-bottom:calc(9px + env(safe-area-inset-bottom,0px))';
-        bar.onclick = () => { if (isOnline()) syncSales(barCtx).then(r => toast(r.remaining ? r.remaining + ' sale(s) still waiting.' : 'All sales synced.')); };
+        bar.onclick = () => { if (!isOnline()) return toast('Still offline - it will sync when you reconnect.');
+          syncSales(barCtx).then(r => toast(r.remaining ? (lastError || (r.remaining + ' sale(s) still waiting.')) : 'All sales synced.')); };
         document.body.appendChild(bar);
       }
       bar.style.display = 'block';
       bar.style.background = off ? '#fef3c7' : (bad ? '#fee2e2' : '#0f172a');
       bar.style.color = off ? '#92400e' : (bad ? '#991b1b' : '#facc15');
       bar.textContent = (off ? 'Offline — sales save on this device and sync when you reconnect.' : '')
+        + (sh && !n ? (off ? ' ' : '') + 'Shift waiting to sync' + (off ? '.' : ' - tap to sync now.') : '')
         + (n ? (off ? ' ' : '') + n + ' sale' + (n === 1 ? '' : 's') + ' waiting to sync' + (off ? '.' : ' — tap to sync now.') : '')
+        + (!off && lastError && (n || sh) ? ' ' + lastError : '')
         + (bad ? ' ' + bad + ' offline sale' + (bad === 1 ? ' was' : 's were') + ' rejected by the server (see Reports/ask Admin).' : '');
     }
     function watch(ctx) {
@@ -137,7 +160,7 @@
       window.addEventListener('offline', refreshBar);
       if (isOnline()) syncSales(ctx);
     }
-    return { isOnline, isNetworkErr, lsGet, lsSet, queue, failed, enqueueSale, syncSales, watch, refreshBar,
+    return { isOnline, isNetworkErr, lsGet, lsSet, queue, failed, enqueueSale, enqueueShift, shiftQueue: shiftQ, syncSales, watch, refreshBar,
       // cached read-only data (products, customers, current shift...) so pages can open offline
       cacheGet: (name, uid) => lsGet(k('cache_' + name, uid), null),
       cacheSet: (name, uid, v) => lsSet(k('cache_' + name, uid), v) };

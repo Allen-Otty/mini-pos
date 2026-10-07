@@ -510,25 +510,30 @@
     };
 
     $('btnConfirmOpenShift').onclick = async () => {
-      if (!OFF.isOnline()) return toast('Opening a shift needs a connection. Open it while online, then you can sell offline.');
       const floatVal = parseFloat($('modalFloatInput').value) || 0;
+      const row = { id: crypto.randomUUID(), business_id: ctx.businessId, user_id: ctx.profile.id,
+        opening_float: floatVal, status: 'OPEN', created_at: new Date().toISOString() };
       $('btnConfirmOpenShift').disabled = true;
-      try {
-        const { data, error } = await sb.from('shift_sessions').insert({
-          id: crypto.randomUUID(),
-          business_id: ctx.businessId,
-          user_id: ctx.profile.id,
-          opening_float: floatVal,
-          status: 'OPEN',
-          created_at: new Date().toISOString()
-        }).select().single();
 
+      // Offline (or the connection drops mid-request): keep the shift on this device and send it
+      // to the server before any of its sales. The id is fixed now, so retrying can't duplicate it.
+      const openLocally = () => {
+        if (!OFF.enqueueShift(uid, row)) { toast('This device is out of storage - the shift was NOT opened.'); return; }
+        OFF.cacheSet('sell_shifts', uid, [row].concat(OFF.cacheGet('sell_shifts', uid) || []));
+        currentShift = row; shiftSales = [];
+        closeOpenShiftModal(); renderShiftBar(); drawCart(); OFF.refreshBar();
+        toast('Offline - shift opened on this device. It will sync when you reconnect.');
+      };
+
+      try {
+        if (!OFF.isOnline()) { openLocally(); return; }
+        const { data, error } = await sb.from('shift_sessions').insert(row).select().single();
         if (error) {
+          if (OFF.isNetworkErr(error)) { openLocally(); return; }
           toast('Could not open shift: ' + error.message);
-          $('btnConfirmOpenShift').disabled = false;
           return;
         }
-
+        OFF.cacheSet('sell_shifts', uid, [data].concat(OFF.cacheGet('sell_shifts', uid) || []));
         currentShift = data;
         shiftSales = [];
         closeOpenShiftModal();
@@ -536,11 +541,12 @@
         drawCart();
         toast('Shift opened successfully with float ' + kes(floatVal));
       } catch (err) {
-        toast('Error opening shift: ' + err.message);
+        if (OFF.isNetworkErr(err)) openLocally(); else toast('Error opening shift: ' + err.message);
       } finally {
         $('btnConfirmOpenShift').disabled = false;
       }
     };
+
 
     function openCloseShiftModal() {
       if (!currentShift) return;
@@ -592,7 +598,7 @@
     $('btnConfirmCloseShift').onclick = async () => {
       if (!currentShift) return;
       if (!OFF.isOnline()) return toast('Closing a shift needs a connection. Sell offline now and close once you are back online.');
-      if (OFF.queue(uid).length) return toast('Sync the ' + OFF.queue(uid).length + ' offline sale(s) first (tap the bar at the bottom), then close the shift so the cash count is right.');
+      if (OFF.queue(uid).length || OFF.shiftQueue(uid).length) return toast('Sync the offline sale(s) / shift first (tap the bar at the bottom), then close the shift so the cash count is right.');
       const floatVal = Number(currentShift.opening_float || 0);
       const cashSalesTotal = shiftSales
         .filter(s => (s.payment_method || 'cash') === 'cash')
