@@ -1,5 +1,11 @@
 # Dogo POS â€” Changelog
 
+## Offline mode, follow-up: open a shift offline + visible sync errors
+
+- **Open Shift now works offline.** The shift is kept on the device (fixed id, so no duplicates) and sent to the server before its sales on reconnect. Closing a shift still needs a connection and is blocked until offline shifts/sales are synced.
+- **Sync no longer stalls silently.** It retries the sign-in token before giving up, and the bottom bar and a tap on it now show the reason (sign in again, connection dropped, server rejected a sale/shift).
+- Service worker cache v11. **Tested:** shift-before-sale ordering, duplicate shift, rejected shift (sales held back) with Node mocks. **Not tested** in a real browser.
+
 ## Offline mode for the new-look till
 
 - **`sell.html`** now works with no connection: products, customers and the open shift are saved on the device on every online load and used when offline. Cash, card-terminal and credit sales are queued on the device (stock is decremented locally so the till cannot oversell) and sent through `process_sale` on reconnect. The sale keeps one `offline_uuid`, so a retry cannot double-record. A receipt shows "Saved on this device"; the official `RC-` number is assigned at sync.
