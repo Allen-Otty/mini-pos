@@ -10,24 +10,52 @@
   const kes = n => 'KES ' + Number(n || 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  /* ---- Offline support -------------------------------------------------
+     The last good { profile, business } is remembered per signed-in user so the
+     app can reopen with no connection. It only ever restores data that came from
+     a real earlier sign-in; it never invents a user. */
+  const CTX_KEY = 'dogo_ctx_v1';
+  const isOnline = () => navigator.onLine !== false;
+  const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+  const isNetworkErr = e => !!e && !e.code && (!e.status || e.status === 0 || /fetch|network|load failed/i.test(String(e.message || e)));
+
+  function cachedResult(c) {
+    return { session: { user: { id: c.userId }, access_token: null, offline: true }, profile: c.profile, business: c.business, offline: true };
+  }
+
   // Returns { session, profile, business } or redirects to the sign-in page.
+  // With no connection it falls back to the cached sign-in (result.offline === true).
   async function requireSession() {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { await toSignIn(); return null; }
-    const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-    if (!profile) { await toSignIn(); return null; }
-    // Look the business up by the profile's own id (platform admins can see many businesses)
-    const { data: business } = await sb.from('businesses').select('*').eq('id', profile.business_id).maybeSingle();
-    return { session, profile, business };
+    const cached = lsGet(CTX_KEY, null);
+    let session = null, sessErr = null;
+    try { const r = await sb.auth.getSession(); session = r.data && r.data.session; sessErr = r.error; } catch (e) { sessErr = e; }
+    if (!session) {
+      if (cached && (!isOnline() || isNetworkErr(sessErr))) return cachedResult(cached);
+      await toSignIn(); return null;
+    }
+    try {
+      const { data: profile, error: pErr } = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+      if (pErr && cached && cached.userId === session.user.id && isNetworkErr(pErr)) return cachedResult(cached);
+      if (!profile) { await toSignIn(); return null; }
+      // Look the business up by the profile's own id (platform admins can see many businesses)
+      const { data: business } = await sb.from('businesses').select('*').eq('id', profile.business_id).maybeSingle();
+      lsSet(CTX_KEY, { userId: session.user.id, profile, business, savedAt: Date.now() });
+      return { session, profile, business };
+    } catch (e) {
+      if (cached && cached.userId === session.user.id) return cachedResult(cached);
+      throw e;
+    }
   }
 
   // No valid session: clear the "use new UI" flag (prevents a redirect loop) and show the sign-in screen.
   async function toSignIn() {
+    if (!isOnline()) { location.replace('index.html?signin=1'); return; } // offline: keep the cached sign-in intact
     try { localStorage.removeItem('dogo_new_ui_ok'); await sb.auth.signOut(); } catch (e) {}
     location.replace('index.html?signin=1');
   }
   async function logout() {
-    try { localStorage.removeItem('dogo_new_ui_ok'); sessionStorage.removeItem('dogo_legacy'); await sb.auth.signOut(); } catch (e) {}
+    try { localStorage.removeItem(CTX_KEY); localStorage.removeItem('dogo_new_ui_ok'); sessionStorage.removeItem('dogo_legacy'); await sb.auth.signOut(); } catch (e) {}
     location.replace('index.html?signin=1');
   }
 
@@ -37,6 +65,83 @@
     t.textContent = msg; t.classList.add('show');
     clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 3200);
   }
+
+
+  /* ---- Offline sales queue ---------------------------------------------
+     Sales rung up with no connection are kept on the device (per user) and sent
+     through the same process_sale RPC when the connection returns. process_sale is
+     idempotent on offline_uuid, so a retry can never record a sale twice.
+     Sales rejected by the server (e.g. insufficient stock) move to a "failed" list
+     instead of retrying forever. Note: the sale's date on the server is the sync
+     time, because process_sale has no date parameter. */
+  const Offline = (function () {
+    const k = (n, uid) => 'dogo_off_' + n + '_' + uid;
+    const queue = uid => lsGet(k('sales', uid), []);
+    const failed = uid => lsGet(k('failed', uid), []);
+    const saveQueue = (uid, q) => lsSet(k('sales', uid), q);
+    const saveFailed = (uid, q) => lsSet(k('failed', uid), q);
+    let syncing = false;
+
+    function enqueueSale(uid, entry) { const q = queue(uid); q.push(entry); return saveQueue(uid, q); }
+
+    async function syncSales(ctx) {
+      const uid = ctx && ctx.profile && ctx.profile.id;
+      if (!uid || syncing || !isOnline()) return { synced: 0, failed: 0, remaining: uid ? queue(uid).length : 0 };
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) return { synced: 0, failed: 0, remaining: queue(uid).length };   // needs a live sign-in to write
+      syncing = true;
+      let synced = 0, rejected = 0;
+      try {
+        let q = queue(uid);
+        while (q.length) {
+          const e = q[0];
+          const { count } = await sb.from('sales').select('id', { count: 'exact', head: true });
+          const receipt = 'RC-' + String((count || 0) + 1).padStart(4, '0');
+          const { error } = await sb.rpc('process_sale', Object.assign({}, e.args, { p_receipt_no: receipt }));
+          if (error) {
+            if (isNetworkErr(error) || !isOnline()) break;               // connection dropped again: keep the rest, try later
+            const f = failed(uid); f.push({ entry: e, reason: error.message, at: Date.now() }); saveFailed(uid, f);
+            rejected++;
+          } else synced++;
+          q = q.slice(1); saveQueue(uid, q);
+        }
+      } finally { syncing = false; }
+      const remaining = queue(uid).length;
+      window.dispatchEvent(new CustomEvent('dogo:synced', { detail: { synced, rejected, remaining } }));
+      refreshBar();
+      return { synced, failed: rejected, remaining };
+    }
+
+    // Thin status strip: shows when offline and how many sales are waiting to sync.
+    let barCtx = null, bar = null;
+    function refreshBar() {
+      if (!barCtx) return;
+      const uid = barCtx.profile.id, n = queue(uid).length, bad = failed(uid).length, off = !isOnline();
+      if (!off && !n && !bad) { if (bar) bar.style.display = 'none'; return; }
+      if (!bar) {
+        bar = document.createElement('div');
+        bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;padding:9px 14px;font:600 13px system-ui,sans-serif;text-align:center;cursor:pointer;padding-bottom:calc(9px + env(safe-area-inset-bottom,0px))';
+        bar.onclick = () => { if (isOnline()) syncSales(barCtx).then(r => toast(r.remaining ? r.remaining + ' sale(s) still waiting.' : 'All sales synced.')); };
+        document.body.appendChild(bar);
+      }
+      bar.style.display = 'block';
+      bar.style.background = off ? '#fef3c7' : (bad ? '#fee2e2' : '#0f172a');
+      bar.style.color = off ? '#92400e' : (bad ? '#991b1b' : '#facc15');
+      bar.textContent = (off ? 'Offline — sales save on this device and sync when you reconnect.' : '')
+        + (n ? (off ? ' ' : '') + n + ' sale' + (n === 1 ? '' : 's') + ' waiting to sync' + (off ? '.' : ' — tap to sync now.') : '')
+        + (bad ? ' ' + bad + ' offline sale' + (bad === 1 ? ' was' : 's were') + ' rejected by the server (see Reports/ask Admin).' : '');
+    }
+    function watch(ctx) {
+      barCtx = ctx; refreshBar();
+      window.addEventListener('online', () => { refreshBar(); syncSales(ctx); });
+      window.addEventListener('offline', refreshBar);
+      if (isOnline()) syncSales(ctx);
+    }
+    return { isOnline, isNetworkErr, lsGet, lsSet, queue, failed, enqueueSale, syncSales, watch, refreshBar,
+      // cached read-only data (products, customers, current shift...) so pages can open offline
+      cacheGet: (name, uid) => lsGet(k('cache_' + name, uid), null),
+      cacheSet: (name, uid, v) => lsSet(k('cache_' + name, uid), v) };
+  })();
 
   // Common page start-up: renders header/nav, enforces login, returns context.
   async function boot(active, opts) {
@@ -58,6 +163,7 @@
       document.querySelector('main').innerHTML = '<div class="dogo-card"><div class="dogo-card__empty">This page is for the business Admin only.</div></div>';
       return null;
     }
+    Offline.watch(ctx);
     return ctx;
   }
 
@@ -99,5 +205,5 @@
     return h;
   }
 
-  window.DogoData = { sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor, apiAuthHeaders };
+  window.DogoData = { Offline, isOnline, sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor, apiAuthHeaders };
 })();
