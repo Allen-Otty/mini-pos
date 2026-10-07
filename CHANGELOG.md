@@ -1,5 +1,12 @@
 # Dogo POS â€” Changelog
 
+## Catalogue: Delete button + per-product sales history
+
+- **Delete** (Admin only) next to Edit: asks for confirmation, shows how many past sale lines include the item, then deletes permanently. If the item is part of past sales the database may refuse (foreign key); the message says so instead of deleting sales records. Also reports when RLS silently deleted nothing.
+- **Sales** button on every row (all roles): modal listing each sale of that product - date, receipt no., qty, price, line total, paid by, cashier - with totals (sales, units, revenue, stock now), CSV export, first 500 shown. Needs a connection.
+- **Tested:** syntax only. **Not tested** against live Supabase: column names assumed from the sale RPC payload (`sale_items.product_id/sale_id/qty/line_total`, `sales.receipt_no/created_at/payment_method/cashier_id`); the modal shows the real error text if one differs.
+
+
 ## Offline sign-in and safe offline logout
 
 - **Sign in offline.** After each online sign-in the device keeps a salted PBKDF2 hash of the password (never the password itself). With no connection the same email/phone + password is checked against it and opens the till from the cached profile. 5 wrong tries lock offline sign-in for 5 minutes. Works only on a device that has signed in online with that account before.
