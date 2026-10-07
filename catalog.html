@@ -141,6 +141,28 @@
         </div>
       </div>
     </div>
+
+    <!-- Sales history for one product -->
+    <div class="dogo-modal" id="histModal">
+      <div class="dogo-modal__box" style="max-width:760px;border-radius:18px;padding:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+          <div>
+            <h2 style="font-size:20px;font-weight:800;color:var(--dogo-ink);margin:0 0 2px;" id="hTitle">Sales history</h2>
+            <div style="font-size:13px;color:var(--dogo-text-muted);" id="hSub"></div>
+          </div>
+          <button style="border:none;background:transparent;color:var(--dogo-text-muted);font-size:20px;cursor:pointer;" id="hClose">&times;</button>
+        </div>
+        <div id="hSummary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;"></div>
+        <div class="dogo-table-wrap" style="max-height:50vh;overflow:auto;"><table class="dogo-table">
+          <thead><tr><th>Date</th><th>Receipt</th><th>Qty</th><th>Price</th><th>Total</th><th>Paid by</th><th>Cashier</th></tr></thead>
+          <tbody id="hRows"></tbody>
+        </table></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:12px;color:var(--dogo-text-muted);" id="hNote"></span>
+          <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="hCsv">Export CSV</button>
+        </div>
+      </div>
+    </div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -241,7 +263,7 @@
         const st = Number(p.stock), low = st <= Number(p.reorder_level || 0);
         return `<tr><td>${esc(p.code)}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.category || '—')}</td><td>${kes(p.price)}</td><td>${Math.round(Number(p.vat_rate || 0) * 100)}%</td>
           <td><span class="dogo-badge ${st <= 0 ? 'dogo-badge--danger' : low ? 'dogo-badge--warn' : 'dogo-badge--ok'}">${st}</span></td><td>${esc(p.reorder_level ?? 0)}</td>
-          <td>${isAdmin ? `<button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-edit="${esc(p.id)}">Edit</button>` : ''}</td></tr>`;
+          <td style="white-space:nowrap;"><button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-log="${esc(p.id)}">Sales</button>${isAdmin ? ` <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-edit="${esc(p.id)}">Edit</button> <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-del="${esc(p.id)}" style="color:#dc2626;border-color:#fca5a5;">Delete</button>` : ''}</td></tr>`;
       }).join('') : '<tr><td colspan="8" class="dogo-card__empty">No products found</td></tr>';
       $('pageInfo').textContent = list.length ? `Showing ${(page - 1) * PER + 1}-${Math.min(page * PER, list.length)} of ${list.length}` : '';
       $('prev').disabled = page <= 1; $('next').disabled = page >= pages;
@@ -274,7 +296,72 @@
     $('mCancel').onclick = closeModal;
     $('mClose').onclick = closeModal;
 
-    $('rows').onclick = e => { const id = e.target.dataset && e.target.dataset.edit; if (id) openModal(products.find(p => String(p.id) === id)); };
+    $('rows').onclick = e => {
+      const d = (e.target.closest('button') || {}).dataset || {};
+      if (d.edit) openModal(products.find(p => String(p.id) === d.edit));
+      else if (d.del) deleteProduct(products.find(p => String(p.id) === d.del));
+      else if (d.log) openHistory(products.find(p => String(p.id) === d.log));
+    };
+
+    /* ---- Delete (admin only, permanent) ---- */
+    async function deleteProduct(p) {
+      if (!p || !isAdmin) return;
+      if (!navigator.onLine) return toast('Deleting needs a connection.');
+      let n = 0;
+      try { const r = await sb.from('sale_items').select('id', { count: 'exact', head: true }).eq('product_id', p.id); if (!r.error) n = r.count || 0; } catch (e) {}
+      const msg = 'Permanently delete "' + p.name + '" (' + p.code + ')?\n\nThis cannot be undone.'
+        + (n ? '\n\nIt appears on ' + n + ' past sale line' + (n === 1 ? '' : 's') + '. Past sales are kept as records, so the database may refuse to delete it.' : '');
+      if (!confirm(msg)) return;
+      const { data, error } = await sb.from('products').delete().eq('id', p.id).select('id');
+      if (error) {
+        if (error.code === '23503') return toast('Can\'t delete: "' + p.name + '" is part of past sales, and those records must stay. Set its stock to 0 instead, or ask me to add a Hide option.');
+        return toast('Could not delete: ' + error.message);
+      }
+      if (!data || !data.length) return toast('Nothing was deleted - you may not have permission, or it is already gone.');
+      toast('"' + p.name + '" deleted'); load();
+    }
+
+    /* ---- Sales history for one product ---- */
+    let histRows = [], histProd = null;
+    const closeHist = () => $('histModal').classList.remove('open');
+    $('hClose').onclick = closeHist;
+    async function openHistory(p) {
+      if (!p) return;
+      histProd = p; histRows = [];
+      $('hTitle').textContent = 'Sales history · ' + p.name;
+      $('hSub').textContent = 'Every time this item was sold, newest first';
+      $('hSummary').innerHTML = ''; $('hNote').textContent = '';
+      $('hRows').innerHTML = '<tr><td colspan="7" class="dogo-card__empty">Loading…</td></tr>';
+      $('histModal').classList.add('open');
+      if (!navigator.onLine) { $('hRows').innerHTML = '<tr><td colspan="7" class="dogo-card__empty">Sales history needs a connection.</td></tr>'; return; }
+      const LIMIT = 500;
+      const li = await sb.from('sale_items').select('*').eq('product_id', p.id).limit(LIMIT);
+      if (li.error) { $('hRows').innerHTML = '<tr><td colspan="7" class="dogo-card__empty">Could not load: ' + esc(li.error.message) + '</td></tr>'; return; }
+      const items = li.data || [];
+      const ids = [...new Set(items.map(i => i.sale_id).filter(Boolean))];
+      const sales = {};
+      for (let i = 0; i < ids.length; i += 100) {
+        const r = await sb.from('sales').select('id,receipt_no,created_at,payment_method,cashier_id').in('id', ids.slice(i, i + 100));
+        (r.data || []).forEach(s => { sales[s.id] = s; });
+      }
+      const cids = [...new Set(Object.values(sales).map(s => s.cashier_id).filter(Boolean))];
+      const names = {};
+      if (cids.length) { const r = await sb.from('profiles').select('id,full_name').in('id', cids); (r.data || []).forEach(x => { names[x.id] = x.full_name; }); }
+      histRows = items.map(i => {
+        const s = sales[i.sale_id] || {};
+        const qty = Number(i.qty ?? i.quantity ?? 0), price = Number(i.price ?? i.unit_price ?? p.price ?? 0);
+        return { at: s.created_at || i.created_at || '', receipt: s.receipt_no || '', qty, price,
+          total: Number(i.line_total ?? (qty * price)), pay: s.payment_method || '', cashier: names[s.cashier_id] || '' };
+      }).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+      const qtySum = histRows.reduce((a, r) => a + r.qty, 0), revSum = histRows.reduce((a, r) => a + r.total, 0);
+      const chip = (l, v) => `<div style="background:#f1f5f9;border-radius:12px;padding:8px 14px;"><div style="font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--dogo-text-muted);">${l}</div><div style="font-size:16px;font-weight:800;">${v}</div></div>`;
+      $('hSummary').innerHTML = chip('Sales', histRows.length) + chip('Units sold', qtySum) + chip('Revenue', kes(revSum)) + chip('In stock now', esc(p.stock));
+      $('hRows').innerHTML = histRows.length ? histRows.map(r => `<tr><td>${esc(r.at ? new Date(r.at).toLocaleString() : '—')}</td><td>${esc(r.receipt || '—')}</td><td>${r.qty}</td><td>${kes(r.price)}</td><td>${kes(r.total)}</td><td>${esc(r.pay || '—')}</td><td>${esc(r.cashier || '—')}</td></tr>`).join('')
+        : '<tr><td colspan="7" class="dogo-card__empty">This item has not been sold yet.</td></tr>';
+      $('hNote').textContent = items.length >= LIMIT ? 'Showing the first ' + LIMIT + ' sales only.' : '';
+    }
+    $('hCsv').onclick = () => histProd && downloadCSV('sales-' + (histProd.code || 'item') + '.csv',
+      [['Date','Receipt','Qty','Price','Total','Paid by','Cashier']].concat(histRows.map(r => [r.at, r.receipt, r.qty, r.price, r.total, r.pay, r.cashier])));
     $('mSave').onclick = async () => {
       const typedBarcode = ($('fBarcode').value || '').trim();
       const rec = {
