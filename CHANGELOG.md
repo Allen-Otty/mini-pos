@@ -1,5 +1,12 @@
 # Dogo POS â€” Changelog
 
+## Offline sign-in and safe offline logout
+
+- **Sign in offline.** After each online sign-in the device keeps a salted PBKDF2 hash of the password (never the password itself). With no connection the same email/phone + password is checked against it and opens the till from the cached profile. 5 wrong tries lock offline sign-in for 5 minutes. Works only on a device that has signed in online with that account before.
+- **Logout no longer strands you offline.** Every logout sets a "locked" flag, so the cached profile is only restored after the password check (previously a logged-out device could be reopened offline with no password, and an offline logout wiped the cached identity so you could not get back in). Offline logout keeps the session, so queued sales still sync after the next sign-in. Queued sales stay on the device through logout.
+- Service worker cache v12. **Tested:** hash match/mismatch in Node, syntax of all changed scripts. **Not tested** in a real browser; try: sign in online, go offline, log out, sign back in offline.
+- **Known limit:** the password hash lives in the browser's local storage like the rest of the cache. On a shared phone, the "locked" check is a UI gate, not encryption.
+
 ## Offline mode, follow-up: open a shift offline + visible sync errors
 
 - **Open Shift now works offline.** The shift is kept on the device (fixed id, so no duplicates) and sent to the server before its sales on reconnect. Closing a shift still needs a connection and is blocked until offline shifts/sales are synced.

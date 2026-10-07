@@ -27,6 +27,8 @@
   // Returns { session, profile, business } or redirects to the sign-in page.
   // With no connection it falls back to the cached sign-in (result.offline === true).
   async function requireSession() {
+    // After any logout the device stays "locked" until the password is entered again (online or offline).
+    if (localStorage.getItem('dogo_locked') === '1') { await toSignIn(); return null; }
     const cached = lsGet(CTX_KEY, null);
     let session = null, sessErr = null;
     try { const r = await sb.auth.getSession(); session = r.data && r.data.session; sessErr = r.error; } catch (e) { sessErr = e; }
@@ -55,9 +57,15 @@
     location.replace('index.html?signin=1');
   }
   async function logout() {
-    try { localStorage.removeItem(CTX_KEY); localStorage.removeItem('dogo_new_ui_ok'); sessionStorage.removeItem('dogo_legacy'); await sb.auth.signOut(); } catch (e) {}
+    try {
+      localStorage.setItem('dogo_locked', '1');                // password required again, even offline
+      localStorage.removeItem('dogo_new_ui_ok'); sessionStorage.removeItem('dogo_legacy');
+      if (isOnline()) await sb.auth.signOut();                 // offline: keep the session so unsynced sales can sync after the next sign-in
+    } catch (e) {}
     location.replace('index.html?signin=1');
   }
+  /* (cached sign-in details are kept after logout so the same user can sign back in offline;
+     they are only ever restored after the password check) */
 
   function toast(msg) {
     let t = document.getElementById('dogoToast');
