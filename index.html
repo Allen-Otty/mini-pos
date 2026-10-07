@@ -10412,6 +10412,46 @@ async function performLogin(identifier, password) {
   return { success: true };
 }
 
+/* ---- Offline sign-in ------------------------------------------------------
+   After every successful ONLINE sign-in a salted PBKDF2 hash of the password is kept on this device.
+   With no connection, the same identifier + password is checked against that hash and restores the
+   cached profile (no server call, no password stored in readable form). Five wrong tries lock it for 5 min. */
+const OFFLINE_CRED_KEY = 'dogo_offline_cred_v1';
+const b64 = u8 => btoa(String.fromCharCode(...u8));
+const unb64 = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
+async function dogoPwHash(pw, salt) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' }, key, 256);
+  return new Uint8Array(bits);
+}
+async function dogoSaveOfflineCred(identifier, password, userId) {
+  try {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const map = JSON.parse(localStorage.getItem(OFFLINE_CRED_KEY) || '{}');
+    map[identifier.toLowerCase()] = { userId, salt: b64(salt), hash: b64(await dogoPwHash(password, salt)), fails: 0, until: 0 };
+    localStorage.setItem(OFFLINE_CRED_KEY, JSON.stringify(map));
+  } catch (e) {}
+}
+// returns { ok:true } or { error:'...' }
+async function dogoOfflineLogin(identifier, password) {
+  try {
+    const map = JSON.parse(localStorage.getItem(OFFLINE_CRED_KEY) || '{}');
+    const rec = map[identifier.toLowerCase()];
+    const ctx = JSON.parse(localStorage.getItem('dogo_ctx_v1') || 'null');
+    if (!rec || !ctx || ctx.userId !== rec.userId) return { error: 'No internet. Offline sign-in only works on a device where you have already signed in online with this account.' };
+    if (rec.until && Date.now() < rec.until) return { error: 'Too many wrong attempts. Try again in a few minutes, or sign in online.' };
+    const got = b64(await dogoPwHash(password, unb64(rec.salt)));
+    if (got !== rec.hash) {
+      rec.fails = (rec.fails || 0) + 1; if (rec.fails >= 5) { rec.until = Date.now() + 5 * 60 * 1000; rec.fails = 0; }
+      localStorage.setItem(OFFLINE_CRED_KEY, JSON.stringify(map));
+      return { error: 'Wrong password.' };
+    }
+    rec.fails = 0; rec.until = 0; localStorage.setItem(OFFLINE_CRED_KEY, JSON.stringify(map));
+    localStorage.removeItem('dogo_locked'); localStorage.setItem('dogo_new_ui_ok', '1');
+    return { ok: true };
+  } catch (e) { return { error: 'Offline sign-in is not available on this browser. Connect to the internet to sign in.' }; }
+}
+
 async function handleLogin() {
   clearAuthMessages();
   const identifier = document.getElementById('loginIdentifier').value.trim();
@@ -10421,15 +10461,28 @@ async function handleLogin() {
     return;
   }
 
+  const goOffline = async () => {
+    const o = await dogoOfflineLogin(identifier, password);
+    if (o.ok) { showToast('Signed in offline - sales will sync when you reconnect.'); window.location.replace('sell.html'); }
+    else showAuthMsg('loginError', o.error);
+  };
+  if (!navigator.onLine) return goOffline();
   const result = await performLogin(identifier, password);
+  if (result.error && /failed to fetch|network|load failed/i.test(result.error)) return goOffline();   // online flag lied / connection died
   if (result.error) { showAuthMsg('loginError', result.error); return; }
+  try {
+    const { data: { session: s2 } } = await sb.auth.getSession();
+    if (s2 && s2.user) await dogoSaveOfflineCred(identifier, password, s2.user.id);
+    localStorage.removeItem('dogo_locked');
+  } catch (e) {}
   if (result.isNewDevice) showToast('New device detected on this login — check Team activity if this wasn\'t you.');
   await afterLogin();
 }
 
 async function handleLogout() {
-  try { localStorage.removeItem('dogo_new_ui_ok'); sessionStorage.removeItem('dogo_legacy'); } catch (e) {}
-  await sb.auth.signOut();
+  try { localStorage.setItem('dogo_locked', '1'); localStorage.removeItem('dogo_new_ui_ok'); sessionStorage.removeItem('dogo_legacy'); } catch (e) {}
+  // offline: keep the session so unsynced sales can still sync after the next sign-in; the lock flag blocks re-entry without the password
+  try { if (navigator.onLine) await sb.auth.signOut(); } catch (e) {}
   stopScanner();
   session = null; profile = null; business = null;
   document.getElementById('appShell').style.display = 'none'; document.getElementById('appShell').classList.remove('portal-shell-active');
@@ -10533,6 +10586,7 @@ async function returnToMyBusiness() {
 }
 
 async function afterLogin() {
+  try { localStorage.removeItem('dogo_locked'); } catch (e) {}
   const { data: { user } } = await sb.auth.getUser();
   if (!user) { handleLogout(); return; }
 
@@ -16322,8 +16376,9 @@ async function saveNewProductFromPage() {
 
   // Check if session is active or user was logged in
   let hasValidSession = false;
+  const dogoLocked = localStorage.getItem('dogo_locked') === '1';
   try {
-    const { data: { session: s } } = await sb.auth.getSession();
+    const { data: { session: s } } = dogoLocked ? { data: { session: null } } : await sb.auth.getSession();
     if (s && s.user) {
       session = s;
       hasValidSession = true;
@@ -16331,7 +16386,7 @@ async function saveNewProductFromPage() {
     }
   } catch(e) {}
 
-  if (!hasValidSession) {
+  if (!hasValidSession && !dogoLocked) {
     const wasLoggedIn = localStorage.getItem('dogopos_is_logged_in') === 'true';
     const cached = localStorage.getItem(LOCAL_CACHE_KEY);
     // Offline restore only works for a real, previously signed-in user. The old code invented an
