@@ -8,6 +8,8 @@ Last updated: 2026-08-31
 
 ## ✅ Completed (verified)
 
+- [x] Offline mode for the new-look till (`sell.html`, `dogo-data.js`, `service-worker.js` v10) - logic tested with mocks; **real-device airplane-mode test still open**
+
 ### Backend — database
 - [x] Confirmed live schema directly via Supabase connector (17 tables, 4 views, 10 edge functions, 6 helper functions) — not assumed from docs
 - [x] Expanded `businesses.business_type` constraint to add Kiosk / Restaurant / Pharmacy / Service, on top of existing Retail/Wholesale/Supermarket/SME/Hotel/Hardware

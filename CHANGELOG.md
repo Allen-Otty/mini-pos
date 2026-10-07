@@ -1,5 +1,14 @@
 # Dogo POS â€” Changelog
 
+## Offline mode for the new-look till
+
+- **`sell.html`** now works with no connection: products, customers and the open shift are saved on the device on every online load and used when offline. Cash, card-terminal and credit sales are queued on the device (stock is decremented locally so the till cannot oversell) and sent through `process_sale` on reconnect. The sale keeps one `offline_uuid`, so a retry cannot double-record. A receipt shows "Saved on this device"; the official `RC-` number is assigned at sync.
+- **Rejected sales** (for example insufficient stock after another device sold the item) move to a failed list and raise a banner instead of retrying forever.
+- **`dogo-data.js`**: the cached sign-in (profile + business from a real earlier login) restores the session offline; it never invents a user. A bottom status bar shows offline state and the number of sales waiting; tapping it syncs.
+- **`service-worker.js` v10**: all new-look pages cached (bills, tables, kitchen, orders were missing), the unpkg barcode library the till actually uses, per-file resilient install, 4 s network timeout before falling back to cache, app-shell fallback for navigation.
+- **Limits:** M-Pesa/KCB/Paystack/Airtel need a connection; opening and closing a shift need a connection (closing is blocked while offline sales are unsynced so the cash count is right); synced sales are dated at sync time because `process_sale` has no date parameter. **Tested:** session-restore and queue/sync logic with Node mocks. **Not tested:** in a real browser against live Supabase - please try airplane-mode on a phone before merging.
+
+
 Newest first. Each entry lists what changed and why, so nothing has to be rediscovered from the git log.
 
 

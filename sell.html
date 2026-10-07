@@ -367,12 +367,28 @@
     let products = [], cart = [], currentShift = null, shiftSales = [];
     let busy = false, pollTimer = null, tickTimer = null;
 
-    // Load initial data
-    const [pRes, cRes, shRes] = await Promise.all([
-      sb.from('products').select('*').order('name'),
-      sb.from('customers').select('id,name').order('name'),
-      sb.from('shift_sessions').select('*').eq('business_id', ctx.businessId).order('created_at', { ascending: false }).limit(20)
-    ]);
+    const OFF = window.DogoData.Offline, uid = ctx.profile.id;
+
+    // Load initial data (falls back to what this device saved last time when there is no connection)
+    let pRes, cRes, shRes;
+    try {
+      [pRes, cRes, shRes] = await Promise.all([
+        sb.from('products').select('*').order('name'),
+        sb.from('customers').select('id,name').order('name'),
+        sb.from('shift_sessions').select('*').eq('business_id', ctx.businessId).order('created_at', { ascending: false }).limit(20)
+      ]);
+      const netErr = [pRes, cRes, shRes].find(r => r.error && OFF.isNetworkErr(r.error));
+      if (netErr) throw netErr.error;
+      OFF.cacheSet('sell_products', uid, pRes.data || []);
+      OFF.cacheSet('sell_customers', uid, cRes.data || []);
+      OFF.cacheSet('sell_shifts', uid, shRes.data || []);
+    } catch (e) {
+      const cp = OFF.cacheGet('sell_products', uid);
+      pRes = { data: cp || [] };
+      cRes = { data: OFF.cacheGet('sell_customers', uid) || [] };
+      shRes = { data: OFF.cacheGet('sell_shifts', uid) || [] };
+      toast(cp ? 'Offline — using the products saved on this device.' : 'No connection and nothing saved on this device yet. Open the till once while online first.');
+    }
 
     products = pRes.data || [];
 
@@ -402,14 +418,19 @@
         shiftSales = [];
         return;
       }
+      let base = OFF.cacheGet('sell_shiftsales_' + currentShift.id, uid) || [];
       try {
-        const { data } = await sb.from('sales')
+        const { data, error } = await sb.from('sales')
           .select('id,total,payment_method,created_at')
           .eq('shift_id', currentShift.id);
-        shiftSales = data || [];
-      } catch (e) {
-        shiftSales = [];
-      }
+        if (error) throw error;
+        base = data || [];
+        OFF.cacheSet('sell_shiftsales_' + currentShift.id, uid, base);
+      } catch (e) { /* offline: use the last saved list */ }
+      // sales rung up offline that haven't reached the server yet still count toward the drawer
+      const pending = OFF.queue(uid).filter(q => q.args.p_shift_id === currentShift.id)
+        .map(q => ({ id: q.args.p_offline_uuid, total: q.args.p_total, payment_method: q.args.p_payment_method, created_at: new Date(q.at).toISOString() }));
+      shiftSales = base.concat(pending);
     }
 
     await loadShiftSales();
@@ -489,6 +510,7 @@
     };
 
     $('btnConfirmOpenShift').onclick = async () => {
+      if (!OFF.isOnline()) return toast('Opening a shift needs a connection. Open it while online, then you can sell offline.');
       const floatVal = parseFloat($('modalFloatInput').value) || 0;
       $('btnConfirmOpenShift').disabled = true;
       try {
@@ -569,6 +591,8 @@
 
     $('btnConfirmCloseShift').onclick = async () => {
       if (!currentShift) return;
+      if (!OFF.isOnline()) return toast('Closing a shift needs a connection. Sell offline now and close once you are back online.');
+      if (OFF.queue(uid).length) return toast('Sync the ' + OFF.queue(uid).length + ' offline sale(s) first (tap the bar at the bottom), then close the shift so the cash count is right.');
       const floatVal = Number(currentShift.opening_float || 0);
       const cashSalesTotal = shiftSales
         .filter(s => (s.payment_method || 'cash') === 'cash')
@@ -849,21 +873,53 @@
     async function recordSale({ snap, customerId, shiftId, pay, ref, uuid }) {
       let sub = 0, vat = 0, grand = 0; const items = toLines(snap);
       items.forEach(i => { const lv = i.line_total - i.line_total / (1 + i.vat_rate); sub += i.line_total - lv; vat += lv; grand += i.line_total; });
-      const { count } = await sb.from('sales').select('id', { count: 'exact', head: true });
-      const receipt = 'RC-' + String((count || 0) + 1).padStart(4, '0');
-      const { data, error } = await sb.rpc('process_sale', { p_business_id: ctx.businessId, p_cashier_id: ctx.profile.id, p_receipt_no: receipt, p_customer_id: customerId || null,
-        p_subtotal_excl_vat: +sub.toFixed(2), p_vat_total: +vat.toFixed(2), p_total: +grand.toFixed(2), p_offline_uuid: uuid || crypto.randomUUID(), p_items: items,
-        p_payment_method: pay, p_shift_id: shiftId, p_mpesa_receipt_no: ref || null });
-      if (error) return { error };
-      if (DIGITAL[pay]) sb.functions.invoke('etims-submit', { body: { sale_id: data } }).catch(() => {});
-      return { id: data, receipt, grand, sub, vat, items };
+      uuid = uuid || crypto.randomUUID();   // fixed once, so a retry after a dropped connection can never double-record
+      const args = { p_business_id: ctx.businessId, p_cashier_id: ctx.profile.id, p_customer_id: customerId || null,
+        p_subtotal_excl_vat: +sub.toFixed(2), p_vat_total: +vat.toFixed(2), p_total: +grand.toFixed(2), p_offline_uuid: uuid, p_items: items,
+        p_payment_method: pay, p_shift_id: shiftId, p_mpesa_receipt_no: ref || null };
+      const queueIt = () => {
+        if (!OFF.enqueueSale(uid, { args, at: Date.now() })) return { error: { message: 'This device is out of storage - the sale was NOT saved. Connect to the internet to complete it.' } };
+        // keep local stock honest so the till can't oversell while offline
+        const saved = OFF.cacheGet('sell_products', uid) || [];
+        items.forEach(i => {
+          const mp = products.find(x => String(x.id) === String(i.product_id)); if (mp) mp.stock = Number(mp.stock) - i.qty;
+          const cp = saved.find(x => String(x.id) === String(i.product_id)); if (cp) cp.stock = Number(cp.stock) - i.qty;
+        });
+        OFF.cacheSet('sell_products', uid, saved);
+        OFF.refreshBar();
+        return { id: uuid, receipt: 'OFFLINE-' + uuid.slice(0, 6).toUpperCase(), grand, sub, vat, items, offline: true };
+      };
+      if (!OFF.isOnline()) return queueIt();
+      try {
+        const { count, error: cErr } = await sb.from('sales').select('id', { count: 'exact', head: true });
+        if (cErr && OFF.isNetworkErr(cErr)) return queueIt();
+        const receipt = 'RC-' + String((count || 0) + 1).padStart(4, '0');
+        const { data, error } = await sb.rpc('process_sale', Object.assign({ p_receipt_no: receipt }, args));
+        if (error) return OFF.isNetworkErr(error) ? queueIt() : { error };
+        if (DIGITAL[pay]) sb.functions.invoke('etims-submit', { body: { sale_id: data } }).catch(() => {});
+        return { id: data, receipt, grand, sub, vat, items };
+      } catch (e) {
+        if (OFF.isNetworkErr(e)) return queueIt();
+        return { error: e };
+      }
     }
     async function afterSale() {
+      if (!OFF.isOnline()) { await loadShiftSales(); drawGrid(); drawCart(); renderShiftBar(); return; }   // stock already adjusted locally
       const [r] = await Promise.all([sb.from('products').select('*').order('name'), loadShiftSales()]);
-      products = r.data || products; drawGrid(); drawCart(); renderShiftBar();
+      if (r.error) { drawGrid(); drawCart(); renderShiftBar(); return; }
+      OFF.cacheSet('sell_products', uid, r.data || []);
+      products = isRestaurant && (r.data || []).some(x => isFoodCat(x.category)) ? r.data.filter(x => isFoodCat(x.category)) : (r.data || products);
+      drawGrid(); drawCart(); renderShiftBar();
     }
+    window.addEventListener('dogo:synced', e => {
+      afterSale();
+      const d = e.detail || {};
+      if (d.synced) toast(d.synced + ' offline sale' + (d.synced === 1 ? '' : 's') + ' synced.');
+      if (d.rejected) toast(d.rejected + ' offline sale(s) were rejected by the server (e.g. stock ran out). Check with your Admin.');
+    });
     function showReceipt(r, pay, ref) {
       $('receiptBox').innerHTML = `<h2>Sale complete</h2><div class="dogo-muted" style="font-size:13px;margin-bottom:10px;">${esc(r.receipt)} · ${esc(new Date().toLocaleString())}</div>
+        ${r.offline ? '<div style="background:#fef3c7;color:#92400e;border-radius:8px;padding:8px 10px;font-size:12.5px;margin-bottom:10px;">Saved on this device. It will sync automatically when you are back online, and gets its official receipt number then.</div>' : ''}
         ${r.items.map(i => `<div class="dogo-list-row"><span>${esc(i.name)} × ${esc(i.qty)}</span><span>${kes(i.line_total)}</span></div>`).join('')}
         <div class="dogo-list-row"><span class="dogo-muted">VAT included</span><span>${kes(r.vat)}</span></div>
         <div class="dogo-total-row"><span>Total</span><span>${kes(r.grand)}</span></div>
@@ -941,7 +997,10 @@
       if (!currentShift) { toast('Open a shift first before making a sale.'); return; }
       if (!cart.length || busy) return;
       const method = $('payMethod').value;
-      if (DIGITAL[method]) return startDigital(method);
+      if (DIGITAL[method]) {
+        if (!OFF.isOnline()) return toast(DIGITAL[method].name + ' needs a connection. Take cash or card-terminal payment while offline.');
+        return startDigital(method);
+      }
       if (method === 'credit' && !$('cust').value) return toast('Select a customer for a credit sale.');
       $('payBtn').disabled = true;
       const r = await recordSale({ snap: snapOf(cart), customerId: $('cust').value || null, shiftId: currentShift.id, pay: method });
