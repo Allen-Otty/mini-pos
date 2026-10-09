@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Contacts · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Contacts</span></div>
+    <div class="dogo-page-title"><h1>Contacts</h1></div>
+    <p class="dogo-page-subtitle" id="bizName">Customers and their purchase history</p>
+
+    <div class="dogo-toolbar" style="justify-content:space-between;margin-bottom:14px;">
+      <input class="dogo-input" id="q" placeholder="Search name or phone" style="max-width:340px;">
+      <button class="dogo-btn dogo-btn--primary" id="addBtn">+ New contact</button>
+    </div>
+    <section class="dogo-card">
+      <div class="dogo-table-wrap"><table class="dogo-table">
+        <thead><tr><th>Name</th><th>Phone</th><th>Total spent</th><th>Last purchase</th></tr></thead>
+        <tbody id="rows"></tbody></table></div>
+    </section>
+    <div class="dogo-modal" id="modal"><div class="dogo-modal__box">
+      <h2>New contact</h2>
+      <div class="dogo-field"><label>Name</label><input class="dogo-input" id="fName"></div>
+      <div class="dogo-field"><label>Phone</label><input class="dogo-input" id="fPhone" type="tel" placeholder="07XX XXX XXX"></div>
+      <div class="dogo-btn-row" style="justify-content:flex-end;"><button class="dogo-btn dogo-btn--ghost" id="mCancel">Cancel</button><button class="dogo-btn dogo-btn--primary" id="mSave">Save</button></div>
+    </div></div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast, downloadCSV } = window.DogoData;
+
+    const ctx = await boot('customers'); if (!ctx) return;
+    const $ = id => document.getElementById(id); let customers = [], spend = {};
+    async function load() {
+      const [c, s, i] = await Promise.all([sb.from('customers').select('*').order('name'), sb.from('sales').select('id,customer_id,created_at'), sb.from('sale_items').select('sale_id,line_total')]);
+      customers = c.data || [];
+      const tot = {}; (i.data || []).forEach(l => tot[l.sale_id] = (tot[l.sale_id] || 0) + Number(l.line_total || 0));
+      spend = {}; (s.data || []).forEach(x => { if (!x.customer_id) return; const r = spend[x.customer_id] || (spend[x.customer_id] = { total: 0, last: '' });
+        r.total += tot[x.id] || 0; if ((x.created_at || '') > r.last) r.last = x.created_at; });
+      draw();
+    }
+    function draw() {
+      const q = $('q').value.trim().toLowerCase();
+      const list = customers.filter(c => !q || (c.name || '').toLowerCase().includes(q) || (c.phone || '').includes(q));
+      $('rows').innerHTML = list.length ? list.map(c => { const r = spend[c.id] || { total: 0, last: '' };
+        return `<tr><td><strong>${esc(c.name)}</strong></td><td>${esc(c.phone || '—')}</td><td>${kes(r.total)}</td><td>${r.last ? esc(r.last.slice(0, 10)) : '—'}</td></tr>`; }).join('')
+        : '<tr><td colspan="4" class="dogo-card__empty">No contacts yet</td></tr>';
+    }
+    $('q').oninput = draw;
+    $('addBtn').onclick = () => { $('fName').value = ''; $('fPhone').value = ''; $('modal').classList.add('open'); };
+    $('mCancel').onclick = () => $('modal').classList.remove('open');
+    $('mSave').onclick = async () => {
+      const name = $('fName').value.trim(); if (!name) return toast('Enter a name');
+      const { error } = await sb.from('customers').insert({ business_id: ctx.businessId, name, phone: $('fPhone').value.trim() });
+      if (error) return toast('Could not add contact: ' + error.message);
+      $('modal').classList.remove('open'); toast('Contact added'); load();
+    };
+    load();
+  })();
+  </script>
+</body>
+</html>

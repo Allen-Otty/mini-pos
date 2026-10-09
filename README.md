@@ -1,0 +1,120 @@
+# Dogo POS — Documentation
+
+A multi-business point-of-sale web app: cloud sync, role-based Admin/Teller accounts, offline sales, KRA VAT-ready reporting, and M-Pesa payments.
+
+**Live app:** https://dogo-pos-app.netlify.app
+**Backend:** Supabase project `mini-pos-backend` (id: `uzwomzkzqrpiumtnniik`)
+**Source code:** https://github.com/Allen-Otty/mini-pos
+
+> **Status note (2026-08-31):** Added a full dual-theme system (Neon Dusk / Till Paper) and replaced every emoji icon with real Font Awesome icons — both live. The email OTP signup flow (which had a known, unresolved `otp_expired` bug — see git history) has been **removed entirely** per the owner's decision: `create-business` now creates the auth user pre-confirmed server-side via the Admin API, so signup is a single step with no email verification at all. Also fixed: session persistence was on by default (any login silently persisted across app launches on a shared device) — now disabled, every launch requires explicit login; the camera scanner used to auto-start on login and run for the whole session — now gated behind a Start/Stop button and stops when leaving the Sell tab; shifts were matched by status alone with no date scoping, so a forgotten open shift from a previous day would silently stay "current" — now scoped to today's date, with a stale-shift warning + one-tap close if an old one is found; checkout is now blocked entirely unless today's shift is open.
+
+---
+
+## 1. What's confirmed working (frontend + backend both wired, verified by reading the real code)
+
+- **Multi-tenant auth**: Sign Up (single-step, pre-confirmed account — no email OTP) → Create Business, Sign In (with show/hide password toggle, confirm-password, password rules), Admin/Teller roles — via `create-business`, `create-teller`, `secure-login` edge functions
+- **Sell tab**: camera barcode scanning, manual entry, cart, VAT-inclusive pricing
+- **Checkout**: Cash, or M-Pesa via STK Push — wired to the real Supabase project (`mpesa-stk-push`, `mpesa-callback`, `mpesa-settings` edge functions; `payment_requests` table)
+- **Shift management**: `openShift()`/`closeShift()`, opening float, expected vs actual cash, variance tracking, shifts history table
+- **Menu & Tables** (Hotel/Restaurant only): **redesigned to a table-first order flow** — tap a table → category-chip menu → running check → Send to Kitchen (prints a KOT) / Checkout Table (clears the table back to Free). Live — see Section 2 for reconciliation notes
+- **Signup/Login hardening**: duplicate-email detection with a link to Sign In, Confirm Password field, show/hide password toggle (login + signup), password rules checklist (8+ chars, upper/lower/number) — live
+- **Neon Dusk theme** (`#00d4ff` / `#020024`) applied as the new default palette — live
+- **Dual-theme system**: Neon Dusk (default, dark) and Till Paper (warm, high-contrast, squared buttons for bright daylight use) — toggle in the header, Settings, and the pre-login screen; persists per-device via `localStorage`, with an anti-flash-of-wrong-theme script applying the saved theme before first paint
+- **Icons**: every emoji in the app replaced with real Font Awesome icons
+- **Platform Admin**: in-app business switcher (`checkPlatformAdminStatus()`, `renderPlatformSwitcher()`) AND a separate full console at `/admin/index.html` — business suspend/reactivate/delete, promote/demote admins, stats dashboard
+- **eTIMS Settings**: save/status/remove KRA PIN/Branch ID; every sale fires a non-blocking `etims-submit` call
+- **Dashboard, Sales Log, Customers, Reports, Expenses, Catalog, Team, Settings** tabs
+- **Offline selling**: sales queue in `localStorage` (correctly scoped to just the sync queue + cache, not full app state), auto-sync on reconnect
+- **Row Level Security**: every table scoped to `business_id`
+
+### Business types
+Retail Shop / Wholesale / Supermarket / SME / Hotel-Restaurant / Hardware Store — live in the UI dropdown. The database constraint was expanded to also accept Kiosk / Restaurant / Pharmacy / Service as separate values, but the frontend dropdown doesn't offer them — by design, since bars are meant to use the existing Hotel/Restaurant type rather than get a new one.
+
+## 2. In progress — Restaurant Menu & Tables redesign
+
+Table → build an order → send to kitchen → pay:
+
+- Table-first flow: tap a table → category-chip menu → running check per table
+- Kitchen Order Ticket printing (reuses the existing receipt `window.print()` pattern)
+- Table auto-clears to Free after checkout
+- **Status: live.** Two independent implementations of this patch were found during reconciliation (this session's and an earlier Claude Code session's) — the earlier one had already been pushed and was kept as the base since it was slightly more defensive against special characters in `onclick` attributes; this session's exclusive work (theme, password hardening) was layered on top by hand. Backend columns (`tables.current_order`, `sales.table_id`) are live. Known gap carried over from the original patch: `checkout()`/`pushSaleToServer()` still doesn't tag the resulting sale with `table_id`, so table-linked sales won't show that link in reporting yet — small non-blocking follow-up.
+- **Open question raised with the user:** the database's `business_type` CHECK constraint allows `'Hotel'`, `'Restaurant'`, `'Pharmacy'`, and `'Service'` as four separate values, but the signup/settings UI dropdown only ever offers a single combined "Hotel / Restaurant" option (stored as `'Hotel'`). The Menu & Tables gate checks for exactly `business_type === 'Hotel'`, so it's internally consistent with the current dropdown — but `'Restaurant'`, `'Pharmacy'`, `'Service'` exist in the database with no UI path to select them and no defined behavior if they were ever set directly. Not resolved — see questions.
+
+## 3. How VAT works in this app
+
+Prices entered are the final, VAT-inclusive selling price — exactly what the customer pays. VAT is extracted backward for KRA record-keeping, never added on top at checkout:
+
+```
+VAT amount = price − (price ÷ (1 + VAT rate))
+```
+
+Example: KES 116 at 16% VAT → VAT = KES 16.00, excl-VAT = KES 100.00. Customer still pays exactly KES 116.
+
+## 4. Data model (confirmed live via direct schema inspection)
+
+| Table | Purpose |
+|---|---|
+| `businesses` | One row per registered business |
+| `profiles` | One row per user, `role` = admin/teller |
+| `products` | Catalog — VAT-inclusive price |
+| `customers` | Per-business customer list |
+| `sales` / `sale_items` | Sale headers/lines. `sales` has `table_id` (column live; not yet written by checkout — see Section 2) |
+| `expenses` | Business costs — Admin only |
+| `tables` | Hotel/Restaurant table management. `current_order` (JSONB) now drives the live table-first order flow (Section 2), not just Free/Occupied toggling |
+| `shift_sessions` | Till open/close, float, variance — has working frontend |
+| `mpesa_settings` / `mpesa_settings_status` | Per-business M-Pesa credentials (locked table + safe status view) |
+| `etims_settings` / `etims_settings_status` | Per-business KRA credentials — has working frontend |
+| `etims_submissions` | Built KRA fiscalization payloads |
+| `platform_admins` / `platform_active_business` | Platform-owner list + active business-switch state — has working frontend (in-app + `/admin`) |
+| `login_history`, `audit_log` | Security/audit logging |
+| `payment_requests` | M-Pesa STK push tracking |
+
+**Views:** `low_stock_items`, `platform_stats`, `mpesa_settings_status`, `etims_settings_status`
+
+**Edge Functions (all `ACTIVE`):** `create-business`, `create-teller`, `secure-login`, `platform-admin`, `mpesa-settings`, `mpesa-stk-push`, `mpesa-callback`, `etims-settings`, `etims-submit`, `platform-switch-business`
+
+## 5. Known issues
+
+See `TASKS.md` for the full, maintained list. Headline items:
+- **Fixed this session:** `checkout()` now calls the atomic `process_sale` RPC (row-locks stock, no more oversell race); RPC extended to accept `payment_method`/`shift_id`/`mpesa_receipt_no`; `low_stock_items` view's real `SECURITY DEFINER` cross-tenant leak fixed (confirmed via `reloptions`, not just the advisor flag); `search_path` pinned on 5 more functions; `anon` execute revoked from two pure-trigger functions
+- **Still open:** `is_admin()`/`is_platform_admin()`/`business_is_active()` remain callable by the unauthenticated `anon` role — not yet resolved, since revoking could break RLS policies that reference them; needs the user's confirmation on intended pre-auth use before touching
+- **Still open:** duplicate permissive RLS policies on `businesses` (member vs platform-admin, for SELECT and UPDATE) — cosmetic performance note only, deliberately left alone rather than risk breaking access
+- **Still open:** leaked-password protection in Supabase Auth settings — dashboard-only toggle, needs the user to do it directly
+- **Still open:** ~20 unindexed foreign keys — fine at current scale
+- **Resolved:** email OTP signup verification was failing as `otp_expired` within 18–52 seconds of the code being sent — confirmed via Supabase auth logs to be a Supabase-side config propagation issue (dashboard's expiry setting genuinely showed 3600s), not fixable from our code or dashboard. Rather than working around a platform-side issue, the owner opted to remove the OTP step entirely: `create-business` now creates the auth user pre-confirmed via the Admin API (`email_confirm: true`), so signup completes in a single step with no email verification. Also worth double-checking separately: every auth request's logged referer was `http://localhost:3000` — worth confirming Authentication → URL Configuration → Site URL is set to the real production URL.
+
+## 6. Hosting & deployment
+
+- **Netlify (default):** `https://dogo-pos-app.netlify.app` — live, linked to `Allen-Otty/mini-pos` main branch for continuous deployment
+- **GitHub Pages (secondary):** `https://allen-otty.github.io/mini-pos/` — every push to `main` auto-rebuilds within 1–2 minutes
+
+```bash
+git clone https://github.com/Allen-Otty/mini-pos.git
+# make changes
+git add -A
+git commit -m "describe the change"
+git push origin main
+```
+
+## 7. Security notes
+
+- Browser only ever holds a publishable Supabase key — RLS enforces the rest
+- Service-role keys only used inside Edge Functions, never in the browser
+- M-Pesa/eTIMS credentials stored in tables that block all direct reads — only their dedicated edge functions (service-role) can touch them
+- `current_business_id()` must always be `SECURITY DEFINER` — a past migration accidentally dropped this and silently broke login app-wide; confirmed fixed and currently `SECURITY DEFINER = true` as of this revision
+- **Fixed this session — Express payments server (`server.js` / `payments/`), only relevant if that server is deployed somewhere reachable, not just run on localhost:**
+  - `POST /api/payments/simulate/:id` and `POST /api/payments/config/:gateway` were reachable by anyone with no login at all. The simulate endpoint could mark any pending payment as successfully paid using a real, correctly-signed callback; the config endpoint could silently overwrite live M-Pesa/KCB/Paystack/Airtel credentials. Both now require `payments/auth.js#requireBusinessAdmin` — a valid Supabase session whose `profiles.role` is `admin`. `simulate/:id` additionally refuses to run against a gateway configured for production (sandbox/test only, even for a real Admin).
+  - `payments/store.js` no longer ships hardcoded fallback values for `KCB_SHARED_SECRET`, `PAYSTACK_SECRET_KEY`, or `AIRTEL_ENCRYPTION_KEY` — these are the secrets used to verify webhook HMAC signatures, and a fixed value committed to a public repo means anyone could forge a valid-looking payment webhook. Missing env vars now generate a random per-process value instead (logged loudly on boot) rather than silently falling back to a value visible in git history. The M-Pesa passkey fallback is intentionally kept as-is — it's Safaricom's own published public sandbox passkey, not a secret.
+  - Real secrets belong in `config/secrets/.env` (gitignored — see `config/secrets/.env.example` for the full list of variables) or the root `.env`. Neither is ever committed.
+- **Still open / worth a follow-up pass:** payment requests on the Express server aren't tagged with `business_id`, so the new Admin check confirms *an* Admin is calling, not that they're an Admin of the specific business that owns that payment request — low risk while the server is single-tenant/local, but should be closed before/if this server is ever deployed multi-tenant alongside the Supabase backend. Also ~100 of the 125 `innerHTML` call sites in `index.html` haven't been through the `escapeHtml()` hardening pass yet (see Aug 29 session in memory — only ~23 were patched).
+
+
+## 8. Multipage rebuild
+
+Shared design system modelled on the DigiKua-style reference (orange header, rounded nav grid, white cards), responsive from phone to desktop.
+
+- `assets/css/theme.css` — all colours, cards, buttons, tables, forms, modals, breakpoints (change once, every page updates)
+- `assets/js/app-shell.js` — shared header + nav grid; add a page to `NAV_ITEMS` and set `BUILT[id] = true`
+- `assets/js/dogo-data.js` — shared Supabase client (publishable key only), `boot()`, login check, toast, CSV download
+- Pages: `dashboard.html` (Overview), `catalog.html` (Products + Inventory), `customers.html` (Contacts), `sell.html` (cash checkout with shift), `expenses.html`, `reports.html` (daily / monthly / sales log + CSV download), `team.html` (read-only), `settings.html`
+- Still in `index.html` (full app): M-Pesa/KCB/Paystack/Airtel checkout, gateway + eTIMS + subscription settings, restaurant/hotel modules, shift close, staff invites, Purchases

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#00d26a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <title>Overview · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Analytics</span></div>
+    <div class="dogo-page-title"><h1>Business Analytics &amp; Management</h1></div>
+    <p class="dogo-page-subtitle" id="bizName">Loading…</p>
+
+    <section class="dogo-stat-grid dogo-stat-grid--4" aria-label="Key figures">
+      <div class="dogo-stat-card">
+        <div class="dogo-stat-card__label">Today's sales</div>
+        <div class="dogo-stat-card__value" id="kpiToday">KES 0.00</div>
+        <span class="dogo-badge dogo-badge--ok dogo-stat-card__foot">Live updates</span>
+      </div>
+      <div class="dogo-stat-card">
+        <div class="dogo-stat-card__label">This month</div>
+        <div class="dogo-stat-card__value" id="kpiMonth">KES 0.00</div>
+        <span class="dogo-badge dogo-badge--warn dogo-stat-card__foot">Current period</span>
+      </div>
+      <div class="dogo-stat-card">
+        <div class="dogo-stat-card__label">Monthly profit</div>
+        <div class="dogo-stat-card__value is-positive" id="kpiProfit">KES 0.00</div>
+        <span class="dogo-badge dogo-badge--ok dogo-stat-card__foot">Sales − expenses</span>
+      </div>
+      <div class="dogo-stat-card">
+        <div class="dogo-stat-card__label">Stock value</div>
+        <div class="dogo-stat-card__value" id="kpiStock">KES 0.00</div>
+        <div class="dogo-stat-card__foot dogo-muted" style="font-size:12.5px;font-weight:700;gap:6px;">
+          <span id="kpiOut">0</span> out · <span id="kpiLow">0</span> low
+        </div>
+      </div>
+    </section>
+
+    <section class="dogo-card" style="margin-top:16px;">
+      <div class="dogo-card__header"><div class="dogo-card__title">Analytics summary</div></div>
+      <div class="dogo-tile-grid">
+        <a href="customers.html" class="dogo-tile dogo-tile--blue"><div class="dogo-tile__icon" data-i="contacts"></div><div class="dogo-tile__label">Customers</div><div class="dogo-tile__value" id="tCustomers">0</div></a>
+        <a href="catalog.html" class="dogo-tile dogo-tile--purple"><div class="dogo-tile__icon" data-i="products"></div><div class="dogo-tile__label">Products</div><div class="dogo-tile__value" id="tProducts">0</div></a>
+        <a href="sell.html" class="dogo-tile dogo-tile--green"><div class="dogo-tile__icon" data-i="sales"></div><div class="dogo-tile__label">Sales</div><div class="dogo-tile__value" id="tSales">0</div></a>
+        <a href="expenses.html" class="dogo-tile dogo-tile--red"><div class="dogo-tile__icon" data-i="expenses"></div><div class="dogo-tile__label">Expenses</div><div class="dogo-tile__value" id="tExpenses">0</div></a>
+      </div>
+    </section>
+
+    <div class="dogo-split" style="margin-top:16px;">
+      <section class="dogo-card">
+        <div class="dogo-card__header">
+          <div class="dogo-card__title">Recent sales</div>
+          <span class="dogo-badge" id="recentCount">0 active</span>
+        </div>
+        <div id="recentSales"><div class="dogo-card__empty">No recent transactions</div></div>
+        <div style="text-align:center;margin-top:8px;"><a class="dogo-link" href="reports.html">View all transactions</a></div>
+      </section>
+
+      <section class="dogo-card">
+        <div class="dogo-card__header">
+          <div class="dogo-card__title">Stock health</div>
+          <span class="dogo-badge dogo-badge--warn" id="lowBadge">0 items</span>
+        </div>
+        <div id="lowStock"><div class="dogo-card__empty">All products are well stocked</div></div>
+        <div style="text-align:center;margin-top:8px;"><a class="dogo-link" href="catalog.html#inventory">Manage products &amp; inventory</a></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, requireSession, logout } = window.DogoData;
+    DogoShell.render({ active: 'dashboard', businessName: 'Dogo POS', onLogout: logout });
+    document.querySelectorAll('[data-i]').forEach(el => { el.innerHTML = DogoShell.ICONS[el.dataset.i] || ''; el.querySelector('svg') && (el.querySelector('svg').style.cssText = 'width:26px;height:26px'); });
+
+    const ctx = await requireSession();
+    if (!ctx) return;
+    const { profile, business } = ctx;
+    if (business && business.name) {
+      document.getElementById('bizName').textContent = business.name;
+      DogoShell.render({ active: 'dashboard', businessName: business.name, onLogout: logout });
+    }
+    const isAdmin = profile && profile.role === 'admin';
+
+    const [prod, cust, sales, items, exp] = await Promise.all([
+      sb.from('products').select('*'),
+      sb.from('customers').select('id'),
+      sb.from('sales').select('*').order('created_at', { ascending: false }),
+      sb.from('sale_items').select('sale_id,name,qty,line_total'),
+      isAdmin ? sb.from('expenses').select('amount,created_at') : Promise.resolve({ data: [] })
+    ]);
+
+    const products = prod.data || [], saleRows = sales.data || [], lines = items.data || [], expenses = exp.data || [];
+    const today = new Date().toISOString().slice(0, 10), month = today.slice(0, 7);
+
+    const totalBySale = {};
+    lines.forEach(l => { totalBySale[l.sale_id] = (totalBySale[l.sale_id] || 0) + Number(l.line_total || 0); });
+    let todayTotal = 0, monthTotal = 0;
+    saleRows.forEach(s => {
+      const d = (s.created_at || '').slice(0, 10), t = totalBySale[s.id] || 0;
+      if (d === today) todayTotal += t;
+      if (d.slice(0, 7) === month) monthTotal += t;
+    });
+    const monthExp = expenses.filter(e => (e.created_at || '').slice(0, 7) === month).reduce((a, e) => a + Number(e.amount || 0), 0);
+    const profit = monthTotal - monthExp;
+
+    const out = products.filter(p => Number(p.stock) <= 0);
+    const low = products.filter(p => Number(p.stock) > 0 && Number(p.stock) <= Number(p.reorder_level || 0));
+    const stockValue = products.reduce((a, p) => a + Number(p.stock || 0) * Number(p.price || 0), 0);
+
+    const set = (id, v) => { document.getElementById(id).textContent = v; };
+    set('kpiToday', kes(todayTotal)); set('kpiMonth', kes(monthTotal));
+    set('kpiProfit', isAdmin ? kes(profit) : '—');
+    document.getElementById('kpiProfit').classList.toggle('is-negative', profit < 0);
+    set('kpiStock', kes(stockValue)); set('kpiOut', out.length); set('kpiLow', low.length);
+    set('tCustomers', (cust.data || []).length); set('tProducts', products.length);
+    set('tSales', saleRows.length); set('tExpenses', expenses.length);
+
+    const recent = saleRows.slice(0, 6);
+    set('recentCount', recent.length + ' active');
+    if (recent.length) {
+      document.getElementById('recentSales').innerHTML = recent.map(s =>
+        `<div class="dogo-list-row"><span>${esc(s.receipt_no || 'Sale')}<br><small class="dogo-muted">${esc((s.created_at || '').slice(0, 10))} · ${esc(s.payment_method || 'cash')}</small></span><strong>${kes(totalBySale[s.id] || 0)}</strong></div>`).join('');
+    }
+    const attention = out.concat(low).slice(0, 6);
+    set('lowBadge', (out.length + low.length) + ' items');
+    if (attention.length) {
+      document.getElementById('lowStock').innerHTML = attention.map(p =>
+        `<div class="dogo-list-row"><span>${esc(p.name)}</span><span class="dogo-badge ${Number(p.stock) <= 0 ? 'dogo-badge--danger' : 'dogo-badge--warn'}">${Number(p.stock) <= 0 ? 'Out' : p.stock + ' left'}</span></div>`).join('');
+    }
+  })();
+  </script>
+</body>
+</html>

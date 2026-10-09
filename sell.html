@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#00d26a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <title>Sales &amp; POS Register · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .pos-shift-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 18px;
+      border-radius: var(--dogo-radius);
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .pos-shift-bar--open {
+      background: #0d1e14;
+      border: 1px solid var(--dogo-neon);
+      box-shadow: 0 4px 14px rgba(0, 210, 106, 0.15);
+      color: #fff;
+    }
+    .pos-shift-bar--closed {
+      background: #ffffff;
+      border: 1.5px dashed var(--dogo-gold);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .shift-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: var(--dogo-radius-pill);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .shift-status-pill--active {
+      background: rgba(0, 210, 106, 0.2);
+      color: var(--dogo-neon-bright);
+      border: 1px solid var(--dogo-neon);
+    }
+    .shift-status-pill--closed {
+      background: var(--dogo-gold-light);
+      color: var(--dogo-gold-dark);
+      border: 1px solid var(--dogo-gold);
+    }
+    .pos-float-preset {
+      border: 1px solid var(--dogo-border);
+      background: #fff;
+      padding: 4px 10px;
+      border-radius: var(--dogo-radius-pill);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--dogo-text);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .pos-float-preset:hover {
+      border-color: var(--dogo-gold);
+      background: var(--dogo-gold-light);
+      color: var(--dogo-gold-dark);
+    }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(13, 25, 18, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.is-active {
+      display: flex;
+    }
+    .modal-dialog {
+      background: #fff;
+      border-radius: var(--dogo-radius-lg);
+      border: 1.5px solid var(--dogo-gold);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    .recon-summary-card {
+      background: var(--dogo-panel);
+      border-radius: var(--dogo-radius);
+      padding: 14px 16px;
+      margin: 14px 0;
+      border: 1px solid var(--dogo-border);
+    }
+    .recon-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      font-size: 13.5px;
+    }
+    .recon-row.is-total {
+      border-top: 1.5px solid var(--dogo-border);
+      margin-top: 6px;
+      padding-top: 10px;
+      font-weight: 800;
+      font-size: 15px;
+    }
+    .variance-badge {
+      padding: 6px 14px;
+      border-radius: var(--dogo-radius-pill);
+      font-size: 13px;
+      font-weight: 800;
+      display: inline-block;
+      text-align: center;
+    }
+    .variance-badge--ok { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .variance-badge--over { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .variance-badge--short { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+  </style>
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+
+  <main class="dogo-page">
+    <div class="dogo-flex-between" style="flex-wrap:wrap;margin-bottom:12px;">
+      <div>
+        <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Sales &amp; POS</span></div>
+        <div class="dogo-page-title"><h1>Point of Sale</h1></div>
+        <p class="dogo-page-subtitle" id="bizName">Ring up sales, scan items &amp; manage cashier shifts</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="dogo-btn dogo-btn--sm dogo-btn--outline" id="btnShiftHistory">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Shift History
+        </button>
+      </div>
+    </div>
+
+    <!-- Active / Inactive Shift Bar -->
+    <div id="shiftStatusBar"></div>
+
+    <div class="dogo-pos">
+      <!-- Product Catalog / Register Grid -->
+      <section class="dogo-card">
+        <div class="dogo-toolbar" style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <div style="flex:1;position:relative;">
+            <input class="dogo-input" id="q" placeholder="Search product name, SKU or barcode..." style="padding-left:36px;">
+            <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--dogo-text-muted);" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <div class="dogo-hide-mobile" id="prodCountBadge" style="font-size:12.5px;font-weight:700;color:var(--dogo-text-muted);">0 products</div>
+        </div>
+        <div class="dogo-prod-grid" id="grid"></div>
+      </section>
+
+      <!-- Cart & Checkout Sidebar -->
+      <aside class="dogo-card dogo-pos__cart">
+        <div class="dogo-card__header">
+          <div class="dogo-card__title" style="display:flex;align-items:center;gap:8px;">
+            <span>Current Sale</span>
+          </div>
+          <span class="dogo-badge" id="cnt" style="background:var(--dogo-gold-light);color:var(--dogo-gold-dark);font-weight:800;">0 items</span>
+        </div>
+
+        <div id="cart">
+          <div class="dogo-card__empty">Cart is empty. Tap a product on the left to add it.</div>
+        </div>
+
+        <div class="dogo-field" style="margin-top:12px;">
+          <label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--dogo-text-muted);">Customer</label>
+          <select class="dogo-select" id="cust">
+            <option value="">Walk-in customer (General)</option>
+          </select>
+        </div>
+
+        <div class="dogo-field">
+          <label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--dogo-text-muted);">Payment Method</label>
+          <select class="dogo-select" id="payMethod">
+            <option value="cash">Cash (Direct Register)</option>
+            <option value="mpesa">M-Pesa Mobile Money</option>
+            <option value="card">Card / Bank Terminal</option>
+            <option value="credit">Customer Credit / Tab</option>
+          </select>
+        </div>
+
+        <div class="dogo-total-row" style="margin-top:14px;border-top:2px solid var(--dogo-gold);padding-top:14px;">
+          <span style="font-weight:800;font-size:16px;">Total Amount</span>
+          <span id="total" style="font-weight:900;font-size:20px;color:var(--dogo-neon-dark);">KES 0.00</span>
+        </div>
+
+        <button class="dogo-btn dogo-btn--primary dogo-btn--block" id="payBtn" disabled style="padding:14px;font-size:15px;margin-top:8px;">
+          Complete Sale
+        </button>
+
+        <div id="shiftLockNotice" style="display:none;background:var(--dogo-gold-light);border:1px solid var(--dogo-gold);border-radius:10px;padding:10px;margin-top:10px;font-size:12px;color:var(--dogo-gold-dark);text-align:center;">
+          <strong>Register Locked:</strong> Open a cashier shift above before completing transactions.
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Open Shift Modal -->
+  <div class="modal-overlay" id="openShiftModal">
+    <div class="modal-dialog">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--dogo-neon-light);color:var(--dogo-neon-dark);display:flex;align-items:center;justify-content:center;border:1px solid var(--dogo-neon);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div>
+          <h2 style="margin:0;font-size:18px;font-weight:800;">Open Cashier Shift</h2>
+          <div style="font-size:13px;color:var(--dogo-text-muted);">Initialize drawer float &amp; start register</div>
+        </div>
+      </div>
+
+      <p style="font-size:13.5px;color:var(--dogo-text);margin:0 0 16px;">
+        Count the starting cash in your register drawer and record the opening float below.
+      </p>
+
+      <div class="dogo-field">
+        <label>Opening Cash Float (KES)</label>
+        <input class="dogo-input" type="number" id="modalFloatInput" step="0.01" min="0" value="0.00" style="font-size:18px;font-weight:800;padding:12px 14px;">
+      </div>
+
+      <div style="margin-bottom:18px;">
+        <div style="font-size:12px;font-weight:700;color:var(--dogo-text-muted);margin-bottom:6px;">Quick Presets:</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" class="pos-float-preset" onclick="document.getElementById('modalFloatInput').value='0.00'">KES 0</button>
+          <button type="button" class="pos-float-preset" onclick="document.getElementById('modalFloatInput').value='500.00'">KES 500</button>
+          <button type="button" class="pos-float-preset" onclick="document.getElementById('modalFloatInput').value='1000.00'">KES 1,000</button>
+          <button type="button" class="pos-float-preset" onclick="document.getElementById('modalFloatInput').value='2000.00'">KES 2,000</button>
+          <button type="button" class="pos-float-preset" onclick="document.getElementById('modalFloatInput').value='5000.00'">KES 5,000</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="dogo-btn dogo-btn--outline" onclick="closeOpenShiftModal()">Cancel</button>
+        <button class="dogo-btn dogo-btn--primary" id="btnConfirmOpenShift">Confirm &amp; Open Shift</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Close Shift Modal -->
+  <div class="modal-overlay" id="closeShiftModal">
+    <div class="modal-dialog">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;border:1px solid #f87171;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><rect x="9" y="9" width="6" height="6"/></svg>
+        </div>
+        <div>
+          <h2 style="margin:0;font-size:18px;font-weight:800;">Close Shift &amp; Reconcile Till</h2>
+          <div style="font-size:13px;color:var(--dogo-text-muted);" id="closeShiftSubtitle">Cash balancing &amp; Z-Report</div>
+        </div>
+      </div>
+
+      <div class="recon-summary-card">
+        <div class="recon-row">
+          <span class="dogo-muted">Cashier:</span>
+          <strong id="reconCashier">—</strong>
+        </div>
+        <div class="recon-row">
+          <span class="dogo-muted">Shift Started:</span>
+          <strong id="reconStarted">—</strong>
+        </div>
+        <div class="recon-row">
+          <span class="dogo-muted">Opening Float:</span>
+          <strong id="reconFloat">KES 0.00</strong>
+        </div>
+        <div class="recon-row">
+          <span class="dogo-muted">Cash Sales in Shift (<span id="reconSalesCount">0</span> transactions):</span>
+          <strong id="reconCashSales" style="color:var(--dogo-neon-dark);">+ KES 0.00</strong>
+        </div>
+        <div class="recon-row is-total">
+          <span>Expected Cash in Drawer:</span>
+          <span id="reconExpected" style="color:#0f2016;font-size:16px;">KES 0.00</span>
+        </div>
+      </div>
+
+      <div class="dogo-field">
+        <label>Actual Cash Counted in Drawer (KES)</label>
+        <input class="dogo-input" type="number" id="reconActualInput" step="0.01" min="0" placeholder="Enter physical counted cash..." style="font-size:18px;font-weight:800;padding:12px 14px;">
+      </div>
+
+      <div style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:12px;background:var(--dogo-panel);">
+        <span style="font-size:13px;font-weight:700;">Reconciliation Status:</span>
+        <div id="reconVarianceBadge" class="variance-badge variance-badge--ok">Enter amount</div>
+      </div>
+
+      <div class="dogo-field">
+        <label>Closing Notes / Explanation (Optional)</label>
+        <input class="dogo-input" id="reconNotes" placeholder="Any variance reason, drawer handover notes...">
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
+        <button class="dogo-btn dogo-btn--outline" onclick="closeCloseShiftModal()">Cancel</button>
+        <button class="dogo-btn dogo-btn--primary" id="btnConfirmCloseShift" style="background:#dc2626;color:#fff;border-color:#b91c1c;">
+          Confirm &amp; Close Shift
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Past Shifts History Modal -->
+  <div class="modal-overlay" id="historyModal">
+    <div class="modal-dialog" style="max-width:720px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div>
+          <h2 style="margin:0;font-size:18px;font-weight:800;">Cashier Shift History</h2>
+          <div style="font-size:13px;color:var(--dogo-text-muted);">Past register sessions and cash variances</div>
+        </div>
+        <button class="dogo-btn dogo-btn--sm dogo-btn--outline" onclick="document.getElementById('historyModal').classList.remove('is-active')">✕ Close</button>
+      </div>
+
+      <div class="dogo-table-wrap">
+        <table class="dogo-table">
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Opened</th>
+              <th>Closed</th>
+              <th style="text-align:right;">Float</th>
+              <th style="text-align:right;">Expected</th>
+              <th style="text-align:right;">Actual</th>
+              <th style="text-align:right;">Variance</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--dogo-text-muted);padding:24px;">Loading shifts...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast } = window.DogoData;
+
+    const ctx = await boot('sell');
+    if (!ctx) return;
+
+    const $ = id => document.getElementById(id);
+    let products = [], cart = [], currentShift = null, shiftSales = [];
+
+    // Load initial data
+    const [pRes, cRes, shRes] = await Promise.all([
+      sb.from('products').select('*').order('name'),
+      sb.from('customers').select('id,name').order('name'),
+      sb.from('shift_sessions').select('*').eq('business_id', ctx.businessId).order('created_at', { ascending: false }).limit(20)
+    ]);
+
+    products = pRes.data || [];
+    $('cust').innerHTML += (cRes.data || []).map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('');
+
+    // Determine active open shift
+    const allShifts = shRes.data || [];
+    currentShift = allShifts.find(s => s.status === 'OPEN' && s.user_id === ctx.profile.id) || null;
+
+    async function loadShiftSales() {
+      if (!currentShift) {
+        shiftSales = [];
+        return;
+      }
+      try {
+        const { data } = await sb.from('sales')
+          .select('id,total,payment_method,created_at')
+          .eq('shift_id', currentShift.id);
+        shiftSales = data || [];
+      } catch (e) {
+        shiftSales = [];
+      }
+    }
+
+    await loadShiftSales();
+
+    function renderShiftBar() {
+      const bar = $('shiftStatusBar');
+      if (currentShift) {
+        const floatVal = Number(currentShift.opening_float || 0);
+        const cashSalesTotal = shiftSales
+          .filter(s => (s.payment_method || 'cash') === 'cash')
+          .reduce((sum, s) => sum + Number(s.total || 0), 0);
+        const expectedCash = floatVal + cashSalesTotal;
+        const openedTime = new Date(currentShift.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        bar.className = 'pos-shift-bar pos-shift-bar--open';
+        bar.innerHTML = `
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span class="shift-status-pill shift-status-pill--active">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--dogo-neon-bright);display:inline-block;box-shadow:0 0 6px var(--dogo-neon-bright);"></span>
+              Shift Active
+            </span>
+            <span style="font-size:13px;color:rgba(255,255,255,0.8);">
+              Opened by <strong>${esc(ctx.profile.full_name || 'Cashier')}</strong> at ${openedTime}
+            </span>
+            <span style="font-size:13px;color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.08);padding:3px 10px;border-radius:var(--dogo-radius-pill);">
+              Float: <strong style="color:var(--dogo-gold-bright);">${kes(floatVal)}</strong>
+            </span>
+            <span style="font-size:13px;color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.08);padding:3px 10px;border-radius:var(--dogo-radius-pill);">
+              Shift Cash Sales: <strong style="color:var(--dogo-neon-bright);">${kes(cashSalesTotal)}</strong> (${shiftSales.length})
+            </span>
+            <span style="font-size:13px;color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.08);padding:3px 10px;border-radius:var(--dogo-radius-pill);">
+              Est. Drawer: <strong style="color:#fff;">${kes(expectedCash)}</strong>
+            </span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="dogo-btn dogo-btn--sm dogo-btn--gold" id="btnTriggerCloseShift">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><rect x="9" y="9" width="6" height="6"/></svg>
+              Close Shift
+            </button>
+          </div>
+        `;
+        $('shiftLockNotice').style.display = 'none';
+        $('payBtn').disabled = !cart.length;
+
+        $('btnTriggerCloseShift').onclick = openCloseShiftModal;
+      } else {
+        bar.className = 'pos-shift-bar pos-shift-bar--closed';
+        bar.innerHTML = `
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span class="shift-status-pill shift-status-pill--closed">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              No Open Shift
+            </span>
+            <span style="font-size:13.5px;color:var(--dogo-text);">
+              The register drawer is closed. Enter opening float to open a shift and start ringing up sales.
+            </span>
+          </div>
+          <div>
+            <button class="dogo-btn dogo-btn--sm dogo-btn--primary" id="btnTriggerOpenShift">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              Open Shift Now
+            </button>
+          </div>
+        `;
+        $('shiftLockNotice').style.display = 'block';
+        $('payBtn').disabled = true;
+
+        $('btnTriggerOpenShift').onclick = () => {
+          $('openShiftModal').classList.add('is-active');
+          $('modalFloatInput').focus();
+        };
+      }
+    }
+
+    window.closeOpenShiftModal = () => {
+      $('openShiftModal').classList.remove('is-active');
+    };
+
+    $('btnConfirmOpenShift').onclick = async () => {
+      const floatVal = parseFloat($('modalFloatInput').value) || 0;
+      $('btnConfirmOpenShift').disabled = true;
+      try {
+        const { data, error } = await sb.from('shift_sessions').insert({
+          id: crypto.randomUUID(),
+          business_id: ctx.businessId,
+          user_id: ctx.profile.id,
+          opening_float: floatVal,
+          status: 'OPEN',
+          created_at: new Date().toISOString()
+        }).select().single();
+
+        if (error) {
+          toast('Could not open shift: ' + error.message);
+          $('btnConfirmOpenShift').disabled = false;
+          return;
+        }
+
+        currentShift = data;
+        shiftSales = [];
+        closeOpenShiftModal();
+        renderShiftBar();
+        drawCart();
+        toast('Shift opened successfully with float ' + kes(floatVal));
+      } catch (err) {
+        toast('Error opening shift: ' + err.message);
+      } finally {
+        $('btnConfirmOpenShift').disabled = false;
+      }
+    };
+
+    function openCloseShiftModal() {
+      if (!currentShift) return;
+      const floatVal = Number(currentShift.opening_float || 0);
+      const cashSalesTotal = shiftSales
+        .filter(s => (s.payment_method || 'cash') === 'cash')
+        .reduce((sum, s) => sum + Number(s.total || 0), 0);
+      const expectedCash = floatVal + cashSalesTotal;
+
+      $('reconCashier').textContent = ctx.profile.full_name || 'Cashier';
+      $('reconStarted').textContent = new Date(currentShift.created_at).toLocaleString();
+      $('reconFloat').textContent = kes(floatVal);
+      $('reconSalesCount').textContent = shiftSales.length;
+      $('reconCashSales').textContent = '+ ' + kes(cashSalesTotal);
+      $('reconExpected').textContent = kes(expectedCash);
+      $('reconActualInput').value = expectedCash.toFixed(2);
+      $('reconNotes').value = '';
+
+      updateVarianceDisplay(expectedCash, expectedCash);
+
+      $('reconActualInput').oninput = () => {
+        const actual = parseFloat($('reconActualInput').value) || 0;
+        updateVarianceDisplay(actual, expectedCash);
+      };
+
+      $('closeShiftModal').classList.add('is-active');
+      $('reconActualInput').focus();
+    }
+
+    window.closeCloseShiftModal = () => {
+      $('closeShiftModal').classList.remove('is-active');
+    };
+
+    function updateVarianceDisplay(actual, expected) {
+      const variance = +(actual - expected).toFixed(2);
+      const badge = $('reconVarianceBadge');
+      if (variance === 0) {
+        badge.className = 'variance-badge variance-badge--ok';
+        badge.textContent = 'Balanced ✓ (KES 0.00)';
+      } else if (variance > 0) {
+        badge.className = 'variance-badge variance-badge--over';
+        badge.textContent = `Over by +${kes(variance)}`;
+      } else {
+        badge.className = 'variance-badge variance-badge--short';
+        badge.textContent = `Short by ${kes(variance)}`;
+      }
+    }
+
+    $('btnConfirmCloseShift').onclick = async () => {
+      if (!currentShift) return;
+      const floatVal = Number(currentShift.opening_float || 0);
+      const cashSalesTotal = shiftSales
+        .filter(s => (s.payment_method || 'cash') === 'cash')
+        .reduce((sum, s) => sum + Number(s.total || 0), 0);
+      const expected = +(floatVal + cashSalesTotal).toFixed(2);
+      const actual = parseFloat($('reconActualInput').value) || 0;
+      const variance = +(actual - expected).toFixed(2);
+      const notes = $('reconNotes').value.trim();
+
+      $('btnConfirmCloseShift').disabled = true;
+
+      try {
+        const { error } = await sb.from('shift_sessions').update({
+          status: 'CLOSED',
+          closed_at: new Date().toISOString(),
+          expected_cash: expected,
+          actual_cash: actual,
+          cash_variance: variance
+        }).eq('id', currentShift.id);
+
+        if (error) {
+          toast('Could not close shift: ' + error.message);
+          $('btnConfirmCloseShift').disabled = false;
+          return;
+        }
+
+        toast(variance === 0 ? 'Shift closed — register balanced!' : `Shift closed — variance ${kes(variance)}`);
+        currentShift = null;
+        shiftSales = [];
+        closeCloseShiftModal();
+        renderShiftBar();
+        drawCart();
+      } catch (err) {
+        toast('Error closing shift: ' + err.message);
+      } finally {
+        $('btnConfirmCloseShift').disabled = false;
+      }
+    };
+
+    // Past Shift History Modal
+    $('btnShiftHistory').onclick = async () => {
+      $('historyModal').classList.add('is-active');
+      $('historyTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">Fetching past shift sessions...</td></tr>';
+      try {
+        const { data } = await sb.from('shift_sessions')
+          .select('*')
+          .eq('business_id', ctx.businessId)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (!data || !data.length) {
+          $('historyTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--dogo-text-muted);">No recorded shifts found yet.</td></tr>';
+          return;
+        }
+
+        $('historyTableBody').innerHTML = data.map(s => {
+          const isClosed = s.status === 'CLOSED';
+          const badge = isClosed ? '<span class="dogo-badge" style="background:#e5e7eb;color:#374151;">CLOSED</span>' : '<span class="dogo-badge dogo-badge--ok">OPEN</span>';
+          const variance = Number(s.cash_variance || 0);
+          const varColor = variance === 0 ? 'var(--dogo-neon-dark)' : (variance > 0 ? 'var(--dogo-gold-dark)' : '#dc2626');
+          return `
+            <tr>
+              <td>${badge}</td>
+              <td>${new Date(s.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</td>
+              <td>${s.closed_at ? new Date(s.closed_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '—'}</td>
+              <td style="text-align:right;">${kes(s.opening_float || 0)}</td>
+              <td style="text-align:right;">${isClosed ? kes(s.expected_cash || 0) : '—'}</td>
+              <td style="text-align:right;font-weight:700;">${isClosed ? kes(s.actual_cash || 0) : '—'}</td>
+              <td style="text-align:right;font-weight:800;color:${varColor};">${isClosed ? (variance > 0 ? '+' : '') + kes(variance) : '—'}</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        $('historyTableBody').innerHTML = `<tr><td colspan="7" style="text-align:center;color:#dc2626;">Error: ${esc(err.message)}</td></tr>`;
+      }
+    };
+
+    function drawGrid() {
+      const q = $('q').value.trim().toLowerCase();
+      const list = products.filter(x => !q || (x.name || '').toLowerCase().includes(q) || (x.code || '').toLowerCase().includes(q));
+      $('prodCountBadge').textContent = list.length + (list.length === 1 ? ' product' : ' products');
+
+      $('grid').innerHTML = list.length ? list.map(x => `
+        <button class="dogo-prod" data-id="${esc(x.id)}" ${Number(x.stock) <= 0 ? 'disabled' : ''}>
+          <span class="dogo-prod__name">${esc(x.name)}</span>
+          <span class="dogo-prod__price">${kes(x.price)}</span>
+          <span class="dogo-muted" style="font-size:12px;">${Number(x.stock) <= 0 ? 'Out of stock' : x.stock + ' in stock'}</span>
+        </button>
+      `).join('') : '<div class="dogo-card__empty" style="grid-column:1/-1;">No products found matching query.</div>';
+    }
+
+    function drawCart() {
+      const items = cart.reduce((a, l) => a + l.qty, 0);
+      const total = cart.reduce((a, l) => a + l.qty * Number(l.p.price), 0);
+      $('cnt').textContent = items + (items === 1 ? ' item' : ' items');
+      $('total').textContent = kes(total);
+
+      $('cart').innerHTML = cart.length ? cart.map((l, i) => `
+        <div class="dogo-cart-line">
+          <div>
+            <strong>${esc(l.p.name)}</strong>
+            <div class="dogo-muted" style="font-size:12.5px;">${kes(l.p.price)} each</div>
+          </div>
+          <div style="text-align:right;"><strong>${kes(l.qty * Number(l.p.price))}</strong></div>
+          <div class="dogo-qty">
+            <button data-dec="${i}">−</button>
+            <span>${l.qty}</span>
+            <button data-inc="${i}">+</button>
+          </div>
+          <div style="text-align:right;">
+            <button class="dogo-link" data-rm="${i}" style="color:#dc2626;">Remove</button>
+          </div>
+        </div>
+      `).join('') : '<div class="dogo-card__empty">Cart is empty. Tap a product to add it.</div>';
+
+      $('payBtn').disabled = !cart.length || !currentShift;
+    }
+
+    $('grid').onclick = e => {
+      const b = e.target.closest('[data-id]');
+      if (!b) return;
+      const pr = products.find(x => String(x.id) === b.dataset.id);
+      if (!pr) return;
+      const l = cart.find(x => x.p.id === pr.id);
+      if (l) {
+        if (l.qty < Number(pr.stock)) l.qty++;
+        else toast('No more stock available for ' + pr.name);
+      } else {
+        cart.push({ p: pr, qty: 1 });
+      }
+      drawCart();
+    };
+
+    $('cart').onclick = e => {
+      const d = e.target.dataset || {};
+      if (d.inc !== undefined) {
+        const l = cart[+d.inc];
+        if (l.qty < Number(l.p.stock)) l.qty++;
+        else toast('No more stock available');
+      }
+      if (d.dec !== undefined) {
+        const l = cart[+d.dec];
+        l.qty--;
+        if (l.qty <= 0) cart.splice(+d.dec, 1);
+      }
+      if (d.rm !== undefined) cart.splice(+d.rm, 1);
+      drawCart();
+    };
+
+    $('q').oninput = drawGrid;
+
+    $('payBtn').onclick = async () => {
+      if (!currentShift) {
+        toast('Open a shift first before making a sale.');
+        return;
+      }
+      if (!cart.length) return;
+
+      $('payBtn').disabled = true;
+      let sub = 0, vat = 0, grand = 0;
+      const items = cart.map(l => {
+        const t = +(l.qty * Number(l.p.price)).toFixed(2);
+        const v = Number(l.p.vat_rate || 0);
+        const lv = t - t / (1 + v);
+        sub += t - lv;
+        vat += lv;
+        grand += t;
+        return {
+          product_id: l.p.id,
+          code: l.p.code,
+          name: l.p.name,
+          qty: l.qty,
+          price: Number(l.p.price),
+          vat_rate: v,
+          unit: l.p.unit || 'piece',
+          line_total: t
+        };
+      });
+
+      const { count } = await sb.from('sales').select('id', { count: 'exact', head: true });
+      const receiptNo = 'RC-' + String((count || 0) + 1).padStart(4, '0');
+      const method = $('payMethod').value;
+
+      const { data, error } = await sb.rpc('process_sale', {
+        p_business_id: ctx.businessId,
+        p_cashier_id: ctx.profile.id,
+        p_receipt_no: receiptNo,
+        p_customer_id: $('cust').value || null,
+        p_subtotal_excl_vat: +sub.toFixed(2),
+        p_vat_total: +vat.toFixed(2),
+        p_total: +grand.toFixed(2),
+        p_offline_uuid: crypto.randomUUID(),
+        p_items: items,
+        p_payment_method: method,
+        p_shift_id: currentShift.id,
+        p_mpesa_receipt_no: null
+      });
+
+      if (error) {
+        toast(error.message.includes('Insufficient stock') ? error.message : 'Could not complete sale: ' + error.message);
+        $('payBtn').disabled = false;
+        return;
+      }
+
+      toast(`Sale complete (${receiptNo}): ${kes(grand)}`);
+      cart = [];
+
+      // Reload products and shift sales
+      const [rProd] = await Promise.all([
+        sb.from('products').select('*').order('name'),
+        loadShiftSales()
+      ]);
+      products = rProd.data || [];
+      drawGrid();
+      drawCart();
+      renderShiftBar();
+    };
+
+    renderShiftBar();
+    drawGrid();
+    drawCart();
+  })();
+  </script>
+</body>
+</html>

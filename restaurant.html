@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#00d26a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <title>Restaurant POS, Tables &amp; KOT · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .rest-tabs-strip {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    .rest-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: var(--dogo-radius-pill);
+      border: 1.5px solid var(--dogo-border);
+      background: #fff;
+      color: var(--dogo-text);
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .rest-tab-btn:hover {
+      border-color: var(--dogo-gold);
+      background: var(--dogo-panel);
+    }
+    .rest-tab-btn.is-active {
+      background: #091710;
+      color: var(--dogo-neon-bright);
+      border-color: var(--dogo-gold);
+      box-shadow: 0 4px 12px rgba(0, 210, 106, 0.2);
+    }
+    .rest-pane {
+      display: none;
+    }
+    .rest-pane.is-active {
+      display: block;
+    }
+    .tables-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+    }
+    .table-card {
+      background: #fff;
+      border: 2px solid var(--dogo-border);
+      border-radius: var(--dogo-radius);
+      padding: 18px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 140px;
+    }
+    .table-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      border-color: var(--dogo-gold);
+    }
+    .table-card.is-free {
+      border-color: var(--dogo-neon);
+      background: #f7fdf9;
+    }
+    .table-card.is-occupied {
+      border-color: var(--dogo-gold);
+      background: var(--dogo-gold-light);
+    }
+    .table-card.is-billed {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+    .table-status-tag {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: var(--dogo-radius-pill);
+      display: inline-block;
+    }
+    .tag-free { background: var(--dogo-neon-light); color: var(--dogo-neon-dark); }
+    .tag-occupied { background: #fef3c7; color: #b45309; }
+    .tag-billed { background: #dbeafe; color: #1e40af; }
+    .kot-card {
+      background: #fff;
+      border-left: 5px solid var(--dogo-gold);
+      border-radius: var(--dogo-radius);
+      padding: 16px;
+      box-shadow: var(--dogo-shadow-card);
+      margin-bottom: 14px;
+    }
+    .cat-filter-pill {
+      border: 1px solid var(--dogo-border);
+      background: #fff;
+      padding: 6px 14px;
+      border-radius: var(--dogo-radius-pill);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--dogo-text);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .cat-filter-pill:hover, .cat-filter-pill.is-active {
+      background: #091710;
+      color: var(--dogo-neon-bright);
+      border-color: var(--dogo-gold);
+    }
+  </style>
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+
+  <main class="dogo-page">
+    <div class="dogo-flex-between" style="flex-wrap:wrap;margin-bottom:12px;">
+      <div>
+        <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Restaurant POS &amp; Hospitality</span></div>
+        <div class="dogo-page-title"><h1>Restaurant &amp; Bar POS</h1></div>
+        <p class="dogo-page-subtitle" id="bizName">Table ordering, Kitchen Order Tickets (KOT) &amp; Floor Plan</p>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <a href="settings.html" class="dogo-btn dogo-btn--sm dogo-btn--outline">
+          ⚙️ Change Industry in Settings
+        </a>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="rest-tabs-strip">
+      <button class="rest-tab-btn is-active" data-pane="pane-orders">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        Order Entry &amp; Billing
+      </button>
+      <button class="rest-tab-btn" data-pane="pane-tables">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+        Tables &amp; Floor Plan
+      </button>
+      <button class="rest-tab-btn" data-pane="pane-kds">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" y1="17" x2="18" y2="17"/></svg>
+        Kitchen Display System (KDS)
+      </button>
+    </div>
+
+    <!-- PANE 1: Restaurant Order Entry -->
+    <div class="rest-pane is-active" id="pane-orders">
+      <div class="dogo-pos">
+        <!-- Menu Items Column -->
+        <section class="dogo-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:12.5px;font-weight:800;color:var(--dogo-text-muted);text-transform:uppercase;">Dining Table:</span>
+              <select class="dogo-select" id="restTableSelect" style="width:auto;font-weight:800;border-color:var(--dogo-gold);">
+                <option value="T1">Table 1 (Window)</option>
+                <option value="T2">Table 2 (Booth)</option>
+                <option value="T3">Table 3 (Dining)</option>
+                <option value="T4">Table 4 (Bar High Top)</option>
+                <option value="T5">Table 5 (Patio)</option>
+                <option value="T6">Table 6 (VIP Room)</option>
+                <option value="TAKEAWAY">Takeaway Counter</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button class="dogo-btn dogo-btn--sm dogo-btn--outline" id="btnOrderTypeDine" style="background:var(--dogo-neon-light);color:var(--dogo-neon-dark);font-weight:800;">Dine-In</button>
+              <button class="dogo-btn dogo-btn--sm dogo-btn--ghost" id="btnOrderTypeTake">Takeaway</button>
+            </div>
+          </div>
+
+          <!-- Category filter pills -->
+          <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:12px;">
+            <button class="cat-filter-pill is-active" data-cat="ALL">ALL MENU</button>
+            <button class="cat-filter-pill" data-cat="BREAKFAST">BREAKFAST</button>
+            <button class="cat-filter-pill" data-cat="LUNCH">LUNCH</button>
+            <button class="cat-filter-pill" data-cat="DINNER">DINNER</button>
+            <button class="cat-filter-pill" data-cat="DRINKS">DRINKS &amp; BAR</button>
+            <button class="cat-filter-pill" data-cat="SNACKS">SNACKS</button>
+          </div>
+
+          <div class="dogo-toolbar" style="margin-bottom:14px;">
+            <input class="dogo-input" id="restSearch" placeholder="Search dish, beverage or meal...">
+          </div>
+
+          <div class="dogo-prod-grid" id="restMenuGrid"></div>
+        </section>
+
+        <!-- Current Table Ticket Sidebar -->
+        <aside class="dogo-card dogo-pos__cart">
+          <div class="dogo-card__header">
+            <div class="dogo-card__title" style="display:flex;align-items:center;gap:6px;">
+              <span id="activeTicketTableBadge" class="table-status-tag tag-occupied">Table 1</span>
+              <span>Order Ticket</span>
+            </div>
+            <span class="dogo-badge" id="restItemCount">0 items</span>
+          </div>
+
+          <div id="restCartList">
+            <div class="dogo-card__empty">No items ordered for this table yet. Tap a dish to add.</div>
+          </div>
+
+          <div class="dogo-field" style="margin-top:12px;">
+            <label style="font-size:12px;color:var(--dogo-text-muted);">Kitchen Preparation Notes</label>
+            <input class="dogo-input" id="restKitchenNotes" placeholder="e.g. Medium rare, no onions, extra pepper">
+          </div>
+
+          <div class="dogo-total-row" style="margin-top:14px;border-top:2px solid var(--dogo-gold);padding-top:12px;">
+            <span style="font-weight:800;font-size:15px;">Order Total</span>
+            <span id="restTotal" style="font-weight:900;font-size:20px;color:var(--dogo-neon-dark);">KES 0.00</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+            <button class="dogo-btn dogo-btn--gold dogo-btn--block" id="btnSendToKitchen">
+              👨‍🍳 Send to Kitchen (KOT)
+            </button>
+            <button class="dogo-btn dogo-btn--primary dogo-btn--block" id="btnSettleBill">
+              💳 Settle Bill &amp; Print Receipt
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- PANE 2: Floor Plan & Tables -->
+    <div class="rest-pane" id="pane-tables">
+      <section class="dogo-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div class="dogo-card__title">Restaurant Floor Plan</div>
+            <div class="dogo-muted" style="font-size:13px;">Live dining room status, guest counts &amp; open tabs</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;font-size:12px;font-weight:700;">
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--dogo-neon);"></span> Free</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--dogo-gold);"></span> Occupied</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;"></span> Billed</span>
+          </div>
+        </div>
+
+        <div class="tables-grid" id="tablesGrid">
+          <!-- Dynamically populated tables T1 - T12 -->
+        </div>
+      </section>
+    </div>
+
+    <!-- PANE 3: Kitchen Display System (KDS) -->
+    <div class="rest-pane" id="pane-kds">
+      <section class="dogo-card">
+        <div class="dogo-card__title" style="margin-bottom:14px;">Live Kitchen Order Tickets (KDS)</div>
+        <p class="dogo-muted" style="font-size:13.5px;margin-top:0;">
+          Real-time order queue for chef and cook staff. Move tickets as dishes are prepped and served.
+        </p>
+
+        <div id="kotList">
+          <!-- Populated tickets -->
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast } = window.DogoData;
+
+    const ctx = await boot('catalog');
+    if (!ctx) return;
+
+    const $ = id => document.getElementById(id);
+
+    // Tab switcher
+    document.querySelectorAll('.rest-tab-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.rest-tab-btn').forEach(b => b.classList.remove('is-active'));
+        document.querySelectorAll('.rest-pane').forEach(p => p.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        $(btn.dataset.pane).classList.add('is-active');
+      };
+    });
+
+    // Default hospitality dishes if catalog is clean
+    const SAMPLE_MENU = [
+      { id: 'h1', name: 'Nyama Choma & Ugali', category: 'DINNER', price: 650, stock: 25 },
+      { id: 'h2', name: 'Whole Fried Tilapia & Greens', category: 'LUNCH', price: 800, stock: 15 },
+      { id: 'h3', name: 'Beef Stew with Chapati', category: 'LUNCH', price: 450, stock: 30 },
+      { id: 'h4', name: 'Full English Breakfast', category: 'BREAKFAST', price: 550, stock: 20 },
+      { id: 'h5', name: 'Kenyan Chai & Mandazi (2pcs)', category: 'BREAKFAST', price: 150, stock: 50 },
+      { id: 'h6', name: 'Chicken Biryani', category: 'DINNER', price: 600, stock: 18 },
+      { id: 'h7', name: 'Tusker Lager Cold 500ml', category: 'DRINKS', price: 280, stock: 120 },
+      { id: 'h8', name: 'Fresh Passion Juice 500ml', category: 'DRINKS', price: 180, stock: 40 },
+      { id: 'h9', name: 'Soda 300ml (Coke/Fanta/Sprite)', category: 'DRINKS', price: 100, stock: 90 },
+      { id: 'h10', name: 'Loaded French Fries & Sausages', category: 'SNACKS', price: 320, stock: 35 },
+      { id: 'h11', name: 'Samosa Beef (Pair)', category: 'SNACKS', price: 120, stock: 60 }
+    ];
+
+    let menu = SAMPLE_MENU;
+    try {
+      const { data } = await sb.from('products').select('*').order('name');
+      if (data && data.length) {
+        // Merge or augment
+        menu = data.map(p => ({
+          id: p.id,
+          name: p.name,
+          category: (p.category || 'LUNCH').toUpperCase(),
+          price: Number(p.price || 0),
+          stock: Number(p.stock || 50)
+        }));
+      }
+    } catch (e) {}
+
+    // Active order state
+    let activeTable = 'T1';
+    let currentCategory = 'ALL';
+    let tableOrders = {
+      'T1': [
+        { item: menu[0], qty: 2, notes: 'Ugali soft' },
+        { item: menu[6] || menu[1], qty: 2, notes: 'Cold' }
+      ]
+    };
+
+    // KOT queue state
+    let kotQueue = [
+      { id: 'KOT-104', table: 'T1', time: '10 mins ago', items: ['2x Nyama Choma & Ugali', '2x Tusker Lager'], status: 'Preparing' },
+      { id: 'KOT-105', table: 'T3', time: '4 mins ago', items: ['1x Whole Fried Tilapia', '1x Fresh Passion Juice'], status: 'New' }
+    ];
+
+    // Floor Plan Tables 1-12
+    const tablesList = [
+      { id: 'T1', name: 'Table 1', seats: 4, section: 'Window View', status: 'occupied', bill: 1860 },
+      { id: 'T2', name: 'Table 2', seats: 2, section: 'Cozy Booth', status: 'free', bill: 0 },
+      { id: 'T3', name: 'Table 3', seats: 6, section: 'Center Dining', status: 'occupied', bill: 980 },
+      { id: 'T4', name: 'Table 4', seats: 2, section: 'Bar High Top', status: 'billed', bill: 560 },
+      { id: 'T5', name: 'Table 5', seats: 4, section: 'Garden Patio', status: 'free', bill: 0 },
+      { id: 'T6', name: 'Table 6', seats: 8, section: 'Executive VIP', status: 'free', bill: 0 },
+      { id: 'T7', name: 'Table 7', seats: 4, section: 'Main Hall', status: 'free', bill: 0 },
+      { id: 'T8', name: 'Table 8', seats: 4, section: 'Main Hall', status: 'free', bill: 0 },
+      { id: 'T9', name: 'Table 9', seats: 2, section: 'Window View', status: 'free', bill: 0 },
+      { id: 'T10', name: 'Table 10', seats: 4, section: 'Patio', status: 'free', bill: 0 },
+      { id: 'T11', name: 'Table 11', seats: 6, section: 'Patio', status: 'free', bill: 0 },
+      { id: 'T12', name: 'Table 12', seats: 10, section: 'Family Banquet', status: 'free', bill: 0 }
+    ];
+
+    function renderTables() {
+      $('tablesGrid').innerHTML = tablesList.map(t => {
+        const cls = t.status === 'free' ? 'is-free' : (t.status === 'billed' ? 'is-billed' : 'is-occupied');
+        const tagCls = t.status === 'free' ? 'tag-free' : (t.status === 'billed' ? 'tag-billed' : 'tag-occupied');
+        return `
+          <div class="table-card ${cls}" onclick="selectTable('${t.id}')">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <strong style="font-size:16px;">${esc(t.name)}</strong>
+                <span class="table-status-tag ${tagCls}">${t.status}</span>
+              </div>
+              <div class="dogo-muted" style="font-size:12px;">${esc(t.section)} · ${t.seats} seats</div>
+            </div>
+            <div style="margin-top:14px;border-top:1px dashed var(--dogo-border);padding-top:8px;">
+              <div style="font-size:11px;color:var(--dogo-text-muted);">Current Bill:</div>
+              <strong style="font-size:14px;color:${t.bill > 0 ? 'var(--dogo-neon-dark)' : 'inherit'};">
+                ${t.bill > 0 ? kes(t.bill) : '—'}
+              </strong>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.selectTable = (id) => {
+      activeTable = id;
+      $('restTableSelect').value = id;
+      $('activeTicketTableBadge').textContent = id;
+      document.querySelector('[data-pane="pane-orders"]').click();
+      renderCart();
+    };
+
+    $('restTableSelect').onchange = e => {
+      activeTable = e.target.value;
+      $('activeTicketTableBadge').textContent = activeTable;
+      renderCart();
+    };
+
+    // Filter pills
+    document.querySelectorAll('.cat-filter-pill').forEach(pill => {
+      pill.onclick = () => {
+        document.querySelectorAll('.cat-filter-pill').forEach(p => p.classList.remove('is-active'));
+        pill.classList.add('is-active');
+        currentCategory = pill.dataset.cat;
+        renderMenu();
+      };
+    });
+
+    $('restSearch').oninput = renderMenu;
+
+    function renderMenu() {
+      const q = $('restSearch').value.trim().toLowerCase();
+      const filtered = menu.filter(m => {
+        const matchQ = !q || m.name.toLowerCase().includes(q);
+        const matchCat = currentCategory === 'ALL' || m.category.includes(currentCategory);
+        return matchQ && matchCat;
+      });
+
+      $('restMenuGrid').innerHTML = filtered.length ? filtered.map(m => `
+        <button class="dogo-prod" onclick="addToOrder('${m.id}')">
+          <span class="dogo-prod__name">${esc(m.name)}</span>
+          <span class="dogo-prod__price">${kes(m.price)}</span>
+          <span class="dogo-muted" style="font-size:12px;">🍽️ ${esc(m.category)}</span>
+        </button>
+      `).join('') : '<div class="dogo-card__empty" style="grid-column:1/-1;">No dishes found matching search.</div>';
+    }
+
+    window.addToOrder = id => {
+      const item = menu.find(m => m.id === id);
+      if (!item) return;
+      if (!tableOrders[activeTable]) tableOrders[activeTable] = [];
+      const existing = tableOrders[activeTable].find(l => l.item.id === id);
+      if (existing) {
+        existing.qty++;
+      } else {
+        tableOrders[activeTable].push({ item, qty: 1, notes: '' });
+      }
+      renderCart();
+      toast(`Added ${item.name} to ${activeTable}`);
+    };
+
+    function renderCart() {
+      const lines = tableOrders[activeTable] || [];
+      const totalCount = lines.reduce((sum, l) => sum + l.qty, 0);
+      const grandTotal = lines.reduce((sum, l) => sum + l.qty * l.item.price, 0);
+
+      $('restItemCount').textContent = totalCount + (totalCount === 1 ? ' item' : ' items');
+      $('restTotal').textContent = kes(grandTotal);
+
+      $('restCartList').innerHTML = lines.length ? lines.map((l, i) => `
+        <div class="dogo-cart-line">
+          <div>
+            <strong>${esc(l.item.name)}</strong>
+            <div class="dogo-muted" style="font-size:12px;">${kes(l.item.price)} each ${l.notes ? '· ' + esc(l.notes) : ''}</div>
+          </div>
+          <div style="text-align:right;"><strong>${kes(l.qty * l.item.price)}</strong></div>
+          <div class="dogo-qty">
+            <button onclick="changeQty(${i}, -1)">−</button>
+            <span>${l.qty}</span>
+            <button onclick="changeQty(${i}, 1)">+</button>
+          </div>
+          <div style="text-align:right;">
+            <button class="dogo-link" onclick="removeLine(${i})" style="color:#dc2626;">✕</button>
+          </div>
+        </div>
+      `).join('') : `<div class="dogo-card__empty">No active order for ${activeTable}. Tap dishes to add.</div>`;
+    }
+
+    window.changeQty = (idx, delta) => {
+      const lines = tableOrders[activeTable] || [];
+      if (!lines[idx]) return;
+      lines[idx].qty += delta;
+      if (lines[idx].qty <= 0) lines.splice(idx, 1);
+      renderCart();
+    };
+
+    window.removeLine = idx => {
+      const lines = tableOrders[activeTable] || [];
+      lines.splice(idx, 1);
+      renderCart();
+    };
+
+    $('btnSendToKitchen').onclick = () => {
+      const lines = tableOrders[activeTable] || [];
+      if (!lines.length) return toast('No items in this order to send to kitchen.');
+      const notes = $('restKitchenNotes').value.trim();
+      const kotId = 'KOT-' + Math.floor(100 + Math.random() * 900);
+
+      kotQueue.unshift({
+        id: kotId,
+        table: activeTable,
+        time: 'Just now',
+        items: lines.map(l => `${l.qty}x ${l.item.name}`),
+        status: 'Preparing',
+        notes
+      });
+
+      renderKDS();
+      toast(`👨‍🍳 ${kotId} sent to kitchen for ${activeTable}!`);
+      $('restKitchenNotes').value = '';
+    };
+
+    $('btnSettleBill').onclick = () => {
+      const lines = tableOrders[activeTable] || [];
+      if (!lines.length) return toast('No active bill to settle.');
+      const grandTotal = lines.reduce((sum, l) => sum + l.qty * l.item.price, 0);
+
+      toast(`Bill settled for ${activeTable}: ${kes(grandTotal)} · Table now free!`);
+      tableOrders[activeTable] = [];
+      const tbl = tablesList.find(t => t.id === activeTable);
+      if (tbl) {
+        tbl.status = 'free';
+        tbl.bill = 0;
+      }
+      renderTables();
+      renderCart();
+    };
+
+    function renderKDS() {
+      $('kotList').innerHTML = kotQueue.length ? kotQueue.map((k, i) => `
+        <div class="kot-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <strong style="font-size:16px;">${esc(k.id)}</strong>
+              <span class="table-status-tag tag-occupied">${esc(k.table)}</span>
+            </div>
+            <span style="font-size:12px;color:var(--dogo-text-muted);">${esc(k.time)}</span>
+          </div>
+          <ul style="margin:8px 0;padding-left:18px;font-size:13.5px;color:var(--dogo-text);">
+            ${k.items.map(it => `<li><strong>${esc(it)}</strong></li>`).join('')}
+          </ul>
+          ${k.notes ? `<div style="font-size:12px;color:#d97706;margin-bottom:8px;"><strong>Note:</strong> ${esc(k.notes)}</div>` : ''}
+          <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--dogo-border);padding-top:8px;margin-top:8px;">
+            <span style="font-size:12px;font-weight:700;color:var(--dogo-neon-dark);">Status: ${esc(k.status)}</span>
+            <div style="display:flex;gap:6px;">
+              <button class="dogo-btn dogo-btn--sm dogo-btn--outline" onclick="advanceKOT(${i})">
+                ${k.status === 'Preparing' ? 'Mark Ready' : (k.status === 'Ready' ? 'Mark Served' : 'Archive')}
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('') : '<div class="dogo-card__empty">No pending kitchen order tickets in queue.</div>';
+    }
+
+    window.advanceKOT = idx => {
+      const k = kotQueue[idx];
+      if (!k) return;
+      if (k.status === 'Preparing') k.status = 'Ready';
+      else if (k.status === 'Ready') k.status = 'Served';
+      else kotQueue.splice(idx, 1);
+      renderKDS();
+      toast('KOT updated');
+    };
+
+    renderTables();
+    renderMenu();
+    renderCart();
+    renderKDS();
+  })();
+  </script>
+</body>
+</html>

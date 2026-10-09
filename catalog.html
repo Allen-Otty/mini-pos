@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Products &amp; Inventory · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Products</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1 style="font-size:24px;font-weight:800;margin:0 0 4px;color:var(--dogo-ink);">Product Catalogue</h1>
+        <p style="font-size:14px;color:var(--dogo-text-muted);margin:0;" id="bizName">Manage your shop items and inventory levels</p>
+      </div>
+      <button style="background:#d97706;color:#fff;border:none;border-radius:var(--dogo-radius-pill);padding:9px 22px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(217,119,6,0.25);" id="addBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>New Product / Service</span>
+      </button>
+    </div>
+
+    <div class="dogo-toolbar" style="justify-content:space-between;margin-bottom:14px;">
+      <div class="dogo-seg" id="viewSeg">
+        <button data-v="all" class="is-active">All Products</button>
+        <button data-v="inventory">Low Stock &amp; Alerts</button>
+      </div>
+    </div>
+    <section class="dogo-card">
+      <div class="dogo-toolbar" style="margin-bottom:14px;">
+        <input class="dogo-input" id="q" placeholder="Search name, code or category">
+        <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="csvBtn">Export CSV</button>
+        <button class="dogo-btn dogo-btn--outline dogo-btn--sm" onclick="window.print()">Print</button>
+      </div>
+      <div class="dogo-table-wrap"><table class="dogo-table">
+        <thead><tr><th>Code / SKU</th><th>Name</th><th>Category</th><th>Price</th><th>Tax Rate</th><th>Stock</th><th>Reorder</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+      <div class="dogo-pager"><span id="pageInfo"></span><span><button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="prev">Prev</button> <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="next">Next</button></span></div>
+    </section>
+
+    <!-- Create Item Modal Matching Screenshot 291 -->
+    <div class="dogo-modal" id="modal">
+      <div class="dogo-modal__box" style="max-width:540px;border-radius:18px;padding:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+          <div>
+            <h2 style="font-size:20px;font-weight:800;color:var(--dogo-ink);margin:0 0 2px;" id="mTitle">Create Item</h2>
+            <div style="font-size:13px;color:var(--dogo-text-muted);">Add a new product or service to your catalog</div>
+          </div>
+          <button style="border:none;background:transparent;color:var(--dogo-text-muted);font-size:20px;cursor:pointer;" id="mClose">&times;</button>
+        </div>
+
+        <div style="margin-top:14px;">
+          <div class="dogo-form-row dogo-form-row--2" style="gap:12px;margin-bottom:10px;">
+            <div class="dogo-field" style="margin:0;">
+              <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">NAME</label>
+              <input class="dogo-input" id="fName" placeholder="Product name" style="background:#f8fafc;">
+            </div>
+            <div class="dogo-field" style="margin:0;">
+              <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">PRICE</label>
+              <input class="dogo-input" id="fPrice" type="number" step="0.01" min="0" value="0.00" style="background:#f8fafc;">
+            </div>
+          </div>
+
+          <div class="dogo-form-row dogo-form-row--2" style="gap:12px;margin-bottom:10px;">
+            <div class="dogo-field" style="margin:0;">
+              <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">SKU *</label>
+              <input class="dogo-input" id="fCode" placeholder="Required" style="background:#f8fafc;">
+            </div>
+            <div class="dogo-field" style="margin:0;">
+              <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">BARCODE</label>
+              <input class="dogo-input" id="fBarcode" placeholder="Optional" style="background:#f8fafc;">
+            </div>
+          </div>
+
+          <div class="dogo-form-row dogo-form-row--2" style="gap:12px;margin-bottom:10px;">
+            <div class="dogo-field" style="margin:0;">
+              <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">CATEGORY</label>
+              <select class="dogo-select" id="fCat" style="background:#f8fafc;">
+                <option value="">Select Category (Optional)</option>
+                <option value="General">General</option>
+                <option value="Groceries">Groceries</option>
+                <option value="Beverages">Beverages</option>
+                <option value="Dairy">Dairy</option>
+                <option value="Bakery">Bakery</option>
+                <option value="Snacks">Snacks</option>
+              </select>
+            </div>
+            <div class="dogo-field" style="margin:0;">
+              <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">TAX TYPE *</label>
+              <select class="dogo-select" id="fVat" style="background:#f8fafc;">
+                <option value="0.16">A (16%) - Standard Rate</option>
+                <option value="0">B (0%) - Zero Rated</option>
+                <option value="0">C (0%) - Exempt</option>
+                <option value="0">D (0%) - Non - VAT</option>
+                <option value="0.08">E (8%) - Petroleum</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="dogo-field" style="margin-bottom:10px;">
+            <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">TYPE</label>
+            <select class="dogo-select" id="fType" style="background:#f8fafc;">
+              <option value="Product">Product</option>
+              <option value="Service">Service</option>
+            </select>
+          </div>
+
+          <div class="dogo-field" style="margin-bottom:12px;">
+            <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">DESCRIPTION</label>
+            <input class="dogo-input" id="fDesc" placeholder="Product description..." style="background:#f8fafc;">
+          </div>
+
+          <div class="dogo-form-row dogo-form-row--2" style="gap:12px;margin-bottom:16px;">
+            <div class="dogo-field" style="margin:0;">
+              <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">INITIAL STOCK</label>
+              <input class="dogo-input" id="fStock" type="number" step="1" min="0" value="0" style="background:#f8fafc;">
+            </div>
+            <div class="dogo-field" style="margin:0;">
+              <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">REORDER THRESHOLD</label>
+              <input class="dogo-input" id="fReorder" type="number" step="1" min="0" value="0" style="background:#f8fafc;">
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-top:16px;">
+            <button style="border:none;background:transparent;color:var(--dogo-text-muted);font-weight:700;font-size:14px;cursor:pointer;" id="mCancel">Cancel</button>
+            <button style="background:#d97706;color:#fff;border:none;border-radius:var(--dogo-radius-pill);padding:9px 28px;font-size:14px;font-weight:700;cursor:pointer;" id="mSave">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast, downloadCSV } = window.DogoData;
+
+    let view = location.hash === '#inventory' ? 'inventory' : 'all';
+    const ctx = await boot('catalog');
+    if (!ctx) return;
+    const { businessId, isAdmin, profile } = ctx;
+    let products = [], page = 1; const PER = 10; let editing = null;
+    const $ = id => document.getElementById(id);
+    if (isAdmin) $('addBtn').style.display = '';
+
+    async function load() {
+      const { data, error } = await sb.from('products').select('*').order('name');
+      if (error) toast('Could not load products: ' + error.message);
+      products = data || []; draw();
+    }
+    function filtered() {
+      const q = $('q').value.trim().toLowerCase();
+      return products.filter(p => (!q || [p.name, p.code, p.category].some(v => String(v || '').toLowerCase().includes(q)))
+        && (view !== 'inventory' || Number(p.stock) <= Number(p.reorder_level || 0)));
+    }
+    function draw() {
+      const list = filtered(), pages = Math.max(1, Math.ceil(list.length / PER));
+      page = Math.min(page, pages);
+      const slice = list.slice((page - 1) * PER, page * PER);
+      $('rows').innerHTML = slice.length ? slice.map(p => {
+        const st = Number(p.stock), low = st <= Number(p.reorder_level || 0);
+        return `<tr><td>${esc(p.code)}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.category || '—')}</td><td>${kes(p.price)}</td><td>${Math.round(Number(p.vat_rate || 0) * 100)}%</td>
+          <td><span class="dogo-badge ${st <= 0 ? 'dogo-badge--danger' : low ? 'dogo-badge--warn' : 'dogo-badge--ok'}">${st}</span></td><td>${esc(p.reorder_level ?? 0)}</td>
+          <td>${isAdmin ? `<button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-edit="${esc(p.id)}">Edit</button>` : ''}</td></tr>`;
+      }).join('') : '<tr><td colspan="8" class="dogo-card__empty">No products found</td></tr>';
+      $('pageInfo').textContent = list.length ? `Showing ${(page - 1) * PER + 1}-${Math.min(page * PER, list.length)} of ${list.length}` : '';
+      $('prev').disabled = page <= 1; $('next').disabled = page >= pages;
+    }
+    document.querySelectorAll('#viewSeg button').forEach(b => {
+      b.classList.toggle('is-active', b.dataset.v === view);
+      b.onclick = () => { view = b.dataset.v; page = 1; document.querySelectorAll('#viewSeg button').forEach(x => x.classList.toggle('is-active', x === b)); draw(); };
+    });
+    $('q').oninput = () => { page = 1; draw(); };
+    $('prev').onclick = () => { page--; draw(); }; $('next').onclick = () => { page++; draw(); };
+    $('csvBtn').onclick = () => downloadCSV('products.csv', [['Code','Name','Category','Price','VAT','Stock','Reorder']].concat(filtered().map(p => [p.code, p.name, p.category, p.price, p.vat_rate, p.stock, p.reorder_level])));
+
+    function openModal(p) {
+      editing = p || null; $('mTitle').textContent = p ? 'Edit Item' : 'Create Item';
+      $('fCode').value = p ? p.code : '';
+      $('fName').value = p ? p.name : '';
+      $('fPrice').value = p ? p.price : '0.00';
+      $('fBarcode').value = p ? (p.barcode || '') : '';
+      $('fCat').value = p ? (p.category || '') : '';
+      $('fVat').value = p ? String(Number(p.vat_rate)) : '0.16';
+      $('fType').value = p ? (p.type || 'Product') : 'Product';
+      $('fDesc').value = p ? (p.description || '') : '';
+      $('fStock').value = p ? p.stock : 0;
+      $('fReorder').value = p ? (p.reorder_level || 0) : 0;
+      $('modal').classList.add('open');
+      $('fName').focus();
+    }
+    const closeModal = () => $('modal').classList.remove('open');
+    $('addBtn').onclick = () => openModal(null);
+    $('mCancel').onclick = closeModal;
+    $('mClose').onclick = closeModal;
+
+    $('rows').onclick = e => { const id = e.target.dataset && e.target.dataset.edit; if (id) openModal(products.find(p => String(p.id) === id)); };
+    $('mSave').onclick = async () => {
+      const rec = {
+        code: $('fCode').value.trim() || 'SKU-' + Date.now().toString().slice(-4),
+        name: $('fName').value.trim(),
+        price: parseFloat($('fPrice').value) || 0,
+        category: $('fCat').value || 'General',
+        vat_rate: parseFloat($('fVat').value) || 0,
+        stock: parseFloat($('fStock').value) || 0,
+        reorder_level: parseFloat($('fReorder').value) || 0
+      };
+      if (!rec.name) return toast('Please enter a product name');
+      if (isNaN(rec.price) || rec.price < 0) return toast('Please enter a valid price');
+
+      const res = editing ? await sb.from('products').update(rec).eq('id', editing.id)
+                          : await sb.from('products').insert(Object.assign({ business_id: businessId, unit: 'piece', created_by: profile ? profile.id : null }, rec));
+      if (res.error) return toast('Could not save: ' + res.error.message);
+      closeModal(); toast('Item saved to catalogue'); load();
+    };
+    load();
+  })();
+  </script>
+</body>
+</html>

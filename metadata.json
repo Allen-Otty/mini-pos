@@ -1,0 +1,10 @@
+{
+  "name": "Dogo POS",
+  "description": "Multi-business point-of-sale platform with cloud sync, role-based accounts, offline sales, and shift management.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

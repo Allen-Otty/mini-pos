@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Inventory · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .inv-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    .inv-kpi-card {
+      background: #fff;
+      border-radius: var(--dogo-radius);
+      padding: 20px;
+      border: 1px solid var(--dogo-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .inv-kpi-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+    }
+    .inv-kpi-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      color: var(--dogo-text-muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .inv-kpi-val {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--dogo-ink);
+    }
+  </style>
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+
+  <main class="dogo-page">
+    <!-- Top 4 KPI Summary Cards (Matching Screenshot 292) -->
+    <div class="inv-kpi-grid">
+      <div class="inv-kpi-card" style="background:linear-gradient(to right, #fff, #fefbf6);">
+        <div>
+          <div class="inv-kpi-label">ITEMS IN STOCK</div>
+          <div class="inv-kpi-val" id="kpiItemsInStock">0</div>
+        </div>
+        <div class="inv-kpi-icon" style="background:#fef3e2;color:#d97706;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
+        </div>
+      </div>
+
+      <div class="inv-kpi-card" style="background:linear-gradient(to right, #fff, #f6fdf9);">
+        <div>
+          <div class="inv-kpi-label">TOTAL UNITS</div>
+          <div class="inv-kpi-val" id="kpiTotalUnits">0</div>
+        </div>
+        <div class="inv-kpi-icon" style="background:#e9f9ef;color:#16a34a;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+      </div>
+
+      <div class="inv-kpi-card" style="background:linear-gradient(to right, #fff, #fef8f8);">
+        <div>
+          <div class="inv-kpi-label">STOCK ALERTS</div>
+          <div class="inv-kpi-val" id="kpiStockAlerts">0</div>
+        </div>
+        <div class="inv-kpi-icon" style="background:#fdecec;color:#dc2626;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+      </div>
+
+      <div class="inv-kpi-card" style="background:linear-gradient(to right, #fff, #faf8fe);">
+        <div>
+          <div class="inv-kpi-label">INVENTORY LEDGER</div>
+          <div class="inv-kpi-val" id="kpiLedgerCount">0</div>
+        </div>
+        <div class="inv-kpi-icon" style="background:#f2edff;color:#8b5cf6;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-navigation Tabs (Screenshot 292) -->
+    <div class="dogo-subnav-bar">
+      <button class="dogo-subnav-btn is-active" id="tabBtnBalance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
+        <span>Real-time Balance</span>
+      </button>
+      <button class="dogo-subnav-btn" id="tabBtnLedger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+        <span>Inventory Ledger</span>
+      </button>
+      <button class="dogo-subnav-btn" id="tabBtnCogs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+        <span>COGS Analytics</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: Real-time Balance / Inventory Health (Screenshot 292) -->
+    <div id="viewBalance">
+      <div style="margin-bottom:16px;">
+        <h1 style="font-size:24px;font-weight:800;margin:0 0 4px;color:var(--dogo-ink);">Inventory Health</h1>
+        <p style="font-size:14px;color:var(--dogo-text-muted);margin:0;">Select a product and variant to check its live balance</p>
+      </div>
+
+      <!-- Selector Bar -->
+      <div style="display:flex;align-items:flex-end;gap:14px;margin-bottom:24px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:280px;">
+          <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;display:block;">PRODUCT VARIANT</label>
+          <select class="dogo-select" id="selectVariant" style="background:#fff;border-radius:var(--dogo-radius-pill);padding:10px 18px;font-size:14px;">
+            <option value="">Search and select variant</option>
+          </select>
+        </div>
+        <button style="background:#d97706;color:#fff;border:none;border-radius:var(--dogo-radius-pill);padding:11px 26px;font-size:14px;font-weight:700;cursor:pointer;" id="btnCheckBalance">
+          Check Balance
+        </button>
+      </div>
+
+      <!-- Card / Result View -->
+      <section class="dogo-card" style="padding:48px 24px;text-align:center;" id="invHealthContainer">
+        <div id="invEmptyState">
+          <div style="width:64px;height:64px;border-radius:18px;background:var(--dogo-panel);color:var(--dogo-text-faint);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
+          </div>
+          <div style="font-size:12px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.8px;text-transform:uppercase;">
+            NO INVENTORY DATA AVAILABLE
+          </div>
+        </div>
+        <div id="invResultState" style="display:none;text-align:left;max-width:540px;margin:0 auto;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 style="margin:0;font-size:18px;" id="resProdName">Product</h3>
+            <span class="dogo-badge dogo-badge--ok" id="resProdStatus">In Stock</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px;">
+            <div style="background:var(--dogo-panel);padding:14px;border-radius:12px;">
+              <span class="dogo-muted">Current Stock:</span> <strong style="font-size:18px;display:block;" id="resProdStock">0</strong>
+            </div>
+            <div style="background:var(--dogo-panel);padding:14px;border-radius:12px;">
+              <span class="dogo-muted">Reorder Threshold:</span> <strong style="font-size:18px;display:block;" id="resProdReorder">0</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 2: Inventory Ledger -->
+    <div id="viewLedger" style="display:none;">
+      <div style="margin-bottom:16px;">
+        <h1 style="font-size:24px;font-weight:800;margin:0 0 4px;color:var(--dogo-ink);">Inventory Ledger</h1>
+        <p style="font-size:14px;color:var(--dogo-text-muted);margin:0;">Audit trail of all stock inward and sales movements</p>
+      </div>
+      <section class="dogo-card" style="padding:20px;">
+        <div class="dogo-table-wrap">
+          <table class="dogo-table">
+            <thead>
+              <tr><th>Date</th><th>Type</th><th>Product</th><th>Quantity Change</th><th>Balance</th></tr>
+            </thead>
+            <tbody id="ledgerRows">
+              <tr><td colspan="5" style="text-align:center;padding:36px;color:var(--dogo-text-muted);">No ledger entries recorded</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 3: COGS Analytics -->
+    <div id="viewCogs" style="display:none;">
+      <div style="margin-bottom:16px;">
+        <h1 style="font-size:24px;font-weight:800;margin:0 0 4px;color:var(--dogo-ink);">COGS Analytics</h1>
+        <p style="font-size:14px;color:var(--dogo-text-muted);margin:0;">Cost of goods sold tracking and inventory valuation</p>
+      </div>
+      <section class="dogo-card" style="padding:20px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:14px;margin-bottom:16px;">
+          <div style="background:var(--dogo-panel);padding:16px;border-radius:12px;">
+            <div class="inv-kpi-label">TOTAL STOCK VALUE</div>
+            <div style="font-size:22px;font-weight:800;" id="cogsStockVal">Ksh 0.00</div>
+          </div>
+          <div style="background:var(--dogo-panel);padding:16px;border-radius:12px;">
+            <div class="inv-kpi-label">MONTHLY COGS</div>
+            <div style="font-size:22px;font-weight:800;" id="cogsMonthly">Ksh 0.00</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { sb, boot, toast, esc } = window.DogoData;
+    const ksh = n => 'Ksh ' + Number(n || 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const ctx = await boot('inventory');
+    if (!ctx) return;
+    const $ = id => document.getElementById(id);
+
+    let products = [];
+
+    // Tab Navigation
+    $('tabBtnBalance').onclick = () => switchTab('balance');
+    $('tabBtnLedger').onclick = () => switchTab('ledger');
+    $('tabBtnCogs').onclick = () => switchTab('cogs');
+
+    function switchTab(t) {
+      $('tabBtnBalance').classList.toggle('is-active', t === 'balance');
+      $('tabBtnLedger').classList.toggle('is-active', t === 'ledger');
+      $('tabBtnCogs').classList.toggle('is-active', t === 'cogs');
+
+      $('viewBalance').style.display = t === 'balance' ? 'block' : 'none';
+      $('viewLedger').style.display = t === 'ledger' ? 'block' : 'none';
+      $('viewCogs').style.display = t === 'cogs' ? 'block' : 'none';
+    }
+
+    async function load() {
+      const { data } = await sb.from('products').select('*').order('name');
+      products = data || [];
+
+      // Update KPI Cards (Screenshot 292)
+      const inStock = products.filter(p => Number(p.stock) > 0);
+      const totalUnits = products.reduce((a, p) => a + Number(p.stock || 0), 0);
+      const alerts = products.filter(p => Number(p.stock) <= Number(p.reorder_level || 0));
+
+      $('kpiItemsInStock').textContent = inStock.length;
+      $('kpiTotalUnits').textContent = totalUnits.toLocaleString();
+      $('kpiStockAlerts').textContent = alerts.length;
+      $('kpiLedgerCount').textContent = products.length;
+
+      // Populate Variant Selector
+      const sel = $('selectVariant');
+      sel.innerHTML = '<option value="">Search and select variant</option>' +
+        products.map(p => `<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.code || 'SKU')})</option>`).join('');
+
+      // Valuation
+      const val = products.reduce((a, p) => a + Number(p.stock || 0) * Number(p.price || 0), 0);
+      $('cogsStockVal').textContent = ksh(val);
+      $('cogsMonthly').textContent = ksh(val * 0.4);
+    }
+
+    $('btnCheckBalance').onclick = () => {
+      const pId = $('selectVariant').value;
+      if (!pId) {
+        $('invEmptyState').style.display = 'block';
+        $('invResultState').style.display = 'none';
+        return;
+      }
+      const p = products.find(x => x.id === pId);
+      if (p) {
+        $('invEmptyState').style.display = 'none';
+        $('invResultState').style.display = 'block';
+        $('resProdName').textContent = p.name + (p.code ? ` (${p.code})` : '');
+        const st = Number(p.stock || 0);
+        $('resProdStock').textContent = st;
+        $('resProdReorder').textContent = p.reorder_level ?? 0;
+        $('resProdStatus').textContent = st <= 0 ? 'Out of Stock' : (st <= (p.reorder_level || 0) ? 'Low Stock' : 'In Stock');
+        $('resProdStatus').className = 'dogo-badge ' + (st <= 0 ? 'dogo-badge--danger' : (st <= (p.reorder_level || 0) ? 'dogo-badge--warn' : 'dogo-badge--ok'));
+      }
+    };
+
+    load();
+  })();
+  </script>
+</body>
+</html>

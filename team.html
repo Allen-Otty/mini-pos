@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Team · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+  <main class="dogo-page">
+    <div class="dogo-breadcrumb">Dashboard <span>›</span> <span class="is-current">Team</span></div>
+    <div class="dogo-page-title"><h1>Team</h1></div>
+    <p class="dogo-page-subtitle" id="bizName"></p>
+
+    <section class="dogo-card">
+      <div class="dogo-table-wrap"><table class="dogo-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table></div>
+      <p class="dogo-muted" style="font-size:13px;margin:14px 0 0;">To invite or remove staff, use <a class="dogo-link" href="index.html">the full app</a>.</p>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { sb, kes, esc, boot, toast, downloadCSV } = window.DogoData;
+
+    const ctx = await boot('team', { adminOnly: true }); if (!ctx) return;
+    const { data } = await sb.from('profiles').select('*'); const list = data || [];
+    document.getElementById('rows').innerHTML = list.length ? list.map(p => `<tr><td><strong>${esc(p.full_name || '—')}</strong></td><td>${esc(p.email || '—')}</td>
+      <td><span class="dogo-badge">${esc(p.role === 'admin' ? 'Admin' : 'Teller')}</span></td><td><span class="dogo-badge ${p.active === false ? 'dogo-badge--danger' : 'dogo-badge--ok'}">${p.active === false ? 'Inactive' : 'Active'}</span></td></tr>`).join('')
+      : '<tr><td colspan="4" class="dogo-card__empty">No team members</td></tr>';
+  })();
+  </script>
+</body>
+</html>
