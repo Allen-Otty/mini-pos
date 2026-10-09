@@ -1,0 +1,12 @@
+{
+  "appId": "com.dogo.pos",
+  "appName": "Dogo POS",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "hostname": "dogo-pos.app"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

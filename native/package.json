@@ -1,0 +1,22 @@
+{
+  "name": "dogo-pos-native",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Native wrappers (Android APK via Capacitor). Web files are bundled by scripts/prepare-www.cjs so the app works offline.",
+  "scripts": {
+    "prepare-www": "node ../scripts/prepare-www.cjs",
+    "sync": "npm run prepare-www && cap sync android",
+    "open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@fontsource/instrument-sans": "^5.0.0",
+    "@fortawesome/fontawesome-free": "6.5.1",
+    "@supabase/supabase-js": "^2.0.0",
+    "chart.js": "^4.0.0",
+    "html5-qrcode": "2.3.8",
+    "tesseract.js": "4.1.1"
+  }
+}

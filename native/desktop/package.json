@@ -1,0 +1,33 @@
+{
+  "name": "dogo-pos-desktop",
+  "productName": "Dogo POS",
+  "version": "1.0.0",
+  "description": "Dogo POS for Windows",
+  "main": "main.js",
+  "author": "Dogo POS",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.dogo.pos",
+    "productName": "Dogo POS",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "package.json"],
+    "extraResources": [{ "from": "../www", "to": "www" }],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Dogo-POS-Setup-${version}.exe"
+    }
+  }
+}
