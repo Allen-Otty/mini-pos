@@ -27,7 +27,7 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "Dogo-POS-Setup-${version}.exe"
+      "artifactName": "Dogo-POS-Setup.exe"
     }
   }
 }

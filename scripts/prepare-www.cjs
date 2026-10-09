@@ -52,7 +52,8 @@ fs.writeFileSync(path.join(vendor, 'fonts.css'), faces.join('\n'));
 fs.writeFileSync(path.join(vendor, 'dogo-config.js'),
   "// Set api_url to your hosted Dogo POS server (e.g. https://your-app.onrender.com) to enable\n" +
   "// KCB / Paystack / Airtel / M-Pesa payments inside the Android and Windows apps.\n" +
-  "window.DOGO_CONFIG = window.DOGO_CONFIG || { api_url: '' };\n");
+  "window.DOGO_CONFIG = window.DOGO_CONFIG || { api_url: '' };\n" +
+  "document.addEventListener('DOMContentLoaded', function () { document.querySelectorAll('.js-web-only').forEach(function (e) { e.style.display = 'none'; }); });\n");
 
 const rules = [
   [/https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@2/g, 'assets/vendor/supabase.js'],
