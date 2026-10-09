@@ -175,8 +175,8 @@
         Account &amp; Admin
       </button>
       <button class="settings-tab-btn" data-tab="tab-apk" style="border-color:var(--dogo-neon);color:var(--dogo-neon-dark);">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-        Android APK (App)
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Apps &amp; Downloads (.apk &amp; .exe)
       </button>
     </div>
 
@@ -740,6 +740,54 @@
               <li>When prompted by Android, tap <strong>"Download anyway"</strong> or <strong>"Open"</strong>.</li>
               <li>If asked, enable <strong>"Install unknown apps"</strong> for your browser in Settings.</li>
               <li>Tap <strong>Install</strong> to add Dogo POS to your home screen and app launcher.</li>
+            </ol>
+          </div>
+        </section>
+
+        <!-- Windows Desktop EXE Card -->
+        <section class="dogo-card" style="border:2px solid #00a4ef;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:rgba(0,120,215,0.18);border:2px solid #00a4ef;display:flex;align-items:center;justify-content:center;color:#00a4ef;flex-shrink:0;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.801"/>
+              </svg>
+            </div>
+            <div>
+              <div style="font-weight:800;font-size:18px;color:var(--dogo-ink);">Dogo POS for Windows (.exe)</div>
+              <div class="dogo-muted" style="font-size:13px;">Windows Desktop Edition (Standalone Executable)</div>
+            </div>
+          </div>
+
+          <p style="font-size:13.5px;color:var(--dogo-text);line-height:1.5;margin-bottom:18px;">
+            Run Dogo POS as a native desktop application on Windows 10 &amp; 11 PCs, cashier counters, touchscreen all-in-one POS terminals, and laptops. Features dedicated borderless app mode, thermal receipt printer integration (ESC/POS), hardware USB/Bluetooth barcode scanner compatibility, and automatic desktop shortcut creation.
+          </p>
+
+          <div style="background:var(--dogo-panel);border-radius:var(--dogo-radius);padding:14px;margin-bottom:20px;border:1px solid var(--dogo-border);font-size:12.5px;">
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span class="dogo-muted">File:</span><strong>dogo-pos.exe</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span class="dogo-muted">Format:</span><strong>PE32+ 64-bit Windows Executable (89 KB)</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span class="dogo-muted">OS Compatibility:</span><strong>Windows 10, Windows 11 (64-bit)</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span class="dogo-muted">Hardware:</span><strong style="color:var(--dogo-neon-dark);">USB/Wireless Barcode Scanners &amp; Printers ✓</strong></div>
+          </div>
+
+          <div class="dogo-btn-row">
+            <a href="/dogo-pos.exe" download="dogo-pos.exe" class="dogo-btn" style="background:#00a4ef;color:#ffffff;border:none;font-size:15px;padding:12px 24px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;font-weight:800;border-radius:var(--dogo-radius);box-shadow:0 4px 14px rgba(0,164,239,0.35);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.801"/>
+              </svg>
+              Download Windows .exe (89 KB)
+            </a>
+          </div>
+
+          <div style="margin-top:20px;border-top:1px dashed var(--dogo-border);padding-top:14px;">
+            <strong style="font-size:13px;display:block;margin-bottom:6px;">Windows Setup &amp; Shortcuts:</strong>
+            <ol style="margin:0;padding-left:20px;font-size:12.5px;color:var(--dogo-text-muted);line-height:1.6;">
+              <li>Click <strong>Download Windows .exe</strong> and save <code>dogo-pos.exe</code> anywhere on your computer (e.g. Desktop or C:\POS).</li>
+              <li>Double-click <code>dogo-pos.exe</code> to launch immediately. It automatically creates a <strong>Dogo POS</strong> desktop icon on your desktop!</li>
+              <li>Optional launcher shortcuts:
+                <br>• Direct Retail Cashier: <code>dogo-pos.exe --retail</code>
+                <br>• Restaurant POS Mode: <code>dogo-pos.exe --restaurant</code>
+                <br>• Create Desktop Icon: <code>dogo-pos.exe --shortcut</code>
+              </li>
             </ol>
           </div>
         </section>

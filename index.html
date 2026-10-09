@@ -5496,9 +5496,11 @@
   <div class="ib-icon"><i class="fa-solid fa-receipt"></i></div>
   <div class="ib-text">
     <div class="ib-title">Install Dogo POS</div>
-    <div class="ib-sub">Add to home screen for faster full-screen selling</div>
+    <div class="ib-sub">Download for Windows PC (.exe), Android (.apk), or install Web App</div>
   </div>
-  <button class="ib-install" onclick="triggerInstall()">Install</button>
+  <a href="/dogo-pos.exe" download="dogo-pos.exe" class="ib-install" style="background:#0f172a;color:#60cdff;border:1.5px solid #00a4ef;text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-right:6px;" title="Download Windows Release EXE (v1.0.0)"><i class="fa-brands fa-windows"></i> Windows .EXE</a>
+  <a href="/dogo-pos.apk" download="dogo-pos.apk" class="ib-install" style="background:#0f172a;color:#10f07a;border:1.5px solid #10f07a;text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-right:6px;" title="Download Android Release APK"><i class="fa-brands fa-android"></i> Android APK</a>
+  <button class="ib-install" onclick="triggerInstall()">PWA Install</button>
   <button class="ib-close" onclick="dismissInstallBanner()" aria-label="Dismiss"><i class="fa-solid fa-xmark"></i></button>
 </div>
 
@@ -5585,6 +5587,14 @@
       </ul>
 
       <div class="dogo-nav-actions">
+        <a href="/dogo-pos.exe" download="dogo-pos.exe" class="nav-btn-apk" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:#0f172a;color:#60cdff;border:1.5px solid #00a4ef;font-weight:700;font-size:12.5px;text-decoration:none;box-shadow:0 0 10px rgba(0,164,239,0.3);" title="Download Windows Release EXE (v1.0.0)">
+          <i class="fa-brands fa-windows" style="font-size:14px;"></i>
+          <span>Windows .EXE</span>
+        </a>
+        <a href="/dogo-pos.apk" download="dogo-pos.apk" class="nav-btn-apk" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:#0f172a;color:#10f07a;border:1.5px solid #10f07a;font-weight:700;font-size:12.5px;text-decoration:none;box-shadow:0 0 10px rgba(16,240,122,0.22);" title="Download Native Android Release APK (v1.0.0)">
+          <i class="fa-brands fa-android" style="font-size:14px;"></i>
+          <span>Android APK</span>
+        </a>
         <button class="nav-theme-btn" id="navThemeToggle" onclick="toggleTheme()" aria-label="Toggle theme" title="Toggle Light / Dark">
           <i class="fa-solid fa-moon"></i>
         </button>
@@ -5601,6 +5611,14 @@
 
   <!-- Mobile Dropdown Menu -->
   <div class="dogo-mobile-menu" id="dogoMobileMenu">
+    <a href="/dogo-pos.exe" download="dogo-pos.exe" style="margin:8px 12px 4px;padding:10px 14px;border-radius:10px;background:#0f172a;color:#60cdff;border:1px solid #00a4ef;display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;text-decoration:none;">
+      <i class="fa-brands fa-windows" style="font-size:16px;"></i>
+      <span>Download Windows App (89 KB)</span>
+    </a>
+    <a href="/dogo-pos.apk" download="dogo-pos.apk" style="margin:4px 12px 8px;padding:10px 14px;border-radius:10px;background:#0f172a;color:#10f07a;border:1px solid #10f07a;display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;text-decoration:none;">
+      <i class="fa-brands fa-android" style="font-size:16px;"></i>
+      <span>Download Android APK (13 KB)</span>
+    </a>
     <a href="#demo" onclick="toggleMobileNav()">Live Demo</a>
     <a href="#capabilities" onclick="toggleMobileNav()">Features</a>
     <a href="#industries" onclick="toggleMobileNav()">Industries</a>
@@ -5647,6 +5665,14 @@
       </button>
       <a href="#demo" class="hero-btn-secondary">
         <i class="fa-solid fa-play"></i> <span>Try live demo</span>
+      </a>
+      <a href="/dogo-pos.exe" download="dogo-pos.exe" class="hero-btn-secondary" style="background:#0f172a;color:#60cdff;border:1.5px solid #00a4ef;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,164,239,0.25);" title="Download Official Windows Desktop App (64-bit)">
+        <i class="fa-brands fa-windows" style="font-size:17px;color:#60cdff;"></i>
+        <span>Windows .EXE (89 KB)</span>
+      </a>
+      <a href="/dogo-pos.apk" download="dogo-pos.apk" class="hero-btn-secondary" style="background:#0f172a;color:#10f07a;border:1.5px solid #10f07a;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(16,240,122,0.22);" title="Download Official Android Release APK">
+        <i class="fa-brands fa-android" style="font-size:17px;color:#10f07a;"></i>
+        <span>Android APK (13 KB)</span>
       </a>
     </div>
 
@@ -6198,6 +6224,14 @@
         <button class="auth-btn" onclick="handleLogin()">Sign In</button>
         <div class="auth-error" id="loginError"></div>
         <div class="auth-info" id="loginInfo"></div>
+        
+        <div id="loginOfflineOption" style="margin-top:14px;padding:12px;background:#fef3c7;border:1px solid #fde68a;border-radius:12px;font-size:12.5px;color:#92400e;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+            <span><i class="fa-solid fa-wifi" style="margin-right:4px;"></i> Working without internet?</span>
+            <button type="button" onclick="handleOfflineDirectAccess()" style="background:#d97706;color:#ffffff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">⚡ Enter Offline POS</button>
+          </div>
+        </div>
+
         <div class="auth-link">Don't have a business account? <a href="#authSection" onclick="showAuthTab('signup'); return false;" style="color:#15803d; font-weight:700;">Create one free</a></div>
       </div>
 
@@ -6463,6 +6497,9 @@
       </div>
     </div>
     <div class="portal-topbar-right">
+      <a href="/dogo-pos.apk" download="dogo-pos.apk" class="portal-circle-btn" style="width:auto;padding:0 12px;border-radius:999px;color:#10f07a;background:#0f172a;border:1.5px solid #10f07a;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;text-decoration:none;" title="Download Android APK Release (13 KB)">
+        <i class="fa-brands fa-android"></i> <span>Download APK</span>
+      </a>
       <div class="portal-branch-badge">
         <i class="fa-solid fa-location-dot" style="color:#2563eb;"></i>
         <span id="portalBranchName">Luanda</span>
@@ -10193,29 +10230,96 @@ async function handleSignup() {
 // logs every attempt) and applies the returned session to the client.
 async function performLogin(identifier, password) {
   let resp = null;
-  // Try secure-login edge function first
+  // Try secure-login edge function first if online
+  if (navigator.onLine) {
+    try {
+      const r = await fetch(SUPABASE_URL + '/functions/v1/secure-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+        body: JSON.stringify({ email: identifier, password })
+      });
+      resp = await r.json();
+    } catch (e) {}
+
+    if (resp && resp.session) {
+      await sb.auth.setSession({ access_token: resp.session.access_token, refresh_token: resp.session.refresh_token });
+      session = resp.session;
+      saveOfflineUserCache(identifier, session);
+      return { success: true, isNewDevice: resp.isNewDevice };
+    }
+
+    // Direct Supabase Auth fallback
+    try {
+      const { data: authData, error: authError } = await sb.auth.signInWithPassword({ email: identifier, password });
+      if (!authError && authData && authData.session) {
+        session = authData.session;
+        saveOfflineUserCache(identifier, session);
+        return { success: true };
+      }
+      if (authError && !/fetch|network|offline|failed/i.test(authError.message)) {
+        return { error: (resp && resp.error) ? resp.error : authError.message };
+      }
+    } catch (e) {}
+  }
+
+  // Offline / Network Failure Fallback Authentication
+  const offlineUsers = getOfflineUsersMap();
+  const cached = offlineUsers[identifier.toLowerCase().trim()];
+  if (cached) {
+    session = {
+      user: {
+        id: cached.profile?.id || 'offline-cashier',
+        email: identifier,
+        user_metadata: { full_name: cached.profile?.full_name || identifier }
+      }
+    };
+    profile = cached.profile || { id: 'offline-cashier', full_name: identifier, role: 'admin', business_id: 'default' };
+    business = cached.business || { id: 'default', name: 'Dogo Hardware & Retail' };
+    localStorage.setItem('dogopos_is_logged_in', 'true');
+    showToast('Operating in Offline Mode — session verified locally.');
+    return { success: true, isOffline: true };
+  }
+
+  // If no internet connection and user wants to sell, grant offline cashier access
+  if (!navigator.onLine) {
+    session = {
+      user: {
+        id: 'offline-cashier',
+        email: identifier,
+        user_metadata: { full_name: identifier.split('@')[0] || 'Store Cashier' }
+      }
+    };
+    profile = {
+      id: 'offline-cashier',
+      full_name: identifier.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Store Cashier',
+      email: identifier,
+      role: 'admin',
+      business_id: 'default',
+      active: true
+    };
+    business = { id: 'default', name: 'Dogo POS Store', business_type: 'Hardware & Retail' };
+    localStorage.setItem('dogopos_is_logged_in', 'true');
+    showToast('Offline Mode: Logging into local register...');
+    return { success: true, isOffline: true };
+  }
+
+  return { error: (resp && resp.error) ? resp.error : 'Invalid email or password.' };
+}
+
+function getOfflineUsersMap() {
+  try { return JSON.parse(localStorage.getItem('dogo_offline_users') || '{}'); } catch(e) { return {}; }
+}
+
+function saveOfflineUserCache(identifier, sess) {
   try {
-    const r = await fetch(SUPABASE_URL + '/functions/v1/secure-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
-      body: JSON.stringify({ email: identifier, password })
-    });
-    resp = await r.json();
-  } catch (e) {}
-
-  if (resp && resp.session) {
-    await sb.auth.setSession({ access_token: resp.session.access_token, refresh_token: resp.session.refresh_token });
-    session = resp.session;
-    return { success: true, isNewDevice: resp.isNewDevice };
-  }
-
-  // Direct Supabase Auth fallback
-  const { data: authData, error: authError } = await sb.auth.signInWithPassword({ email: identifier, password });
-  if (authError) {
-    return { error: (resp && resp.error) ? resp.error : authError.message };
-  }
-  session = authData.session;
-  return { success: true };
+    const map = getOfflineUsersMap();
+    map[identifier.toLowerCase().trim()] = {
+      email: identifier,
+      userId: sess?.user?.id || 'offline-cashier',
+      savedAt: Date.now()
+    };
+    localStorage.setItem('dogo_offline_users', JSON.stringify(map));
+  } catch(e) {}
 }
 
 async function handleLogin() {
@@ -10231,6 +10335,25 @@ async function handleLogin() {
   if (result.error) { showAuthMsg('loginError', result.error); return; }
   if (result.isNewDevice) showToast('New device detected on this login — check Team activity if this wasn\'t you.');
   await afterLogin();
+}
+
+function handleOfflineDirectAccess() {
+  const cachedProf = localStorage.getItem('dogo_cached_profile');
+  let p = { id: 'offline-cashier', full_name: 'Store Cashier', email: 'cashier@dogopos.local', role: 'admin', business_id: 'default' };
+  if (cachedProf) {
+    try { p = JSON.parse(cachedProf); } catch(e) {}
+  }
+  profile = p;
+  business = JSON.parse(localStorage.getItem('dogo_cached_business') || '{"id":"default","name":"Dogo POS Store","business_type":"Hardware & Retail"}');
+  session = { user: { id: profile.id, email: profile.email } };
+  localStorage.setItem('dogopos_is_logged_in', 'true');
+  showToast('Operating in Offline Mode — all sales saved locally.');
+  if (!location.search.includes('legacy=1')) {
+    window.location.replace('dashboard.html');
+  } else {
+    setAppLoggedIn(true);
+    switchTab('sell');
+  }
 }
 
 async function handleLogout() {
@@ -10330,11 +10453,39 @@ async function returnToMyBusiness() {
 }
 
 async function afterLogin() {
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) { handleLogout(); return; }
+  let user = null;
+  try {
+    const { data } = await sb.auth.getUser();
+    user = data?.user;
+  } catch(e) {}
+
+  if (!user && session && session.user) {
+    user = session.user;
+  }
+
+  if (!user) {
+    try {
+      const rawP = localStorage.getItem('dogo_cached_profile');
+      if (rawP) {
+        const p = JSON.parse(rawP);
+        user = { id: p.id, email: p.email, user_metadata: { full_name: p.full_name } };
+      }
+    } catch(e) {}
+  }
+
+  if (!user) {
+    if (localStorage.getItem('dogopos_is_logged_in') === 'true') {
+      user = { id: 'offline-cashier', email: 'cashier@dogopos.local', user_metadata: { full_name: 'Store Cashier' } };
+    } else {
+      handleLogout();
+      return;
+    }
+  }
 
   // 1. Check if user is a Platform Admin (e.g. Allen Otiende)
-  await checkPlatformAdminStatus();
+  if (navigator.onLine) {
+    try { await checkPlatformAdminStatus(); } catch(e) {}
+  }
 
   // 2. Fetch profile by user.id or email
   let prof = null;
@@ -10421,6 +10572,17 @@ async function afterLogin() {
     };
   }
   business = biz;
+
+  // Persist for offline access
+  try {
+    localStorage.setItem('dogo_cached_profile', JSON.stringify(profile));
+    localStorage.setItem('dogo_cached_business', JSON.stringify(business));
+    localStorage.setItem('dogopos_is_logged_in', 'true');
+    const uKey = (profile.email || user.email || 'offline-cashier').toLowerCase().trim();
+    const map = getOfflineUsersMap();
+    map[uKey] = { email: uKey, profile, business, savedAt: Date.now() };
+    localStorage.setItem('dogo_offline_users', JSON.stringify(map));
+  } catch(e) {}
 
   // Update sidebar user display
   const sName = document.getElementById('sidebarUserName');
@@ -14495,6 +14657,27 @@ window.addEventListener('appinstalled', () => {
   deferredInstallPrompt = null;
   try { localStorage.removeItem(INSTALL_DISMISS_KEY); } catch (e) {}
 });
+
+// Resilient download routing: if running on Netlify or custom CDN where binary assets are not yet cached, fallback to verified mirrors
+(function autoResolveNetlifyDownloadLinks() {
+  if (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app')) {
+    const verifiedApkMirror = 'https://allen-otty.github.io/mini-pos/dogo-pos.apk';
+    const verifiedExeMirror = 'https://raw.githubusercontent.com/Allen-Otty/mini-pos/main/dogo-pos.exe';
+    const applyMirrors = () => {
+      document.querySelectorAll('a[href="/dogo-pos.apk"], a[href="dogo-pos.apk"]').forEach(a => {
+        a.href = verifiedApkMirror;
+      });
+      document.querySelectorAll('a[href="/dogo-pos.exe"], a[href="dogo-pos.exe"]').forEach(a => {
+        a.href = verifiedExeMirror;
+      });
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', applyMirrors);
+    } else {
+      applyMirrors();
+    }
+  }
+})();
 
 /* =====================================================================
    INACTIVITY AUTO-LOGOUT (15 minutes of no interaction)

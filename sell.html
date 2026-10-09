@@ -347,7 +347,7 @@
   <script src="assets/js/app-shell.js"></script>
   <script>
   (async function () {
-    const { sb, kes, esc, boot, toast } = window.DogoData;
+    const { sb, kes, esc, boot, toast, getProducts, getCustomers, getActiveShift, openShiftLocally, closeShiftLocally, queueOfflineSale, syncOfflineSales } = window.DogoData;
 
     const ctx = await boot('sell');
     if (!ctx) return;
@@ -355,19 +355,30 @@
     const $ = id => document.getElementById(id);
     let products = [], cart = [], currentShift = null, shiftSales = [];
 
-    // Load initial data
-    const [pRes, cRes, shRes] = await Promise.all([
-      sb.from('products').select('*').order('name'),
-      sb.from('customers').select('id,name').order('name'),
-      sb.from('shift_sessions').select('*').eq('business_id', ctx.businessId).order('created_at', { ascending: false }).limit(20)
-    ]);
+    // Offline banner update
+    function checkOfflineState() {
+      let b = $('sellOfflineBanner');
+      if (!b) {
+        b = document.createElement('div');
+        b.id = 'sellOfflineBanner';
+        b.style.cssText = 'display:none;background:#fef3c7;border:1px solid #fde68a;color:#92400e;padding:10px 16px;border-radius:12px;font-size:13px;font-weight:700;margin-bottom:14px;align-items:center;gap:8px;';
+        b.innerHTML = '<span style="font-size:16px;">⚡</span> <span>You are currently in Offline Mode — all sales and shift totals are saved safely to this device and will sync automatically when connected.</span>';
+        const main = document.querySelector('main');
+        if (main) main.insertBefore(b, $('shiftStatusBar'));
+      }
+      b.style.display = navigator.onLine ? 'none' : 'flex';
+    }
+    window.addEventListener('online', checkOfflineState);
+    window.addEventListener('offline', checkOfflineState);
+    setTimeout(checkOfflineState, 100);
 
-    products = pRes.data || [];
-    $('cust').innerHTML += (cRes.data || []).map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('');
+    // Load initial data via offline-resilient helpers
+    products = await getProducts();
+    const custs = await getCustomers();
+    $('cust').innerHTML = '<option value="">Walk-in Customer</option>' + (custs || []).map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('');
 
     // Determine active open shift
-    const allShifts = shRes.data || [];
-    currentShift = allShifts.find(s => s.status === 'OPEN' && s.user_id === ctx.profile.id) || null;
+    currentShift = await getActiveShift(ctx.businessId, ctx.profile.id);
 
     async function loadShiftSales() {
       if (!currentShift) {
@@ -375,13 +386,13 @@
         return;
       }
       try {
-        const { data } = await sb.from('sales')
-          .select('id,total,payment_method,created_at')
-          .eq('shift_id', currentShift.id);
-        shiftSales = data || [];
-      } catch (e) {
-        shiftSales = [];
-      }
+        if (navigator.onLine) {
+          const { data } = await sb.from('sales')
+            .select('id,total,payment_method,created_at')
+            .eq('shift_id', currentShift.id);
+          if (data) shiftSales = data;
+        }
+      } catch (e) {}
     }
 
     await loadShiftSales();
@@ -464,22 +475,7 @@
       const floatVal = parseFloat($('modalFloatInput').value) || 0;
       $('btnConfirmOpenShift').disabled = true;
       try {
-        const { data, error } = await sb.from('shift_sessions').insert({
-          id: crypto.randomUUID(),
-          business_id: ctx.businessId,
-          user_id: ctx.profile.id,
-          opening_float: floatVal,
-          status: 'OPEN',
-          created_at: new Date().toISOString()
-        }).select().single();
-
-        if (error) {
-          toast('Could not open shift: ' + error.message);
-          $('btnConfirmOpenShift').disabled = false;
-          return;
-        }
-
-        currentShift = data;
+        currentShift = openShiftLocally(ctx.businessId, ctx.profile.id, floatVal);
         shiftSales = [];
         closeOpenShiftModal();
         renderShiftBar();
@@ -553,20 +549,7 @@
       $('btnConfirmCloseShift').disabled = true;
 
       try {
-        const { error } = await sb.from('shift_sessions').update({
-          status: 'CLOSED',
-          closed_at: new Date().toISOString(),
-          expected_cash: expected,
-          actual_cash: actual,
-          cash_variance: variance
-        }).eq('id', currentShift.id);
-
-        if (error) {
-          toast('Could not close shift: ' + error.message);
-          $('btnConfirmCloseShift').disabled = false;
-          return;
-        }
-
+        closeShiftLocally(currentShift.id, actual, expected, variance, notes);
         toast(variance === 0 ? 'Shift closed — register balanced!' : `Shift closed — variance ${kes(variance)}`);
         currentShift = null;
         shiftSales = [];
@@ -720,43 +703,55 @@
         };
       });
 
-      const { count } = await sb.from('sales').select('id', { count: 'exact', head: true });
-      const receiptNo = 'RC-' + String((count || 0) + 1).padStart(4, '0');
+      const localCounter = (parseInt(localStorage.getItem('dogo_receipt_counter') || '100', 10) + 1);
+      localStorage.setItem('dogo_receipt_counter', String(localCounter));
+      const receiptNo = 'RC-' + String(localCounter).padStart(4, '0');
       const method = $('payMethod').value;
+      const offlineUuid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'sale-' + Date.now();
 
-      const { data, error } = await sb.rpc('process_sale', {
-        p_business_id: ctx.businessId,
-        p_cashier_id: ctx.profile.id,
-        p_receipt_no: receiptNo,
-        p_customer_id: $('cust').value || null,
-        p_subtotal_excl_vat: +sub.toFixed(2),
-        p_vat_total: +vat.toFixed(2),
-        p_total: +grand.toFixed(2),
-        p_offline_uuid: crypto.randomUUID(),
-        p_items: items,
-        p_payment_method: method,
-        p_shift_id: currentShift.id,
-        p_mpesa_receipt_no: null
+      const saleRecord = {
+        business_id: ctx.businessId,
+        cashier_id: ctx.profile.id,
+        receipt_no: receiptNo,
+        customer_id: $('cust').value || null,
+        subtotal_excl_vat: +sub.toFixed(2),
+        vat_total: +vat.toFixed(2),
+        total: +grand.toFixed(2),
+        offline_uuid: offlineUuid,
+        payment_method: method,
+        shift_id: currentShift.id,
+        created_at: new Date().toISOString()
+      };
+
+      // Queue sale locally & optimistically adjust stock
+      queueOfflineSale(saleRecord, items);
+
+      // Record in current shift sales locally for instant drawer math
+      shiftSales.push({
+        id: offlineUuid,
+        total: +grand.toFixed(2),
+        payment_method: method,
+        created_at: saleRecord.created_at
       });
 
-      if (error) {
-        toast(error.message.includes('Insufficient stock') ? error.message : 'Could not complete sale: ' + error.message);
-        $('payBtn').disabled = false;
-        return;
+      // Optimistically update products in memory
+      items.forEach(li => {
+        const pr = products.find(x => x.id === li.product_id || x.code === li.code);
+        if (pr) pr.stock = Math.max(0, Number(pr.stock || 0) - Number(li.qty));
+      });
+
+      if (navigator.onLine) {
+        syncOfflineSales().catch(() => {});
+        toast(`Sale complete (${receiptNo}): ${kes(grand)}`);
+      } else {
+        toast(`⚡ Sale recorded offline (${receiptNo}): ${kes(grand)} (Saved to device)`);
       }
 
-      toast(`Sale complete (${receiptNo}): ${kes(grand)}`);
       cart = [];
-
-      // Reload products and shift sales
-      const [rProd] = await Promise.all([
-        sb.from('products').select('*').order('name'),
-        loadShiftSales()
-      ]);
-      products = rProd.data || [];
       drawGrid();
       drawCart();
       renderShiftBar();
+      $('payBtn').disabled = false;
     };
 
     renderShiftBar();

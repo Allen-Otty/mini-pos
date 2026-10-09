@@ -76,6 +76,17 @@ app.get(['/dogo-pos.apk', '/download/apk', '/apk'], (req, res) => {
   res.status(404).send('APK not found');
 });
 
+// Download route for Windows release .exe application
+app.get(['/dogo-pos.exe', '/dogo-pos-setup.exe', '/download/exe', '/exe', '/download/windows', '/windows'], (req, res) => {
+  const exePath = path.join(__dirname, 'dogo-pos.exe');
+  if (fs.existsSync(exePath)) {
+    res.setHeader('Content-Type', 'application/vnd.microsoft.portable-executable');
+    res.setHeader('Content-Disposition', 'attachment; filename="dogo-pos.exe"');
+    return res.sendFile(exePath);
+  }
+  res.status(404).send('Windows executable not found');
+});
+
 // Primary root route: serve dashboard.html (the permanent new look)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'dashboard.html'));

@@ -87,6 +87,16 @@ See `TASKS.md` for the full, maintained list. Headline items:
 
 - **Netlify (default):** `https://dogo-pos-app.netlify.app` — live, linked to `Allen-Otty/mini-pos` main branch for continuous deployment
 - **GitHub Pages (secondary):** `https://allen-otty.github.io/mini-pos/` — every push to `main` auto-rebuilds within 1–2 minutes
+- **Windows Desktop Application (.exe):** Native 64-bit Windows release (`dogo-pos.exe` - 89 KB). Downloadable via `/dogo-pos.exe`, `/download/windows`, or directly on the home dashboard. Supports borderless App Mode, hardware USB/Bluetooth barcode scanner keyboard wedge input, and ESC/POS thermal receipt printing.
+- **Android Release Application (.apk):** Official signed release package (`dogo-pos.apk` - 13 KB). Downloadable via `/dogo-pos.apk` or direct GitHub Pages mirror.
+
+### Windows Desktop Launcher Features & Flags
+- Direct double-click: Auto-detects local/cloud POS, opens frameless app window, and creates desktop shortcut.
+- `dogo-pos.exe --retail`: Direct Cashier Retail POS mode (`/sell.html`)
+- `dogo-pos.exe --restaurant`: Hotel & Restaurant table order mode (`/restaurant.html`)
+- `dogo-pos.exe --shortcut`: Re-creates Desktop icon shortcut
+- `dogo-pos.exe --local`: Forces connection to local server `http://127.0.0.1:3000`
+- `dogo-pos.exe --help`: Displays full options dialog
 
 ```bash
 git clone https://github.com/Allen-Otty/mini-pos.git

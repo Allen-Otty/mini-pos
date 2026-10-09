@@ -62,6 +62,14 @@
   const NAV_ITEMS = NAV_ITEMS_RAW.map(i => BUILT[i.id] ? i : Object.assign({}, i, { href: LEGACY }));
 
   function renderHeader(root, opts) {
+    const apkHref = (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app'))
+      ? 'https://allen-otty.github.io/mini-pos/dogo-pos.apk'
+      : '/dogo-pos.apk';
+
+    const exeHref = (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app'))
+      ? 'https://raw.githubusercontent.com/Allen-Otty/mini-pos/main/dogo-pos.exe'
+      : '/dogo-pos.exe';
+
     root.innerHTML = `
       <header class="dogo-header">
         <button class="dogo-header__icon-btn dogo-hide-desktop" id="dogoNavToggle" aria-label="Menu">${ICONS.menu}</button>
@@ -69,9 +77,17 @@
           <span class="dogo-header__logo">D</span>
           <span>${opts.businessName || 'Dogo POS'}</span>
         </a>
-        <div class="dogo-header__actions" style="display:flex;align-items:center;gap:6px;">
-          <a href="/dogo-pos.apk" download="dogo-pos.apk" class="dogo-header__icon-btn" title="Download Android APK" style="color:var(--dogo-neon-bright);display:flex;align-items:center;justify-content:center;">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        <div class="dogo-header__actions" style="display:flex;align-items:center;gap:8px;">
+          <button id="dogoSyncPill" class="dogo-btn" onclick="window.DogoData && window.DogoData.syncOfflineSales && window.DogoData.syncOfflineSales()" style="display:inline-flex;align-items:center;padding:5px 10px;font-size:12px;border-radius:999px;font-weight:700;border:1px solid #00d26a;background:rgba(0,210,106,0.12);color:var(--dogo-neon-dark);cursor:pointer;" title="Sync status">
+            <span style="width:7px;height:7px;border-radius:50%;background:#00d26a;display:inline-block;margin-right:4px;"></span>Online
+          </button>
+          <a href="${exeHref}" download="dogo-pos.exe" class="dogo-btn" title="Download Windows Desktop App (v1.0.0)" style="padding:6px 12px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#00a4ef;color:#ffffff;border:1px solid #00a4ef;border-radius:999px;font-weight:700;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.801"/></svg>
+            <span>Windows .EXE</span>
+          </a>
+          <a href="${apkHref}" download="dogo-pos.apk" class="dogo-btn dogo-btn--primary" title="Download Android APK Release (v1.0.0)" style="padding:6px 12px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;box-shadow:0 0 12px var(--dogo-neon-glow);border-radius:999px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-1.0002s.4482-1.0001.9993-1.0001c.5516 0 .9997.4485.9997 1.0001 0 .5516-.4481 1.0002-.9997 1.0002m-11.046 0c-.5511 0-.9993-.4486-.9993-1.0002s.4482-1.0001.9993-1.0001c.5516 0 .9997.4485.9997 1.0001 0 .5516-.4481 1.0002-.9997 1.0002m11.4045-6.02l1.996-3.456a.4158.4158 0 00-.1523-.5676.416.416 0 00-.5681.1523l-2.0223 3.5028c-1.5791-.7224-3.3496-1.1274-5.2348-1.1274s-3.6557.405-5.2348 1.1274L4.6398 5.4501a.4162.4162 0 00-.5681-.1523.4157.4157 0 00-.1523.5676l1.996 3.456C2.6884 11.0962.5 14.5934.5 18.665h23c0-4.0716-2.1884-7.5688-5.6185-9.3436"/></svg>
+            <span>Android APK</span>
           </a>
           <button class="dogo-header__icon-btn" id="dogoLogoutBtn" aria-label="Log out">${ICONS.logout}</button>
         </div>
@@ -85,6 +101,14 @@
 
   function renderNav(root, opts) {
     const items = opts.items || NAV_ITEMS;
+    const apkHref = (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app'))
+      ? 'https://allen-otty.github.io/mini-pos/dogo-pos.apk'
+      : '/dogo-pos.apk';
+
+    const exeHref = (typeof window !== 'undefined' && window.location.hostname.includes('netlify.app'))
+      ? 'https://raw.githubusercontent.com/Allen-Otty/mini-pos/main/dogo-pos.exe'
+      : '/dogo-pos.exe';
+
     root.innerHTML = `
       <nav class="dogo-nav-panel" id="dogoNavPanel">
         <div class="dogo-nav-grid">
@@ -93,6 +117,14 @@
               ${ICONS[item.icon] || ''}<span>${item.label}</span>
             </a>
           `).join('')}
+          <a class="dogo-nav-item" href="${exeHref}" download="dogo-pos.exe" style="color:#00a4ef;font-weight:700;" title="Download Windows Desktop App (.exe)">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:17px;height:17px;"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.801"/></svg>
+            <span>Windows .EXE</span>
+          </a>
+          <a class="dogo-nav-item" href="${apkHref}" download="dogo-pos.apk" style="color:var(--dogo-neon-dark);font-weight:700;" title="Download Android Release APK">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Android APK</span>
+          </a>
           <a class="dogo-nav-item" href="index.html?legacy=1" style="margin-left:auto;color:var(--dogo-gold-dark);font-weight:700;"><span>Legacy Modules &rarr;</span></a>
         </div>
       </nav>

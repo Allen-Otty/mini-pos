@@ -1,0 +1,74 @@
+# Netlify configuration for Dogo POS
+
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/dogo-pos.apk"
+  [headers.values]
+    Content-Type = "application/vnd.android.package-archive"
+    Content-Disposition = "attachment; filename=\"dogo-pos.apk\""
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/dogo-pos.exe"
+  [headers.values]
+    Content-Type = "application/vnd.microsoft.portable-executable"
+    Content-Disposition = "attachment; filename=\"dogo-pos.exe\""
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/dogo-pos-setup.exe"
+  [headers.values]
+    Content-Type = "application/vnd.microsoft.portable-executable"
+    Content-Disposition = "attachment; filename=\"dogo-pos-setup.exe\""
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(self)"
+
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+# Redirects & Routing
+[[redirects]]
+  from = "/download/apk"
+  to = "/dogo-pos.apk"
+  status = 302
+
+[[redirects]]
+  from = "/apk"
+  to = "/dogo-pos.apk"
+  status = 302
+
+[[redirects]]
+  from = "/download/exe"
+  to = "/dogo-pos.exe"
+  status = 302
+
+[[redirects]]
+  from = "/exe"
+  to = "/dogo-pos.exe"
+  status = 302
+
+[[redirects]]
+  from = "/download/windows"
+  to = "/dogo-pos.exe"
+  status = 302
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/legacy"
+  to = "/index.html"
+  status = 200
