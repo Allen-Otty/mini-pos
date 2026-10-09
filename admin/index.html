@@ -1330,27 +1330,16 @@
           </div>
         </div>
 
-        <!-- Plan Pricing -->
-        <h4 style="color:var(--gold); font-size:14px; font-weight:800; margin:22px 0 10px;">
-          <i class="fa-solid fa-tags"></i> Monthly Plan Pricing Overrides
+        <!-- Plans & Pricing (plan_catalog table) -->
+        <h4 style="color:var(--gold); font-size:14px; font-weight:800; margin:22px 0 4px;">
+          <i class="fa-solid fa-tags"></i> Plans, Pricing &amp; Features
         </h4>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Core POS Monthly Price (KES)</label>
-            <input type="number" id="setPriceCore" class="form-control" value="999">
-          </div>
-          <div class="form-group">
-            <label>Control POS + eTIMS Monthly Price (KES)</label>
-            <input type="number" id="setPriceControl" class="form-control" value="1999">
-          </div>
-          <div class="form-group">
-            <label>Core Group Monthly Price (KES)</label>
-            <input type="number" id="setPriceCoreGroup" class="form-control" value="3999">
-          </div>
-          <div class="form-group">
-            <label>Control Group Monthly Price (KES)</label>
-            <input type="number" id="setPriceControlGroup" class="form-control" value="7999">
-          </div>
+        <p class="card-sub" style="margin:0 0 12px;">Changes appear on the public pricing page, signup, upgrade screen and plan limits. Leave a limit blank for unlimited. Tellers are staff on top of the owner.</p>
+        <div id="planCatalogEditor"><p class="card-sub">Loading plans…</p></div>
+        <div style="margin:12px 0 4px; text-align:right;">
+          <button class="btn-primary" onclick="savePlanCatalog()">
+            <i class="fa-solid fa-floppy-disk"></i> Save Plans &amp; Pricing
+          </button>
         </div>
 
         <div style="margin-top:18px; text-align:right;">
@@ -1667,10 +1656,6 @@ const DEFAULT_PLATFORM_SETTINGS = {
   bank_account_number: '',
   paystack_public_key: '',
   paystack_secret_key: '',
-  price_core: 999,
-  price_control: 1999,
-  price_core_group: 3999,
-  price_control_group: 7999,
   alert_whatsapp: '+254712345678',
   alert_telegram: '',
   telegram_bot_token: '',
@@ -1792,6 +1777,7 @@ async function callPlatformFn(action, payload) {
 
 async function loadDashboard() {
   await loadPlatformSettingsFromDB();
+  await loadPlanCatalogAdmin();
   loadAnalyticsFields();
   loadBroadcastFields();
 
@@ -1997,8 +1983,7 @@ async function renderSubscriptionsViews(businesses) {
   businesses.forEach(b => {
     if (b.subscription_plan && b.subscription_plan !== 'Free' && b.subscription_status === 'active') {
       paidCount++;
-      totalMrr += Number(b.subscription_plan === 'Control Group' ? 7999 : b.subscription_plan === 'Control' ? 1999
-        : b.subscription_plan === 'Core Group' ? 3999 : b.subscription_plan === 'Core' ? 999 : 0);
+      totalMrr += planMonthly(b.subscription_plan);
     }
   });
 
@@ -2029,7 +2014,7 @@ async function renderSubscriptionsViews(businesses) {
   if (hBody) {
     hBody.innerHTML = businesses.map(b => {
       const plan = b.subscription_plan || 'Free';
-      const amount = { 'Control Group': 7999, 'Control': 1999, 'Core Group': 3999, 'Core': 999 }[plan] || 0;
+      const amount = planMonthly(plan);
       const renews = b.subscription_renews_at ? new Date(b.subscription_renews_at).toLocaleDateString() : (plan === 'Free' ? 'Never' : '—');
       return `
         <tr>
@@ -2074,7 +2059,7 @@ function printSubscriptionInvoice(bizId, bizName, plan, amount) {
   const modal = document.getElementById('invoiceModal');
   const invNum = 'INV-' + Math.floor(100000 + Math.random() * 900000);
   const dateStr = new Date().toISOString().split('T')[0];
-  const total = Number(amount || (plan === 'Control' ? 1999 : (plan === 'Core' ? 999 : 0)));
+  const total = Number(amount || planMonthly(plan));
   const vat = total * 0.16;
 
   document.getElementById('invNumber').textContent = invNum;
@@ -2174,10 +2159,6 @@ function loadPayoutFields() {
   const aWa = document.getElementById('setAlertWhatsapp'); if (aWa) aWa.value = cfg.alert_whatsapp || '';
   const aTg = document.getElementById('setAlertTelegram'); if (aTg) aTg.value = cfg.alert_telegram || '';
 
-  const prCore = document.getElementById('setPriceCore'); if (prCore) prCore.value = cfg.price_core;
-  const prCtrl = document.getElementById('setPriceControl'); if (prCtrl) prCtrl.value = cfg.price_control;
-  const prCoreG = document.getElementById('setPriceCoreGroup'); if (prCoreG) prCoreG.value = cfg.price_core_group;
-  const prCtrlG = document.getElementById('setPriceControlGroup'); if (prCtrlG) prCtrlG.value = cfg.price_control_group;
 
   toggleMpesaModeFields();
 }
@@ -2205,6 +2186,97 @@ function fillAdminSandboxDefaults() {
   showToast('Safaricom Sandbox defaults set (Shortcode 174379). Paste your Consumer Key & Secret from Daraja Portal.');
 }
 
+// ==========================================
+// PLAN CATALOG (prices, limits, features) — table: plan_catalog
+// ==========================================
+const DEFAULT_PLAN_PRICES = { 'Free': 0, 'Core': 999, 'Core Group': 3999, 'Control': 1999, 'Control Group': 7999 };
+const PLAN_FLAG_LABELS = {
+  cashSales: 'Cash sales', basicReceipts: 'Basic receipts', scanner: 'Barcode scanner', offlineStorage: 'Offline storage',
+  mpesaStk: 'M-Pesa STK Push', shifts: 'Shifts & float', restaurantKitchen: 'Tables & kitchen tickets', profitReports: 'Profit reports',
+  teamAccounts: 'Team accounts', etims: 'KRA eTIMS', advancedStockAlerts: 'Stock alerts', multiBranch: 'Multi-branch', prioritySupport: 'Priority support'
+};
+let planCatalogCache = [];
+
+function planMonthly(plan) {
+  const r = planCatalogCache.find(x => x.plan === plan);
+  return r ? Number(r.monthly_price) : (DEFAULT_PLAN_PRICES[plan] || 0);
+}
+
+async function loadPlanCatalogAdmin() {
+  try {
+    const { data, error } = await sb.from('plan_catalog').select('*').order('sort');
+    if (error) throw error;
+    planCatalogCache = data || [];
+  } catch (e) {
+    planCatalogCache = [];
+    console.warn('plan_catalog not available yet (run migration 20261009_plan_catalog.sql):', e.message);
+  }
+  renderPlanCatalogEditor();
+}
+
+function renderPlanCatalogEditor() {
+  const box = document.getElementById('planCatalogEditor');
+  if (!box) return;
+  if (!planCatalogCache.length) {
+    box.innerHTML = '<p class="card-sub" style="color:#fca5a5;">Plan catalog not found. Run <code>supabase/migrations/20261009_plan_catalog.sql</code> in the Supabase SQL editor, then reload this page.</p>';
+    return;
+  }
+  const num = v => (v === null || v === undefined) ? '' : v;
+  box.innerHTML = planCatalogCache.map((r, i) => `
+    <div class="card" style="margin-bottom:12px; padding:14px;" data-plan-row="${i}">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+        <strong style="font-size:15px;">${escapeHtml(r.plan)}</strong>
+        <span class="tag tag-plan-${r.plan.toLowerCase().replace(/\s+/g,'-')}">${escapeHtml(r.plan)}</span>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>Display name</label><input class="form-control" data-f="display_name" value="${escapeHtml(r.display_name)}"></div>
+        <div class="form-group"><label>Monthly price (KES)</label><input type="number" min="0" class="form-control" data-f="monthly_price" value="${num(r.monthly_price)}"></div>
+        <div class="form-group"><label>Yearly price (KES)</label><input type="number" min="0" class="form-control" data-f="yearly_price" value="${num(r.yearly_price)}"></div>
+        <div class="form-group"><label>Max tellers (blank = unlimited)</label><input type="number" min="0" class="form-control" data-f="max_tellers" value="${num(r.max_tellers)}"></div>
+        <div class="form-group"><label>Max branches (blank = unlimited)</label><input type="number" min="1" class="form-control" data-f="max_branches" value="${num(r.max_branches)}"></div>
+        <div class="form-group"><label>Max products (blank = unlimited)</label><input type="number" min="1" class="form-control" data-f="max_products" value="${num(r.max_products)}"></div>
+      </div>
+      <div class="form-group" style="margin-top:8px;"><label>Tagline</label><input class="form-control" data-f="tagline" value="${escapeHtml(r.tagline || '')}"></div>
+      <div class="form-group" style="margin-top:8px;"><label>Pricing-page bullets (one per line, **bold** supported)</label>
+        <textarea class="form-control" data-f="features" rows="5">${escapeHtml((r.features || []).join('\n'))}</textarea></div>
+      <label style="font-size:12px; font-weight:700; display:block; margin:10px 0 6px;">Included features</label>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:6px;">
+        ${Object.keys(PLAN_FLAG_LABELS).map(k => `
+          <label style="display:flex; gap:6px; align-items:center; font-size:12.5px; font-weight:500;">
+            <input type="checkbox" data-flag="${k}" ${r.flags && r.flags[k] ? 'checked' : ''}> ${PLAN_FLAG_LABELS[k]}
+          </label>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+async function savePlanCatalog() {
+  if (!planCatalogCache.length) return showToast('Plan catalog not loaded. Run the 20261009 migration first.');
+  const rows = [];
+  for (const el of document.querySelectorAll('[data-plan-row]')) {
+    const base = planCatalogCache[Number(el.dataset.planRow)];
+    const get = f => el.querySelector(`[data-f="${f}"]`).value.trim();
+    const optInt = f => { const v = get(f); return v === '' ? null : Math.max(0, parseInt(v, 10)); };
+    const monthly = parseFloat(get('monthly_price')), yearly = parseFloat(get('yearly_price'));
+    if (!(monthly >= 0) || !(yearly >= 0)) return showToast(`Enter valid prices for ${base.plan}.`);
+    const branches = optInt('max_branches'), products = optInt('max_products');
+    if (branches === 0 || products === 0) return showToast(`${base.plan}: branches and products must be at least 1 (or blank for unlimited).`);
+    const flags = {};
+    el.querySelectorAll('[data-flag]').forEach(c => { flags[c.dataset.flag] = c.checked; });
+    rows.push({
+      plan: base.plan, sort: base.sort, display_name: get('display_name') || base.plan, tagline: get('tagline'),
+      monthly_price: monthly, yearly_price: yearly,
+      max_tellers: optInt('max_tellers'), max_branches: branches, max_products: products,
+      flags, features: el.querySelector('[data-f="features"]').value.split('\n').map(x => x.trim()).filter(Boolean)
+    });
+  }
+  const { error } = await sb.from('plan_catalog').upsert(rows, { onConflict: 'plan' });
+  if (error) return showToast('Could not save plans: ' + error.message);
+  planCatalogCache = rows;
+  try { localStorage.removeItem('dogo_plan_catalog_v1'); } catch (e) {}
+  showToast('Plans & pricing saved. The pricing page and limits now use these values.');
+  renderSubscriptionsViews && allBusinessesCache && renderSubscriptionsViews(allBusinessesCache);
+}
+
 async function savePayoutSettings() {
   const cfg = getStoredPlatformSettings();
 
@@ -2229,11 +2301,6 @@ async function savePayoutSettings() {
   cfg.telegram_bot_token = document.getElementById('setTelegramBotToken')?.value.trim() || '';
   cfg.alert_whatsapp = document.getElementById('setAlertWhatsapp')?.value.trim() || '';
   cfg.alert_telegram = document.getElementById('setAlertTelegram')?.value.trim() || '';
-
-  cfg.price_core = parseFloat(document.getElementById('setPriceCore')?.value || '999');
-  cfg.price_control = parseFloat(document.getElementById('setPriceControl')?.value || '1999');
-  cfg.price_core_group = parseFloat(document.getElementById('setPriceCoreGroup')?.value || '3999');
-  cfg.price_control_group = parseFloat(document.getElementById('setPriceControlGroup')?.value || '7999');
 
   // NOTE: this used to also call the 'mpesa-settings' edge function — the same one a
   // business uses to configure ITS OWN till for its own sales. Calling it from here

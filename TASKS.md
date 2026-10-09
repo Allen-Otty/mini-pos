@@ -112,3 +112,10 @@ Last updated: 2026-08-31
 ## How this file will be maintained
 
 Every future change (schema migration, edge function, frontend edit, doc update) gets an entry added here in the same turn it's made — moved from "Open" to "Completed" once verified (not just written), with a one-line note on how it was verified (tool output, direct fetch, etc.). If a task is uncertain, it stays unchecked with a note on what's blocking it — nothing gets checked off on assumption.
+
+
+## Admin console: plans, pricing & features (branch `admin-plan-catalog`)
+- [x] `plan_catalog` table (migration `20261009_plan_catalog.sql`): monthly/yearly price, max tellers/branches/products, feature flags and pricing-page bullets per plan. Core seeded with 1 teller.
+- [x] Admin Console > Settings: new "Plans, Pricing & Features" editor (replaces the old 4 price boxes, which wrote columns that don't exist).
+- [x] Public pricing cards, signup picker, upgrade screen, and client/DB plan limits read from the catalog; built-in values remain as fallback.
+- [ ] **To go live:** run `20261009_plan_catalog.sql` in the Supabase SQL editor (after 20260930), then merge. Note 20260930 is still not applied (see its header about Free-plan grandfathering).

@@ -50,6 +50,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <script src="assets/js/biz-profiles.js"></script>
+<script src="assets/js/plan-catalog.js"></script>
 <style>
   
 #appHeader, #mainTabs {
@@ -6076,14 +6077,14 @@
         <div>
           <div class="pricing-eyebrow">Starter store</div>
           <h3 class="pricing-plan-name">Free</h3>
-          <p style="font-size:13px; color:var(--text-secondary); margin:0;">For small kiosks and single tellers getting started.</p>
+          <p data-plan-tagline="Free" style="font-size:13px; color:var(--text-secondary); margin:0;">For small kiosks and single tellers getting started.</p>
 
           <div class="pricing-price-wrap">
             <span class="pricing-amount">KES 0</span>
             <span class="pricing-period">/ month</span>
           </div>
 
-          <ul class="pricing-features">
+          <ul class="pricing-features" data-plan-features="Free">
             <li><i class="fa-solid fa-circle-check"></i> 1 branch &amp; 1 user</li>
             <li><i class="fa-solid fa-circle-check"></i> Up to 5 catalog products</li>
             <li><i class="fa-solid fa-circle-check"></i> Cash sales &amp; basic receipts</li>
@@ -6103,20 +6104,20 @@
         <div>
           <div class="pricing-eyebrow">Growth store</div>
           <h3 class="pricing-plan-name">Core POS</h3>
-          <p style="font-size:13px; color:var(--text-secondary); margin:0;">For active retail shops and restaurants needing control.</p>
+          <p data-plan-tagline="Core POS" style="font-size:13px; color:var(--text-secondary); margin:0;">For active retail shops and restaurants needing control.</p>
 
           <div class="pricing-price-wrap">
             <span class="pricing-amount" id="corePriceAmount">KES 999</span>
             <span class="pricing-period" id="corePricePeriod">/ month</span>
           </div>
 
-          <ul class="pricing-features">
+          <ul class="pricing-features" data-plan-features="Core">
             <li><i class="fa-solid fa-circle-check"></i> <strong>Unlimited products</strong></li>
             <li><i class="fa-solid fa-circle-check"></i> M-Pesa STK Push integration</li>
             <li><i class="fa-solid fa-circle-check"></i> Shift &amp; float reconciliation</li>
             <li><i class="fa-solid fa-circle-check"></i> Restaurant tables &amp; kitchen tickets</li>
             <li><i class="fa-solid fa-circle-check"></i> Profit &amp; cost reporting</li>
-            <li><i class="fa-solid fa-circle-check"></i> Staff &amp; teller accounts</li>
+            <li><i class="fa-solid fa-circle-check"></i> 1 teller account</li>
           </ul>
         </div>
 
@@ -6130,14 +6131,14 @@
         <div>
           <div class="pricing-eyebrow">Multi-branch growth</div>
           <h3 class="pricing-plan-name">Core Group</h3>
-          <p style="font-size:13px; color:var(--text-secondary); margin:0;">Core POS for up to five branches under one business account.</p>
+          <p data-plan-tagline="Core Group" style="font-size:13px; color:var(--text-secondary); margin:0;">Core POS for up to five branches under one business account.</p>
 
           <div class="pricing-price-wrap">
             <span class="pricing-amount" id="coreGroupPriceAmount">KES 3,999</span>
             <span class="pricing-period" id="coreGroupPricePeriod">/ month</span>
           </div>
 
-          <ul class="pricing-features">
+          <ul class="pricing-features" data-plan-features="Core Group">
             <li><i class="fa-solid fa-circle-check"></i> Everything in Core POS</li>
             <li><i class="fa-solid fa-circle-check"></i> <strong>Up to 5 branches</strong></li>
             <li><i class="fa-solid fa-circle-check"></i> Staff accounts (up to 25)</li>
@@ -6157,14 +6158,14 @@
         <div>
           <div class="pricing-eyebrow">Established teams</div>
           <h3 class="pricing-plan-name">Control POS</h3>
-          <p style="font-size:13px; color:var(--text-secondary); margin:0;">For growing supermarkets and tax-compliant merchants.</p>
+          <p data-plan-tagline="Control POS" style="font-size:13px; color:var(--text-secondary); margin:0;">For growing supermarkets and tax-compliant merchants.</p>
 
           <div class="pricing-price-wrap">
             <span class="pricing-amount" id="controlPriceAmount">KES 1,999</span>
             <span class="pricing-period" id="controlPricePeriod">/ month</span>
           </div>
 
-          <ul class="pricing-features">
+          <ul class="pricing-features" data-plan-features="Control">
             <li><i class="fa-solid fa-circle-check"></i> Everything in Core POS</li>
             <li><i class="fa-solid fa-circle-check"></i> <strong>KRA eTIMS tax fiscalization</strong></li>
             <li><i class="fa-solid fa-circle-check"></i> Advanced reorder stock alerts</li>
@@ -6184,14 +6185,14 @@
         <div>
           <div class="pricing-eyebrow">Multi-branch compliance</div>
           <h3 class="pricing-plan-name">Control Group</h3>
-          <p style="font-size:13px; color:var(--text-secondary); margin:0;">Control POS and advanced management for up to five branches.</p>
+          <p data-plan-tagline="Control Group" style="font-size:13px; color:var(--text-secondary); margin:0;">Control POS and advanced management for up to five branches.</p>
 
           <div class="pricing-price-wrap">
             <span class="pricing-amount" id="controlGroupPriceAmount">KES 7,999</span>
             <span class="pricing-period" id="controlGroupPricePeriod">/ month</span>
           </div>
 
-          <ul class="pricing-features">
+          <ul class="pricing-features" data-plan-features="Control Group">
             <li><i class="fa-solid fa-circle-check"></i> Everything in Control POS</li>
             <li><i class="fa-solid fa-circle-check"></i> <strong>Up to 5 branches</strong></li>
             <li><i class="fa-solid fa-circle-check"></i> KRA eTIMS support</li>
@@ -9529,7 +9530,8 @@ function setBillingCycle(cycle) {
     mBtn.classList.toggle('active', !isYearly);
     yBtn.classList.toggle('active', isYearly);
   }
-  const tiers = [
+  window.__billingCycle = cycle;
+  const tiers = (window.DogoPlanCatalog && DogoPlanCatalog.tiers().length === 4) ? DogoPlanCatalog.tiers() : [
     { amt: 'corePriceAmount', per: 'corePricePeriod', m: 'KES 999', y: 'KES 9,999', save: 'KES 1,989' },
     { amt: 'coreGroupPriceAmount', per: 'coreGroupPricePeriod', m: 'KES 3,999', y: 'KES 39,999', save: 'KES 7,989' },
     { amt: 'controlPriceAmount', per: 'controlPricePeriod', m: 'KES 1,999', y: 'KES 19,999', save: 'KES 3,989' },
@@ -9788,6 +9790,19 @@ let posfitiSelectedFeature = 'control'; // 'core' | 'control'
 let posfitiSelectedBranches = '1';       // '1' | '5'
 let posfitiSelectedBilling = 'monthly';  // 'monthly' | 'yearly'
 let posfitiReferralCode = '';
+
+// Admin-edited prices, limits and feature lists (plan_catalog). The values hardcoded above
+// stay as the fallback if the table doesn't exist yet or the network is down.
+if (window.DogoPlanCatalog) {
+  DogoPlanCatalog.load().then(rows => {
+    if (!rows.length) return;
+    DogoPlanCatalog.applyToPlanFeatures(PLAN_FEATURES);
+    DogoPlanCatalog.applyToPosfiti(POSFITI_PRICING);
+    DogoPlanCatalog.applyToLanding();
+    if (typeof setBillingCycle === 'function') setBillingCycle(window.__billingCycle || 'monthly');
+    if (typeof updatePosfitiUI === 'function' && document.getElementById('posfitiPriceAmt')) { try { updatePosfitiUI(); } catch (e) {} }
+  });
+}
 let posfitiFeaturesExpanded = false;
 
 function setPosfitiFeature(feat) {
@@ -14311,7 +14326,7 @@ function handleCreateBranchClick() {
   if (currentBranches >= maxBranches) {
     showPlanUpgradePrompt(
       'Multi-Branch Expansion (Group Plan)',
-      `Your current plan (${planInfo.name}) supports ${maxBranches} branch. Upgrade to Core Group (KES 3,999/mo) or Control Group (KES 7,999/mo) to manage up to 5 branch locations with unified inventory.`,
+      `Your current plan (${planInfo.name}) supports ${maxBranches} branch. Upgrade to Core Group (KES ${(PLAN_FEATURES['Core Group']||{}).priceMonth?.toLocaleString() || '3,999'}/mo) or Control Group (KES ${(PLAN_FEATURES['Control Group']||{}).priceMonth?.toLocaleString() || '7,999'}/mo) to manage up to 5 branch locations with unified inventory.`,
       planInfo.name.includes('Control') ? 'Control Group' : 'Core Group'
     );
     return;
