@@ -39,6 +39,7 @@
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/biz-profiles.js"></script>
   <script src="assets/js/app-shell.js"></script>
   <script>
   (async function () {
@@ -46,6 +47,8 @@
 
     const ctx = await boot('expenses'); if (!ctx) return;
     const $ = id => document.getElementById(id); let rows = [];
+    // Expense categories follow the business type ("Stock Purchases" is kept in every list).
+    DogoBiz.fillSelect($('fCat'), DogoBiz.profileFor(ctx.business && ctx.business.business_type).expenseCategories);
     if (!ctx.isAdmin) { $('histCard').style.display = 'none'; $('tellerNote').style.display = ''; $('kMonth').textContent = $('kAll').textContent = '—'; }
     async function load() {
       if (!ctx.isAdmin) return;

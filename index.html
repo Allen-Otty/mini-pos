@@ -49,6 +49,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+<script src="assets/js/biz-profiles.js"></script>
 <style>
   
 #appHeader, #mainTabs {
@@ -9054,20 +9055,21 @@ function applyIndustryCustomizations(bizType) {
   // 4b. Update Add Product Category dropdown
   const pcCatSelect = document.getElementById('pcCategory');
   if (pcCatSelect) {
-    const indCats = {
-      'Hotel': ['Breakfast', 'Drinks', 'Lunch', 'Dinner/Supper', 'Snacks'],
-      'Supermarket': ['Groceries', 'Beverages', 'Dairy & Eggs', 'Bakery', 'Personal Care', 'Household & Cleaning', 'Snacks & Confectionery'],
-      'Wholesale': ['Bulk Grains', 'Bulk Pantry', 'Bulk Oils & Fats', 'Bulk Soaps & Detergents', 'Bulk Beverages', 'Sacks & Bales'],
-      'Hardware': ['Cement & Masonry', 'Roofing & Iron Sheets', 'Paint & Finishes', 'Plumbing & Pipes', 'Steel & Rebar', 'Tools & Hardware', 'Electrical'],
-      'Kiosk': ['Bakery & Breads', 'Dairy & Milk', 'Airtime & Vouchers', 'Soft Drinks', 'Snacks & Confectionery', 'Daily Pantry', 'Fresh Produce'],
-      'Retail': ['Men’s Apparel', 'Women’s Apparel', 'Footwear & Shoes', 'Bags & Accessories', 'Electronics & Gadgets', 'Beauty & Cosmetics'],
-      'SME': ['Professional Services', 'Technical & Diagnostic', 'Maintenance Contracts', 'Support Services', 'Parts & Consumables', 'Documentation']
-    }[norm] || ['General', 'Retail', 'Wholesale', 'Beverages', 'Pantry'];
+    const indCats = DogoBiz.profileFor(norm).categories;   // one shared list per business type (assets/js/biz-profiles.js)
 
     const curVal = pcCatSelect.value;
     pcCatSelect.innerHTML = indCats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
     if (indCats.includes(curVal)) pcCatSelect.value = curVal;
   }
+
+  // 4c. Stock units and expense categories follow the business type too.
+  const bizProfile = DogoBiz.profileFor(norm);
+  ['pcUnit', 'npUnit', 'capUnit'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) DogoBiz.fillSelect(el, bizProfile.units, { preserve: true });
+  });
+  const expSel = document.getElementById('expCategory');
+  if (expSel) DogoBiz.fillSelect(expSel, bizProfile.expenseCategories, { preserve: true });
 
   // Hotel mode: the Menu Items quick-add category becomes a food-course picker
   // (Breakfast / Lunch / Dinner/Supper / Snacks / Drinks / Other) instead of
@@ -9081,7 +9083,7 @@ function applyIndustryCustomizations(bizType) {
         capSel.id = 'capCategorySelect';
         capInput.parentNode.insertBefore(capSel, capInput);
       }
-      const foodCats = ['Breakfast', 'Drinks', 'Lunch', 'Dinner/Supper', 'Snacks', 'Other'];
+      const foodCats = DogoBiz.PROFILES.restaurant.categories.concat(['Other']);
       const curCap = capInput.value;
       capSel.innerHTML = foodCats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
       if (foodCats.includes(curCap)) capSel.value = curCap;
@@ -13278,7 +13280,7 @@ function editProduct(code) {
   document.getElementById('capCategory').value = p.category || '';
   document.getElementById('capPrice').value = p.price;
   document.getElementById('capVat').value = String(p.vat);
-  document.getElementById('capUnit').value = p.unit || 'piece';
+  DogoBiz.setValue(document.getElementById('capUnit'), p.unit || 'piece');
   document.getElementById('capStock').value = String(p.stock || 0);
   document.getElementById('capReorder').value = String(p.reorder || 0);
   document.getElementById('capSaveBtn').textContent = 'Update Product';

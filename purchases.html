@@ -425,6 +425,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/biz-profiles.js"></script>
   <script src="assets/js/app-shell.js"></script>
   <script>
   (async function () {
@@ -435,6 +436,12 @@
     if (!ctx) return;
     const { businessId, profile } = ctx;
     const $ = id => document.getElementById(id);
+    // New-product categories and item types follow the business type (same lists as the Catalogue).
+    const biz = DogoBiz.profileFor(ctx.business && ctx.business.business_type);
+    const isMenu = biz.key === 'restaurant';
+    DogoBiz.fillSelect($('npCat'), biz.categories, { placeholder: isMenu ? 'Select menu category' : 'Category' });
+    DogoBiz.fillSelect($('npType'), biz.types);
+    $('npType').value = biz.defaultType;
 
     // State
     let activeTab = 'orders';
@@ -715,10 +722,11 @@
       const code = $('npSku').value.trim();
       const price = parseFloat($('npPrice').value);
       const stock = parseFloat($('npStock').value) || 0;
-      const category = $('npCat').value;
+      const category = $('npCat').value || (isMenu ? '' : 'General');
       const vat_rate = parseFloat($('npTax').value) || 0;
 
       if (!name || !code || isNaN(price)) return toast('Enter product name, SKU, and price');
+      if (isMenu && !category) return toast('Pick a menu category so it appears on the till');
 
       const { data, error } = await sb.from('products').insert({
         business_id: businessId,

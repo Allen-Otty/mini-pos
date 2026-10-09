@@ -167,6 +167,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/biz-profiles.js"></script>
   <script src="assets/js/app-shell.js"></script>
   <script>
   (async function () {
@@ -176,12 +177,27 @@
     const ctx = await boot('catalog');
     if (!ctx) return;
     const { businessId, isAdmin, profile } = ctx;
+
     let products = [], page = 1; const PER = 10; let editing = null;
     // The products table only has a barcode column once supabase/migrations/20261004_product_barcode.sql
     // has been run. Probe once so saving works either way (without it, the scanned barcode is used as the SKU).
     let hasBarcodeCol = false;
     sb.from('products').select('barcode').limit(1).then(r => { hasBarcodeCol = !r.error; });
     const $ = id => document.getElementById(id);
+
+    // Wording, categories and item types follow the business type (supermarket, hardware, restaurant...).
+    const biz = DogoBiz.profileFor(ctx.business && ctx.business.business_type);
+    const isMenu = biz.key === 'restaurant';
+    const fieldLabel = id => $(id).closest('.dogo-field').querySelector('label');
+    document.querySelector('h1').textContent = biz.pageTitle;
+    document.querySelector('#addBtn span').textContent = biz.addLabel;
+    $('mTitle').nextElementSibling.textContent = biz.subtitle;
+    fieldLabel('fName').textContent = biz.nameLabel;
+    $('fName').placeholder = biz.namePlaceholder;
+    fieldLabel('fStock').textContent = biz.stockLabel;
+    fieldLabel('fReorder').textContent = biz.reorderLabel;
+    $('fDesc').placeholder = biz.descPlaceholder;
+    DogoBiz.fillSelect($('fType'), biz.types);
     if (isAdmin) $('addBtn').style.display = '';
 
     // ---------- Barcode scanner (camera) for product add/edit ----------
@@ -277,14 +293,18 @@
     $('csvBtn').onclick = () => downloadCSV('products.csv', [['Code','Name','Category','Price','VAT','Stock','Reorder']].concat(filtered().map(p => [p.code, p.name, p.category, p.price, p.vat_rate, p.stock, p.reorder_level])));
 
     function openModal(p) {
-      editing = p || null; $('mTitle').textContent = p ? 'Edit Item' : 'Create Item';
+      editing = p || null; $('mTitle').textContent = (p ? 'Edit ' : 'Create ') + biz.itemWord;
+      DogoBiz.fillSelect($('fCat'), biz.categories, {
+        placeholder: isMenu ? 'Select menu category' : 'Select Category (Optional)',
+        keepValue: p && p.category
+      });
       $('fCode').value = p ? p.code : '';
       $('fName').value = p ? p.name : '';
       $('fPrice').value = p ? p.price : '0.00';
       $('fBarcode').value = p ? (p.barcode || '') : '';
       $('fCat').value = p ? (p.category || '') : '';
       $('fVat').value = p ? String(Number(p.vat_rate)) : '0.16';
-      $('fType').value = p ? (p.type || 'Product') : 'Product';
+      $('fType').value = p ? (p.type || biz.defaultType) : biz.defaultType;
       $('fDesc').value = p ? (p.description || '') : '';
       $('fStock').value = p ? p.stock : 0;
       $('fReorder').value = p ? (p.reorder_level || 0) : 0;
@@ -368,13 +388,15 @@
         code: $('fCode').value.trim() || typedBarcode || 'SKU-' + Date.now().toString().slice(-4),
         name: $('fName').value.trim(),
         price: parseFloat($('fPrice').value) || 0,
-        category: $('fCat').value || 'General',
+        // On a restaurant, anything not in a menu category is hidden from the till, so one must be chosen.
+        category: $('fCat').value || (isMenu ? '' : 'General'),
         vat_rate: parseFloat($('fVat').value) || 0,
         stock: parseFloat($('fStock').value) || 0,
         reorder_level: parseFloat($('fReorder').value) || 0
       };
       if (hasBarcodeCol) rec.barcode = typedBarcode || null;
-      if (!rec.name) return toast('Please enter a product name');
+      if (!rec.name) return toast('Please enter a name for this item');
+      if (isMenu && !rec.category) return toast('Pick a menu category so it appears on the till');
       if (isNaN(rec.price) || rec.price < 0) return toast('Please enter a valid price');
 
       const res = editing ? await sb.from('products').update(rec).eq('id', editing.id)
