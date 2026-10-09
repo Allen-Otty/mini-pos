@@ -115,7 +115,8 @@ Every future change (schema migration, edge function, frontend edit, doc update)
 
 
 ## Admin console: plans, pricing & features (branch `admin-plan-catalog`)
-- [x] `plan_catalog` table (migration `20261009_plan_catalog.sql`): monthly/yearly price, max tellers/branches/products, feature flags and pricing-page bullets per plan. Core seeded with 1 teller.
-- [x] Admin Console > Settings: new "Plans, Pricing & Features" editor (replaces the old 4 price boxes, which wrote columns that don't exist).
-- [x] Public pricing cards, signup picker, upgrade screen, and client/DB plan limits read from the catalog; built-in values remain as fallback.
-- [ ] **To go live:** run `20261009_plan_catalog.sql` in the Supabase SQL editor (after 20260930), then merge. Note 20260930 is still not applied (see its header about Free-plan grandfathering).
+- [x] Admin Console > Settings: "Plans, Pricing & Features" editor on the existing `plan_definitions` table (price, yearly price, tellers/branches/products, bullets, feature toggles). Replaces the old 4 price boxes.
+- [x] Public pricing cards, signup picker, upgrade screen, and client plan limits read from `plan_definitions` (`assets/js/plan-catalog.js`); built-in values remain as fallback.
+- [x] `flags` column added to production (`20261009_plan_definitions_flags.sql`, applied 2026-10-09).
+- [x] Repo migrations synced with production for `plan_tier_limits` and `plan_definitions`. Not copied: `20261005071455_secure_process_sale` (applied in prod, not in repo).
+- Teller semantics: `max_tellers` counts non-admin staff; the owner is extra. Core = 1 teller in production.

@@ -6077,7 +6077,7 @@
         <div>
           <div class="pricing-eyebrow">Starter store</div>
           <h3 class="pricing-plan-name">Free</h3>
-          <p data-plan-tagline="Free" style="font-size:13px; color:var(--text-secondary); margin:0;">For small kiosks and single tellers getting started.</p>
+          <p style="font-size:13px; color:var(--text-secondary); margin:0;">For small kiosks and single tellers getting started.</p>
 
           <div class="pricing-price-wrap">
             <span class="pricing-amount">KES 0</span>
@@ -6104,7 +6104,7 @@
         <div>
           <div class="pricing-eyebrow">Growth store</div>
           <h3 class="pricing-plan-name">Core POS</h3>
-          <p data-plan-tagline="Core POS" style="font-size:13px; color:var(--text-secondary); margin:0;">For active retail shops and restaurants needing control.</p>
+          <p style="font-size:13px; color:var(--text-secondary); margin:0;">For active retail shops and restaurants needing control.</p>
 
           <div class="pricing-price-wrap">
             <span class="pricing-amount" id="corePriceAmount">KES 999</span>
@@ -6131,7 +6131,7 @@
         <div>
           <div class="pricing-eyebrow">Multi-branch growth</div>
           <h3 class="pricing-plan-name">Core Group</h3>
-          <p data-plan-tagline="Core Group" style="font-size:13px; color:var(--text-secondary); margin:0;">Core POS for up to five branches under one business account.</p>
+          <p style="font-size:13px; color:var(--text-secondary); margin:0;">Core POS for up to five branches under one business account.</p>
 
           <div class="pricing-price-wrap">
             <span class="pricing-amount" id="coreGroupPriceAmount">KES 3,999</span>
@@ -6158,7 +6158,7 @@
         <div>
           <div class="pricing-eyebrow">Established teams</div>
           <h3 class="pricing-plan-name">Control POS</h3>
-          <p data-plan-tagline="Control POS" style="font-size:13px; color:var(--text-secondary); margin:0;">For growing supermarkets and tax-compliant merchants.</p>
+          <p style="font-size:13px; color:var(--text-secondary); margin:0;">For growing supermarkets and tax-compliant merchants.</p>
 
           <div class="pricing-price-wrap">
             <span class="pricing-amount" id="controlPriceAmount">KES 1,999</span>
@@ -6185,7 +6185,7 @@
         <div>
           <div class="pricing-eyebrow">Multi-branch compliance</div>
           <h3 class="pricing-plan-name">Control Group</h3>
-          <p data-plan-tagline="Control Group" style="font-size:13px; color:var(--text-secondary); margin:0;">Control POS and advanced management for up to five branches.</p>
+          <p style="font-size:13px; color:var(--text-secondary); margin:0;">Control POS and advanced management for up to five branches.</p>
 
           <div class="pricing-price-wrap">
             <span class="pricing-amount" id="controlGroupPriceAmount">KES 7,999</span>
@@ -9791,7 +9791,7 @@ let posfitiSelectedBranches = '1';       // '1' | '5'
 let posfitiSelectedBilling = 'monthly';  // 'monthly' | 'yearly'
 let posfitiReferralCode = '';
 
-// Admin-edited prices, limits and feature lists (plan_catalog). The values hardcoded above
+// Admin-edited prices, limits and feature lists (plan_definitions). The values hardcoded above
 // stay as the fallback if the table doesn't exist yet or the network is down.
 if (window.DogoPlanCatalog) {
   DogoPlanCatalog.load().then(rows => {

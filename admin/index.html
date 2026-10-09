@@ -1330,7 +1330,7 @@
           </div>
         </div>
 
-        <!-- Plans & Pricing (plan_catalog table) -->
+        <!-- Plans & Pricing (plan_definitions table) -->
         <h4 style="color:var(--gold); font-size:14px; font-weight:800; margin:22px 0 4px;">
           <i class="fa-solid fa-tags"></i> Plans, Pricing &amp; Features
         </h4>
@@ -2187,7 +2187,7 @@ function fillAdminSandboxDefaults() {
 }
 
 // ==========================================
-// PLAN CATALOG (prices, limits, features) — table: plan_catalog
+// PLAN DEFINITIONS (prices, limits, features) — table: plan_definitions
 // ==========================================
 const DEFAULT_PLAN_PRICES = { 'Free': 0, 'Core': 999, 'Core Group': 3999, 'Control': 1999, 'Control Group': 7999 };
 const PLAN_FLAG_LABELS = {
@@ -2199,17 +2199,17 @@ let planCatalogCache = [];
 
 function planMonthly(plan) {
   const r = planCatalogCache.find(x => x.plan === plan);
-  return r ? Number(r.monthly_price) : (DEFAULT_PLAN_PRICES[plan] || 0);
+  return r ? Number(r.price_monthly) : (DEFAULT_PLAN_PRICES[plan] || 0);
 }
 
 async function loadPlanCatalogAdmin() {
   try {
-    const { data, error } = await sb.from('plan_catalog').select('*').order('sort');
+    const { data, error } = await sb.from('plan_definitions').select('*').order('sort_order');
     if (error) throw error;
     planCatalogCache = data || [];
   } catch (e) {
     planCatalogCache = [];
-    console.warn('plan_catalog not available yet (run migration 20261009_plan_catalog.sql):', e.message);
+    console.warn('plan_definitions not available:', e.message);
   }
   renderPlanCatalogEditor();
 }
@@ -2218,7 +2218,7 @@ function renderPlanCatalogEditor() {
   const box = document.getElementById('planCatalogEditor');
   if (!box) return;
   if (!planCatalogCache.length) {
-    box.innerHTML = '<p class="card-sub" style="color:#fca5a5;">Plan catalog not found. Run <code>supabase/migrations/20261009_plan_catalog.sql</code> in the Supabase SQL editor, then reload this page.</p>';
+    box.innerHTML = '<p class="card-sub" style="color:#fca5a5;">Could not load plans from the <code>plan_definitions</code> table. Sign in as a platform admin and reload.</p>';
     return;
   }
   const num = v => (v === null || v === undefined) ? '' : v;
@@ -2230,13 +2230,12 @@ function renderPlanCatalogEditor() {
       </div>
       <div class="form-grid">
         <div class="form-group"><label>Display name</label><input class="form-control" data-f="display_name" value="${escapeHtml(r.display_name)}"></div>
-        <div class="form-group"><label>Monthly price (KES)</label><input type="number" min="0" class="form-control" data-f="monthly_price" value="${num(r.monthly_price)}"></div>
-        <div class="form-group"><label>Yearly price (KES)</label><input type="number" min="0" class="form-control" data-f="yearly_price" value="${num(r.yearly_price)}"></div>
-        <div class="form-group"><label>Max tellers (blank = unlimited)</label><input type="number" min="0" class="form-control" data-f="max_tellers" value="${num(r.max_tellers)}"></div>
+        <div class="form-group"><label>Monthly price (KES)</label><input type="number" min="0" class="form-control" data-f="price_monthly" value="${num(r.price_monthly)}"></div>
+        <div class="form-group"><label>Yearly price (KES)</label><input type="number" min="0" class="form-control" data-f="price_yearly" value="${num(r.price_yearly)}"></div>
+        <div class="form-group"><label>Tellers besides the owner (blank = unlimited)</label><input type="number" min="0" class="form-control" data-f="max_tellers" value="${num(r.max_tellers)}"></div>
         <div class="form-group"><label>Max branches (blank = unlimited)</label><input type="number" min="1" class="form-control" data-f="max_branches" value="${num(r.max_branches)}"></div>
         <div class="form-group"><label>Max products (blank = unlimited)</label><input type="number" min="1" class="form-control" data-f="max_products" value="${num(r.max_products)}"></div>
       </div>
-      <div class="form-group" style="margin-top:8px;"><label>Tagline</label><input class="form-control" data-f="tagline" value="${escapeHtml(r.tagline || '')}"></div>
       <div class="form-group" style="margin-top:8px;"><label>Pricing-page bullets (one per line, **bold** supported)</label>
         <textarea class="form-control" data-f="features" rows="5">${escapeHtml((r.features || []).join('\n'))}</textarea></div>
       <label style="font-size:12px; font-weight:700; display:block; margin:10px 0 6px;">Included features</label>
@@ -2250,29 +2249,29 @@ function renderPlanCatalogEditor() {
 }
 
 async function savePlanCatalog() {
-  if (!planCatalogCache.length) return showToast('Plan catalog not loaded. Run the 20261009 migration first.');
+  if (!planCatalogCache.length) return showToast('Plans not loaded; reload the page and try again.');
   const rows = [];
   for (const el of document.querySelectorAll('[data-plan-row]')) {
     const base = planCatalogCache[Number(el.dataset.planRow)];
     const get = f => el.querySelector(`[data-f="${f}"]`).value.trim();
     const optInt = f => { const v = get(f); return v === '' ? null : Math.max(0, parseInt(v, 10)); };
-    const monthly = parseFloat(get('monthly_price')), yearly = parseFloat(get('yearly_price'));
+    const monthly = parseFloat(get('price_monthly')), yearly = parseFloat(get('price_yearly'));
     if (!(monthly >= 0) || !(yearly >= 0)) return showToast(`Enter valid prices for ${base.plan}.`);
     const branches = optInt('max_branches'), products = optInt('max_products');
     if (branches === 0 || products === 0) return showToast(`${base.plan}: branches and products must be at least 1 (or blank for unlimited).`);
     const flags = {};
     el.querySelectorAll('[data-flag]').forEach(c => { flags[c.dataset.flag] = c.checked; });
     rows.push({
-      plan: base.plan, sort: base.sort, display_name: get('display_name') || base.plan, tagline: get('tagline'),
-      monthly_price: monthly, yearly_price: yearly,
+      plan: base.plan, sort_order: base.sort_order, active: base.active, display_name: get('display_name') || base.plan,
+      price_monthly: monthly, price_yearly: yearly,
       max_tellers: optInt('max_tellers'), max_branches: branches, max_products: products,
       flags, features: el.querySelector('[data-f="features"]').value.split('\n').map(x => x.trim()).filter(Boolean)
     });
   }
-  const { error } = await sb.from('plan_catalog').upsert(rows, { onConflict: 'plan' });
+  const { error } = await sb.from('plan_definitions').upsert(rows, { onConflict: 'plan' });
   if (error) return showToast('Could not save plans: ' + error.message);
   planCatalogCache = rows;
-  try { localStorage.removeItem('dogo_plan_catalog_v1'); } catch (e) {}
+  try { localStorage.removeItem('dogo_plan_defs_v2'); } catch (e) {}
   showToast('Plans & pricing saved. The pricing page and limits now use these values.');
   renderSubscriptionsViews && allBusinessesCache && renderSubscriptionsViews(allBusinessesCache);
 }
