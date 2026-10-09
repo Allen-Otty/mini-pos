@@ -112,3 +112,11 @@ Last updated: 2026-08-31
 ## How this file will be maintained
 
 Every future change (schema migration, edge function, frontend edit, doc update) gets an entry added here in the same turn it's made — moved from "Open" to "Completed" once verified (not just written), with a one-line note on how it was verified (tool output, direct fetch, etc.). If a task is uncertain, it stays unchecked with a note on what's blocking it — nothing gets checked off on assumption.
+
+
+## Admin console: plans, pricing & features (branch `admin-plan-catalog`)
+- [x] Admin Console > Settings: "Plans, Pricing & Features" editor on the existing `plan_definitions` table (price, yearly price, tellers/branches/products, bullets, feature toggles). Replaces the old 4 price boxes.
+- [x] Public pricing cards, signup picker, upgrade screen, and client plan limits read from `plan_definitions` (`assets/js/plan-catalog.js`); built-in values remain as fallback.
+- [x] `flags` column added to production (`20261009_plan_definitions_flags.sql`, applied 2026-10-09).
+- [x] Repo migrations synced with production for `plan_tier_limits` and `plan_definitions`. Not copied: `20261005071455_secure_process_sale` (applied in prod, not in repo).
+- Teller semantics: `max_tellers` counts non-admin staff; the owner is extra. Core = 1 teller in production.

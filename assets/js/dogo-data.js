@@ -218,6 +218,26 @@
     'Control':       { maxUsers: Infinity, maxBranches: 1, maxProducts: Infinity, name: 'Control POS (1 Branch)' },
     'Control Group': { maxUsers: Infinity, maxBranches: 5, maxProducts: Infinity, name: 'Control Group (Up to 5 Branches)' }
   };
+  // Admin-edited limits (plan_definitions table). Cached copy applies instantly; a background
+  // fetch refreshes it for next time. Falls back to the table above if never loaded.
+  function applyPlanCatalog(rows) {
+    (rows || []).forEach(r => {
+      if (!PLAN_LIMITS[r.plan]) return;
+      PLAN_LIMITS[r.plan] = {
+        maxUsers: r.max_tellers === null ? Infinity : r.max_tellers + 1,
+        maxBranches: r.max_branches === null ? Infinity : r.max_branches,
+        maxProducts: r.max_products === null ? Infinity : r.max_products,
+        name: r.display_name
+      };
+    });
+  }
+  try { applyPlanCatalog(JSON.parse(localStorage.getItem('dogo_plan_defs_v2') || 'null')); } catch (e) {}
+  try {
+    fetch(SUPABASE_URL + '/rest/v1/plan_definitions?select=*&order=sort_order', { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } })
+      .then(r => r.ok ? r.json() : null)
+      .then(rows => { if (Array.isArray(rows) && rows.length) { localStorage.setItem('dogo_plan_defs_v2', JSON.stringify(rows)); applyPlanCatalog(rows); } })
+      .catch(() => {});
+  } catch (e) {}
   function planKeyFor(business) {
     const raw = (business && business.subscription_plan) || 'Free';
     if (/control.*group/i.test(raw)) return 'Control Group';
