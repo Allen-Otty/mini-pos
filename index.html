@@ -6076,7 +6076,7 @@
       <div class="pricing-card">
         <div>
           <div class="pricing-eyebrow">Starter store</div>
-          <h3 class="pricing-plan-name">Free</h3>
+          <h3 class="pricing-plan-name" data-plan-name="Free">Free</h3>
           <p style="font-size:13px; color:var(--text-secondary); margin:0;">For small kiosks and single tellers getting started.</p>
 
           <div class="pricing-price-wrap">
@@ -6103,7 +6103,7 @@
         <div class="pricing-badge">Recommended</div>
         <div>
           <div class="pricing-eyebrow">Growth store</div>
-          <h3 class="pricing-plan-name">Core POS</h3>
+          <h3 class="pricing-plan-name" data-plan-name="Core">Core POS</h3>
           <p style="font-size:13px; color:var(--text-secondary); margin:0;">For active retail shops and restaurants needing control.</p>
 
           <div class="pricing-price-wrap">
@@ -6130,7 +6130,7 @@
       <div class="pricing-card">
         <div>
           <div class="pricing-eyebrow">Multi-branch growth</div>
-          <h3 class="pricing-plan-name">Core Group</h3>
+          <h3 class="pricing-plan-name" data-plan-name="Core Group">Core Group</h3>
           <p style="font-size:13px; color:var(--text-secondary); margin:0;">Core POS for up to five branches under one business account.</p>
 
           <div class="pricing-price-wrap">
@@ -6157,7 +6157,7 @@
         <div class="pricing-badge" style="background:#0f172a; color:#fff;">Pro store</div>
         <div>
           <div class="pricing-eyebrow">Established teams</div>
-          <h3 class="pricing-plan-name">Control POS</h3>
+          <h3 class="pricing-plan-name" data-plan-name="Control">Control POS</h3>
           <p style="font-size:13px; color:var(--text-secondary); margin:0;">For growing supermarkets and tax-compliant merchants.</p>
 
           <div class="pricing-price-wrap">
@@ -6184,7 +6184,7 @@
         <div class="pricing-badge" style="background:#0f172a; color:#fff;">Enterprise</div>
         <div>
           <div class="pricing-eyebrow">Multi-branch compliance</div>
-          <h3 class="pricing-plan-name">Control Group</h3>
+          <h3 class="pricing-plan-name" data-plan-name="Control Group">Control Group</h3>
           <p style="font-size:13px; color:var(--text-secondary); margin:0;">Control POS and advanced management for up to five branches.</p>
 
           <div class="pricing-price-wrap">
@@ -9541,7 +9541,7 @@ function setBillingCycle(cycle) {
     const a = document.getElementById(t.amt);
     const pr = document.getElementById(t.per);
     if (a) a.textContent = isYearly ? t.y : t.m;
-    if (pr) pr.textContent = isYearly ? `/ year (Save ${t.save})` : '/ month';
+    if (pr) pr.textContent = isYearly ? (t.save ? `/ year (Save ${t.save})` : '/ year') : '/ month';
   });
 }
 
@@ -15784,12 +15784,11 @@ function closeUpgradePlanModal() {
 }
 
 function selectUpgradePlan(tier, price, title) {
-  const PLAN_META = {
-    'Core':          { name: 'Core POS',         price: 999 },
-    'Core Group':    { name: 'Core Group',       price: 3999 },
-    'Control':       { name: 'Control POS',      price: 1999 },
-    'Control Group': { name: 'Control Group',    price: 7999 }
-  };
+  const PLAN_META = {};
+  [['Core', 'Core POS', 999], ['Core Group', 'Core Group', 3999], ['Control', 'Control POS', 1999], ['Control Group', 'Control Group', 7999]].forEach(([k, n, pr]) => {
+    const live = (typeof PLAN_FEATURES !== 'undefined' && PLAN_FEATURES[k]) || {};
+    PLAN_META[k] = { name: live.name || n, price: live.priceMonth != null ? live.priceMonth : pr };
+  });
   const meta = PLAN_META[tier] || { name: tier, price: price };
   const planName = title || meta.name;
   currentSelectedPlan = planName;

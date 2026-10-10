@@ -33,7 +33,8 @@
   }
 
   const row = plan => (rows || []).find(r => r.plan === plan);
-  const saveText = r => 'KES ' + fmt(Math.max(0, r.price_monthly * 12 - r.price_yearly));
+  const saveAmt = r => Math.max(0, r.price_monthly * 12 - r.price_yearly);
+  const saveText = r => 'KES ' + fmt(saveAmt(r));
 
   // Limits in the same shape dogo-data.js / index.html already use.
   function limitsFor(plan) {
@@ -48,6 +49,7 @@
   function applyToPlanFeatures(PF) {
     (rows || []).forEach(r => {
       const t = PF[r.plan]; if (!t) return;
+      if (r.display_name) t.name = r.display_name;
       t.priceMonth = Number(r.price_monthly); t.priceYear = Number(r.price_yearly);
       t.maxUsers = r.max_tellers === null ? Infinity : r.max_tellers + 1;
       t.maxBranches = lim(r.max_branches); t.maxProducts = lim(r.max_products);
@@ -62,7 +64,8 @@
       const m = map[r.plan]; if (!m || !P[m[0]] || !P[m[0]][m[1]]) return;
       const c = P[m[0]][m[1]];
       c.monthly.price = Number(r.price_monthly); c.yearly.price = Number(r.price_yearly);
-      c.yearly.saveBadge = r.price_yearly > 0 ? 'Save ' + saveText(r) : '';
+      if (r.display_name) c.title = r.display_name;
+      c.yearly.saveBadge = saveAmt(r) > 0 ? 'Save ' + saveText(r) : '';
       if (r.features && r.features.length) c.features = r.features.map(f => f.replace(/\*\*/g, '')).slice(0, 8);
     });
   }
@@ -75,6 +78,8 @@
     (rows || []).forEach(r => {
       const base = IDS[r.plan];
       if (base) { const a = document.getElementById(base + 'PriceAmount'); if (a) a.textContent = 'KES ' + fmt(r.price_monthly); }
+      const nm = document.querySelector('[data-plan-name="' + r.plan + '"]');
+      if (nm && r.display_name) nm.textContent = r.display_name;
       const ul = document.querySelector('[data-plan-features="' + r.plan + '"]');
       if (ul && r.features && r.features.length) {
         ul.innerHTML = r.features.map(f => '<li><i class="fa-solid fa-circle-check"></i> ' + richText(f) + '</li>').join('');
@@ -82,6 +87,8 @@
       const optId = { 'Free': 'suPlanOptFree', 'Core': 'suPlanOptCore', 'Control': 'suPlanOptControl', 'Core Group': 'suPlanOptCoreGroup', 'Control Group': 'suPlanOptControlGroup' }[r.plan];
       const sub = optId && document.querySelector('#' + optId + ' .su-plan-sub');
       if (sub) sub.textContent = sub.textContent.replace(/KES [\d,]+\/mo/, 'KES ' + fmt(r.price_monthly) + '/mo');
+      const ttl = optId && document.querySelector('#' + optId + ' .su-plan-title');
+      if (ttl && r.display_name) ttl.textContent = r.display_name;
     });
   }
 
@@ -90,7 +97,7 @@
     return Object.keys(IDS).map(p => {
       const r = row(p); if (!r) return null;
       return { amt: IDS[p] + 'PriceAmount', per: IDS[p] + 'PricePeriod',
-               m: 'KES ' + fmt(r.price_monthly), y: 'KES ' + fmt(r.price_yearly), save: saveText(r) };
+               m: 'KES ' + fmt(r.price_monthly), y: 'KES ' + fmt(r.price_yearly), save: saveAmt(r) > 0 ? saveText(r) : '' };
     }).filter(Boolean);
   }
 
