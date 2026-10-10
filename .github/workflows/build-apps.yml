@@ -29,13 +29,31 @@ jobs:
           npm install
           node ../scripts/prepare-www.cjs
           npx cap sync android
-      - name: Build APK
+      - name: Build signed release APK
+        id: signed
         working-directory: native/android
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          DOGO_VERSION_CODE: ${{ github.run_number }}
+          DOGO_VERSION_NAME: 1.0.${{ github.run_number }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/dogo-release.jks"
+            export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/dogo-release.jks"
+            ./gradlew assembleRelease
+            echo "apk=native/android/app/build/outputs/apk/release/app-release.apk" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Signing secrets missing - building a debug APK (updates may fail to install)"
+            ./gradlew assembleDebug
+            echo "apk=native/android/app/build/outputs/apk/debug/app-debug.apk" >> "$GITHUB_OUTPUT"
+          fi
       - name: Collect APK
-        run: cp native/android/app/build/outputs/apk/debug/app-debug.apk Dogo-POS.apk
+        working-directory: ${{ github.workspace }}
+        run: cp "${{ steps.signed.outputs.apk }}" Dogo-POS.apk
       - uses: actions/upload-artifact@v4
         with:
           name: Dogo-POS-apk
