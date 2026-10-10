@@ -778,6 +778,9 @@
     <button class="admin-nav-btn" data-tab="analytics" onclick="switchAdminTab('analytics', this)">
       <i class="fa-solid fa-chart-simple"></i> Analytics
     </button>
+    <button class="admin-nav-btn" data-tab="landing" onclick="switchAdminTab('landing', this); loadLandingCmsInfo()">
+      <i class="fa-solid fa-pen-ruler"></i> Landing Page
+    </button>
     <button class="admin-nav-btn" data-tab="broadcast" onclick="switchAdminTab('broadcast', this)">
       <i class="fa-solid fa-bullhorn"></i> Broadcasts
     </button>
@@ -1428,6 +1431,22 @@
     </div>
 
     <!-- TAB 10: BROADCAST ANNOUNCEMENTS -->
+    <div class="tab-view" id="tab-landing">
+      <div class="card" style="padding:18px;">
+        <h3 style="margin:0 0 6px;"><i class="fa-solid fa-pen-ruler"></i> Landing Page Editor</h3>
+        <p class="card-sub" style="margin:0 0 14px;">Open the public landing page in edit mode, then tap any text or image to change it. Add an announcement banner, swap photos, edit links, or hide whole sections. Your changes go live as soon as you press Save.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+          <a class="btn-primary" href="../index.html?cms=edit" style="text-decoration:none; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-pen"></i> Open visual editor</a>
+          <a class="btn-secondary" href="../index.html" target="_blank" style="text-decoration:none; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-arrow-up-right-from-square"></i> View live page</a>
+        </div>
+        <div id="landingCmsInfo" class="card-sub">Loading…</div>
+        <div style="margin-top:14px;">
+          <button class="btn-secondary" onclick="resetLandingCms()" style="color:#f87171;"><i class="fa-solid fa-rotate-left"></i> Reset landing page to original</button>
+        </div>
+        <p class="card-sub" style="margin-top:14px;">Prices, plan names and plan bullet points are edited under Settings → Plans, Pricing &amp; Features.</p>
+      </div>
+    </div>
+
     <div class="tab-view" id="tab-broadcast">
       <div class="admin-card">
         <div class="card-header-flex">
@@ -2184,6 +2203,30 @@ function fillAdminSandboxDefaults() {
   const ck = document.getElementById('setDarajaKey');
   if (ck && !ck.value) ck.focus();
   showToast('Safaricom Sandbox defaults set (Shortcode 174379). Paste your Consumer Key & Secret from Daraja Portal.');
+}
+
+// ==========================================
+// LANDING PAGE CMS (table: landing_content)
+// ==========================================
+async function loadLandingCmsInfo() {
+  const box = document.getElementById('landingCmsInfo');
+  if (!box) return;
+  try {
+    const { data, error } = await sb.from('landing_content').select('key, updated_at').order('updated_at', { ascending: false });
+    if (error) throw error;
+    box.textContent = data.length
+      ? data.length + ' element' + (data.length > 1 ? 's' : '') + ' customised. Last change: ' + new Date(data[0].updated_at).toLocaleString() + '.'
+      : 'The landing page is showing the original content. Nothing customised yet.';
+  } catch (e) {
+    box.textContent = 'Landing page storage is not set up yet (run the landing_content migration).';
+  }
+}
+async function resetLandingCms() {
+  if (!confirm('Remove ALL landing page edits and go back to the original page? Uploaded images stay in storage.')) return;
+  const { error } = await sb.from('landing_content').delete().neq('key', '');
+  if (error) return showToast('Could not reset: ' + error.message);
+  showToast('Landing page reset to the original.');
+  loadLandingCmsInfo();
 }
 
 // ==========================================
