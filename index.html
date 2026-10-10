@@ -50,6 +50,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <script src="assets/js/biz-profiles.js"></script>
+<script src="assets/js/subscription-guard.js"></script>
 <script src="assets/js/plan-catalog.js"></script>
 <style>
   
@@ -10724,6 +10725,19 @@ async function afterLogin() {
     localStorage.removeItem('dogo_new_ui_ok');
   } catch (e) {}
 
+  // 3-day warning / expired lock screen. The platform admin is never locked (decided by the server).
+  try {
+    if (window.DogoSubGuard && business && business.id && !String(business.id).startsWith('biz-') && business.id !== 'default-biz') {
+      window.DogoSubGuard.check(sb, {
+        key: business.id,
+        isAdmin: !!(profile && profile.role === 'admin'),
+        onRenew: renewCurrentPlan,
+        onLogout: handleLogout,
+        autoRenew: /[?&]renew=1/.test(location.search)
+      }).catch(function () {});
+    }
+  } catch (e) {}
+
   // Update sidebar user display
   const sName = document.getElementById('sidebarUserName');
   const sRole = document.getElementById('sidebarUserRole');
@@ -15734,6 +15748,16 @@ let currentSelectedPrice = 1999;
 let currentSelectedBranches = '1';
 let currentSelectedBilling = 'monthly';
 
+// Opens the payment window for the plan the business is already on (used by the renew buttons).
+function renewCurrentPlan() {
+  const info = getCurrentBusinessPlan();
+  const map = { 'Core': ['Core', 'Core POS', '1'], 'Control': ['Control', 'Control POS', '1'],
+                'Core Group': ['Core', 'Core Group', '5'], 'Control Group': ['Control', 'Control Group', '5'] };
+  const m = map[info.plan] || map['Core'];
+  const f = PLAN_FEATURES[info.plan] || {};
+  openUpgradePlanModal(m[0], f.priceMonth || (m[0] === 'Control' ? 1999 : 999), m[1], m[2], 'monthly');
+}
+
 function openUpgradePlanModal(tier = 'Control', price = 1999, planTitle = 'Control POS', branches = '1', billing = 'monthly') {
   const overlay = document.getElementById('subUpgradeModalOverlay');
   if (!overlay) return;
@@ -16118,21 +16142,34 @@ async function applySubscriptionSuccess(planName, refCode, phone, isTrial = fals
   // for a genuinely verified grant: a free trial, or an M-Pesa payment Safaricom
   // itself confirmed via the STK push poll. The manual-code box below does NOT call
   // this function — see submitSubscriptionClaim().
+  // The plan is never written from the browser (the database refuses that for anyone but the
+  // platform admin). A free trial is granted by the server; a Safaricom-confirmed payment is
+  // recorded as a claim that the platform admin approves, which then activates the plan.
   if (business && business.id) {
-    const renewsAt = isTrial
-      ? new Date(Date.now() + 7 * 86400000)
-      : new Date(Date.now() + (isYearly ? 365 : 30) * 86400000);
-    const updates = {
-      subscription_plan: planKey,
-      subscription_status: isTrial ? 'trial' : 'active',
-      subscription_started_at: business.subscription_started_at || new Date().toISOString(),
-      subscription_renews_at: renewsAt.toISOString()
-    };
-    const { error: subErr } = await sb.from('businesses').update(updates).eq('id', business.id);
-    if (subErr) {
-      showToast('Payment confirmed, but saving your plan failed: ' + subErr.message + '. Contact support with reference ' + refCode + '.');
+    if (isTrial) {
+      const { data: st, error: trialErr } = await sb.rpc('start_free_trial', { p_plan: planKey });
+      if (trialErr) { showToast(trialErr.message || 'Could not start the trial.'); return; }
+      Object.assign(business, {
+        subscription_plan: planKey,
+        subscription_status: 'trial',
+        subscription_started_at: business.subscription_started_at || new Date().toISOString(),
+        subscription_renews_at: (st && st.renews_at) || new Date(Date.now() + 7 * 86400000).toISOString()
+      });
     } else {
-      Object.assign(business, updates);
+      const { error: claimErr } = await sb.from('subscription_claims').insert({
+        business_id: business.id,
+        submitted_by: profile?.id || null,
+        plan: planKey,
+        branches: Number(branches) || 1,
+        billing: billing || 'monthly',
+        amount: currentSelectedPrice || null,
+        phone: phone || '',
+        mpesa_code: refCode
+      });
+      if (claimErr) {
+        showToast('Payment confirmed, but recording it failed: ' + claimErr.message + '. Contact support with reference ' + refCode + '.');
+        return;
+      }
     }
   }
 
@@ -16173,7 +16210,11 @@ async function applySubscriptionSuccess(planName, refCode, phone, isTrial = fals
   applyPlanFeaturesVisibility();
   renderSubscriptionTab();
 
-  showToast(`Congratulations! Upgraded to ${planName}. All features are now unlocked!`);
+  if (isTrial) {
+    showToast(`Your 7-day ${planName} trial has started. All its features are unlocked!`);
+  } else {
+    showToast(`Payment received (ref ${refCode}). Your ${planName} plan switches on as soon as it is verified.`);
+  }
   trackPlatformEvent('subscription_payment_submitted', { plan: planName, value: isTrial ? 0 : currentSelectedPrice, ref: refCode });
 }
 

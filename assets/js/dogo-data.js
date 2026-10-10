@@ -195,6 +195,12 @@
       return null;
     }
     Offline.watch(ctx);
+    // 3-day warning / expired lock screen (assets/js/subscription-guard.js). Never blocks page start-up.
+    try {
+      if (window.DogoSubGuard && ctx.businessId) {
+        window.DogoSubGuard.check(sb, { key: ctx.businessId, isAdmin: ctx.isAdmin, onLogout: logout }).catch(function () {});
+      }
+    } catch (e) {}
     return ctx;
   }
 
