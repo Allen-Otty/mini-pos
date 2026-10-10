@@ -23,6 +23,7 @@ const ASSETS_TO_CACHE = [
   "./assets/js/app-shell.js",
   "./assets/js/dogo-data.js",
   "./assets/js/plan-catalog.js",
+  "./assets/js/landing-cms.js",
   "./assets/js/biz-profiles.js",
   "./assets/js/subscription-guard.js",
   "./assets/js/kitchen-store.js",

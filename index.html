@@ -52,6 +52,7 @@
 <script src="assets/js/biz-profiles.js"></script>
 <script src="assets/js/subscription-guard.js"></script>
 <script src="assets/js/plan-catalog.js"></script>
+<script src="assets/js/landing-cms.js"></script>
 <style>
   
 #appHeader, #mainTabs {
@@ -16435,6 +16436,11 @@ async function saveNewProductFromPage() {
 
 // Restore user preference and session state on app init
 (async function initAppState() {
+  // Admin-only visual editor for the landing page (opened from the Admin Console).
+  if (new URLSearchParams(location.search).get('cms') === 'edit' && window.DogoCMS) {
+    if (await DogoCMS.bootEdit()) return;
+    return;
+  }
   try {
     const isHidden = localStorage.getItem('dogopos_sidebar_hidden') === 'true';
     if (isHidden && window.innerWidth >= 1024) {
