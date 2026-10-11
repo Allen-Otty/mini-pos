@@ -339,6 +339,9 @@
             <input class="dogo-input" id="npStock" type="number" step="1" min="0" placeholder="Initial Stock *">
             <select class="dogo-select" id="npCat"><option value="General">Category</option><option value="Beverages">Beverages</option><option value="Dairy">Dairy</option><option value="Groceries">Groceries</option><option value="Bakery">Bakery</option></select>
           </div>
+          <div class="dogo-field" style="margin-bottom:8px;">
+            <input class="dogo-input" id="npCost" type="number" step="0.01" min="0" placeholder="Buying Price (optional)">
+          </div>
           <div class="dogo-field" style="margin-bottom:10px;">
             <select class="dogo-select" id="npTax"><option value="0">Tax Type: Exempt (0%)</option><option value="0.16">Tax Type: Standard (16%)</option></select>
           </div>
@@ -447,6 +450,7 @@
     // State
     let activeTab = 'orders';
     let products = [];
+    let hasCostCol = false;   // true once the products.cost column exists (set when products load)
     let suppliers = [
       { id: 'sup-1', name: 'Bidco Africa', phone: '+254 700 111 222', email: 'orders@bidco-africa.com' },
       { id: 'sup-2', name: 'Brookside Dairy', phone: '+254 722 333 444', email: 'sales@brookside.co.ke' },
@@ -500,6 +504,7 @@
     async function initData() {
       loadPersisted();
       const { data: prods } = await sb.from('products').select('*').order('name');
+      hasCostCol = !!(prods && prods.length && Object.prototype.hasOwnProperty.call(prods[0], 'cost'));
       products = (prods || []).filter(x => !x.archived);
       populateProductSelect();
 
@@ -729,7 +734,8 @@
       if (!name || !code || isNaN(price)) return toast('Enter product name, SKU, and price');
       if (isMenu && !category) return toast('Pick a menu category so it appears on the till');
 
-      const { data, error } = await sb.from('products').insert({
+      const costVal = $('npCost').value.trim();
+      const newRec = {
         business_id: businessId,
         name,
         code,
@@ -738,7 +744,9 @@
         category,
         vat_rate,
         created_by: profile ? profile.id : null
-      }).select().single();
+      };
+      if (hasCostCol && costVal !== '' && parseFloat(costVal) >= 0) newRec.cost = parseFloat(costVal);
+      const { data, error } = await sb.from('products').insert(newRec).select().single();
 
       if (error) return toast('Could not create product: ' + error.message);
 
@@ -834,8 +842,16 @@
         // 1. Restock products in Supabase
         for (const item of currentPoItems) {
           const prod = products.find(p => p.id === item.productId);
-          const newStock = Number(prod ? prod.stock : 0) + Number(item.qty);
-          await sb.from('products').update({ stock: newStock }).eq('id', item.productId);
+          const oldStock = Number(prod ? prod.stock : 0), qty = Number(item.qty), unitCost = Number(item.unitCost || 0);
+          const newStock = oldStock + qty;
+          const upd = { stock: newStock };
+          // Keep the buying price current: weighted average of what is already on the shelf and this delivery.
+          if (hasCostCol && unitCost > 0 && qty > 0) {
+            const oldCost = prod && prod.cost !== null && prod.cost !== undefined ? Number(prod.cost) : null;
+            upd.cost = Math.round((oldCost !== null && oldStock > 0 ? (oldStock * oldCost + qty * unitCost) / newStock : unitCost) * 100) / 100;
+          }
+          await sb.from('products').update(upd).eq('id', item.productId);
+          if (prod) { prod.stock = newStock; if (upd.cost !== undefined) prod.cost = upd.cost; }
         }
 
         // 2. Insert procurement expense

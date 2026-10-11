@@ -259,7 +259,7 @@
         products.map(p => `<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.code || 'SKU')})</option>`).join('');
 
       // Valuation
-      const val = products.reduce((a, p) => a + Number(p.stock || 0) * Number(p.price || 0), 0);
+      const val = window.DogoData.stockValue(products).value;
       $('cogsStockVal').textContent = ksh(val);
       $('cogsMonthly').textContent = ksh(val * 0.4);
     }
