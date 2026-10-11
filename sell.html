@@ -867,7 +867,18 @@
     if (apiBase !== null) ['kcb', 'paystack', 'airtel'].forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = DIGITAL[k].name; $('payMethod').appendChild(o); });
     const PENDING_KEY = 'dogo_pending_payment_v1_' + ctx.profile.id, TIMEOUT_S = 72;
 
+    // Pochi la Biashara: the customer sends money to the shop's Pochi number; the cashier records the M-Pesa code from the SMS.
+    const POCHI = ctx.business && ctx.business.pochi_number;
+    if (POCHI) { const o = document.createElement('option'); o.value = 'pochi'; o.textContent = 'Pochi la Biashara'; $('payMethod').appendChild(o); }
+    NAMES.pochi = 'Pochi la Biashara';
     function drawPayFields() {
+      if ($('payMethod').value === 'pochi') {
+        $('payFields').innerHTML = `<div class="dogo-field"><div style="background:#fef9c3;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:8px;">Ask the customer to send the total to Pochi <strong>${esc(POCHI)}</strong>, then type the M-Pesa code from their confirmation SMS.</div>
+          <label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--dogo-text-muted);">M-Pesa confirmation code</label>
+          <input class="dogo-input" id="pochiCode" placeholder="e.g. UJB4X7K2QD" maxlength="10" autocapitalize="characters" style="text-transform:uppercase;"></div>`;
+        $('payBtn').textContent = 'Confirm Pochi payment';
+        return;
+      }
       const m = DIGITAL[$('payMethod').value];
       $('payFields').innerHTML = m ? `<div class="dogo-field"><label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--dogo-text-muted);">${esc(m.label)}</label><input class="dogo-input" id="payContact" placeholder="${esc(m.ph)}" inputmode="${$('payMethod').value === 'paystack' ? 'email' : 'tel'}"></div>` : '';
       $('payBtn').textContent = m ? 'Send ' + m.name + ' request' : 'Complete Sale';
@@ -1019,10 +1030,21 @@
         return startDigital(method);
       }
       if (method === 'credit' && !$('cust').value) return toast('Select a customer for a credit sale.');
+      let pochiRef = null;
+      if (method === 'pochi') {
+        pochiRef = (($('pochiCode') && $('pochiCode').value) || '').trim().toUpperCase();
+        if (!/^[A-Z0-9]{10}$/.test(pochiRef)) return toast('Enter the 10-character M-Pesa code from the SMS, e.g. UJB4X7K2QD');
+        if (OFF.isOnline()) {
+          try {
+            const dup = await sb.from('sales').select('id').eq('mpesa_receipt_no', pochiRef).limit(1);
+            if (dup.data && dup.data.length) return toast('That M-Pesa code was already used for another sale.');
+          } catch (e) { /* offline or failed lookup: carry on */ }
+        }
+      }
       $('payBtn').disabled = true;
-      const r = await recordSale({ snap: snapOf(cart), customerId: $('cust').value || null, shiftId: currentShift.id, pay: method });
+      const r = await recordSale({ snap: snapOf(cart), customerId: $('cust').value || null, shiftId: currentShift.id, pay: method, ref: pochiRef });
       if (r.error) { toast(r.error.message.includes('Insufficient stock') ? r.error.message : 'Could not complete sale: ' + r.error.message); drawCart(); return; }
-      cart = []; $('cust').value = ''; showReceipt(r, method); afterSale();
+      cart = []; $('cust').value = ''; if ($('pochiCode')) $('pochiCode').value = ''; showReceipt(r, method, pochiRef || undefined); afterSale();
     };
 
     renderShiftBar();
