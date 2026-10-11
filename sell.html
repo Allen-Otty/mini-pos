@@ -916,7 +916,14 @@
         const { data, error } = await sb.rpc('process_sale', Object.assign({ p_receipt_no: receipt }, args));
         if (error) return OFF.isNetworkErr(error) ? queueIt() : { error };
         if (DIGITAL[pay]) sb.functions.invoke('etims-submit', { body: { sale_id: data } }).catch(() => {});
-        return { id: data, receipt, grand, sub, vat, items };
+        // The database guarantees a unique receipt number (it replaces one that another device already took),
+        // so show the number that was actually stored.
+        let shownReceipt = receipt;
+        try {
+          const g = await sb.from('sales').select('receipt_no').eq('id', data).maybeSingle();
+          if (g.data && g.data.receipt_no) shownReceipt = g.data.receipt_no;
+        } catch (e) { /* keep the number we sent */ }
+        return { id: data, receipt: shownReceipt, grand, sub, vat, items };
       } catch (e) {
         if (OFF.isNetworkErr(e)) return queueIt();
         return { error: e };
