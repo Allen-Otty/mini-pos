@@ -90,14 +90,20 @@
     const saveFailed = (uid, q) => lsSet(k('failed', uid), q);
     const shiftQ = uid => lsGet(k('shifts', uid), []);
     const saveShiftQ = (uid, q) => lsSet(k('shifts', uid), q);
+    const prodQ = uid => lsGet(k('products', uid), []);
+    const saveProdQ = (uid, q) => lsSet(k('products', uid), q);
+    const prodFailed = uid => lsGet(k('prodfailed', uid), []);
     let syncing = false, lastError = '';
 
     function enqueueShift(uid, row) { const q = shiftQ(uid); q.push(row); return saveShiftQ(uid, q); }
+    // Catalogue changes made offline: { op: 'insert'|'update', id, rec }. Inserts carry a client-made uuid,
+    // so a retry after a dropped connection can never create the item twice.
+    function enqueueProduct(uid, entry) { const q = prodQ(uid); q.push(entry); return saveProdQ(uid, q); }
     function enqueueSale(uid, entry) { const q = queue(uid); q.push(entry); return saveQueue(uid, q); }
 
     async function syncSales(ctx) {
       const uid = ctx && ctx.profile && ctx.profile.id;
-      const pendingCount = () => (uid ? queue(uid).length : 0);
+      const pendingCount = () => (uid ? queue(uid).length + prodQ(uid).length : 0);
       if (!uid || syncing || !isOnline()) return { synced: 0, failed: 0, remaining: pendingCount() };
       // an offline-restored page may hold an expired token: try to refresh it before giving up
       let { data: { session } } = await sb.auth.getSession();
@@ -106,6 +112,25 @@
       syncing = true; lastError = '';
       let synced = 0, rejected = 0;
       try {
+        // 0) catalogue items added/edited offline go first, so offline sales can point at them
+        let pq = prodQ(uid);
+        while (pq.length) {
+          const e = pq[0];
+          let error;
+          if (e.op === 'insert') {
+            ({ error } = await sb.from('products').insert(Object.assign({ id: e.id }, e.rec)));
+            if (error && error.code === '23505') error = null;   // already there from an earlier try
+          } else {
+            ({ error } = await sb.from('products').update(e.rec).eq('id', e.id));
+          }
+          if (error) {
+            if (isNetworkErr(error) || !isOnline()) { lastError = 'Connection dropped - will retry.'; break; }
+            const f = prodFailed(uid); f.push({ entry: e, reason: error.message, at: Date.now() }); lsSet(k('prodfailed', uid), f);
+            lastError = 'Server rejected an item: ' + error.message; rejected++;
+          } else synced++;
+          pq = pq.slice(1); saveProdQ(uid, pq);
+        }
+        if (!pq.length) {
         // 1) shifts opened offline must exist on the server before the sales that point at them
         let sq = shiftQ(uid);
         while (sq.length) {
@@ -131,9 +156,10 @@
           } else synced++;
           q = q.slice(1); saveQueue(uid, q);
         }
+        }
       } catch (err) { lastError = 'Sync error: ' + (err && err.message || err); }
       finally { syncing = false; }
-      const remaining = queue(uid).length;
+      const remaining = queue(uid).length + prodQ(uid).length;
       window.dispatchEvent(new CustomEvent('dogo:synced', { detail: { synced, rejected, remaining } }));
       refreshBar();
       return { synced, failed: rejected, remaining };
@@ -143,9 +169,9 @@
     let barCtx = null, bar = null;
     function refreshBar() {
       if (!barCtx) return;
-      const uid = barCtx.profile.id, n = queue(uid).length, bad = failed(uid).length, off = !isOnline();
+      const uid = barCtx.profile.id, n = queue(uid).length, np = prodQ(uid).length, bad = failed(uid).length, off = !isOnline();
       const sh = shiftQ(uid).length;
-      if (!off && !n && !bad && !sh) { if (bar) bar.style.display = 'none'; return; }
+      if (!off && !n && !np && !bad && !sh) { if (bar) bar.style.display = 'none'; return; }
       if (!bar) {
         bar = document.createElement('div');
         bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;padding:9px 14px;font:600 13px system-ui,sans-serif;text-align:center;cursor:pointer;padding-bottom:calc(9px + env(safe-area-inset-bottom,0px))';
@@ -156,7 +182,8 @@
       bar.style.display = 'block';
       bar.style.background = off ? '#fef3c7' : (bad ? '#fee2e2' : '#0f172a');
       bar.style.color = off ? '#92400e' : (bad ? '#991b1b' : '#facc15');
-      bar.textContent = (off ? 'Offline — sales save on this device and sync when you reconnect.' : '')
+      bar.textContent = (off ? 'Offline — sales and catalogue changes save on this device and sync when you reconnect.' : '')
+        + (np ? (off ? ' ' : '') + np + ' catalogue change' + (np === 1 ? '' : 's') + ' waiting to sync' + (off ? '.' : ' — tap to sync now.') : '')
         + (sh && !n ? (off ? ' ' : '') + 'Shift waiting to sync' + (off ? '.' : ' - tap to sync now.') : '')
         + (n ? (off ? ' ' : '') + n + ' sale' + (n === 1 ? '' : 's') + ' waiting to sync' + (off ? '.' : ' — tap to sync now.') : '')
         + (!off && lastError && (n || sh) ? ' ' + lastError : '')
@@ -168,7 +195,7 @@
       window.addEventListener('offline', refreshBar);
       if (isOnline()) syncSales(ctx);
     }
-    return { isOnline, isNetworkErr, lsGet, lsSet, queue, failed, enqueueSale, enqueueShift, shiftQueue: shiftQ, syncSales, watch, refreshBar,
+    return { isOnline, isNetworkErr, lsGet, lsSet, queue, failed, enqueueSale, enqueueProduct, productQueue: prodQ, enqueueShift, shiftQueue: shiftQ, syncSales, watch, refreshBar,
       // cached read-only data (products, customers, current shift...) so pages can open offline
       cacheGet: (name, uid) => lsGet(k('cache_' + name, uid), null),
       cacheSet: (name, uid, v) => lsSet(k('cache_' + name, uid), v) };

@@ -182,8 +182,12 @@
     let products = [], page = 1; const PER = 10; let editing = null;
     // The products table only has a barcode column once supabase/migrations/20261004_product_barcode.sql
     // has been run. Probe once so saving works either way (without it, the scanned barcode is used as the SKU).
-    let hasBarcodeCol = false;
-    sb.from('products').select('barcode').limit(1).then(r => { hasBarcodeCol = !r.error; });
+    const OFF = window.DogoData.Offline, uid = profile && profile.id;
+    let hasBarcodeCol = OFF.lsGet('dogo_has_barcode', false);   // remembered so it also works offline
+    sb.from('products').select('barcode').limit(1).then(r => {
+      if (!r.error) { hasBarcodeCol = true; OFF.lsSet('dogo_has_barcode', true); }
+      else if (!OFF.isNetworkErr(r.error)) { hasBarcodeCol = false; OFF.lsSet('dogo_has_barcode', false); }
+    });
     const $ = id => document.getElementById(id);
 
     // Wording, categories and item types follow the business type (supermarket, hardware, restaurant...).
@@ -263,9 +267,20 @@
     };
 
     async function load() {
-      const { data, error } = await sb.from('products').select('*').order('name');
-      if (error) toast('Could not load products: ' + error.message);
-      products = data || []; draw();
+      // push anything saved offline first so the list below already includes it
+      if (OFF.isOnline() && uid && OFF.productQueue(uid).length) { try { await OFF.syncSales(ctx); } catch (e) {} }
+      let res;
+      try { res = await sb.from('products').select('*').order('name'); } catch (e) { res = { error: e }; }
+      if (res.error && (OFF.isNetworkErr(res.error) || !OFF.isOnline())) {
+        const cp = OFF.cacheGet('sell_products', uid);
+        products = cp || [];
+        toast(cp ? 'Offline — showing the items saved on this device.' : 'No connection and nothing saved on this device yet. Open the catalogue once while online first.');
+        return draw();
+      }
+      if (res.error) toast('Could not load products: ' + res.error.message);
+      products = res.data || [];
+      if (!res.error) OFF.cacheSet('sell_products', uid, products);     // same copy the till uses
+      draw();
     }
     function filtered() {
       const q = $('q').value.trim().toLowerCase();
@@ -400,8 +415,28 @@
       if (isMenu && !rec.category) return toast('Pick a menu category so it appears on the till');
       if (isNaN(rec.price) || rec.price < 0) return toast('Please enter a valid price');
 
-      const res = editing ? await sb.from('products').update(rec).eq('id', editing.id)
-                          : await sb.from('products').insert(Object.assign({ business_id: businessId, unit: 'piece', created_by: profile ? profile.id : null }, rec));
+      const full = editing ? rec : Object.assign({ business_id: businessId, unit: 'piece', created_by: profile ? profile.id : null }, rec);
+      const newId = editing ? null : (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));
+      // No connection (or it drops mid-save): keep the change on this device and send it when back online.
+      const saveOffline = () => {
+        if (!uid) return toast('Could not save: not signed in on this device.');
+        if (!editing && products.some(x => x.business_id === businessId && String(x.code) === String(rec.code))) return toast('That SKU is already used by another item.');
+        OFF.enqueueProduct(uid, editing ? { op: 'update', id: editing.id, rec: full } : { op: 'insert', id: newId, rec: full });
+        // show it straight away, and in the till's copy of the catalogue
+        const apply = list => editing ? list.map(x => x.id === editing.id ? Object.assign({}, x, rec) : x)
+                                      : list.concat([Object.assign({ id: newId, created_at: new Date().toISOString() }, full)]);
+        products = apply(products).sort((a, b) => String(a.name).localeCompare(String(b.name)));
+        OFF.cacheSet('sell_products', uid, products);
+        OFF.refreshBar(); closeModal(); draw();
+        toast('Saved on this device. It will sync when you are back online.');
+      };
+      if (!OFF.isOnline()) return saveOffline();
+      let res;
+      try {
+        res = editing ? await sb.from('products').update(rec).eq('id', editing.id)
+                      : await sb.from('products').insert(Object.assign({ id: newId }, full));
+      } catch (e) { res = { error: e }; }
+      if (res.error && OFF.isNetworkErr(res.error)) return saveOffline();
       if (res.error) return toast('Could not save: ' + res.error.message);
       closeModal(); toast('Item saved to catalogue'); load();
     };
