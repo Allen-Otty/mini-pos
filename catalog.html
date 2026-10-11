@@ -381,7 +381,7 @@
       if (!OFF.isOnline()) return toast((on ? 'Archiving' : 'Restoring') + ' needs a connection.');
       const { error } = await sb.from('products').update({ archived: !!on, archived_at: on ? new Date().toISOString() : null }).eq('id', p.id);
       if (error) return toast('Could not ' + (on ? 'archive' : 'restore') + ': ' + error.message);
-      toast('"' + p.name + '" ' + (on ? 'archived' : 'restored')); load();
+      toast('"' + p.name + '" ' + (on ? 'archived' : 'restored')); window.DogoData.notifyProductsChanged(); load();
     }
 
     /* ---- Delete (admin only, permanent) ---- */
@@ -407,7 +407,7 @@
         return toast('Could not delete: ' + error.message);
       }
       if (!data || !data.length) return toast('Nothing was deleted - you may not have permission, or it is already gone.');
-      toast('"' + p.name + '" deleted'); load();
+      toast('"' + p.name + '" deleted'); window.DogoData.notifyProductsChanged(); load();
     }
 
     /* ---- Sales history for one product ---- */
@@ -497,7 +497,7 @@
       } catch (e) { res = { error: e }; }
       if (res.error && OFF.isNetworkErr(res.error)) return saveOffline();
       if (res.error) return toast('Could not save: ' + res.error.message);
-      closeModal(); toast('Item saved to catalogue'); load();
+      closeModal(); toast('Item saved to catalogue'); window.DogoData.notifyProductsChanged(); load();
     };
     load();
   })();

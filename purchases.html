@@ -841,18 +841,27 @@
       try {
         // 1. Restock products in Supabase
         for (const item of currentPoItems) {
-          const prod = products.find(p => p.id === item.productId);
-          const oldStock = Number(prod ? prod.stock : 0), qty = Number(item.qty), unitCost = Number(item.unitCost || 0);
-          const newStock = oldStock + qty;
-          const upd = { stock: newStock };
-          // Keep the buying price current: weighted average of what is already on the shelf and this delivery.
-          if (hasCostCol && unitCost > 0 && qty > 0) {
-            const oldCost = prod && prod.cost !== null && prod.cost !== undefined ? Number(prod.cost) : null;
-            upd.cost = Math.round((oldCost !== null && oldStock > 0 ? (oldStock * oldCost + qty * unitCost) / newStock : unitCost) * 100) / 100;
+          // Add to the stock as it is right now (sales may have happened since this page loaded), and only
+          // write if nobody changed it in between; otherwise read again and retry.
+          const prod = products.find(x => x.id === item.productId);
+          const qty = Number(item.qty), unitCost = Number(item.unitCost || 0);
+          for (let attempt = 0; attempt < 5; attempt++) {
+            const cur = await sb.from('products').select(hasCostCol ? 'stock,cost' : 'stock').eq('id', item.productId).maybeSingle();
+            if (cur.error || !cur.data) throw new Error('Could not read current stock for ' + item.name);
+            const base = Number(cur.data.stock || 0), newStock = base + qty;
+            const upd = { stock: newStock };
+            // Keep the buying price current: weighted average of what is already on the shelf and this delivery.
+            if (hasCostCol && unitCost > 0 && qty > 0) {
+              const oldCost = cur.data.cost !== null && cur.data.cost !== undefined ? Number(cur.data.cost) : null;
+              upd.cost = Math.round((oldCost !== null && base > 0 ? (base * oldCost + qty * unitCost) / newStock : unitCost) * 100) / 100;
+            }
+            const r = await sb.from('products').update(upd).eq('id', item.productId).eq('stock', base).select('id');
+            if (r.error) throw r.error;
+            if (r.data && r.data.length) { if (prod) { prod.stock = newStock; if (upd.cost !== undefined) prod.cost = upd.cost; } break; }
+            if (attempt === 4) throw new Error('Stock for ' + item.name + ' kept changing, please try again');
           }
-          await sb.from('products').update(upd).eq('id', item.productId);
-          if (prod) { prod.stock = newStock; if (upd.cost !== undefined) prod.cost = upd.cost; }
         }
+        window.DogoData.notifyProductsChanged();
 
         // 2. Insert procurement expense
         const itemsSummary = currentPoItems.map(i => `${i.name} (x${i.qty})`).join(', ');

@@ -302,6 +302,8 @@
     return h;
   }
 
+  // Tells other open tabs/windows on this device (e.g. the till) that stock or items changed, so they refresh at once.
+  const notifyProductsChanged = () => { try { localStorage.setItem('dogo_products_changed', String(Date.now())); } catch (e) {} };
   /* Stock value. Uses what the stock cost you (products.cost) once buying prices exist; until at
      least one product has one it falls back to selling price so the number is never silently 0.
      missing = items in stock that still have no buying price. */
@@ -316,5 +318,5 @@
     return { basis: 'cost', missing: live.filter(p => Number(p.stock) > 0 && !hasCost(p)).length,
              value: costed.reduce((a, p) => a + Math.max(0, Number(p.stock || 0)) * Number(p.cost), 0) };
   }
-  window.DogoData = { stockValue, bundleTotal, Offline, isOnline, sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor, apiAuthHeaders };
+  window.DogoData = { notifyProductsChanged, stockValue, bundleTotal, Offline, isOnline, sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor, apiAuthHeaders };
 })();

@@ -938,6 +938,27 @@
       products = isRestaurant && live.some(x => isFoodCat(x.category)) ? live.filter(x => isFoodCat(x.category)) : (r.data ? live : products);
       drawGrid(); drawCart(); renderShiftBar();
     }
+    // Pick up stock changes made elsewhere (restocking, catalogue edits, other tills) without a page reload:
+    // when the tab is shown again, when the connection returns, every 30 seconds, and instantly when another
+    // tab on this device saves a stock/item change.
+    let lastStockPull = 0;
+    async function refreshStock(force) {
+      if (busy || document.hidden || !OFF.isOnline()) return;
+      if (!force && Date.now() - lastStockPull < 5000) return;
+      lastStockPull = Date.now();
+      let r; try { r = await sb.from('products').select('*').order('name'); } catch (e) { return; }
+      if (!r || r.error) return;
+      OFF.cacheSet('sell_products', uid, r.data || []);
+      const live = (r.data || []).filter(x => !x.archived);
+      products = isRestaurant && live.some(x => isFoodCat(x.category)) ? live.filter(x => isFoodCat(x.category)) : live;
+      cart.forEach(l => { const np = products.find(x => String(x.id) === String(l.p.id)); if (np) l.p = np; });
+      drawGrid(); drawCart();
+    }
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshStock(); });
+    window.addEventListener('focus', () => refreshStock());
+    window.addEventListener('online', () => refreshStock(true));
+    window.addEventListener('storage', e => { if (e.key === 'dogo_products_changed') refreshStock(true); });
+    setInterval(() => refreshStock(), 30000);
     window.addEventListener('dogo:synced', e => {
       afterSale();
       const d = e.detail || {};
