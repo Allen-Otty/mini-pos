@@ -500,7 +500,7 @@
     async function initData() {
       loadPersisted();
       const { data: prods } = await sb.from('products').select('*').order('name');
-      products = prods || [];
+      products = (prods || []).filter(x => !x.archived);
       populateProductSelect();
 
       // Check expenses for any existing Stock Purchases

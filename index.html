@@ -10890,7 +10890,7 @@ async function loadAllData() {
         (profile.role === 'admin' && business && business.business_type === 'Hotel') ? sb.from('tables').select('*').order('created_at') : Promise.resolve({ data: [] }),
         sb.from('shift_sessions').select('*').order('created_at', { ascending: false }).limit(50),
       ]);
-      CATALOG = (prodRes.data || []).map(p => ({
+      CATALOG = (prodRes.data || []).filter(p => !p.archived).map(p => ({
         id: p.id, code: p.code, name: p.name, category: p.category, price: Number(p.price),
         vat: Number(p.vat_rate), stock: p.stock, reorder: p.reorder_level, unit: p.unit || 'piece'
       }));
