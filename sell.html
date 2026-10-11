@@ -391,7 +391,7 @@
       toast(cp ? 'Offline — using the products saved on this device.' : 'No connection and nothing saved on this device yet. Open the till once while online first.');
     }
 
-    products = pRes.data || [];
+    products = (pRes.data || []).filter(x => !x.archived);
 
     // Restaurant mode: same till, food-only catalog + restaurant wording.
     const FOOD_CATS = ['BREAKFAST', 'DRINKS', 'LUNCH', 'DINNER/SUPPER', 'SNACKS',
@@ -916,7 +916,8 @@
       const [r] = await Promise.all([sb.from('products').select('*').order('name'), loadShiftSales()]);
       if (r.error) { drawGrid(); drawCart(); renderShiftBar(); return; }
       OFF.cacheSet('sell_products', uid, r.data || []);
-      products = isRestaurant && (r.data || []).some(x => isFoodCat(x.category)) ? r.data.filter(x => isFoodCat(x.category)) : (r.data || products);
+      const live = (r.data || []).filter(x => !x.archived);
+      products = isRestaurant && live.some(x => isFoodCat(x.category)) ? live.filter(x => isFoodCat(x.category)) : (r.data ? live : products);
       drawGrid(); drawCart(); renderShiftBar();
     }
     window.addEventListener('dogo:synced', e => {

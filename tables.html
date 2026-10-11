@@ -84,7 +84,7 @@
     let currentShift = null, busy = false, pollTimer = null, tickTimer = null;
     const [p, t, sh] = await Promise.all([sb.from('products').select('*').order('name'), sb.from('tables').select('*').order('created_at'),
       sb.from('shift_sessions').select('*').eq('user_id', ctx.profile.id).eq('status', 'OPEN').order('created_at', { ascending: false })]);
-    products = p.data || []; tables = t.data || [];
+    products = (p.data || []).filter(x => !x.archived); tables = t.data || [];
     cats = [...new Set(products.map(x => x.category || 'Uncategorized'))];
     const todayStr = new Date().toISOString().slice(0, 10);
     currentShift = (sh.data || []).find(s => (s.created_at || '').slice(0, 10) === todayStr) || null;
@@ -208,7 +208,7 @@
     async function clearTable(tableId) {
       await sb.from('tables').update({ current_order: [], status: 'free' }).eq('id', tableId);
       const t = tables.find(x => x.id === tableId); if (t) { t.current_order = []; t.status = 'free'; }
-      const r = await sb.from('products').select('*').order('name'); products = r.data || products;
+      const r = await sb.from('products').select('*').order('name'); products = r.data ? r.data.filter(x => !x.archived) : products;
     }
     function showBillReceipt(r, pay, ref) {
       $('billModal').classList.remove('open');

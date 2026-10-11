@@ -105,7 +105,7 @@
       isRest ? sb.from('tables').select('*').order('created_at') : Promise.resolve({ data: [] })
     ]);
 
-    const products = prod.data || [], saleRows = sales.data || [], lines = items.data || [], expenses = exp.data || [];
+    const products = (prod.data || []).filter(x => !x.archived), saleRows = sales.data || [], lines = items.data || [], expenses = exp.data || [];
     const today = new Date().toISOString().slice(0, 10), month = today.slice(0, 7);
 
     const totalBySale = {};

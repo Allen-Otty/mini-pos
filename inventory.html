@@ -241,7 +241,7 @@
 
     async function load() {
       const { data } = await sb.from('products').select('*').order('name');
-      products = data || [];
+      products = (data || []).filter(x => !x.archived);
 
       // Update KPI Cards (Screenshot 292)
       const inStock = products.filter(p => Number(p.stock) > 0);

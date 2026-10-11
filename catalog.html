@@ -29,6 +29,7 @@
       <div class="dogo-seg" id="viewSeg">
         <button data-v="all" class="is-active">All Products</button>
         <button data-v="inventory">Low Stock &amp; Alerts</button>
+        <button data-v="archived" id="archTab">Archived</button>
       </div>
     </div>
     <section class="dogo-card">
@@ -305,7 +306,7 @@
     }
     function filtered() {
       const q = $('q').value.trim().toLowerCase();
-      return products.filter(p => (!q || [p.name, p.code, p.category].some(v => String(v || '').toLowerCase().includes(q)))
+      return products.filter(p => (view === 'archived' ? !!p.archived : !p.archived) && (!q || [p.name, p.code, p.category].some(v => String(v || '').toLowerCase().includes(q)))
         && (view !== 'inventory' || Number(p.stock) <= Number(p.reorder_level || 0)));
     }
     function draw() {
@@ -316,7 +317,7 @@
         const st = Number(p.stock), low = st <= Number(p.reorder_level || 0);
         return `<tr><td>${esc(p.code)}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.category || '—')}</td><td>${kes(p.price)}</td><td>${Math.round(Number(p.vat_rate || 0) * 100)}%</td>
           <td><span class="dogo-badge ${st <= 0 ? 'dogo-badge--danger' : low ? 'dogo-badge--warn' : 'dogo-badge--ok'}">${st}</span></td><td>${esc(p.reorder_level ?? 0)}</td>
-          <td style="white-space:nowrap;"><button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-log="${esc(p.id)}">Sales</button>${isAdmin ? ` <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-edit="${esc(p.id)}">Edit</button> <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-del="${esc(p.id)}" style="color:#dc2626;border-color:#fca5a5;">Delete</button>` : ''}</td></tr>`;
+          <td style="white-space:nowrap;"><button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-log="${esc(p.id)}">Sales</button>${isAdmin && p.archived ? ` <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-restore="${esc(p.id)}">Restore</button>` : ''}${isAdmin && !p.archived ? ` <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-edit="${esc(p.id)}">Edit</button> <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-del="${esc(p.id)}" style="color:#dc2626;border-color:#fca5a5;">Delete</button>` : ''}</td></tr>`;
       }).join('') : '<tr><td colspan="8" class="dogo-card__empty">No products found</td></tr>';
       $('pageInfo').textContent = list.length ? `Showing ${(page - 1) * PER + 1}-${Math.min(page * PER, list.length)} of ${list.length}` : '';
       $('prev').disabled = page <= 1; $('next').disabled = page >= pages;
@@ -358,8 +359,18 @@
       const d = (e.target.closest('button') || {}).dataset || {};
       if (d.edit) openModal(products.find(p => String(p.id) === d.edit));
       else if (d.del) deleteProduct(products.find(p => String(p.id) === d.del));
+      else if (d.restore) setArchived(products.find(p => String(p.id) === d.restore), false);
       else if (d.log) openHistory(products.find(p => String(p.id) === d.log));
     };
+
+    /* ---- Archive / restore (admin only): hides an item everywhere but keeps its sales history ---- */
+    async function setArchived(p, on) {
+      if (!p || !isAdmin) return;
+      if (!OFF.isOnline()) return toast((on ? 'Archiving' : 'Restoring') + ' needs a connection.');
+      const { error } = await sb.from('products').update({ archived: !!on, archived_at: on ? new Date().toISOString() : null }).eq('id', p.id);
+      if (error) return toast('Could not ' + (on ? 'archive' : 'restore') + ': ' + error.message);
+      toast('"' + p.name + '" ' + (on ? 'archived' : 'restored')); load();
+    }
 
     /* ---- Delete (admin only, permanent) ---- */
     async function deleteProduct(p) {
@@ -369,10 +380,18 @@
       try { const r = await sb.from('sale_items').select('id', { count: 'exact', head: true }).eq('product_id', p.id); if (!r.error) n = r.count || 0; } catch (e) {}
       const msg = 'Permanently delete "' + p.name + '" (' + p.code + ')?\n\nThis cannot be undone.'
         + (n ? '\n\nIt appears on ' + n + ' past sale line' + (n === 1 ? '' : 's') + '. Past sales are kept as records, so the database may refuse to delete it.' : '');
+      // An item that has been sold can't be erased (past sales keep their records): offer to archive it instead.
+      if (n) {
+        if (confirm('"' + p.name + '" appears on ' + n + ' past sale line' + (n === 1 ? '' : 's') + ', so it can\'t be erased.\n\nArchive it instead? It disappears from the till, orders and stock lists, but your sales history stays. You can restore it from the Archived tab.')) return setArchived(p, true);
+        return;
+      }
       if (!confirm(msg)) return;
       const { data, error } = await sb.from('products').delete().eq('id', p.id).select('id');
       if (error) {
-        if (error.code === '23503') return toast('Can\'t delete: "' + p.name + '" is part of past sales, and those records must stay. Set its stock to 0 instead, or ask me to add a Hide option.');
+        if (error.code === '23503') {
+          if (confirm('"' + p.name + '" is part of past sales, so it can\'t be erased.\n\nArchive it instead?')) return setArchived(p, true);
+          return;
+        }
         return toast('Could not delete: ' + error.message);
       }
       if (!data || !data.length) return toast('Nothing was deleted - you may not have permission, or it is already gone.');
