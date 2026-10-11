@@ -783,7 +783,7 @@
       $('grid').innerHTML = list.length ? list.map(x => `
         <button class="dogo-prod" data-id="${esc(x.id)}" ${Number(x.stock) <= 0 ? 'disabled' : ''}>
           <span class="dogo-prod__name">${esc(x.name)}</span>
-          <span class="dogo-prod__price">${kes(x.price)}</span>
+          <span class="dogo-prod__price">${kes(x.price)}</span>${(x.price_breaks || []).length ? '<span class="dogo-badge dogo-badge--ok">' + x.price_breaks.map(b => b.qty + ' for ' + b.price).join(' · ') + '</span>' : ''}
           <span class="dogo-muted" style="font-size:12px;">${Number(x.stock) <= 0 ? 'Out of stock' : x.stock + ' in stock'}${isRestaurant && x.category ? ' · ' + esc(String(x.category).toUpperCase()) : ''}</span>
         </button>
       `).join('') : '<div class="dogo-card__empty" style="grid-column:1/-1;">No products found matching query.</div>';
@@ -791,7 +791,8 @@
 
     function drawCart() {
       const items = cart.reduce((a, l) => a + l.qty, 0);
-      const total = cart.reduce((a, l) => a + l.qty * Number(l.p.price), 0);
+      const lineTotal = l => window.DogoData.bundleTotal(l.qty, l.p.price, l.p.price_breaks);
+      const total = cart.reduce((a, l) => a + lineTotal(l), 0);
       $('cnt').textContent = items + (items === 1 ? ' item' : ' items');
       $('total').textContent = kes(total);
 
@@ -799,9 +800,9 @@
         <div class="dogo-cart-line">
           <div>
             <strong>${esc(l.p.name)}</strong>
-            <div class="dogo-muted" style="font-size:12.5px;">${kes(l.p.price)} each</div>
+            <div class="dogo-muted" style="font-size:12.5px;">${kes(l.p.price)} each${lineTotal(l) < l.qty * Number(l.p.price) - 0.001 ? ' · <span style="color:#15803d;font-weight:700;">offer saves ' + kes(l.qty * Number(l.p.price) - lineTotal(l)) + '</span>' : ''}</div>
           </div>
-          <div style="text-align:right;"><strong>${kes(l.qty * Number(l.p.price))}</strong></div>
+          <div style="text-align:right;"><strong>${kes(lineTotal(l))}</strong></div>
           <div class="dogo-qty">
             <button data-dec="${i}">−</button>
             <span>${l.qty}</span>
@@ -873,9 +874,9 @@
     }
     $('payMethod').onchange = () => { if (!busy) drawPayFields(); };
 
-    const totalOf = list => list.reduce((a, l) => a + l.qty * Number(l.p.price), 0);
-    const snapOf = list => list.map(l => ({ product_id: l.p.id, code: l.p.code, name: l.p.name, qty: l.qty, price: Number(l.p.price), vat_rate: Number(l.p.vat_rate || 0), unit: l.p.unit || 'piece' }));
-    const toLines = snap => snap.map(l => { const t = +(l.qty * Number(l.price)).toFixed(2); return { product_id: l.product_id, code: l.code, name: l.name, qty: l.qty, price: Number(l.price), vat_rate: Number(l.vat_rate || 0), unit: l.unit || 'piece', line_total: t }; });
+    const totalOf = list => list.reduce((a, l) => a + window.DogoData.bundleTotal(l.qty, l.p.price, l.p.price_breaks), 0);
+    const snapOf = list => list.map(l => ({ product_id: l.p.id, code: l.p.code, name: l.p.name, qty: l.qty, price: Number(l.p.price), vat_rate: Number(l.p.vat_rate || 0), unit: l.p.unit || 'piece', breaks: l.p.price_breaks || null }));
+    const toLines = snap => snap.map(l => { const t = window.DogoData.bundleTotal(l.qty, l.price, l.breaks); const eff = l.qty ? +(t / l.qty).toFixed(4) : Number(l.price); return { product_id: l.product_id, code: l.code, name: l.name, qty: l.qty, price: t < l.qty * Number(l.price) - 0.001 ? eff : Number(l.price), vat_rate: Number(l.vat_rate || 0), unit: l.unit || 'piece', line_total: t }; });
 
     async function recordSale({ snap, customerId, shiftId, pay, ref, uuid }) {
       let sub = 0, vat = 0, grand = 0; const items = toLines(snap);

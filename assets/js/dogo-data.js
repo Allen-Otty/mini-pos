@@ -20,6 +20,19 @@
   const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
   const isNetworkErr = e => !!e && !e.code && (!e.status || e.status === 0 || /fetch|network|load failed/i.test(String(e.message || e)));
 
+  /* Bulk offers: breaks = [{ qty: 3, price: 10 }] means "3 for 10". Returns the cheapest total for buying exactly
+     `qty` pieces at `unit` each, mixing offers and single pieces (4 pieces at 4 each, 3 for 10 -> 14). */
+  function bundleTotal(qty, unit, breaks) {
+    qty = Math.max(0, Math.floor(Number(qty) || 0)); unit = Number(unit) || 0;
+    const tiers = (Array.isArray(breaks) ? breaks : []).map(b => ({ q: Math.floor(Number(b && b.qty)), p: Number(b && b.price) }))
+      .filter(b => b.q >= 2 && b.p >= 0 && isFinite(b.p) && b.p < b.q * unit);
+    if (!tiers.length || !qty) return +(qty * unit).toFixed(2);
+    if (qty > 20000) { let left = qty, t = 0; tiers.sort((a, b) => a.p / a.q - b.p / b.q).forEach(b => { const n = Math.floor(left / b.q); t += n * b.p; left -= n * b.q; }); return +(t + left * unit).toFixed(2); }
+    const dp = new Array(qty + 1).fill(0);
+    for (let i = 1; i <= qty; i++) { let best = dp[i - 1] + unit; for (const b of tiers) if (i >= b.q) best = Math.min(best, dp[i - b.q] + b.p); dp[i] = best; }
+    return +dp[qty].toFixed(2);
+  }
+
   function cachedResult(c) {
     return { session: { user: { id: c.userId }, access_token: null, offline: true }, profile: c.profile, business: c.business, offline: true };
   }
@@ -289,5 +302,5 @@
     return h;
   }
 
-  window.DogoData = { Offline, isOnline, sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor, apiAuthHeaders };
+  window.DogoData = { bundleTotal, Offline, isOnline, sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor, apiAuthHeaders };
 })();

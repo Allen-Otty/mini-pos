@@ -134,6 +134,12 @@
             </div>
           </div>
 
+          <div class="dogo-field" id="brkWrap" style="margin:0 0 16px;">
+            <label id="brkLabel" style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">BULK PRICES (OPTIONAL)</label>
+            <div class="dogo-muted" id="brkHint" style="font-size:12px;margin:2px 0 6px;">Buy more, pay less - applied automatically at the till. Stock still counts per piece.</div>
+            <div id="brkRows"></div>
+          </div>
+
           <div style="display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-top:16px;">
             <button style="border:none;background:transparent;color:var(--dogo-text-muted);font-weight:700;font-size:14px;cursor:pointer;" id="mCancel">Cancel</button>
             <button style="background:#d97706;color:#fff;border:none;border-radius:var(--dogo-radius-pill);padding:9px 28px;font-size:14px;font-weight:700;cursor:pointer;" id="mSave">Save</button>
@@ -183,12 +189,18 @@
     // The products table only has a barcode column once supabase/migrations/20261004_product_barcode.sql
     // has been run. Probe once so saving works either way (without it, the scanned barcode is used as the SKU).
     const OFF = window.DogoData.Offline, uid = profile && profile.id;
+    const $ = id => document.getElementById(id);
     let hasBarcodeCol = OFF.lsGet('dogo_has_barcode', false);   // remembered so it also works offline
+    let hasBreaksCol = OFF.lsGet('dogo_has_breaks', false);
+    sb.from('products').select('price_breaks').limit(1).then(r => {
+      if (!r.error) { hasBreaksCol = true; OFF.lsSet('dogo_has_breaks', true); $('brkWrap').style.display = ''; }
+      else if (!OFF.isNetworkErr(r.error)) { hasBreaksCol = false; OFF.lsSet('dogo_has_breaks', false); $('brkWrap').style.display = 'none'; }
+    });
+    $('brkWrap').style.display = hasBreaksCol ? '' : 'none';
     sb.from('products').select('barcode').limit(1).then(r => {
       if (!r.error) { hasBarcodeCol = true; OFF.lsSet('dogo_has_barcode', true); }
       else if (!OFF.isNetworkErr(r.error)) { hasBarcodeCol = false; OFF.lsSet('dogo_has_barcode', false); }
     });
-    const $ = id => document.getElementById(id);
 
     // Wording, categories and item types follow the business type (supermarket, hardware, restaurant...).
     const biz = DogoBiz.profileFor(ctx.business && ctx.business.business_type);
@@ -202,6 +214,15 @@
     fieldLabel('fStock').textContent = biz.stockLabel;
     fieldLabel('fReorder').textContent = biz.reorderLabel;
     $('fDesc').placeholder = biz.descPlaceholder;
+    // Bulk prices / offers: "3 for 10". Shown as "Offers" on a restaurant menu.
+    if (isMenu) { $('brkLabel').textContent = 'OFFERS (OPTIONAL)'; $('brkHint').textContent = 'e.g. 2 for 500. The best offer is applied automatically.'; }
+    const BRK_N = 3;
+    $('brkRows').innerHTML = Array.from({ length: BRK_N }, (_, i) => `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+      <input class="dogo-input" id="bq${i}" type="number" min="2" step="1" placeholder="Qty" style="background:#f8fafc;width:35%;">
+      <span class="dogo-muted" style="white-space:nowrap;">for KES</span>
+      <input class="dogo-input" id="bp${i}" type="number" min="0" step="0.01" placeholder="Total price" style="background:#f8fafc;"></div>`).join('');
+    const readBreaks = () => { const out = []; for (let i = 0; i < BRK_N; i++) { const q = Math.floor(parseFloat($('bq' + i).value)), pr = parseFloat($('bp' + i).value); if (q >= 2 && pr >= 0) out.push({ qty: q, price: pr }); } return out.sort((a, b) => a.qty - b.qty); };
+    const fillBreaks = br => { for (let i = 0; i < BRK_N; i++) { const b = Array.isArray(br) ? br[i] : null; $('bq' + i).value = b ? b.qty : ''; $('bp' + i).value = b ? b.price : ''; } };
     DogoBiz.fillSelect($('fType'), biz.types);
     if (isAdmin) $('addBtn').style.display = '';
 
@@ -324,6 +345,7 @@
       $('fDesc').value = p ? (p.description || '') : '';
       $('fStock').value = p ? p.stock : 0;
       $('fReorder').value = p ? (p.reorder_level || 0) : 0;
+      fillBreaks(p && p.price_breaks);
       $('modal').classList.add('open');
       $('fName').focus();
     }
@@ -411,6 +433,10 @@
         reorder_level: parseFloat($('fReorder').value) || 0
       };
       if (hasBarcodeCol) rec.barcode = typedBarcode || null;
+      const breaks = readBreaks();
+      const bad = breaks.find(b => b.price >= b.qty * rec.price);
+      if (bad) return toast('Bulk price must be lower than ' + bad.qty + ' × ' + rec.price + ' = ' + (bad.qty * rec.price) + ', otherwise it is not a saving.');
+      if (hasBreaksCol) rec.price_breaks = breaks.length ? breaks : null;
       if (!rec.name) return toast('Please enter a name for this item');
       if (isMenu && !rec.category) return toast('Pick a menu category so it appears on the till');
       if (isNaN(rec.price) || rec.price < 0) return toast('Please enter a valid price');
