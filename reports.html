@@ -123,6 +123,32 @@
       </div>
 
       <div class="report-card-grid" id="reportCardsGrid">
+        <div class="report-hub-card" data-rpt="bestsellers">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+              <div class="report-hub-icon" style="background:#d97706;color:#fff;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              </div>
+            </div>
+            <div style="font-weight:800;font-size:16px;color:var(--dogo-ink);margin-bottom:4px;">Best Sellers</div>
+            <div style="font-size:13px;color:var(--dogo-text-muted);">Items ranked by how many were sold, not by money</div>
+          </div>
+          <div style="font-size:12px;font-weight:800;color:#d97706;letter-spacing:0.5px;margin-top:16px;">GENERATE REPORT &rsaquo;</div>
+        </div>
+
+        <div class="report-hub-card" data-rpt="sold_history">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+              <div class="report-hub-icon" style="background:#2563eb;color:#fff;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3h18v4H3z"/><path d="M5 7v14h14V7"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
+              </div>
+            </div>
+            <div style="font-weight:800;font-size:16px;color:var(--dogo-ink);margin-bottom:4px;">Products Sold History</div>
+            <div style="font-size:13px;color:var(--dogo-text-muted);">Every item sold: when, how many, and for how much</div>
+          </div>
+          <div style="font-size:12px;font-weight:800;color:#d97706;letter-spacing:0.5px;margin-top:16px;">GENERATE REPORT &rsaquo;</div>
+        </div>
+
         <!-- Cash Flow Statement -->
         <div class="report-hub-card" data-rpt="cashflow">
           <div>
@@ -249,6 +275,10 @@
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <!-- Dropdown report switcher (Screenshot 300) -->
           <select class="dogo-select" id="reportSelectSwitcher" style="border-radius:var(--dogo-radius-pill);padding:9px 18px;font-size:14px;font-weight:700;border:1.5px solid var(--dogo-border);">
+            <optgroup label="PRODUCTS">
+              <option value="bestsellers">Best Sellers</option>
+              <option value="sold_history">Products Sold History</option>
+            </optgroup>
             <optgroup label="FINANCIAL">
               <option value="cashflow">Cash Flow Statement</option>
               <option value="pnl" selected>Profit &amp; Loss</option>
@@ -345,7 +375,7 @@
   <script src="assets/js/app-shell.js"></script>
   <script>
   (async function () {
-    const { sb, boot, esc } = window.DogoData;
+    const { sb, boot, esc, downloadCSV } = window.DogoData;
     const ksh = n => 'Ksh ' + Number(n || 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const $ = id => document.getElementById(id);
 
@@ -401,7 +431,9 @@
         trial: 'Trial Balance',
         cashcollection: 'Cash Collection',
         balancesheet: 'Balance Sheet',
-        tax: 'Tax Report'
+        tax: 'Tax Report',
+        bestsellers: 'Best Sellers',
+        sold_history: 'Products Sold History'
       };
       $('reportViewTitle').textContent = titles[currentReport] || 'Financial Report';
       $('pnlKpiGrid').style.display = (currentReport === 'pnl' || currentReport === 'detailed_pnl') ? 'grid' : 'none';
@@ -437,9 +469,20 @@
 
     // Load Supabase Data
     async function loadData() {
+      // The server returns at most 1000 rows per request, so read the big tables page by page.
+      const all = async (table, order) => {
+        let rows = [], from = 0, error = null;
+        for (;;) {
+          let q = sb.from(table).select('*'); if (order) q = q.order(order.col, { ascending: order.asc });
+          const r = await q.range(from, from + 999);
+          if (r.error) { error = r.error; break; }
+          rows = rows.concat(r.data || []); if ((r.data || []).length < 1000) break; from += 1000;
+        }
+        return { data: rows, error };
+      };
       const [s, i, e, p] = await Promise.all([
-        sb.from('sales').select('*').order('created_at', { ascending: false }),
-        sb.from('sale_items').select('*'),
+        all('sales', { col: 'created_at', asc: false }),
+        all('sale_items', { col: 'id', asc: true }),
         sb.from('expenses').select('*').order('created_at', { ascending: false }),
         sb.from('products').select('*')
       ]);
@@ -483,6 +526,74 @@
       $('kpiNet').textContent = ksh(netIncome);
 
       const container = $('activeReportContent');
+
+      /* ---- Product reports: Best Sellers and Products Sold History ---- */
+      if (currentReport === 'bestsellers' || currentReport === 'sold_history') {
+        const saleById = {}; inRangeSales.forEach(s => { saleById[s.id] = s; });
+        const lines = inRangeItems.map(it => { const sl = saleById[it.sale_id] || {}; const qty = Number(it.qty || 0), tot = Number(it.line_total ?? qty * Number(it.price || 0));
+          return { at: sl.created_at || '', receipt: sl.receipt_no || '', pay: sl.payment_method || '', sale: it.sale_id, key: it.product_id || it.code || it.name, code: it.code || '', name: it.name || '(item)', qty, tot }; })
+          .sort((a, b) => String(b.at).localeCompare(String(a.at)));
+        const when = d => d ? new Date(d).toLocaleString('en-KE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+        const range = (from || to) ? `${esc(from || 'start')} to ${esc(to || 'today')}` : 'All time';
+        const th = 'text-align:right;';
+        if (currentReport === 'bestsellers') {
+          const m = {};
+          lines.forEach(l => { const r = m[l.key] || (m[l.key] = { name: l.name, code: l.code, units: 0, sales: new Set(), rev: 0 }); r.units += l.qty; r.rev += l.tot; r.sales.add(l.sale); });
+          let rows = Object.values(m).map(r => Object.assign(r, { n: r.sales.size }));
+          const by = window.__bestSort || 'units';
+          rows.sort((a, b) => by === 'rev' ? b.rev - a.rev : by === 'n' ? (b.n - a.n || b.units - a.units) : (b.units - a.units || b.n - a.n));
+          const maxV = rows.length ? Math.max(...rows.map(r => by === 'rev' ? r.rev : by === 'n' ? r.n : r.units)) || 1 : 1;
+          const seg = (k, label) => `<button data-sort="${k}" class="dogo-btn-pill-outline" style="${by === k ? 'background:#0f172a;color:#fff;' : ''}">${label}</button>`;
+          container.innerHTML = `
+            <div class="stmt-banner-header"><span>BEST SELLERS</span><span style="font-size:12px;font-weight:600;">${range}</span></div>
+            <div class="stmt-body">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+                <span class="dogo-muted" style="font-size:12px;font-weight:700;">RANK BY</span>${seg('units', 'Units sold')}${seg('n', 'Times sold')}${seg('rev', 'Money (KES)')}
+                <button class="dogo-btn-pill-outline" id="bsCsv" style="margin-left:auto;">Export CSV</button>
+              </div>
+              <div class="dogo-table-wrap"><table class="dogo-table">
+                <thead><tr><th>#</th><th>Item</th><th style="${th}">Units sold</th><th style="${th}">Times sold</th><th style="${th}">Money</th></tr></thead>
+                <tbody>${rows.length ? rows.map((r, i) => {
+                  const v = by === 'rev' ? r.rev : by === 'n' ? r.n : r.units;
+                  return `<tr><td>${i + 1}</td><td><strong>${esc(r.name)}</strong><div style="height:5px;border-radius:3px;background:#f59e0b;margin-top:4px;width:${Math.max(3, Math.round(v / maxV * 100))}%;"></div></td>
+                    <td style="${th}"><strong>${r.units}</strong></td><td style="${th}">${r.n}</td><td style="${th}">${ksh(r.rev)}</td></tr>`; }).join('') : '<tr><td colspan="5" class="dogo-card__empty">No sales in this period.</td></tr>'}</tbody>
+              </table></div>
+              <div class="dogo-muted" style="font-size:12px;margin-top:8px;">Units sold = how many pieces left the shelf. Times sold = in how many separate sales it appeared.</div>
+            </div>`;
+          container.querySelectorAll('[data-sort]').forEach(b => { b.onclick = () => { window.__bestSort = b.dataset.sort; renderActiveReport(); }; });
+          $('bsCsv').onclick = () => downloadCSV('best-sellers.csv', [['Rank', 'Item', 'Code', 'Units sold', 'Times sold', 'Money']].concat(rows.map((r, i) => [i + 1, r.name, r.code, r.units, r.n, r.rev.toFixed(2)])));
+          return;
+        }
+        // Products Sold History
+        const MAX = 300;
+        const draw = () => {
+          const q = ($('shQ').value || '').trim().toLowerCase();
+          const list = lines.filter(l => !q || l.name.toLowerCase().includes(q) || l.code.toLowerCase().includes(q) || String(l.receipt).toLowerCase().includes(q));
+          const units = list.reduce((a, l) => a + l.qty, 0), money = list.reduce((a, l) => a + l.tot, 0);
+          $('shSum').textContent = `${list.length} line${list.length === 1 ? '' : 's'} · ${units} units · ${ksh(money)}`;
+          $('shRows').innerHTML = list.length ? list.slice(0, MAX).map(l => `<tr><td>${esc(when(l.at))}</td><td>${esc(l.receipt || '—')}</td><td><strong>${esc(l.name)}</strong></td><td style="${th}">${l.qty}</td><td style="${th}">${ksh(l.tot)}</td><td>${esc(l.pay || '—')}</td></tr>`).join('')
+            : '<tr><td colspan="6" class="dogo-card__empty">No items sold in this period.</td></tr>';
+          $('shNote').textContent = list.length > MAX ? `Showing the latest ${MAX} of ${list.length}. Export CSV for everything.` : '';
+          draw.list = list;
+        };
+        container.innerHTML = `
+          <div class="stmt-banner-header"><span>PRODUCTS SOLD HISTORY</span><span style="font-size:12px;font-weight:600;">${range}</span></div>
+          <div class="stmt-body">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
+              <input class="dogo-input" id="shQ" placeholder="Search item, code or receipt…" style="max-width:280px;background:#f8fafc;">
+              <button class="dogo-btn-pill-outline" id="shCsv" style="margin-left:auto;">Export CSV</button>
+            </div>
+            <div class="dogo-muted" id="shSum" style="font-size:13px;font-weight:700;margin-bottom:8px;"></div>
+            <div class="dogo-table-wrap"><table class="dogo-table">
+              <thead><tr><th>Date</th><th>Receipt</th><th>Item</th><th style="${th}">Qty</th><th style="${th}">Total</th><th>Paid by</th></tr></thead>
+              <tbody id="shRows"></tbody>
+            </table></div>
+            <div class="dogo-muted" id="shNote" style="font-size:12px;margin-top:8px;"></div>
+          </div>`;
+        $('shQ').oninput = draw; draw();
+        $('shCsv').onclick = () => downloadCSV('products-sold.csv', [['Date', 'Receipt', 'Item', 'Code', 'Qty', 'Total', 'Paid by']].concat((draw.list || lines).map(l => [l.at, l.receipt, l.name, l.code, l.qty, l.tot.toFixed(2), l.pay])));
+        return;
+      }
 
       // 1. BALANCE SHEET (Screenshots 302, 303, 304)
       if (currentReport === 'balancesheet') {
