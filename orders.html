@@ -74,7 +74,7 @@
     }
 
     const [p, t] = await Promise.all([sb.from('products').select('*').order('name'), sb.from('tables').select('*').order('created_at')]);
-    const menu = (p.data || []).filter(x => isFood(x.category));
+    const menu = (p.data || []).filter(x => isFood(x.category) && !x.archived);
     const floor = t.data || [];
     if (floor.length) { $('tableField').style.display = ''; $('tableSel').innerHTML += floor.map(x => `<option value="${esc(x.name)}">${esc(x.name)}</option>`).join(''); }
     $('orderType').onchange = () => { $('tableField').style.display = ($('orderType').value === 'Dine In' && floor.length) ? '' : 'none'; };

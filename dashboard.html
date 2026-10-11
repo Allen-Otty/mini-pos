@@ -96,28 +96,34 @@
     }
     const isAdmin = profile && profile.role === 'admin';
 
-    const [prod, cust, sales, items, exp, tbl] = await Promise.all([
-      sb.from('products').select('*'),
-      sb.from('customers').select('id'),
-      sb.from('sales').select('*').order('created_at', { ascending: false }),
-      sb.from('sale_items').select('sale_id,name,qty,line_total'),
-      isAdmin ? sb.from('expenses').select('amount,created_at') : Promise.resolve({ data: [] }),
+    // Dates use the shop's own clock (not UTC), so "today" and "this month" roll over at local midnight.
+    const pad = n => String(n).padStart(2, '0');
+    const dayOf = d => { const x = new Date(d); return x.getFullYear() + '-' + pad(x.getMonth() + 1) + '-' + pad(x.getDate()); };
+    const nowD = new Date(), today = dayOf(nowD), month = today.slice(0, 7);
+    const monthStartISO = new Date(nowD.getFullYear(), nowD.getMonth(), 1).toISOString();
+    // The server returns at most 1000 rows per request, so read lists page by page.
+    const all = async (q) => { let rows = [], from = 0; for (;;) { const r = await q().range(from, from + 999); if (r.error) return { data: rows, error: r.error }; rows = rows.concat(r.data || []); if ((r.data || []).length < 1000) break; from += 1000; } return { data: rows }; };
+    const count = t => sb.from(t).select('id', { count: 'exact', head: true });
+
+    const [prod, custN, salesN, expN, monthSales, recentSales, monthExp, tbl] = await Promise.all([
+      all(() => sb.from('products').select('*').order('name')),
+      count('customers'),
+      count('sales'),
+      isAdmin ? count('expenses') : Promise.resolve({ count: 0 }),
+      all(() => sb.from('sales').select('id,total,created_at').gte('created_at', monthStartISO).order('created_at', { ascending: false })),
+      sb.from('sales').select('id,receipt_no,payment_method,total,created_at').order('created_at', { ascending: false }).limit(6),
+      isAdmin ? all(() => sb.from('expenses').select('amount,created_at').gte('created_at', monthStartISO).order('created_at', { ascending: false })) : Promise.resolve({ data: [] }),
       isRest ? sb.from('tables').select('*').order('created_at') : Promise.resolve({ data: [] })
     ]);
 
-    const products = prod.data || [], saleRows = sales.data || [], lines = items.data || [], expenses = exp.data || [];
-    const today = new Date().toISOString().slice(0, 10), month = today.slice(0, 7);
-
-    const totalBySale = {};
-    lines.forEach(l => { totalBySale[l.sale_id] = (totalBySale[l.sale_id] || 0) + Number(l.line_total || 0); });
+    const products = (prod.data || []).filter(x => !x.archived);
+    // Sales totals come straight from each sale's recorded total (it always equals the sum of its lines).
     let todayTotal = 0, monthTotal = 0;
-    saleRows.forEach(s => {
-      const d = (s.created_at || '').slice(0, 10), t = totalBySale[s.id] || 0;
-      if (d === today) todayTotal += t;
-      if (d.slice(0, 7) === month) monthTotal += t;
-    });
-    const monthExp = expenses.filter(e => (e.created_at || '').slice(0, 7) === month).reduce((a, e) => a + Number(e.amount || 0), 0);
-    const profit = monthTotal - monthExp;
+    (monthSales.data || []).forEach(s => { const t = Number(s.total || 0); monthTotal += t; if (dayOf(s.created_at) === today) todayTotal += t; });
+    const monthExpTotal = (monthExp.data || []).reduce((a, e) => a + Number(e.amount || 0), 0);
+    const profit = monthTotal - monthExpTotal;
+    const saleRows = recentSales.data || [], totalBySale = {};
+    saleRows.forEach(s => { totalBySale[s.id] = Number(s.total || 0); });
 
     const out = products.filter(p => Number(p.stock) <= 0);
     const low = products.filter(p => Number(p.stock) > 0 && Number(p.stock) <= Number(p.reorder_level || 0));
@@ -128,8 +134,8 @@
     set('kpiProfit', isAdmin ? kes(profit) : '—');
     document.getElementById('kpiProfit').classList.toggle('is-negative', profit < 0);
     set('kpiStock', kes(stockValue)); set('kpiOut', out.length); set('kpiLow', low.length);
-    set('tCustomers', (cust.data || []).length); set('tProducts', products.length);
-    set('tSales', saleRows.length); set('tExpenses', expenses.length);
+    set('tCustomers', custN.count || 0); set('tProducts', products.length);
+    set('tSales', salesN.count || 0); set('tExpenses', expN.count || 0);
 
     const recent = saleRows.slice(0, 6);
     set('recentCount', recent.length + ' active');

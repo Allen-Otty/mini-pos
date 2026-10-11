@@ -391,7 +391,7 @@
       toast(cp ? 'Offline — using the products saved on this device.' : 'No connection and nothing saved on this device yet. Open the till once while online first.');
     }
 
-    products = pRes.data || [];
+    products = (pRes.data || []).filter(x => !x.archived);
 
     // Restaurant mode: same till, food-only catalog + restaurant wording.
     const FOOD_CATS = ['BREAKFAST', 'DRINKS', 'LUNCH', 'DINNER/SUPPER', 'SNACKS',
@@ -783,7 +783,7 @@
       $('grid').innerHTML = list.length ? list.map(x => `
         <button class="dogo-prod" data-id="${esc(x.id)}" ${Number(x.stock) <= 0 ? 'disabled' : ''}>
           <span class="dogo-prod__name">${esc(x.name)}</span>
-          <span class="dogo-prod__price">${kes(x.price)}</span>
+          <span class="dogo-prod__price">${kes(x.price)}</span>${(x.price_breaks || []).length ? '<span class="dogo-badge dogo-badge--ok">' + x.price_breaks.map(b => b.qty + ' for ' + b.price).join(' · ') + '</span>' : ''}
           <span class="dogo-muted" style="font-size:12px;">${Number(x.stock) <= 0 ? 'Out of stock' : x.stock + ' in stock'}${isRestaurant && x.category ? ' · ' + esc(String(x.category).toUpperCase()) : ''}</span>
         </button>
       `).join('') : '<div class="dogo-card__empty" style="grid-column:1/-1;">No products found matching query.</div>';
@@ -791,7 +791,8 @@
 
     function drawCart() {
       const items = cart.reduce((a, l) => a + l.qty, 0);
-      const total = cart.reduce((a, l) => a + l.qty * Number(l.p.price), 0);
+      const lineTotal = l => window.DogoData.bundleTotal(l.qty, l.p.price, l.p.price_breaks);
+      const total = cart.reduce((a, l) => a + lineTotal(l), 0);
       $('cnt').textContent = items + (items === 1 ? ' item' : ' items');
       $('total').textContent = kes(total);
 
@@ -799,9 +800,9 @@
         <div class="dogo-cart-line">
           <div>
             <strong>${esc(l.p.name)}</strong>
-            <div class="dogo-muted" style="font-size:12.5px;">${kes(l.p.price)} each</div>
+            <div class="dogo-muted" style="font-size:12.5px;">${kes(l.p.price)} each${lineTotal(l) < l.qty * Number(l.p.price) - 0.001 ? ' · <span style="color:#15803d;font-weight:700;">offer saves ' + kes(l.qty * Number(l.p.price) - lineTotal(l)) + '</span>' : ''}</div>
           </div>
-          <div style="text-align:right;"><strong>${kes(l.qty * Number(l.p.price))}</strong></div>
+          <div style="text-align:right;"><strong>${kes(lineTotal(l))}</strong></div>
           <div class="dogo-qty">
             <button data-dec="${i}">−</button>
             <span>${l.qty}</span>
@@ -866,16 +867,27 @@
     if (apiBase !== null) ['kcb', 'paystack', 'airtel'].forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = DIGITAL[k].name; $('payMethod').appendChild(o); });
     const PENDING_KEY = 'dogo_pending_payment_v1_' + ctx.profile.id, TIMEOUT_S = 72;
 
+    // Pochi la Biashara: the customer sends money to the shop's Pochi number; the cashier records the M-Pesa code from the SMS.
+    const POCHI = ctx.business && ctx.business.pochi_number;
+    if (POCHI) { const o = document.createElement('option'); o.value = 'pochi'; o.textContent = 'Pochi la Biashara'; $('payMethod').appendChild(o); }
+    NAMES.pochi = 'Pochi la Biashara';
     function drawPayFields() {
+      if ($('payMethod').value === 'pochi') {
+        $('payFields').innerHTML = `<div class="dogo-field"><div style="background:#fef9c3;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:8px;">Ask the customer to send the total to Pochi <strong>${esc(POCHI)}</strong>, then type the M-Pesa code from their confirmation SMS.</div>
+          <label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--dogo-text-muted);">M-Pesa confirmation code</label>
+          <input class="dogo-input" id="pochiCode" placeholder="e.g. UJB4X7K2QD" maxlength="10" autocapitalize="characters" style="text-transform:uppercase;"></div>`;
+        $('payBtn').textContent = 'Confirm Pochi payment';
+        return;
+      }
       const m = DIGITAL[$('payMethod').value];
       $('payFields').innerHTML = m ? `<div class="dogo-field"><label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--dogo-text-muted);">${esc(m.label)}</label><input class="dogo-input" id="payContact" placeholder="${esc(m.ph)}" inputmode="${$('payMethod').value === 'paystack' ? 'email' : 'tel'}"></div>` : '';
       $('payBtn').textContent = m ? 'Send ' + m.name + ' request' : 'Complete Sale';
     }
     $('payMethod').onchange = () => { if (!busy) drawPayFields(); };
 
-    const totalOf = list => list.reduce((a, l) => a + l.qty * Number(l.p.price), 0);
-    const snapOf = list => list.map(l => ({ product_id: l.p.id, code: l.p.code, name: l.p.name, qty: l.qty, price: Number(l.p.price), vat_rate: Number(l.p.vat_rate || 0), unit: l.p.unit || 'piece' }));
-    const toLines = snap => snap.map(l => { const t = +(l.qty * Number(l.price)).toFixed(2); return { product_id: l.product_id, code: l.code, name: l.name, qty: l.qty, price: Number(l.price), vat_rate: Number(l.vat_rate || 0), unit: l.unit || 'piece', line_total: t }; });
+    const totalOf = list => list.reduce((a, l) => a + window.DogoData.bundleTotal(l.qty, l.p.price, l.p.price_breaks), 0);
+    const snapOf = list => list.map(l => ({ product_id: l.p.id, code: l.p.code, name: l.p.name, qty: l.qty, price: Number(l.p.price), vat_rate: Number(l.p.vat_rate || 0), unit: l.p.unit || 'piece', breaks: l.p.price_breaks || null }));
+    const toLines = snap => snap.map(l => { const t = window.DogoData.bundleTotal(l.qty, l.price, l.breaks); const eff = l.qty ? +(t / l.qty).toFixed(4) : Number(l.price); return { product_id: l.product_id, code: l.code, name: l.name, qty: l.qty, price: t < l.qty * Number(l.price) - 0.001 ? eff : Number(l.price), vat_rate: Number(l.vat_rate || 0), unit: l.unit || 'piece', line_total: t }; });
 
     async function recordSale({ snap, customerId, shiftId, pay, ref, uuid }) {
       let sub = 0, vat = 0, grand = 0; const items = toLines(snap);
@@ -904,7 +916,14 @@
         const { data, error } = await sb.rpc('process_sale', Object.assign({ p_receipt_no: receipt }, args));
         if (error) return OFF.isNetworkErr(error) ? queueIt() : { error };
         if (DIGITAL[pay]) sb.functions.invoke('etims-submit', { body: { sale_id: data } }).catch(() => {});
-        return { id: data, receipt, grand, sub, vat, items };
+        // The database guarantees a unique receipt number (it replaces one that another device already took),
+        // so show the number that was actually stored.
+        let shownReceipt = receipt;
+        try {
+          const g = await sb.from('sales').select('receipt_no').eq('id', data).maybeSingle();
+          if (g.data && g.data.receipt_no) shownReceipt = g.data.receipt_no;
+        } catch (e) { /* keep the number we sent */ }
+        return { id: data, receipt: shownReceipt, grand, sub, vat, items };
       } catch (e) {
         if (OFF.isNetworkErr(e)) return queueIt();
         return { error: e };
@@ -915,7 +934,8 @@
       const [r] = await Promise.all([sb.from('products').select('*').order('name'), loadShiftSales()]);
       if (r.error) { drawGrid(); drawCart(); renderShiftBar(); return; }
       OFF.cacheSet('sell_products', uid, r.data || []);
-      products = isRestaurant && (r.data || []).some(x => isFoodCat(x.category)) ? r.data.filter(x => isFoodCat(x.category)) : (r.data || products);
+      const live = (r.data || []).filter(x => !x.archived);
+      products = isRestaurant && live.some(x => isFoodCat(x.category)) ? live.filter(x => isFoodCat(x.category)) : (r.data ? live : products);
       drawGrid(); drawCart(); renderShiftBar();
     }
     window.addEventListener('dogo:synced', e => {
@@ -939,10 +959,18 @@
     const fnError = async err => { let m = err.message || 'Payment request failed'; try { const t = await err.context.text(); const j = JSON.parse(t); m = j.error || j.message || m; } catch (_) {} return m; };
     async function initiate(m, snap, grand, contact, customerId) {
       if (m === 'mpesa') {
-        const { data, error } = await sb.functions.invoke('mpesa-stk-push', { body: { phone: contact, amount: grand, customer_id: customerId || null, plan: null, metadata: {},
+        // Make sure the sign-in token is fresh before asking the server to send the M-Pesa prompt.
+        let token = null;
+        try {
+          let { data: { session } } = await sb.auth.getSession();
+          if (!session || (session.expires_at && session.expires_at * 1000 - Date.now() < 60000)) { const r = await sb.auth.refreshSession(); session = r.data && r.data.session; }
+          token = session && session.access_token;
+        } catch (_) {}
+        if (!token) return { error: 'Your sign-in has expired. Sign out, sign in again, then retry the M-Pesa request.' };
+        const { data, error } = await sb.functions.invoke('mpesa-stk-push', { headers: { Authorization: 'Bearer ' + token }, body: { phone: contact, amount: grand, customer_id: customerId || null, plan: null, metadata: {},
           cart: snap.map(l => ({ id: l.product_id, code: l.code, name: l.name, price: l.price, qty: l.qty, vat: l.vat_rate, unit: l.unit })) } });
         if (error) return { error: await fnError(error) };
-        if (data && data.error) return { error: /credentials|not set up|Settings/i.test(data.error) ? 'M-Pesa is not set up for this business yet. Add your Till/Paybill in Settings.' : data.error };
+        if (data && data.error) return { error: /Invalid session/i.test(data.error) ? 'Your sign-in has expired. Sign out, sign in again, then retry.' : /credentials|not set up|Settings/i.test(data.error) ? 'M-Pesa is not set up for this business yet. Add your Till/Paybill in Settings.' : data.error };
         const id = data && (data.payment_request_id || data.id); return id ? { id, channel: 'supabase' } : { error: 'M-Pesa did not return a payment request.' };
       }
       const r = await fetch(apiBase + '/api/payments/initiate', { method: 'POST', headers: await window.DogoData.apiAuthHeaders({ 'Content-Type': 'application/json' }),
@@ -1009,10 +1037,21 @@
         return startDigital(method);
       }
       if (method === 'credit' && !$('cust').value) return toast('Select a customer for a credit sale.');
+      let pochiRef = null;
+      if (method === 'pochi') {
+        pochiRef = (($('pochiCode') && $('pochiCode').value) || '').trim().toUpperCase();
+        if (!/^[A-Z0-9]{10}$/.test(pochiRef)) return toast('Enter the 10-character M-Pesa code from the SMS, e.g. UJB4X7K2QD');
+        if (OFF.isOnline()) {
+          try {
+            const dup = await sb.from('sales').select('id').eq('mpesa_receipt_no', pochiRef).limit(1);
+            if (dup.data && dup.data.length) return toast('That M-Pesa code was already used for another sale.');
+          } catch (e) { /* offline or failed lookup: carry on */ }
+        }
+      }
       $('payBtn').disabled = true;
-      const r = await recordSale({ snap: snapOf(cart), customerId: $('cust').value || null, shiftId: currentShift.id, pay: method });
+      const r = await recordSale({ snap: snapOf(cart), customerId: $('cust').value || null, shiftId: currentShift.id, pay: method, ref: pochiRef });
       if (r.error) { toast(r.error.message.includes('Insufficient stock') ? r.error.message : 'Could not complete sale: ' + r.error.message); drawCart(); return; }
-      cart = []; $('cust').value = ''; showReceipt(r, method); afterSale();
+      cart = []; $('cust').value = ''; if ($('pochiCode')) $('pochiCode').value = ''; showReceipt(r, method, pochiRef || undefined); afterSale();
     };
 
     renderShiftBar();

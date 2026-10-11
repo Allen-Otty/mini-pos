@@ -29,6 +29,7 @@
       <div class="dogo-seg" id="viewSeg">
         <button data-v="all" class="is-active">All Products</button>
         <button data-v="inventory">Low Stock &amp; Alerts</button>
+        <button data-v="archived" id="archTab">Archived</button>
       </div>
     </div>
     <section class="dogo-card">
@@ -134,6 +135,12 @@
             </div>
           </div>
 
+          <div class="dogo-field" id="brkWrap" style="margin:0 0 16px;">
+            <label id="brkLabel" style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">BULK PRICES (OPTIONAL)</label>
+            <div class="dogo-muted" id="brkHint" style="font-size:12px;margin:2px 0 6px;">Buy more, pay less - applied automatically at the till. Stock still counts per piece.</div>
+            <div id="brkRows"></div>
+          </div>
+
           <div style="display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-top:16px;">
             <button style="border:none;background:transparent;color:var(--dogo-text-muted);font-weight:700;font-size:14px;cursor:pointer;" id="mCancel">Cancel</button>
             <button style="background:#d97706;color:#fff;border:none;border-radius:var(--dogo-radius-pill);padding:9px 28px;font-size:14px;font-weight:700;cursor:pointer;" id="mSave">Save</button>
@@ -182,9 +189,19 @@
     let products = [], page = 1; const PER = 10; let editing = null;
     // The products table only has a barcode column once supabase/migrations/20261004_product_barcode.sql
     // has been run. Probe once so saving works either way (without it, the scanned barcode is used as the SKU).
-    let hasBarcodeCol = false;
-    sb.from('products').select('barcode').limit(1).then(r => { hasBarcodeCol = !r.error; });
+    const OFF = window.DogoData.Offline, uid = profile && profile.id;
     const $ = id => document.getElementById(id);
+    let hasBarcodeCol = OFF.lsGet('dogo_has_barcode', false);   // remembered so it also works offline
+    let hasBreaksCol = OFF.lsGet('dogo_has_breaks', false);
+    sb.from('products').select('price_breaks').limit(1).then(r => {
+      if (!r.error) { hasBreaksCol = true; OFF.lsSet('dogo_has_breaks', true); $('brkWrap').style.display = ''; }
+      else if (!OFF.isNetworkErr(r.error)) { hasBreaksCol = false; OFF.lsSet('dogo_has_breaks', false); $('brkWrap').style.display = 'none'; }
+    });
+    $('brkWrap').style.display = hasBreaksCol ? '' : 'none';
+    sb.from('products').select('barcode').limit(1).then(r => {
+      if (!r.error) { hasBarcodeCol = true; OFF.lsSet('dogo_has_barcode', true); }
+      else if (!OFF.isNetworkErr(r.error)) { hasBarcodeCol = false; OFF.lsSet('dogo_has_barcode', false); }
+    });
 
     // Wording, categories and item types follow the business type (supermarket, hardware, restaurant...).
     const biz = DogoBiz.profileFor(ctx.business && ctx.business.business_type);
@@ -198,6 +215,15 @@
     fieldLabel('fStock').textContent = biz.stockLabel;
     fieldLabel('fReorder').textContent = biz.reorderLabel;
     $('fDesc').placeholder = biz.descPlaceholder;
+    // Bulk prices / offers: "3 for 10". Shown as "Offers" on a restaurant menu.
+    if (isMenu) { $('brkLabel').textContent = 'OFFERS (OPTIONAL)'; $('brkHint').textContent = 'e.g. 2 for 500. The best offer is applied automatically.'; }
+    const BRK_N = 3;
+    $('brkRows').innerHTML = Array.from({ length: BRK_N }, (_, i) => `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+      <input class="dogo-input" id="bq${i}" type="number" min="2" step="1" placeholder="Qty" style="background:#f8fafc;width:35%;">
+      <span class="dogo-muted" style="white-space:nowrap;">for KES</span>
+      <input class="dogo-input" id="bp${i}" type="number" min="0" step="0.01" placeholder="Total price" style="background:#f8fafc;"></div>`).join('');
+    const readBreaks = () => { const out = []; for (let i = 0; i < BRK_N; i++) { const q = Math.floor(parseFloat($('bq' + i).value)), pr = parseFloat($('bp' + i).value); if (q >= 2 && pr >= 0) out.push({ qty: q, price: pr }); } return out.sort((a, b) => a.qty - b.qty); };
+    const fillBreaks = br => { for (let i = 0; i < BRK_N; i++) { const b = Array.isArray(br) ? br[i] : null; $('bq' + i).value = b ? b.qty : ''; $('bp' + i).value = b ? b.price : ''; } };
     DogoBiz.fillSelect($('fType'), biz.types);
     if (isAdmin) $('addBtn').style.display = '';
 
@@ -263,13 +289,24 @@
     };
 
     async function load() {
-      const { data, error } = await sb.from('products').select('*').order('name');
-      if (error) toast('Could not load products: ' + error.message);
-      products = data || []; draw();
+      // push anything saved offline first so the list below already includes it
+      if (OFF.isOnline() && uid && OFF.productQueue(uid).length) { try { await OFF.syncSales(ctx); } catch (e) {} }
+      let res;
+      try { res = await sb.from('products').select('*').order('name'); } catch (e) { res = { error: e }; }
+      if (res.error && (OFF.isNetworkErr(res.error) || !OFF.isOnline())) {
+        const cp = OFF.cacheGet('sell_products', uid);
+        products = cp || [];
+        toast(cp ? 'Offline — showing the items saved on this device.' : 'No connection and nothing saved on this device yet. Open the catalogue once while online first.');
+        return draw();
+      }
+      if (res.error) toast('Could not load products: ' + res.error.message);
+      products = res.data || [];
+      if (!res.error) OFF.cacheSet('sell_products', uid, products);     // same copy the till uses
+      draw();
     }
     function filtered() {
       const q = $('q').value.trim().toLowerCase();
-      return products.filter(p => (!q || [p.name, p.code, p.category].some(v => String(v || '').toLowerCase().includes(q)))
+      return products.filter(p => (view === 'archived' ? !!p.archived : !p.archived) && (!q || [p.name, p.code, p.category].some(v => String(v || '').toLowerCase().includes(q)))
         && (view !== 'inventory' || Number(p.stock) <= Number(p.reorder_level || 0)));
     }
     function draw() {
@@ -280,7 +317,7 @@
         const st = Number(p.stock), low = st <= Number(p.reorder_level || 0);
         return `<tr><td>${esc(p.code)}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.category || '—')}</td><td>${kes(p.price)}</td><td>${Math.round(Number(p.vat_rate || 0) * 100)}%</td>
           <td><span class="dogo-badge ${st <= 0 ? 'dogo-badge--danger' : low ? 'dogo-badge--warn' : 'dogo-badge--ok'}">${st}</span></td><td>${esc(p.reorder_level ?? 0)}</td>
-          <td style="white-space:nowrap;"><button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-log="${esc(p.id)}">Sales</button>${isAdmin ? ` <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-edit="${esc(p.id)}">Edit</button> <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-del="${esc(p.id)}" style="color:#dc2626;border-color:#fca5a5;">Delete</button>` : ''}</td></tr>`;
+          <td style="white-space:nowrap;"><button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-log="${esc(p.id)}">Sales</button>${isAdmin && p.archived ? ` <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-restore="${esc(p.id)}">Restore</button>` : ''}${isAdmin && !p.archived ? ` <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-edit="${esc(p.id)}">Edit</button> <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-del="${esc(p.id)}" style="color:#dc2626;border-color:#fca5a5;">Delete</button>` : ''}</td></tr>`;
       }).join('') : '<tr><td colspan="8" class="dogo-card__empty">No products found</td></tr>';
       $('pageInfo').textContent = list.length ? `Showing ${(page - 1) * PER + 1}-${Math.min(page * PER, list.length)} of ${list.length}` : '';
       $('prev').disabled = page <= 1; $('next').disabled = page >= pages;
@@ -309,6 +346,7 @@
       $('fDesc').value = p ? (p.description || '') : '';
       $('fStock').value = p ? p.stock : 0;
       $('fReorder').value = p ? (p.reorder_level || 0) : 0;
+      fillBreaks(p && p.price_breaks);
       $('modal').classList.add('open');
       $('fName').focus();
     }
@@ -321,8 +359,18 @@
       const d = (e.target.closest('button') || {}).dataset || {};
       if (d.edit) openModal(products.find(p => String(p.id) === d.edit));
       else if (d.del) deleteProduct(products.find(p => String(p.id) === d.del));
+      else if (d.restore) setArchived(products.find(p => String(p.id) === d.restore), false);
       else if (d.log) openHistory(products.find(p => String(p.id) === d.log));
     };
+
+    /* ---- Archive / restore (admin only): hides an item everywhere but keeps its sales history ---- */
+    async function setArchived(p, on) {
+      if (!p || !isAdmin) return;
+      if (!OFF.isOnline()) return toast((on ? 'Archiving' : 'Restoring') + ' needs a connection.');
+      const { error } = await sb.from('products').update({ archived: !!on, archived_at: on ? new Date().toISOString() : null }).eq('id', p.id);
+      if (error) return toast('Could not ' + (on ? 'archive' : 'restore') + ': ' + error.message);
+      toast('"' + p.name + '" ' + (on ? 'archived' : 'restored')); load();
+    }
 
     /* ---- Delete (admin only, permanent) ---- */
     async function deleteProduct(p) {
@@ -332,10 +380,18 @@
       try { const r = await sb.from('sale_items').select('id', { count: 'exact', head: true }).eq('product_id', p.id); if (!r.error) n = r.count || 0; } catch (e) {}
       const msg = 'Permanently delete "' + p.name + '" (' + p.code + ')?\n\nThis cannot be undone.'
         + (n ? '\n\nIt appears on ' + n + ' past sale line' + (n === 1 ? '' : 's') + '. Past sales are kept as records, so the database may refuse to delete it.' : '');
+      // An item that has been sold can't be erased (past sales keep their records): offer to archive it instead.
+      if (n) {
+        if (confirm('"' + p.name + '" appears on ' + n + ' past sale line' + (n === 1 ? '' : 's') + ', so it can\'t be erased.\n\nArchive it instead? It disappears from the till, orders and stock lists, but your sales history stays. You can restore it from the Archived tab.')) return setArchived(p, true);
+        return;
+      }
       if (!confirm(msg)) return;
       const { data, error } = await sb.from('products').delete().eq('id', p.id).select('id');
       if (error) {
-        if (error.code === '23503') return toast('Can\'t delete: "' + p.name + '" is part of past sales, and those records must stay. Set its stock to 0 instead, or ask me to add a Hide option.');
+        if (error.code === '23503') {
+          if (confirm('"' + p.name + '" is part of past sales, so it can\'t be erased.\n\nArchive it instead?')) return setArchived(p, true);
+          return;
+        }
         return toast('Could not delete: ' + error.message);
       }
       if (!data || !data.length) return toast('Nothing was deleted - you may not have permission, or it is already gone.');
@@ -396,12 +452,36 @@
         reorder_level: parseFloat($('fReorder').value) || 0
       };
       if (hasBarcodeCol) rec.barcode = typedBarcode || null;
+      const breaks = readBreaks();
+      const bad = breaks.find(b => b.price >= b.qty * rec.price);
+      if (bad) return toast('Bulk price must be lower than ' + bad.qty + ' × ' + rec.price + ' = ' + (bad.qty * rec.price) + ', otherwise it is not a saving.');
+      if (hasBreaksCol) rec.price_breaks = breaks.length ? breaks : null;
       if (!rec.name) return toast('Please enter a name for this item');
       if (isMenu && !rec.category) return toast('Pick a menu category so it appears on the till');
       if (isNaN(rec.price) || rec.price < 0) return toast('Please enter a valid price');
 
-      const res = editing ? await sb.from('products').update(rec).eq('id', editing.id)
-                          : await sb.from('products').insert(Object.assign({ business_id: businessId, unit: 'piece', created_by: profile ? profile.id : null }, rec));
+      const full = editing ? rec : Object.assign({ business_id: businessId, unit: 'piece', created_by: profile ? profile.id : null }, rec);
+      const newId = editing ? null : (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));
+      // No connection (or it drops mid-save): keep the change on this device and send it when back online.
+      const saveOffline = () => {
+        if (!uid) return toast('Could not save: not signed in on this device.');
+        if (!editing && products.some(x => x.business_id === businessId && String(x.code) === String(rec.code))) return toast('That SKU is already used by another item.');
+        OFF.enqueueProduct(uid, editing ? { op: 'update', id: editing.id, rec: full } : { op: 'insert', id: newId, rec: full });
+        // show it straight away, and in the till's copy of the catalogue
+        const apply = list => editing ? list.map(x => x.id === editing.id ? Object.assign({}, x, rec) : x)
+                                      : list.concat([Object.assign({ id: newId, created_at: new Date().toISOString() }, full)]);
+        products = apply(products).sort((a, b) => String(a.name).localeCompare(String(b.name)));
+        OFF.cacheSet('sell_products', uid, products);
+        OFF.refreshBar(); closeModal(); draw();
+        toast('Saved on this device. It will sync when you are back online.');
+      };
+      if (!OFF.isOnline()) return saveOffline();
+      let res;
+      try {
+        res = editing ? await sb.from('products').update(rec).eq('id', editing.id)
+                      : await sb.from('products').insert(Object.assign({ id: newId }, full));
+      } catch (e) { res = { error: e }; }
+      if (res.error && OFF.isNetworkErr(res.error)) return saveOffline();
       if (res.error) return toast('Could not save: ' + res.error.message);
       closeModal(); toast('Item saved to catalogue'); load();
     };

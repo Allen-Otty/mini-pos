@@ -79,7 +79,7 @@
       sb.from('shift_sessions').select('*').eq('user_id', ctx.profile.id).eq('status', 'OPEN').order('created_at', { ascending: false }),
       sb.from('tables').select('*').order('created_at')
     ]);
-    products = p.data || [];
+    products = (p.data || []).filter(x => !x.archived);
     currentShift = (sh.data || []).find(s => (s.created_at || '').slice(0, 10) === todayStr) || null;
     tablesWithOrders = (tb.data || []).filter(t => (t.current_order || []).length);
     $('noShiftNote').style.display = currentShift ? 'none' : '';
@@ -175,7 +175,7 @@
     }
     async function settleTicket(ticketId, rec) {
       await DogoKitchen.markPaid(ticketId, rec && rec.id ? rec.id : null);
-      const r = await sb.from('products').select('*').order('name'); products = r.data || products;
+      const r = await sb.from('products').select('*').order('name'); products = r.data ? r.data.filter(x => !x.archived) : products;
     }
     function showBillReceipt(r, pay, ref) {
       $('billModal').classList.remove('open');

@@ -329,6 +329,16 @@
 
     <!-- TAB 3: Safaricom M-Pesa -->
     <div class="settings-tab-pane" id="tab-mpesa">
+      <section class="dogo-card" style="max-width:820px;margin-bottom:16px;">
+        <div style="font-weight:800;font-size:18px;">Pochi la Biashara</div>
+        <div class="dogo-muted" style="font-size:13px;margin-bottom:12px;">Customers send money to your Pochi number, and the cashier types in the M-Pesa confirmation code from the SMS. Pochi cannot send a payment prompt to the customer's phone. For automatic prompts you need a Till or Paybill (below).</div>
+        <div class="dogo-field"><label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--dogo-text-muted);">Pochi phone number</label>
+          <input class="dogo-input" type="tel" id="pochiNumber" placeholder="e.g. 0741288381" inputmode="tel"></div>
+        <div class="dogo-btn-row" style="margin-top:12px;">
+          <button class="dogo-btn dogo-btn--primary" id="btnSavePochi">Save Pochi number</button>
+          <button class="dogo-btn dogo-btn--outline" id="btnClearPochi" style="color:#dc2626;">Turn off</button>
+        </div>
+      </section>
       <section class="dogo-card" style="max-width:820px;">
         <div class="gateway-header">
           <div>
@@ -806,6 +816,21 @@
       } catch (e) {}
     }
     loadSavedGatewayConfigs();
+
+    $('pochiNumber').value = b.pochi_number || '';
+    const savePochi = async (num) => {
+      const { error } = await sb.from('businesses').update({ pochi_number: num || null }).eq('id', ctx.businessId);
+      if (error) return toast('Could not save Pochi: ' + error.message);
+      b.pochi_number = num || null;
+      try { const c = JSON.parse(localStorage.getItem('dogo_ctx_v1') || 'null'); if (c && c.business) { c.business.pochi_number = num || null; localStorage.setItem('dogo_ctx_v1', JSON.stringify(c)); } } catch (e) {}
+      toast(num ? 'Pochi la Biashara is on. Cashiers will see it as a payment method.' : 'Pochi la Biashara turned off.');
+    };
+    $('btnSavePochi').onclick = () => {
+      const n = $('pochiNumber').value.replace(/[\s-]/g, '');
+      if (!/^(\+?254|0)?[71]\d{8}$/.test(n)) return toast('Enter the Safaricom phone number of your Pochi, e.g. 0741288381');
+      savePochi(n);
+    };
+    $('btnClearPochi').onclick = () => { $('pochiNumber').value = ''; savePochi(''); };
 
     $('btnSaveMpesa').onclick = async () => {
       const shortcode = $('mpesaShortcode').value.trim();
