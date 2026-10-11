@@ -941,10 +941,18 @@
     const fnError = async err => { let m = err.message || 'Payment request failed'; try { const t = await err.context.text(); const j = JSON.parse(t); m = j.error || j.message || m; } catch (_) {} return m; };
     async function initiate(m, snap, grand, contact, customerId) {
       if (m === 'mpesa') {
-        const { data, error } = await sb.functions.invoke('mpesa-stk-push', { body: { phone: contact, amount: grand, customer_id: customerId || null, plan: null, metadata: {},
+        // Make sure the sign-in token is fresh before asking the server to send the M-Pesa prompt.
+        let token = null;
+        try {
+          let { data: { session } } = await sb.auth.getSession();
+          if (!session || (session.expires_at && session.expires_at * 1000 - Date.now() < 60000)) { const r = await sb.auth.refreshSession(); session = r.data && r.data.session; }
+          token = session && session.access_token;
+        } catch (_) {}
+        if (!token) return { error: 'Your sign-in has expired. Sign out, sign in again, then retry the M-Pesa request.' };
+        const { data, error } = await sb.functions.invoke('mpesa-stk-push', { headers: { Authorization: 'Bearer ' + token }, body: { phone: contact, amount: grand, customer_id: customerId || null, plan: null, metadata: {},
           cart: snap.map(l => ({ id: l.product_id, code: l.code, name: l.name, price: l.price, qty: l.qty, vat: l.vat_rate, unit: l.unit })) } });
         if (error) return { error: await fnError(error) };
-        if (data && data.error) return { error: /credentials|not set up|Settings/i.test(data.error) ? 'M-Pesa is not set up for this business yet. Add your Till/Paybill in Settings.' : data.error };
+        if (data && data.error) return { error: /Invalid session/i.test(data.error) ? 'Your sign-in has expired. Sign out, sign in again, then retry.' : /credentials|not set up|Settings/i.test(data.error) ? 'M-Pesa is not set up for this business yet. Add your Till/Paybill in Settings.' : data.error };
         const id = data && (data.payment_request_id || data.id); return id ? { id, channel: 'supabase' } : { error: 'M-Pesa did not return a payment request.' };
       }
       const r = await fetch(apiBase + '/api/payments/initiate', { method: 'POST', headers: await window.DogoData.apiAuthHeaders({ 'Content-Type': 'application/json' }),
