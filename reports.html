@@ -390,7 +390,9 @@
     let products = [];
 
     // Dates
-    const todayStr = new Date().toISOString().slice(0, 10);
+    // Local calendar day (not UTC), so a sale at 1am in Nairobi counts as that day.
+    const dayOf = v => { const d = new Date(v); if (isNaN(d)) return ''; return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+    const todayStr = dayOf(new Date());
     const startMonthStr = todayStr.slice(0, 7) + '-01';
     $('dateFrom').value = startMonthStr;
     $('dateTo').value = todayStr;
@@ -483,7 +485,7 @@
       const [s, i, e, p] = await Promise.all([
         all('sales', { col: 'created_at', asc: false }),
         all('sale_items', { col: 'id', asc: true }),
-        sb.from('expenses').select('*').order('created_at', { ascending: false }),
+        all('expenses', { col: 'created_at', asc: false }),
         sb.from('products').select('*')
       ]);
       sales = s.data || [];
@@ -499,11 +501,11 @@
 
       // Filtered sales in range
       const inRangeSales = sales.filter(s => {
-        const d = (s.created_at || '').slice(0, 10);
+        const d = dayOf(s.created_at);
         return (!from || d >= from) && (!to || d <= to);
       });
       const inRangeExp = expenses.filter(e => {
-        const d = (e.created_at || '').slice(0, 10);
+        const d = dayOf(e.created_at);
         return (!from || d >= from) && (!to || d <= to);
       });
 
