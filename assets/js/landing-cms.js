@@ -14,6 +14,8 @@
   const INLINE = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'BR', 'SPAN', 'SMALL', 'MARK']);
   const SAFE_CSS = new Set(['color', 'background', 'background-color', 'font-weight', 'font-style', 'text-decoration']);
 
+  const EMBED = new URLSearchParams(location.search).get('embed') === '1';   // running inside the Admin Console
+  const tell = (type, extra) => { if (EMBED && window.parent !== window) { try { window.parent.postMessage(Object.assign({ source: 'dogo-cms', type }, extra || {}), location.origin); } catch (e) {} } };
   let root = null, prepared = false, editing = false;
   const reg = new Map();      // key -> element (text / img / link / block)
   const orig = new Map();     // key -> original value (for reset and diffing)
@@ -219,6 +221,7 @@
     const n = changes.size;
     $('cmsCount').textContent = n ? (n + ' unsaved change' + (n > 1 ? 's' : '')) : 'No unsaved changes';
     $('cmsSave').disabled = !n; $('cmsSave').style.opacity = n ? 1 : .5;
+    tell('dirty', { dirty: n > 0, count: n });
   }
   function setSel(el, kind) {
     if (sel && sel.el !== el) { sel.el.classList.remove('cms-sel'); if (sel.el.isContentEditable) sel.el.removeAttribute('contenteditable'); }
@@ -319,7 +322,7 @@
     if (del.length) { const { error } = await sb.from('landing_content').delete().in('key', del); if (error) { refreshBar(); return toast('Could not save: ' + error.message); } }
     up.forEach(r => { rows[r.key] = r.value; }); del.forEach(k => { delete rows[k]; });
     changes.clear(); try { localStorage.removeItem(CACHE); } catch (e) {}
-    refreshBar(); toast('Saved. The live landing page is updated.');
+    refreshBar(); toast('Saved. The live landing page is updated.'); tell('saved');
   }
   function buildUi() {
     const css = document.createElement('style');
@@ -343,7 +346,7 @@
     ui.innerHTML =
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">' +
         '<strong style="font-size:13px;flex:1;min-width:140px">Editing landing page<br><span id="cmsCount" style="font-weight:500;color:#475569">No unsaved changes</span></strong>' +
-        '<button id="cmsDiscard">Discard</button><button id="cmsExit" class="dng">Exit</button><button id="cmsSave" class="pri" disabled>Save</button></div>' +
+        '<button id="cmsDiscard">Discard</button>' + (EMBED ? '' : '<button id="cmsExit" class="dng">Exit</button>') + '<button id="cmsSave" class="pri" disabled>Save</button></div>' +
       '<div style="display:flex;gap:6px;overflow-x:auto;white-space:nowrap">' +
         '<button data-need="*" id="cmsUp" title="Select the block around this">↑ Parent</button>' +
         '<button data-need="text" id="cmsB"><b>B</b></button><button data-need="text" id="cmsI"><i>I</i></button>' +
@@ -354,7 +357,7 @@
     document.body.appendChild(ui);
     $('cmsSave').onclick = save;
     $('cmsDiscard').onclick = () => { if (!changes.size || confirm('Discard all unsaved changes?')) location.reload(); };
-    $('cmsExit').onclick = () => { if (!changes.size || confirm('You have unsaved changes. Leave without saving?')) location.href = 'admin/index.html'; };
+    if ($('cmsExit')) $('cmsExit').onclick = () => { if (!changes.size || confirm('You have unsaved changes. Leave without saving?')) location.href = 'admin/index.html'; };
     $('cmsUp').onclick = selectParent; $('cmsHideBtn').onclick = toggleHide; $('cmsReset').onclick = resetSel;
     $('cmsLink').onclick = editLink; $('cmsPhoto').onclick = pickImage; $('cmsUrl').onclick = editImageUrl;
     $('cmsB').onclick = () => { if (sel) { sel.el.focus(); document.execCommand('bold'); track(sel.key, sel.el); } };
@@ -396,6 +399,7 @@
       const { data: ok, error } = await sb.rpc('is_platform_admin');
       if (error || !ok) throw new Error('Only platform admins can edit the landing page.');
     } catch (e) {
+      if (EMBED) { tell('denied', { message: e.message || 'Not allowed.' }); document.body.innerHTML = '<div style="font:600 15px system-ui;padding:28px;color:#b91c1c">' + (e.message || 'Not allowed.') + ' Sign in to the admin console as the platform admin, then reload.</div>'; return false; }
       alert(e.message || 'Not allowed.'); location.replace(location.pathname); return false;
     }
     if (typeof setAppLoggedIn === 'function') setAppLoggedIn(false);
@@ -404,6 +408,7 @@
     prepare(); injectBaseCss();
     try { applyAll(await fetchRows()); } catch (e) { toast('Could not load saved edits yet (run the landing_content migration).'); }
     buildUi();
+    tell('ready');
     return true;
   }
 
