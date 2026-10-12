@@ -140,6 +140,26 @@
             </div>
           </div>
 
+          <div class="dogo-field" id="porWrap" style="margin:0 0 16px;display:none;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;"><input type="checkbox" id="porOn"> SELL BY PORTION (OIL, FLOUR, SPIRITS...)</label>
+            <div id="porBox" style="display:none;margin-top:8px;">
+              <div class="dogo-muted" style="font-size:12px;margin-bottom:8px;">Buy a big pack, sell small portions. Stock is counted in portions; each sale takes one portion off.</div>
+              <div class="dogo-form-row dogo-form-row--2" style="gap:12px;margin-bottom:8px;">
+                <div class="dogo-field" style="margin:0;"><label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">BULK PACK SIZE</label>
+                  <div style="display:flex;gap:6px;"><input class="dogo-input" id="porBulk" type="number" step="any" min="0" placeholder="20" style="background:#f8fafc;"><select class="dogo-select" id="porBulkUnit" style="width:84px;"><option value="l">L</option><option value="ml">ml</option><option value="kg">kg</option><option value="g">g</option></select></div></div>
+                <div class="dogo-field" style="margin:0;"><label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">ONE PORTION (<span id="porUnitLbl">ml</span>)</label>
+                  <input class="dogo-input" id="porSize" type="number" step="any" min="0" placeholder="15" style="background:#f8fafc;"></div>
+              </div>
+              <div class="dogo-form-row dogo-form-row--2" style="gap:12px;margin-bottom:8px;">
+                <div class="dogo-field" style="margin:0;"><label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">PRICE YOU PAID FOR ONE PACK</label>
+                  <input class="dogo-input" id="porPackCost" type="number" step="any" min="0" placeholder="5200" style="background:#f8fafc;"></div>
+                <div class="dogo-field" style="margin:0;"><label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">PACKS TO ADD TO STOCK</label>
+                  <input class="dogo-input" id="porPacks" type="number" step="any" min="0" placeholder="0" style="background:#f8fafc;"></div>
+              </div>
+              <div id="porSummary" class="dogo-muted" style="font-size:12.5px;"></div>
+            </div>
+          </div>
+
           <div class="dogo-field" id="brkWrap" style="margin:0 0 16px;">
             <label id="brkLabel" style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">BULK PRICES (OPTIONAL)</label>
             <div class="dogo-muted" id="brkHint" style="font-size:12px;margin:2px 0 6px;">Buy more, pay less - applied automatically at the till. Stock still counts per piece.</div>
@@ -207,6 +227,12 @@
       if (!r.error) { hasBreaksCol = true; OFF.lsSet('dogo_has_breaks', true); $('brkWrap').style.display = ''; }
       else if (!OFF.isNetworkErr(r.error)) { hasBreaksCol = false; OFF.lsSet('dogo_has_breaks', false); $('brkWrap').style.display = 'none'; }
     });
+    let hasPortionCol = OFF.lsGet('dogo_has_portion', false);
+    sb.from('products').select('portion_size').limit(1).then(r => {
+      if (!r.error) { hasPortionCol = true; OFF.lsSet('dogo_has_portion', true); $('porWrap').style.display = ''; }
+      else if (!OFF.isNetworkErr(r.error)) { hasPortionCol = false; OFF.lsSet('dogo_has_portion', false); $('porWrap').style.display = 'none'; }
+    });
+    $('porWrap').style.display = hasPortionCol ? '' : 'none';
     $('brkWrap').style.display = hasBreaksCol ? '' : 'none';
     $('costWrap').style.display = hasCostCol ? '' : 'none';
     sb.from('products').select('barcode').limit(1).then(r => {
@@ -327,7 +353,7 @@
       $('rows').innerHTML = slice.length ? slice.map(p => {
         const st = Number(p.stock), low = st <= Number(p.reorder_level || 0);
         return `<tr><td>${esc(p.code)}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.category || '—')}</td><td>${kes(p.price)}${p.cost != null ? `<br><small class="dogo-muted">cost ${kes(p.cost)}</small>` : ''}</td><td>${Math.round(Number(p.vat_rate || 0) * 100)}%</td>
-          <td><span class="dogo-badge ${st <= 0 ? 'dogo-badge--danger' : low ? 'dogo-badge--warn' : 'dogo-badge--ok'}">${st}</span></td><td>${esc(p.reorder_level ?? 0)}</td>
+          <td><span class="dogo-badge ${st <= 0 ? 'dogo-badge--danger' : low ? 'dogo-badge--warn' : 'dogo-badge--ok'}">${st}</span>${p.portion_size > 0 && p.bulk_size > 0 ? `<br><small class="dogo-muted">${(() => { const t = st * p.portion_size, g = p.portion_unit === 'g'; return (t >= 1000 ? Math.round(t / 10) / 100 + (g ? ' kg' : ' L') : Math.round(t * 10) / 10 + ' ' + (p.portion_unit || 'ml')) + ' left'; })()}</small>` : ''}</td><td>${esc(p.reorder_level ?? 0)}</td>
           <td style="white-space:nowrap;"><button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-log="${esc(p.id)}">Sales</button>${isAdmin && p.archived ? ` <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-restore="${esc(p.id)}">Restore</button>` : ''}${isAdmin && !p.archived ? ` <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-edit="${esc(p.id)}">Edit</button> <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-del="${esc(p.id)}" style="color:#dc2626;border-color:#fca5a5;">Delete</button>` : ''}</td></tr>`;
       }).join('') : '<tr><td colspan="8" class="dogo-card__empty">No products found</td></tr>';
       $('pageInfo').textContent = list.length ? `Showing ${(page - 1) * PER + 1}-${Math.min(page * PER, list.length)} of ${list.length}` : '';
@@ -359,8 +385,39 @@
       $('fStock').value = p ? p.stock : 0;
       $('fReorder').value = p ? (p.reorder_level || 0) : 0;
       fillBreaks(p && p.price_breaks);
+      fillPortion(p);
       $('modal').classList.add('open');
       $('fName').focus();
+    }
+    // ---- Sell by portion: big pack in, small portions out. Stock is counted in portions. ----
+    const BASE = { l: ['ml', 1000], ml: ['ml', 1], kg: ['g', 1000], g: ['g', 1] };
+    const porCalc = () => {
+      const bu = BASE[$('porBulkUnit').value], bulk = parseFloat($('porBulk').value), size = parseFloat($('porSize').value);
+      const packCost = parseFloat($('porPackCost').value), packs = parseFloat($('porPacks').value) || 0;
+      $('porUnitLbl').textContent = bu[0];
+      if (!(bulk > 0) || !(size > 0)) return null;
+      const bulkBase = bulk * bu[1], per = Math.floor(bulkBase / size + 1e-9);
+      if (per < 1) return null;
+      return { bulkBase, size, unit: bu[0], per, packs, cost: packCost >= 0 ? Math.round(packCost / per * 100) / 100 : null, packCost };
+    };
+    const porSummary = () => {
+      const c = porCalc(), price = parseFloat($('fPrice').value) || 0;
+      if (!c) { $('porSummary').textContent = 'Enter the pack size and the portion size.'; return; }
+      let t = c.per.toLocaleString() + ' portions per pack';
+      if (c.cost !== null && !isNaN(c.cost)) { t += ' · cost ' + c.cost + ' each'; if (price > 0) t += ' · profit ' + Math.round((price - c.cost) * 100) / 100 + ' each, ' + kes((price - c.cost) * c.per) + ' per pack'; }
+      if (c.packs > 0) t += ' · adds ' + Math.round(c.packs * c.per).toLocaleString() + ' portions to stock';
+      $('porSummary').textContent = t;
+    };
+    ['porBulk', 'porBulkUnit', 'porSize', 'porPackCost', 'porPacks', 'fPrice'].forEach(id => { $(id).addEventListener('input', porSummary); $(id).addEventListener('change', porSummary); });
+    $('porOn').onchange = () => { $('porBox').style.display = $('porOn').checked ? '' : 'none'; porSummary(); };
+    function fillPortion(p) {
+      const on = !!(p && p.portion_size > 0 && p.bulk_size > 0);
+      $('porOn').checked = on; $('porBox').style.display = on ? '' : 'none';
+      let bu = 'ml'; if (on) { const g = p.portion_unit === 'g'; bu = g ? (p.bulk_size >= 1000 ? 'kg' : 'g') : (p.bulk_size >= 1000 ? 'l' : 'ml'); }
+      $('porBulkUnit').value = bu; $('porBulk').value = on ? p.bulk_size / BASE[bu][1] : ''; $('porSize').value = on ? p.portion_size : '';
+      const per = on ? Math.floor(p.bulk_size / p.portion_size + 1e-9) : 0;
+      $('porPackCost').value = on && p.cost != null ? Math.round(p.cost * per * 100) / 100 : ''; $('porPacks').value = '';
+      porSummary();
     }
     const closeModal = () => $('modal').classList.remove('open');
     $('addBtn').onclick = () => openModal(null);
@@ -465,6 +522,15 @@
       };
       if (hasBarcodeCol) rec.barcode = typedBarcode || null;
       if (hasCostCol) { const cv = ($('fCost').value || '').trim(); rec.cost = cv === '' ? null : parseFloat(cv); if (cv !== '' && !(rec.cost >= 0)) return toast('Please enter a valid buying price'); }
+      if (hasPortionCol) {
+        if ($('porOn').checked) {
+          const c = porCalc();
+          if (!c) return toast('Sell by portion: enter the pack size and one portion size (portion must be smaller than the pack).');
+          rec.bulk_size = c.bulkBase; rec.portion_size = c.size; rec.portion_unit = c.unit;
+          if (hasCostCol && c.cost !== null && !isNaN(c.cost)) rec.cost = c.cost;
+          if (c.packs > 0) rec.stock = (editing ? Number(editing.stock || 0) : 0) + Math.round(c.packs * c.per);
+        } else { rec.bulk_size = null; rec.portion_size = null; rec.portion_unit = null; }
+      }
       const breaks = readBreaks();
       const bad = breaks.find(b => b.price >= b.qty * rec.price);
       if (bad) return toast('Bulk price must be lower than ' + bad.qty + ' × ' + rec.price + ' = ' + (bad.qty * rec.price) + ', otherwise it is not a saving.');

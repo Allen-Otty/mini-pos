@@ -780,7 +780,7 @@
       const prod = products.find(p => p.id === prodId);
       currentPoItems.push({
         productId: prodId,
-        name: prod ? prod.name : 'Product',
+        name: prod ? prod.name + (Number(prod.portion_size) > 0 ? ' (bulk packs)' : '') : 'Product',
         qty,
         unitCost,
         total: qty * unitCost
@@ -844,7 +844,9 @@
           // Add to the stock as it is right now (sales may have happened since this page loaded), and only
           // write if nobody changed it in between; otherwise read again and retry.
           const prod = products.find(x => x.id === item.productId);
-          const qty = Number(item.qty), unitCost = Number(item.unitCost || 0);
+          // Items sold by portion are bought in bulk packs: quantity = packs, price = per pack.
+          const per = prod && Number(prod.portion_size) > 0 && Number(prod.bulk_size) > 0 ? Math.floor(Number(prod.bulk_size) / Number(prod.portion_size) + 1e-9) : 1;
+          const qty = Number(item.qty) * per, unitCost = Number(item.unitCost || 0) / per;
           for (let attempt = 0; attempt < 5; attempt++) {
             const cur = await sb.from('products').select(hasCostCol ? 'stock,cost' : 'stock').eq('id', item.productId).maybeSingle();
             if (cur.error || !cur.data) throw new Error('Could not read current stock for ' + item.name);
