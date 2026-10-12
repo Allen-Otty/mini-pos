@@ -42,6 +42,7 @@
     fixedassets: true,
     loans: true,
     equity: true,
+    team: true,
     settings: true
   };
   // NOTE: 'Legacy Modules' link is added to the nav panel below
@@ -62,6 +63,7 @@
     { id: 'fixedassets', label: 'Fixed Assets', href: 'fixedassets.html', icon: 'fixedassets' },
     { id: 'loans', label: 'Loans', href: 'loans.html', icon: 'loans' },
     { id: 'equity', label: 'Equity', href: 'equity.html', icon: 'equity' },
+    { id: 'team', label: 'Team & Branches', href: 'team.html', icon: 'contacts' },
     { id: 'settings', label: 'Settings', href: 'settings.html', icon: 'settings' }
   ];
   // Pages not yet migrated open the existing app so no nav link is ever a dead end.
