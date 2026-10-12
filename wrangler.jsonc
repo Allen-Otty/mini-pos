@@ -1,6 +1,6 @@
 {
   // Dogo POS is a static site (HTML + JS talking to Supabase), so Cloudflare just serves the files.
-  "name": "mini-pos",
+  "name": "dogopos",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./",
