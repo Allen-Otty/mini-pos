@@ -778,6 +778,9 @@
     <button class="admin-nav-btn" data-tab="analytics" onclick="switchAdminTab('analytics', this)">
       <i class="fa-solid fa-chart-simple"></i> Analytics
     </button>
+    <button class="admin-nav-btn" data-tab="landing" onclick="switchAdminTab('landing', this); loadLandingCmsInfo(); loadLandingEditor()">
+      <i class="fa-solid fa-pen-ruler"></i> Landing Page
+    </button>
     <button class="admin-nav-btn" data-tab="broadcast" onclick="switchAdminTab('broadcast', this)">
       <i class="fa-solid fa-bullhorn"></i> Broadcasts
     </button>
@@ -1428,6 +1431,25 @@
     </div>
 
     <!-- TAB 10: BROADCAST ANNOUNCEMENTS -->
+    <div class="tab-view" id="tab-landing">
+      <div class="card" style="padding:18px;">
+        <h3 style="margin:0 0 6px;"><i class="fa-solid fa-pen-ruler"></i> Landing Page Editor</h3>
+        <p class="card-sub" style="margin:0 0 12px;">Tap any text or image in the page below to change it. Add an announcement banner, swap photos, edit links, or hide whole sections. Changes go live when you press <b>Save</b> at the bottom of the editor.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; align-items:center;">
+          <button class="btn-secondary" onclick="reloadLandingEditor()"><i class="fa-solid fa-rotate"></i> Reload editor</button>
+          <a class="btn-secondary" href="../index.html?cms=edit" style="text-decoration:none; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-expand"></i> Full screen</a>
+          <a class="btn-secondary" href="../index.html" target="_blank" style="text-decoration:none; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-arrow-up-right-from-square"></i> View live page</a>
+          <span id="landingDirtyBadge" style="display:none; color:#fbbf24; font-weight:700; font-size:13px;"><i class="fa-solid fa-circle"></i> Unsaved changes</span>
+        </div>
+        <div id="landingCmsInfo" class="card-sub" style="margin-bottom:12px;">Loading…</div>
+        <iframe id="landingEditorFrame" title="Landing page editor" style="width:100%; height:calc(100vh - 300px); min-height:520px; border:1px solid rgba(148,163,184,.35); border-radius:14px; background:#fff;"></iframe>
+        <div style="margin-top:14px;">
+          <button class="btn-secondary" onclick="resetLandingCms()" style="color:#f87171;"><i class="fa-solid fa-rotate-left"></i> Reset landing page to original</button>
+        </div>
+        <p class="card-sub" style="margin-top:14px;">Prices, plan names and plan bullet points are edited under Settings → Plans, Pricing &amp; Features.</p>
+      </div>
+    </div>
+
     <div class="tab-view" id="tab-broadcast">
       <div class="admin-card">
         <div class="card-header-flex">
@@ -1705,7 +1727,24 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
+let landingDirty = false;
+window.addEventListener('message', e => {
+  if (e.origin !== location.origin || !e.data || e.data.source !== 'dogo-cms') return;
+  if (e.data.type === 'dirty') { landingDirty = !!e.data.dirty; const b = document.getElementById('landingDirtyBadge'); if (b) b.style.display = landingDirty ? '' : 'none'; }
+  if (e.data.type === 'saved') { try { loadLandingCmsInfo(); } catch (x) {} }
+});
+window.addEventListener('beforeunload', e => { if (landingDirty) { e.preventDefault(); e.returnValue = ''; } });
+function loadLandingEditor(force) {
+  const f = document.getElementById('landingEditorFrame');
+  if (f && (force || !f.getAttribute('src'))) f.setAttribute('src', '../index.html?cms=edit&embed=1');
+}
+function reloadLandingEditor() {
+  if (landingDirty && !confirm('You have unsaved landing page changes. Reload and lose them?')) return;
+  landingDirty = false; const b = document.getElementById('landingDirtyBadge'); if (b) b.style.display = 'none';
+  loadLandingEditor(true);
+}
 function switchAdminTab(tabId, btn) {
+  if (landingDirty && tabId !== 'landing' && !confirm('You have unsaved landing page changes. Leave this tab and lose them?')) return;
   document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.admin-nav-btn').forEach(b => b.classList.remove('active'));
   const target = document.getElementById('tab-' + tabId);
@@ -2184,6 +2223,30 @@ function fillAdminSandboxDefaults() {
   const ck = document.getElementById('setDarajaKey');
   if (ck && !ck.value) ck.focus();
   showToast('Safaricom Sandbox defaults set (Shortcode 174379). Paste your Consumer Key & Secret from Daraja Portal.');
+}
+
+// ==========================================
+// LANDING PAGE CMS (table: landing_content)
+// ==========================================
+async function loadLandingCmsInfo() {
+  const box = document.getElementById('landingCmsInfo');
+  if (!box) return;
+  try {
+    const { data, error } = await sb.from('landing_content').select('key, updated_at').order('updated_at', { ascending: false });
+    if (error) throw error;
+    box.textContent = data.length
+      ? data.length + ' element' + (data.length > 1 ? 's' : '') + ' customised. Last change: ' + new Date(data[0].updated_at).toLocaleString() + '.'
+      : 'The landing page is showing the original content. Nothing customised yet.';
+  } catch (e) {
+    box.textContent = 'Landing page storage is not set up yet (run the landing_content migration).';
+  }
+}
+async function resetLandingCms() {
+  if (!confirm('Remove ALL landing page edits and go back to the original page? Uploaded images stay in storage.')) return;
+  const { error } = await sb.from('landing_content').delete().neq('key', '');
+  if (error) return showToast('Could not reset: ' + error.message);
+  showToast('Landing page reset to the original.');
+  loadLandingCmsInfo();
 }
 
 // ==========================================
