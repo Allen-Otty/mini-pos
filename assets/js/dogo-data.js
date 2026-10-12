@@ -258,11 +258,11 @@
   // if this drifts or a request skips this check entirely, the database still refuses
   // an insert that goes over plan.
   const PLAN_LIMITS = {
-    'Free':          { maxUsers: 1,      maxBranches: 1, maxProducts: 5,        name: 'Free (Starter)' },
-    'Core':          { maxUsers: 5,      maxBranches: 1, maxProducts: Infinity, name: 'Core POS (1 Branch)' },
-    'Core Group':    { maxUsers: 25,     maxBranches: 5, maxProducts: Infinity, name: 'Core Group (Up to 5 Branches)' },
-    'Control':       { maxUsers: Infinity, maxBranches: 1, maxProducts: Infinity, name: 'Control POS (1 Branch)' },
-    'Control Group': { maxUsers: Infinity, maxBranches: 5, maxProducts: Infinity, name: 'Control Group (Up to 5 Branches)' }
+    'Free':          { maxUsers: 1,      maxBranches: 1, maxProducts: 20,       name: 'Free (Starter)' },
+    'Core':          { maxUsers: 3,      maxBranches: 1, maxProducts: Infinity, name: 'Core POS (1 Branch)' },
+    'Core Group':    { maxUsers: Infinity, maxBranches: 5, maxProducts: Infinity, name: 'Core Group (Up to 5 Branches)' },
+    'Control':       { maxUsers: 6,      maxBranches: 3, maxProducts: Infinity, name: 'Control POS (1 Branch)' },
+    'Control Group': { maxUsers: Infinity, maxBranches: Infinity, maxProducts: Infinity, name: 'Control Group (Up to 5 Branches)' }
   };
   // Admin-edited limits (plan_definitions table). Cached copy applies instantly; a background
   // fetch refreshes it for next time. Falls back to the table above if never loaded.
@@ -302,5 +302,19 @@
     return h;
   }
 
-  window.DogoData = { bundleTotal, Offline, isOnline, sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor, apiAuthHeaders };
+  /* Stock value. Uses what the stock cost you (products.cost) once buying prices exist; until at
+     least one product has one it falls back to selling price so the number is never silently 0.
+     missing = items in stock that still have no buying price. */
+  function stockValue(products) {
+    const live = (products || []).filter(p => !p.archived);
+    const hasCost = p => p.cost !== null && p.cost !== undefined && p.cost !== '' && Number.isFinite(Number(p.cost));
+    const costed = live.filter(hasCost);
+    if (!costed.length) {
+      return { basis: 'price', missing: live.filter(p => Number(p.stock) > 0).length,
+               value: live.reduce((a, p) => a + Math.max(0, Number(p.stock || 0)) * Number(p.price || 0), 0) };
+    }
+    return { basis: 'cost', missing: live.filter(p => Number(p.stock) > 0 && !hasCost(p)).length,
+             value: costed.reduce((a, p) => a + Math.max(0, Number(p.stock || 0)) * Number(p.cost), 0) };
+  }
+  window.DogoData = { stockValue, bundleTotal, Offline, isOnline, sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor, apiAuthHeaders };
 })();

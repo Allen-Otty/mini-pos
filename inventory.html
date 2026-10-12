@@ -259,9 +259,36 @@
         products.map(p => `<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.code || 'SKU')})</option>`).join('');
 
       // Valuation
-      const val = products.reduce((a, p) => a + Number(p.stock || 0) * Number(p.price || 0), 0);
+      const val = window.DogoData.stockValue(products).value;
       $('cogsStockVal').textContent = ksh(val);
-      $('cogsMonthly').textContent = ksh(val * 0.4);
+      loadMonthlyCogs();
+    }
+
+    // Cost of goods sold this month = quantity sold x each product's buying price (Catalog).
+    async function loadMonthlyCogs() {
+      const el = $('cogsMonthly');
+      try {
+        const m0 = new Date(); m0.setDate(1); m0.setHours(0, 0, 0, 0);
+        const byId = {}; products.forEach(p => { byId[p.id] = p; });
+        let rows = [], from = 0;
+        for (;;) {
+          const r = await sb.from('sale_items').select('product_id,qty,sales!inner(created_at)').gte('sales.created_at', m0.toISOString()).range(from, from + 999);
+          if (r.error) throw r.error;
+          rows = rows.concat(r.data || []);
+          if ((r.data || []).length < 1000) break; from += 1000;
+        }
+        let cogs = 0, sold = 0, uncosted = 0;
+        rows.forEach(it => {
+          const pr = byId[it.product_id], c = pr && pr.cost !== null && pr.cost !== undefined && pr.cost !== '' ? Number(pr.cost) : NaN;
+          sold++;
+          if (Number.isFinite(c)) cogs += Number(it.qty || 0) * c; else uncosted++;
+        });
+        el.textContent = sold && uncosted === sold ? '—' : ksh(cogs);
+        el.title = uncosted ? uncosted + ' sold line(s) have no buying price yet and are left out' : '';
+        let note = $('cogsMonthlyNote');
+        if (!note) { note = document.createElement('div'); note.id = 'cogsMonthlyNote'; note.style.cssText = 'font-size:11.5px;font-weight:700;color:#b45309;margin-top:6px;'; el.parentElement.appendChild(note); }
+        note.textContent = sold && uncosted ? (uncosted === sold ? 'Add buying prices in Catalog to see this.' : uncosted + ' sold line(s) left out: no buying price yet.') : '';
+      } catch (e) { el.textContent = '—'; }
     }
 
     // Scan-to-lookup: point the camera at a barcode to pull up its stock card.
