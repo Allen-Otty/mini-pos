@@ -944,7 +944,7 @@
     let lastStockPull = 0;
     async function refreshStock(force) {
       if (busy || document.hidden || !OFF.isOnline()) return;
-      if (!force && Date.now() - lastStockPull < 5000) return;
+      if (!force && Date.now() - lastStockPull < 15000) return;
       lastStockPull = Date.now();
       let r; try { r = await sb.from('products').select('*').order('name'); } catch (e) { return; }
       if (!r || r.error) return;
@@ -958,7 +958,7 @@
     window.addEventListener('focus', () => refreshStock());
     window.addEventListener('online', () => refreshStock(true));
     window.addEventListener('storage', e => { if (e.key === 'dogo_products_changed') refreshStock(true); });
-    setInterval(() => refreshStock(), 30000);
+    setInterval(() => refreshStock(), 90000);
     window.addEventListener('dogo:synced', e => {
       afterSale();
       const d = e.detail || {};
