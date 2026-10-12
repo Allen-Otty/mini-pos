@@ -38,7 +38,7 @@
         <div class="dogo-stat-card__label" id="stat4Label">Stock value</div>
         <div class="dogo-stat-card__value" id="kpiStock">KES 0.00</div>
         <div class="dogo-stat-card__foot dogo-muted" style="font-size:12.5px;font-weight:700;gap:6px;" id="stat4Foot">
-          <span id="kpiOut">0</span> out · <span id="kpiLow">0</span> low
+          <span id="kpiOut">0</span> out · <span id="kpiLow">0</span> low<span id="kpiNote"></span>
         </div>
       </div>
     </section>
@@ -127,13 +127,15 @@
 
     const out = products.filter(p => Number(p.stock) <= 0);
     const low = products.filter(p => Number(p.stock) > 0 && Number(p.stock) <= Number(p.reorder_level || 0));
-    const stockValue = products.reduce((a, p) => a + Number(p.stock || 0) * Number(p.price || 0), 0);
+    const sv = DogoData.stockValue(products), stockValue = sv.value;
 
     const set = (id, v) => { document.getElementById(id).textContent = v; };
     set('kpiToday', kes(todayTotal)); set('kpiMonth', kes(monthTotal));
     set('kpiProfit', isAdmin ? kes(profit) : '—');
     document.getElementById('kpiProfit').classList.toggle('is-negative', profit < 0);
     set('kpiStock', kes(stockValue)); set('kpiOut', out.length); set('kpiLow', low.length);
+    set('stat4Label', sv.basis === 'cost' ? 'Stock value (at cost)' : 'Stock value (at selling price)');
+    set('kpiNote', sv.basis === 'price' ? ' · add buying prices for cost value' : (sv.missing ? ' · ' + sv.missing + ' without buying price' : ''));
     set('tCustomers', custN.count || 0); set('tProducts', products.length);
     set('tSales', salesN.count || 0); set('tExpenses', expN.count || 0);
 

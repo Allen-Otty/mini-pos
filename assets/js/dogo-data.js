@@ -302,5 +302,19 @@
     return h;
   }
 
-  window.DogoData = { bundleTotal, Offline, isOnline, sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor, apiAuthHeaders };
+  /* Stock value. Uses what the stock cost you (products.cost) once buying prices exist; until at
+     least one product has one it falls back to selling price so the number is never silently 0.
+     missing = items in stock that still have no buying price. */
+  function stockValue(products) {
+    const live = (products || []).filter(p => !p.archived);
+    const hasCost = p => p.cost !== null && p.cost !== undefined && p.cost !== '' && Number.isFinite(Number(p.cost));
+    const costed = live.filter(hasCost);
+    if (!costed.length) {
+      return { basis: 'price', missing: live.filter(p => Number(p.stock) > 0).length,
+               value: live.reduce((a, p) => a + Math.max(0, Number(p.stock || 0)) * Number(p.price || 0), 0) };
+    }
+    return { basis: 'cost', missing: live.filter(p => Number(p.stock) > 0 && !hasCost(p)).length,
+             value: costed.reduce((a, p) => a + Math.max(0, Number(p.stock || 0)) * Number(p.cost), 0) };
+  }
+  window.DogoData = { stockValue, bundleTotal, Offline, isOnline, sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor, apiAuthHeaders };
 })();
