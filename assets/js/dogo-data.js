@@ -258,11 +258,11 @@
   // if this drifts or a request skips this check entirely, the database still refuses
   // an insert that goes over plan.
   const PLAN_LIMITS = {
-    'Free':          { maxUsers: 1,      maxBranches: 1, maxProducts: 5,        name: 'Free (Starter)' },
-    'Core':          { maxUsers: 5,      maxBranches: 1, maxProducts: Infinity, name: 'Core POS (1 Branch)' },
-    'Core Group':    { maxUsers: 25,     maxBranches: 5, maxProducts: Infinity, name: 'Core Group (Up to 5 Branches)' },
-    'Control':       { maxUsers: Infinity, maxBranches: 1, maxProducts: Infinity, name: 'Control POS (1 Branch)' },
-    'Control Group': { maxUsers: Infinity, maxBranches: 5, maxProducts: Infinity, name: 'Control Group (Up to 5 Branches)' }
+    'Free':          { maxUsers: 1,      maxBranches: 1, maxProducts: 20,       name: 'Free (Starter)' },
+    'Core':          { maxUsers: 3,      maxBranches: 1, maxProducts: Infinity, name: 'Core POS (1 Branch)' },
+    'Core Group':    { maxUsers: Infinity, maxBranches: 5, maxProducts: Infinity, name: 'Core Group (Up to 5 Branches)' },
+    'Control':       { maxUsers: 6,      maxBranches: 3, maxProducts: Infinity, name: 'Control POS (1 Branch)' },
+    'Control Group': { maxUsers: Infinity, maxBranches: Infinity, maxProducts: Infinity, name: 'Control Group (Up to 5 Branches)' }
   };
   // Admin-edited limits (plan_definitions table). Cached copy applies instantly; a background
   // fetch refreshes it for next time. Falls back to the table above if never loaded.

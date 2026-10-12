@@ -6118,7 +6118,7 @@
             <li><i class="fa-solid fa-circle-check"></i> Shift &amp; float reconciliation</li>
             <li><i class="fa-solid fa-circle-check"></i> Restaurant tables &amp; kitchen tickets</li>
             <li><i class="fa-solid fa-circle-check"></i> Profit &amp; cost reporting</li>
-            <li><i class="fa-solid fa-circle-check"></i> 1 teller account</li>
+            <li><i class="fa-solid fa-circle-check"></i> 1 branch, 1 admin &amp; 2 tellers</li>
           </ul>
         </div>
 
@@ -6189,7 +6189,7 @@
           <p style="font-size:13px; color:var(--text-secondary); margin:0;">Control POS and advanced management for up to five branches.</p>
 
           <div class="pricing-price-wrap">
-            <span class="pricing-amount" id="controlGroupPriceAmount">KES 7,999</span>
+            <span class="pricing-amount" id="controlGroupPriceAmount">KES 4,999</span>
             <span class="pricing-period" id="controlGroupPricePeriod">/ month</span>
           </div>
 
@@ -6335,7 +6335,7 @@
           <div class="su-plan-option" id="suPlanOptControlGroup" onclick="setSignupPlan('Control Group')">
             <div class="su-plan-badge" style="background:#0f172a; color:#fff;">Enterprise</div>
             <div class="su-plan-title">Control Group</div>
-            <div class="su-plan-sub">KES 7,999/mo · Control POS, up to 5 branches</div>
+            <div class="su-plan-sub">KES 4,999/mo · Control POS, unlimited branches</div>
           </div>
         </div>
         <input type="hidden" id="suSelectedPlan" value="Free">
@@ -9534,9 +9534,9 @@ function setBillingCycle(cycle) {
   window.__billingCycle = cycle;
   const tiers = (window.DogoPlanCatalog && DogoPlanCatalog.tiers().length === 4) ? DogoPlanCatalog.tiers() : [
     { amt: 'corePriceAmount', per: 'corePricePeriod', m: 'KES 999', y: 'KES 9,999', save: 'KES 1,989' },
-    { amt: 'coreGroupPriceAmount', per: 'coreGroupPricePeriod', m: 'KES 3,999', y: 'KES 39,999', save: 'KES 7,989' },
-    { amt: 'controlPriceAmount', per: 'controlPricePeriod', m: 'KES 1,999', y: 'KES 19,999', save: 'KES 3,989' },
-    { amt: 'controlGroupPriceAmount', per: 'controlGroupPricePeriod', m: 'KES 7,999', y: 'KES 79,999', save: 'KES 15,989' }
+    { amt: 'coreGroupPriceAmount', per: 'coreGroupPricePeriod', m: 'KES 3,999', y: 'KES 39,990', save: 'KES 7,998' },
+    { amt: 'controlPriceAmount', per: 'controlPricePeriod', m: 'KES 1,999', y: 'KES 23,988', save: '' },
+    { amt: 'controlGroupPriceAmount', per: 'controlGroupPricePeriod', m: 'KES 4,999', y: 'KES 49,990', save: 'KES 9,998' }
   ];
   tiers.forEach(t => {
     const a = document.getElementById(t.amt);
@@ -9608,7 +9608,7 @@ const PLAN_FEATURES = {
     name: 'Free (Starter)',
     tier: 'Free',
     priceMonth: 0,
-    maxProducts: 5,
+    maxProducts: 20,
     maxUsers: 1,
     maxBranches: 1,
     cashSales: true,
@@ -9632,7 +9632,7 @@ const PLAN_FEATURES = {
     priceMonth: 999,
     priceYear: 9999,
     maxProducts: Infinity,
-    maxUsers: 5,
+    maxUsers: 3,
     maxBranches: 1,
     cashSales: true,
     basicReceipts: true,
@@ -9653,7 +9653,7 @@ const PLAN_FEATURES = {
     tier: 'Core',
     branches: 5,
     priceMonth: 3999,
-    priceYear: 39999,
+    priceYear: 39990,
     maxProducts: Infinity,
     maxUsers: 25,
     maxBranches: 5,
@@ -9676,10 +9676,10 @@ const PLAN_FEATURES = {
     tier: 'Control',
     branches: 1,
     priceMonth: 1999,
-    priceYear: 19999,
+    priceYear: 23988,
     maxProducts: Infinity,
-    maxUsers: Infinity,
-    maxBranches: 1,
+    maxUsers: 6,
+    maxBranches: 3,
     cashSales: true,
     basicReceipts: true,
     scanner: true,
@@ -9700,11 +9700,11 @@ const PLAN_FEATURES = {
     name: 'Control Group (Up to 5 Branches)',
     tier: 'Control',
     branches: 5,
-    priceMonth: 7999,
-    priceYear: 79999,
+    priceMonth: 4999,
+    priceYear: 49990,
     maxProducts: Infinity,
     maxUsers: Infinity,
-    maxBranches: 5,
+    maxBranches: Infinity,
     cashSales: true,
     basicReceipts: true,
     scanner: true,
@@ -9744,7 +9744,7 @@ const POSFITI_PRICING = {
       title: 'Core Group',
       sub: 'Core POS for up to five branches under one business account.',
       monthly: { price: 3999, periodText: 'MONTHLY · UP TO 5 BRANCHES', saveBadge: '' },
-      yearly: { price: 39999, periodText: 'YEARLY · UP TO 5 BRANCHES', saveBadge: 'Save KES 7,989' },
+      yearly: { price: 39990, periodText: 'YEARLY · UP TO 5 BRANCHES', saveBadge: 'Save KES 7,998' },
       features: [
         'Everything in Core POS', 'Up to 5 branches', 'Unlimited products',
         'Shared owner billing', 'Cash & M-Pesa checkout', 'Stock management'
@@ -9760,7 +9760,7 @@ const POSFITI_PRICING = {
       title: 'Control POS',
       sub: 'For growing businesses that need deeper reporting and KRA eTIMS support.',
       monthly: { price: 1999, periodText: 'MONTHLY · 1 BRANCH', saveBadge: '' },
-      yearly: { price: 19999, periodText: 'YEARLY · 1 BRANCH', saveBadge: 'Save KES 3,989' },
+      yearly: { price: 23988, periodText: 'YEARLY · 1 BRANCH', saveBadge: '' },
       features: [
         'Everything in Core POS', 'KRA eTIMS support', 'Advanced reports',
         'Advanced inventory', 'Staff permissions', 'Branch management'
@@ -9773,8 +9773,8 @@ const POSFITI_PRICING = {
     '5': {
       title: 'Control Group',
       sub: 'Control POS and advanced management for up to five branches.',
-      monthly: { price: 7999, periodText: 'MONTHLY · UP TO 5 BRANCHES', saveBadge: '' },
-      yearly: { price: 79999, periodText: 'YEARLY · UP TO 5 BRANCHES', saveBadge: 'Save KES 15,989' },
+      monthly: { price: 4999, periodText: 'MONTHLY · UNLIMITED BRANCHES', saveBadge: '' },
+      yearly: { price: 49990, periodText: 'YEARLY · UNLIMITED BRANCHES', saveBadge: 'Save KES 9,998' },
       features: [
         'Everything in Control POS', 'Up to 5 branches', 'Unlimited products',
         'Shared owner billing', 'KRA eTIMS support', 'Advanced inventory and reports'
@@ -9795,14 +9795,16 @@ let posfitiReferralCode = '';
 // Admin-edited prices, limits and feature lists (plan_definitions). The values hardcoded above
 // stay as the fallback if the table doesn't exist yet or the network is down.
 if (window.DogoPlanCatalog) {
-  DogoPlanCatalog.load().then(rows => {
-    if (!rows.length) return;
+  const applyCatalog = rows => {
+    if (!rows || !rows.length) return;
     DogoPlanCatalog.applyToPlanFeatures(PLAN_FEATURES);
     DogoPlanCatalog.applyToPosfiti(POSFITI_PRICING);
     DogoPlanCatalog.applyToLanding();
     if (typeof setBillingCycle === 'function') setBillingCycle(window.__billingCycle || 'monthly');
     if (typeof updatePosfitiUI === 'function' && document.getElementById('posfitiPriceAmt')) { try { updatePosfitiUI(); } catch (e) {} }
-  });
+  };
+  applyCatalog(DogoPlanCatalog.loadCached());          // instant: last saved prices
+  DogoPlanCatalog.load().then(applyCatalog);           // then refresh from the database
 }
 let posfitiFeaturesExpanded = false;
 
@@ -10065,14 +10067,14 @@ function showPlanUpgradePrompt(featureTitle, featureDesc, targetPlan = 'Core') {
       </div>
 
       <div style="display:flex; flex-direction:column; gap:10px;">
-        <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('${targetPlan}', ${isControl ? 1999 : 999});" style="width:100%; padding:13px; border-radius:999px; background:#16a34a; color:#ffffff; font-weight:800; font-size:14px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(22,163,74,0.3); transition:all 0.15s;">
+        <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('${targetPlan}');" style="width:100%; padding:13px; border-radius:999px; background:#16a34a; color:#ffffff; font-weight:800; font-size:14px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(22,163,74,0.3); transition:all 0.15s;">
           Upgrade to ${escapeHtml(planName)} &middot; ${planPrice}
         </button>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Core', 999);" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#15803d; font-weight:700; font-size:12px; border:1.5px solid #16a34a; cursor:pointer;">Core · 999</button>
-          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Control', 1999);" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#0369a1; font-weight:700; font-size:12px; border:1.5px solid #0284c7; cursor:pointer;">Control · 1,999</button>
-          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Core Group', 3999);" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#166534; font-weight:700; font-size:12px; border:1.5px solid #22c55e; cursor:pointer;">Core Group · 3,999</button>
-          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Control Group', 7999);" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#92400e; font-weight:700; font-size:12px; border:1.5px solid #f59e0b; cursor:pointer;">Control Group · 7,999</button>
+          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Core');" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#15803d; font-weight:700; font-size:12px; border:1.5px solid #16a34a; cursor:pointer;">Core · 999</button>
+          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Control');" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#0369a1; font-weight:700; font-size:12px; border:1.5px solid #0284c7; cursor:pointer;">Control · 1,999</button>
+          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Core Group');" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#166534; font-weight:700; font-size:12px; border:1.5px solid #22c55e; cursor:pointer;">Core Group · 3,999</button>
+          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Control Group');" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#92400e; font-weight:700; font-size:12px; border:1.5px solid #f59e0b; cursor:pointer;">Control Group · 7,999</button>
         </div>
         <button onclick="closePlanUpgradePrompt(); activateFreeTrial('${targetPlan}');" style="width:100%; padding:11px; border-radius:999px; background:#f1f5f9; color:#0f172a; font-weight:700; font-size:13px; border:1px solid #e2e8f0; cursor:pointer;">
           Start 7-Day Free Trial (Instant Activation)
@@ -15758,12 +15760,12 @@ function renewCurrentPlan() {
   openUpgradePlanModal(m[0], f.priceMonth || (m[0] === 'Control' ? 1999 : 999), m[1], m[2], 'monthly');
 }
 
-function openUpgradePlanModal(tier = 'Control', price = 1999, planTitle = 'Control POS', branches = '1', billing = 'monthly') {
+function openUpgradePlanModal(tier = 'Control', price = null, planTitle = 'Control POS', branches = '1', billing = 'monthly') {
   const overlay = document.getElementById('subUpgradeModalOverlay');
   if (!overlay) return;
 
   currentSelectedPlan = planTitle || (tier === 'Control' ? 'Control POS' : 'Core POS');
-  currentSelectedPrice = price || (tier === 'Control' ? 1999 : 999);
+  currentSelectedPrice = price || livePlanPrice(tier, billing);
   currentSelectedBranches = String(branches || '1');
   currentSelectedBilling = billing || 'monthly';
 
@@ -15807,9 +15809,17 @@ function closeUpgradePlanModal() {
   }
 }
 
+// Plan price as saved in the admin console (plan_definitions); the numbers are only a fallback
+// for the moment before the catalog loads or when offline.
+function livePlanPrice(tier, billing) {
+  const f = (typeof PLAN_FEATURES !== 'undefined' && PLAN_FEATURES[tier]) || {};
+  const fb = { 'Core': [999, 9999], 'Core Group': [3999, 39990], 'Control': [1999, 23988], 'Control Group': [4999, 49990] }[tier] || [0, 0];
+  const v = billing === 'yearly' ? f.priceYear : f.priceMonth;
+  return Number.isFinite(v) ? v : (billing === 'yearly' ? fb[1] : fb[0]);
+}
 function selectUpgradePlan(tier, price, title) {
   const PLAN_META = {};
-  [['Core', 'Core POS', 999], ['Core Group', 'Core Group', 3999], ['Control', 'Control POS', 1999], ['Control Group', 'Control Group', 7999]].forEach(([k, n, pr]) => {
+  [['Core', 'Core POS', 999], ['Core Group', 'Core Group', 3999], ['Control', 'Control POS', 1999], ['Control Group', 'Control Group', 4999]].forEach(([k, n, pr]) => {
     const live = (typeof PLAN_FEATURES !== 'undefined' && PLAN_FEATURES[k]) || {};
     PLAN_META[k] = { name: live.name || n, price: live.priceMonth != null ? live.priceMonth : pr };
   });
@@ -16507,7 +16517,7 @@ async function saveNewProductFromPage() {
       <!-- Plan Selection Cards -->
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px;">
         <!-- Core Group -->
-        <div id="planCardCoreGroup" onclick="selectUpgradePlan('Core Group', 3999)" style="border:2px solid #e5e7eb; border-radius:16px; padding:18px; cursor:pointer; transition:all 0.15s; background:#fafafa;">
+        <div id="planCardCoreGroup" onclick="selectUpgradePlan('Core Group')" style="border:2px solid #e5e7eb; border-radius:16px; padding:18px; cursor:pointer; transition:all 0.15s; background:#fafafa;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <span style="font-weight:800; font-size:15px; color:#111827;">Core Group</span>
             <span style="background:#dcfce7; color:#166534; font-size:10px; font-weight:800; padding:2px 8px; border-radius:999px;">5 Branches</span>
@@ -16524,13 +16534,13 @@ async function saveNewProductFromPage() {
         </div>
 
         <!-- Control Group -->
-        <div id="planCardControlGroup" onclick="selectUpgradePlan('Control Group', 7999)" style="border:2px solid #e5e7eb; border-radius:16px; padding:18px; cursor:pointer; transition:all 0.15s; background:#fafafa;">
+        <div id="planCardControlGroup" onclick="selectUpgradePlan('Control Group')" style="border:2px solid #e5e7eb; border-radius:16px; padding:18px; cursor:pointer; transition:all 0.15s; background:#fafafa;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <span style="font-weight:800; font-size:15px; color:#111827;">Control Group</span>
             <span style="background:#fef3c7; color:#92400e; font-size:10px; font-weight:800; padding:2px 8px; border-radius:999px;">5 Branches + eTIMS</span>
           </div>
           <div style="font-size:20px; font-weight:900; color:#111827; margin-bottom:8px;">
-            KES <span id="modalPriceControlGroup">7,999</span><span style="font-size:12px; font-weight:600; color:var(--text-secondary);">/mo</span>
+            KES <span id="modalPriceControlGroup">4,999</span><span style="font-size:12px; font-weight:600; color:var(--text-secondary);">/mo</span>
           </div>
           <ul style="font-size:12px; color:#4b5563; padding-left:16px; margin:0; line-height:1.6;">
             <li>Everything in Control</li>
@@ -16541,7 +16551,7 @@ async function saveNewProductFromPage() {
         </div>
 
         <!-- Core POS -->
-        <div id="planCardCore" onclick="selectUpgradePlan('Core', 999)" style="border:2px solid #16a34a; border-radius:16px; padding:18px; cursor:pointer; transition:all 0.15s; background:#f0fdf4;">
+        <div id="planCardCore" onclick="selectUpgradePlan('Core')" style="border:2px solid #16a34a; border-radius:16px; padding:18px; cursor:pointer; transition:all 0.15s; background:#f0fdf4;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <span style="font-weight:800; font-size:15px; color:#111827;">Core POS</span>
             <span style="background:#fef08a; color:#854d0e; font-size:10px; font-weight:800; padding:2px 8px; border-radius:999px;">Popular</span>
@@ -16558,7 +16568,7 @@ async function saveNewProductFromPage() {
         </div>
 
         <!-- Control POS -->
-        <div id="planCardControl" onclick="selectUpgradePlan('Control', 1999)" style="border:2px solid #e5e7eb; border-radius:16px; padding:18px; cursor:pointer; transition:all 0.15s; background:#fafafa;">
+        <div id="planCardControl" onclick="selectUpgradePlan('Control')" style="border:2px solid #e5e7eb; border-radius:16px; padding:18px; cursor:pointer; transition:all 0.15s; background:#fafafa;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <span style="font-weight:800; font-size:15px; color:#111827;">Control POS</span>
             <span style="background:#e0f2fe; color:#0369a1; font-size:10px; font-weight:800; padding:2px 8px; border-radius:999px;">Pro &amp; eTIMS</span>

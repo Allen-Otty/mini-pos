@@ -7,15 +7,21 @@
   const URL = 'https://uzwomzkzqrpiumtnniik.supabase.co';
   const KEY = 'sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D';
   const CACHE = 'dogo_plan_defs_v2';
-  let rows = null;
+  let rows = null, fetched = false;
 
   const fmt = n => Number(n || 0).toLocaleString('en-KE');
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const richText = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   const lim = v => (v === null || v === undefined) ? Infinity : Number(v);
 
-  async function load() {
+  // Last saved copy, available instantly so returning visitors never see the old built-in prices.
+  function loadCached() {
     if (rows) return rows;
+    try { rows = JSON.parse(localStorage.getItem(CACHE) || 'null'); } catch (e) { rows = null; }
+    return rows || [];
+  }
+  async function load() {
+    if (fetched) return rows;
     try {
       const r = await fetch(URL + '/rest/v1/plan_definitions?select=*&order=sort_order', {
         headers: { apikey: KEY, Authorization: 'Bearer ' + KEY }
@@ -23,7 +29,7 @@
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const data = await r.json();
       if (Array.isArray(data) && data.length) {
-        rows = data;
+        rows = data; fetched = true;
         try { localStorage.setItem(CACHE, JSON.stringify(rows)); } catch (e) {}
         return rows;
       }
@@ -74,8 +80,11 @@
   const IDS = {
     'Core': 'core', 'Core Group': 'coreGroup', 'Control': 'control', 'Control Group': 'controlGroup'
   };
+  const MODAL_IDS = { 'Core': 'modalPriceCore', 'Core Group': 'modalPriceCoreGroup', 'Control': 'modalPriceControl', 'Control Group': 'modalPriceControlGroup' };
   function applyToLanding() {
     (rows || []).forEach(r => {
+      const mp = MODAL_IDS[r.plan] && document.getElementById(MODAL_IDS[r.plan]);
+      if (mp) mp.textContent = fmt(r.price_monthly);
       const base = IDS[r.plan];
       if (base) { const a = document.getElementById(base + 'PriceAmount'); if (a) a.textContent = 'KES ' + fmt(r.price_monthly); }
       const nm = document.querySelector('[data-plan-name="' + r.plan + '"]');
@@ -101,6 +110,6 @@
     }).filter(Boolean);
   }
 
-  window.DogoPlanCatalog = { load, row, limitsFor, applyToPlanFeatures, applyToPosfiti, applyToLanding, tiers,
+  window.DogoPlanCatalog = { load, loadCached, row, limitsFor, applyToPlanFeatures, applyToPosfiti, applyToLanding, tiers,
     get rows() { return rows || []; }, price: (p, cycle) => { const r = row(p); return r ? Number(cycle === 'yearly' ? r.price_yearly : r.price_monthly) : null; } };
 })();
