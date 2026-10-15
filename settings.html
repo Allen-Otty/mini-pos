@@ -256,6 +256,11 @@
           </div>
 
           <div class="dogo-field">
+            <label>Buy Goods Till No. (printed on receipt, optional)</label>
+            <input class="dogo-input" type="text" id="setReceiptTill" placeholder="e.g. 6684101" inputmode="numeric">
+          </div>
+
+          <div class="dogo-field">
             <label>Receipt Footer Note / Slogan</label>
             <input class="dogo-input" type="text" id="setReceiptFooter" placeholder="e.g. Asante sana! Goods once sold are not returnable without receipt.">
           </div>
@@ -284,6 +289,14 @@
                 <div class="dogo-muted" style="font-size:12.5px;">Show 16% standard VAT, 0% zero-rated, and tax exempt totals</div>
               </div>
               <input type="checkbox" id="setReceiptShowVat" checked style="width:20px;height:20px;accent-color:var(--dogo-neon);">
+            </label>
+
+            <label class="switch-label">
+              <div>
+                <strong>Barcode of receipt number</strong>
+                <div class="dogo-muted" style="font-size:12.5px;">Print a scannable barcode at the bottom (handy for returns)</div>
+              </div>
+              <input type="checkbox" id="setReceiptBarcode" checked style="width:20px;height:20px;accent-color:var(--dogo-neon);">
             </label>
 
             <label class="switch-label">
@@ -680,6 +693,7 @@
   <script src="assets/js/dogo-data.js"></script>
   <script src="assets/js/subscription-guard.js"></script>
   <script src="assets/js/app-shell.js"></script>
+  <script src="assets/js/receipt-format.js"></script>
   <script>
   (async function () {
     const { sb, kes, esc, boot, toast, logout } = window.DogoData;
@@ -772,6 +786,10 @@
     $('setReceiptFooter').value = b.receipt_footer || 'Thank you for your business!';
     $('setReceiptShowLogo').checked = b.receipt_show_logo !== false;
     $('setReceiptShowVat').checked = b.receipt_show_vat_breakdown !== false;
+    // Till number and barcode are kept on this device (works offline, no database change needed)
+    const rcptExtra = (window.DogoReceipt ? DogoReceipt.getExtra(ctx.businessId) : {});
+    $('setReceiptTill').value = rcptExtra.till || '';
+    $('setReceiptBarcode').checked = rcptExtra.barcode !== false;
 
     function updateReceiptPreview() {
       $('prevBizName').textContent = ($('setBizName').value.trim() || b.name || 'DOGO POS').toUpperCase();
@@ -801,6 +819,8 @@
       const { error } = await sb.from('businesses').update(updates).eq('id', ctx.businessId);
       if (error) return toast('Could not save receipt settings: ' + error.message);
 
+      if (window.DogoReceipt) DogoReceipt.setExtra(ctx.businessId, Object.assign(DogoReceipt.getExtra(ctx.businessId), {
+        till: $('setReceiptTill').value.trim(), barcode: $('setReceiptBarcode').checked }));
       Object.assign(b, updates);
       toast('Receipt settings saved successfully!');
     };

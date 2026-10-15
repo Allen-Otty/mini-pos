@@ -70,6 +70,7 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             </button>
           </div>
+          <button class="dogo-btn-pill-outline" id="btnScanInvoice" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;">&#128247; Scan invoice</button>
           <button class="dogo-btn-primary-orange" id="btnOpenNewPo">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             <span>New PO</span>
@@ -93,6 +94,7 @@
           </div>
         </div>
 
+        <div id="payablesBanner" style="display:none;background:#fef3c7;border:1px solid #fcd34d;color:#78350f;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:14px;"></div>
         <div class="dogo-table-wrap">
           <table class="dogo-table">
             <thead>
@@ -421,6 +423,7 @@
       </div>
       <div class="dogo-btn-row" style="justify-content:space-between;margin-top:16px;">
         <button class="dogo-btn dogo-btn--outline" onclick="window.print()">Print</button>
+        <button class="dogo-btn dogo-btn--outline" id="btnMarkPaid" style="display:none;border-color:#047857;color:#047857;font-weight:700;">Mark as paid</button>
         <button class="dogo-btn dogo-btn--primary" id="btnCloseVoucher">Close</button>
       </div>
     </div>
@@ -431,6 +434,8 @@
   <script src="assets/js/subscription-guard.js"></script>
   <script src="assets/js/biz-profiles.js"></script>
   <script src="assets/js/app-shell.js"></script>
+  <script src="assets/js/invoice-parse.js"></script>
+  <script src="assets/js/invoice-scan.js"></script>
   <script>
   (async function () {
     const { sb, boot, toast, downloadCSV, esc } = window.DogoData;
@@ -555,6 +560,7 @@
       const q = ($('searchPo').value || '').trim().toLowerCase();
       const list = purchaseOrders.filter(p => !q || (p.ref_no || '').toLowerCase().includes(q) || (p.supplier || '').toLowerCase().includes(q));
       
+      renderPayables();
       const tbody = $('rowsPo');
       if (!list.length) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:48px 16px;color:var(--dogo-text-muted);">No data available in table</td></tr>';
@@ -566,7 +572,7 @@
         <tr>
           <td><strong>${esc(p.ref_no || '—')}</strong></td>
           <td>${esc(p.supplier || '—')}</td>
-          <td><span class="dogo-badge dogo-badge--ok">${esc(p.status || 'Received')}</span></td>
+          <td>${p.payment_status === 'Unpaid' ? `<span class="dogo-badge" style="background:#fef3c7;color:#92400e;">Unpaid${p.due_date ? ' &middot; due ' + esc(p.due_date) : ''}</span>` : `<span class="dogo-badge dogo-badge--ok">${esc(p.status || 'Received')}</span>`}</td>
           <td><strong>${ksh(p.total_amount)}</strong></td>
           <td>${esc(p.date || '—')}</td>
           <td>
@@ -824,23 +830,10 @@
       }
     };
 
-    // Submit Create PO
-    $('btnSubmitCreatePo').onclick = async () => {
-      if (!selectedSupplier) return toast('Please select or create a supplier');
-      if (!currentPoItems.length) return toast('Please add at least one line item');
-
-      const grandTotal = currentPoItems.reduce((a, i) => a + i.total, 0);
-      const totalUnits = currentPoItems.reduce((a, i) => a + i.qty, 0);
-      const today = new Date().toISOString().slice(0, 10);
-      const refNo = 'PO-' + String(purchaseOrders.length + 1).padStart(4, '0');
-      const notes = $('poNotes').value.trim();
-
-      $('btnSubmitCreatePo').disabled = true;
-      $('btnSubmitCreatePo').textContent = 'Creating PO...';
-
-      try {
-        // 1. Restock products in Supabase
-        for (const item of currentPoItems) {
+    // Adds each line's quantity to the product's CURRENT stock (safe against sales happening meanwhile)
+    // and keeps the buying price as a weighted average. Shared by manual POs and scanned invoices.
+    async function restockItems(items) {
+      for (const item of items) {
           // Add to the stock as it is right now (sales may have happened since this page loaded), and only
           // write if nobody changed it in between; otherwise read again and retry.
           const prod = products.find(x => x.id === item.productId);
@@ -863,6 +856,25 @@
             if (attempt === 4) throw new Error('Stock for ' + item.name + ' kept changing, please try again');
           }
         }
+    }
+
+    // Submit Create PO
+    $('btnSubmitCreatePo').onclick = async () => {
+      if (!selectedSupplier) return toast('Please select or create a supplier');
+      if (!currentPoItems.length) return toast('Please add at least one line item');
+
+      const grandTotal = currentPoItems.reduce((a, i) => a + i.total, 0);
+      const totalUnits = currentPoItems.reduce((a, i) => a + i.qty, 0);
+      const today = new Date().toISOString().slice(0, 10);
+      const refNo = 'PO-' + String(purchaseOrders.length + 1).padStart(4, '0');
+      const notes = $('poNotes').value.trim();
+
+      $('btnSubmitCreatePo').disabled = true;
+      $('btnSubmitCreatePo').textContent = 'Creating PO...';
+
+      try {
+        // 1. Restock products in Supabase
+        await restockItems(currentPoItems);
         window.DogoData.notifyProductsChanged();
 
         // 2. Insert procurement expense
@@ -916,6 +928,91 @@
       }
     };
 
+    // ---------- Scanned invoices ----------
+    async function commitScannedInvoice(inv) {
+      const biz2 = DogoBiz.profileFor(ctx.business && ctx.business.business_type);
+      const lines = [];
+      for (let idx = 0; idx < inv.items.length; idx++) {
+        const it = inv.items[idx];
+        let pid = it.productId;
+        if (!it.skip && !pid) {
+          const code = 'INV' + Date.now().toString(36).toUpperCase() + idx;
+          const rec = { business_id: businessId, name: it.description, code, price: it.sell_price, stock: 0,
+            category: isMenu ? (typeof biz2.categories[0] === 'string' ? biz2.categories[0] : '') : 'General',
+            vat_rate: inv.vat > 0 ? 0.16 : 0, created_by: profile ? profile.id : null };
+          if (hasCostCol) rec.cost = it.unit_cost;
+          const { data, error } = await sb.from('products').insert(rec).select().single();
+          if (error) throw new Error('Could not create product "' + it.description + '": ' + error.message);
+          products.push(data); pid = data.id;
+        }
+        lines.push({ name: it.description, qty: it.qty, unitCost: it.unit_cost, total: it.total, productId: it.skip ? null : pid });
+      }
+      populateProductSelect();
+      await restockItems(lines.filter(l => l.productId));
+      window.DogoData.notifyProductsChanged();
+
+      // supplier record (kept with the other suppliers on this device)
+      const nm = inv.supplier.name.trim();
+      let sup = suppliers.find(x => (x.name || '').toLowerCase() === nm.toLowerCase());
+      if (!sup) { sup = { id: 'sup-' + Date.now(), name: nm, phone: inv.supplier.phone || '', email: '', pin: inv.supplier.pin || '' }; suppliers.unshift(sup); }
+      else { if (!sup.phone && inv.supplier.phone) sup.phone = inv.supplier.phone; if (!sup.pin && inv.supplier.pin) sup.pin = inv.supplier.pin; }
+
+      const refNo = 'PO-' + String(purchaseOrders.length + 1).padStart(4, '0');
+      const itemsSummary = lines.map(i => `${i.name} (x${i.qty})`).join(', ');
+      const desc = `Supplier PO: ${sup.name} [${refNo}] - Invoice ${inv.invoice_no || 'n/a'} - ${itemsSummary}`;
+      let expRow = null, payStatus = 'Unpaid';
+      if (inv.paid) {
+        const r = await sb.from('expenses').insert({ business_id: businessId, category: 'Stock Purchases', description: desc, amount: inv.total, vat_rate: 0, created_by: profile ? profile.id : null }).select().maybeSingle();
+        if (!r.error && r.data) { expRow = r.data; payStatus = 'Paid'; }
+      }
+      purchaseOrders.unshift({
+        id: 'po-' + crypto.randomUUID(), expense_id: expRow ? expRow.id : null, ref_no: refNo, supplier: sup.name, supplier_phone: sup.phone,
+        status: 'Received', total_amount: inv.total, total_units: lines.reduce((a, i) => a + i.qty, 0), date: inv.date,
+        items: lines, notes: 'Scanned invoice' + (inv.invoice_no ? ' ' + inv.invoice_no : ''), invoice_no: inv.invoice_no || '',
+        source: 'invoice-scan', payment_status: payStatus, due_date: inv.due_date || '', expense_desc: desc, vat: inv.vat || 0
+      });
+      savePersisted();
+      initData();
+      toast(payStatus === 'Paid' ? `Invoice saved: stock updated and ${ksh(inv.total)} recorded as an expense`
+        : inv.paid ? 'Stock updated, but the expense could not be saved. It is listed as unpaid; use Mark as paid to retry.'
+        : `Stock updated. ${ksh(inv.total)} added to what you owe ${sup.name}.`);
+    }
+
+    $('btnScanInvoice').onclick = () => {
+      DogoInvoiceScan.open({
+        products, suppliers,
+        getToken: async () => { const r = await sb.auth.getSession(); return r.data && r.data.session ? r.data.session.access_token : null; },
+        onCommit: commitScannedInvoice
+      });
+    };
+
+    function renderPayables() {
+      const unpaid = purchaseOrders.filter(p => p.payment_status === 'Unpaid');
+      let box = $('payablesBanner');
+      if (!box) return;
+      if (!unpaid.length) { box.style.display = 'none'; return; }
+      const total = unpaid.reduce((a, p) => a + Number(p.total_amount || 0), 0);
+      const today = new Date().toISOString().slice(0, 10);
+      const overdue = unpaid.filter(p => p.due_date && p.due_date < today).length;
+      box.style.display = 'block';
+      box.innerHTML = `<strong>Owed to suppliers: ${ksh(total)}</strong> across ${unpaid.length} unpaid invoice${unpaid.length > 1 ? 's' : ''}` +
+        (overdue ? ` <span style="color:#b91c1c;font-weight:700;">&middot; ${overdue} overdue</span>` : '') +
+        '<div style="font-size:12.5px;margin-top:2px;">Open an invoice with View and choose Mark as paid once you have paid it.</div>';
+    }
+
+    async function markPaid(poId) {
+      const po = purchaseOrders.find(p => p.id === poId);
+      if (!po || po.payment_status !== 'Unpaid') return;
+      const r = await sb.from('expenses').insert({ business_id: businessId, category: 'Stock Purchases',
+        description: po.expense_desc || `Supplier PO: ${po.supplier} [${po.ref_no}]`, amount: po.total_amount, vat_rate: 0, created_by: profile ? profile.id : null }).select().maybeSingle();
+      if (r.error || !r.data) return toast('Could not record the payment: ' + ((r.error && r.error.message) || 'try again'));
+      po.expense_id = r.data.id; po.payment_status = 'Paid'; po.paid_date = new Date().toISOString().slice(0, 10);
+      savePersisted(); renderPoTable(); renderReceiptsTable();
+      $('voucherModal').classList.remove('open');
+      toast(`Marked as paid: ${ksh(po.total_amount)} recorded as an expense`);
+    }
+    $('btnMarkPaid').onclick = () => { if (window.__voucherPoId) markPaid(window.__voucherPoId); };
+
     // --- View PO Voucher Details ---
     $('rowsPo').onclick = (e) => {
       const poId = e.target.dataset && e.target.dataset.po;
@@ -939,7 +1036,10 @@
       $('vSupplier').textContent = rec.supplier;
       $('vDate').textContent = rec.date;
       $('vRef').textContent = rec.ref_no || rec.receipt_no;
-      $('vPayment').textContent = 'Completed (Inward)';
+      const unpaid = rec.payment_status === 'Unpaid';
+      $('vPayment').textContent = unpaid ? 'UNPAID' + (rec.due_date ? ' - due ' + rec.due_date : '') : (rec.payment_status === 'Paid' ? 'Paid' : 'Completed (Inward)');
+      window.__voucherPoId = type === 'PO' && unpaid ? rec.id : null;
+      $('btnMarkPaid').style.display = type === 'PO' && unpaid ? '' : 'none';
       $('vStatus').textContent = rec.status || 'Received';
       $('vTotal').textContent = ksh(rec.total_amount);
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = "dogo-pos-cache-v31";
+const CACHE_NAME = "dogo-pos-cache-v32";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
@@ -27,6 +27,10 @@ const ASSETS_TO_CACHE = [
   "./assets/js/biz-profiles.js",
   "./assets/js/subscription-guard.js",
   "./assets/js/kitchen-store.js",
+  "./assets/js/receipt-format.js",
+  "./assets/js/invoice-parse.js",
+  "./assets/js/invoice-scan.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

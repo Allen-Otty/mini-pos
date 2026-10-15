@@ -7,7 +7,7 @@ COPY package.json ./
 RUN npm install --omit=dev
 
 # App source
-COPY server.js ./
+COPY server.js scan-invoice.js ./
 COPY payments ./payments
 COPY index.html admin payment-complete.html ./
 

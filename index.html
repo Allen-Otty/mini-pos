@@ -50,6 +50,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <script src="assets/js/biz-profiles.js"></script>
+<script src="assets/js/receipt-format.js"></script>
 <script src="assets/js/subscription-guard.js"></script>
 <script src="assets/js/plan-catalog.js"></script>
 <script src="assets/js/landing-cms.js"></script>
@@ -11387,6 +11388,8 @@ async function handleTableCheckoutClick(btn) {
 }
 
 async function checkout() {
+  // remember the cash handed over so the receipt can print Amount Tendered / Change Given
+  window.__lastTendered = parseFloat((document.getElementById('cashTenderedInput') || {}).value || '0') || 0;
   if (cart.length === 0) return false;
   if (!currentShift) {
     showToast('Open a shift before making a sale — see the Sell tab.');
@@ -11596,6 +11599,16 @@ function showReceipt(receiptNo, items, subtotal, vatTotal, grand, now, mpesaRece
   if (typeof finalizeRestBill === 'function') finalizeRestBill();
 
   const hotelReceipt = typeof isRestaurantBiz === 'function' && isRestaurantBiz();
+  if (window.DogoReceipt) {
+    // Supermarket-style receipt (see assets/js/receipt-format.js)
+    const tendered = (!mpesaReceipt && window.__lastTendered >= grand) ? window.__lastTendered : 0;
+    window.__lastTendered = 0;
+    const orderLine = hotelReceipt && currentOrderContext
+      ? ((currentOrderContext.type || 'Order') + (currentOrderContext.table ? ' · Table ' + currentOrderContext.table : '')) : '';
+    document.getElementById('receiptContent').innerHTML = DogoReceipt.build({ business, profile, receiptNo, items, grand, now, mpesaReceipt, gatewayName, tendered, orderLine });
+    document.getElementById('receiptModal').classList.add('show');
+    return;
+  }
   let linesHtml = '';
   items.forEach(item => {
     const lineTotal = item.price * item.qty;

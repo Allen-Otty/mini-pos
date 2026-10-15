@@ -3,6 +3,8 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { paymentRouter } from './payments/index.js';
+import { requireSession } from './payments/auth.js';
+import { scanInvoiceHandler } from './scan-invoice.js';
 
 // Safely load environment variables from .env or config/secrets/.env
 function loadLocalEnv() {
@@ -40,6 +42,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3000;
 const HOST = '0.0.0.0';
+
+// Invoice photo reading (AI). Registered before the global JSON parser because photos exceed its default size limit.
+app.post('/api/scan-invoice', express.json({ limit: '12mb' }), requireSession, scanInvoiceHandler);
 
 // Body parsing with rawBody retention for webhook cryptographic signatures (HMAC verification)
 app.use(express.json({

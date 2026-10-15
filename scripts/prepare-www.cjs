@@ -35,6 +35,13 @@ cp('tesseract.js/dist/tesseract.min.js', 'tesseract.min.js');
 cp('@fortawesome/fontawesome-free/css', 'fa/css');
 cp('@fortawesome/fontawesome-free/webfonts', 'fa/webfonts');
 
+// offline text reader (Tesseract): worker + core + English data, so invoice scanning works with no internet
+fs.mkdirSync(path.join(vendor, 'tess'), { recursive: true });
+cp('tesseract.js/dist/worker.min.js', 'tess/worker.min.js');
+cp('tesseract.js-core/tesseract-core.wasm.js', 'tess/tesseract-core.wasm.js');
+cp('tesseract.js-core/tesseract-core-simd.wasm.js', 'tess/tesseract-core-simd.wasm.js');
+cp('@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz', 'tess/eng.traineddata.gz');
+
 fs.mkdirSync(path.join(vendor, 'fonts'), { recursive: true });
 const fontDir = must(path.join(nm, '@fontsource/instrument-sans/files'));
 const faces = [];
@@ -53,7 +60,9 @@ fs.writeFileSync(path.join(vendor, 'dogo-config.js'),
   "// Set api_url to your hosted Dogo POS server (e.g. https://your-app.onrender.com) to enable\n" +
   "// KCB / Paystack / Airtel / M-Pesa payments inside the Android and Windows apps.\n" +
   "window.DOGO_CONFIG = window.DOGO_CONFIG || { api_url: '' };\n" +
-  "document.addEventListener('DOMContentLoaded', function () { document.querySelectorAll('.js-web-only').forEach(function (e) { e.style.display = 'none'; }); });\n");
+  "document.addEventListener('DOMContentLoaded', function () { document.querySelectorAll('.js-web-only').forEach(function (e) { e.style.display = 'none'; }); });\n" +
+  "(function () { var s = document.currentScript; if (!s) return; var t = new URL('tess/', s.src).href.replace(/\\/$/, '');\n" +
+  "  window.DOGO_TESS = { script: new URL('tesseract.min.js', s.src).href, worker: t + '/worker.min.js', core: t, lang: t }; })();\n");
 
 const rules = [
   [/https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@2/g, 'assets/vendor/supabase.js'],

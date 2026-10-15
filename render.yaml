@@ -16,6 +16,8 @@ services:
         value: https://uzwomzkzqrpiumtnniik.supabase.co
       - key: SUPABASE_ANON_KEY
         sync: false     # set in Render dashboard: publishable key from Supabase
+      - key: ANTHROPIC_API_KEY
+        sync: false     # optional: enables AI reading of scanned invoices (without it the app reads on-device)
       - key: APP_URL
         sync: false     # set to https://dogo-pos-api.onrender.com (or your custom domain)
       # M-Pesa Daraja — set these in the dashboard, never commit them

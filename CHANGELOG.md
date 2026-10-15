@@ -1,5 +1,11 @@
 # Dogo POS â€” Changelog
 
+## Unreleased
+
+- **Supermarket-style receipts**: item table with Qty / Unit Price / Ext Price (VAT-exclusive), Subtotal, 16% VAT, Receipt Total, Amount Tendered and Change Given, "You were served by", PIN, optional Buy Goods Till number and a Code 128 barcode of the receipt number. New Settings fields: Buy Goods Till No. and barcode on/off (kept on the device).
+- **Scan invoice** (Purchases): photo of a supplier invoice or receipt is read by AI when online and the server has `ANTHROPIC_API_KEY`, otherwise on the device with Tesseract OCR (fully offline inside the Android/Windows apps). Review and edit, match lines to products or create new ones, then it updates stock, weighted buying prices, suppliers and records the expense, or an unpaid invoice (payable) to mark as paid later.
+- New server endpoint `POST /api/scan-invoice` (signed-in users, per-user hourly limit).
+
 ## Catalogue: Delete button + per-product sales history
 
 - **Delete** (Admin only) next to Edit: asks for confirmation, shows how many past sale lines include the item, then deletes permanently. If the item is part of past sales the database may refuse (foreign key); the message says so instead of deleting sales records. Also reports when RLS silently deleted nothing.
