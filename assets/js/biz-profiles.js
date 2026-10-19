@@ -10,12 +10,73 @@
 (function () {
   const TYPES_GOODS = [{ value: 'Product', label: 'Product' }, { value: 'Service', label: 'Service' }];
 
+  // Department / Category lists per kind of shop: [department, SKU prefix, [sub-categories]].
+  // The Department is what the Category dropdown shows and what is saved on the product.
+  // Sub-categories and prefixes are reference data only (no sample products are stored anywhere).
+  const GENERAL_STORE = [
+    ['Confectionery', 'GEN-CFN', ['Sweets & Chocolates', 'Biscuits & Snacks']],
+    ['Packaged Essentials', 'GEN-PKF', ['Dry Foods & Instant', 'Cooking Basics']],
+    ['School & Office', 'GEN-STN', ['Writing Instruments', 'Books & Paper']],
+    ['Household Utilities', 'GEN-HUT', ['Small Household', 'Small Cleaning']],
+    ['Sundries & Kiosk', 'GEN-SNG', ['Small Personal Care']]
+  ];
+  const TAXONOMY = {
+    supermarket: [
+      ['Fresh Produce', 'SUP-FPR', ['Fresh Fruits', 'Fresh Vegetables']],
+      ['Dairy & Chilled', 'SUP-DAR', ['Fresh Milk & Yoghurt', 'Butter, Cheese & Cream']],
+      ['Bakery & Prepared', 'SUP-BAK', ['Bakery & Deli']],
+      ['Dry Groceries', 'SUP-GMC', ['Grains & Cereals', 'Oils, Condiments & Spices', 'Breakfast & Instant Foods']],
+      ['Beverages', 'SUP-BEV', ['Soft Drinks & Juices', 'Water & Hot Drinks']],
+      ['Household Care', 'SUP-HHC', ['Laundry Essentials', 'Cleaning & Surface Care', 'Paper & Paper Goods']],
+      ['Personal Care', 'SUP-HGY', ['Bath & Hair Care', 'Oral & Hygiene Care']]
+    ],
+    hardware: [
+      ['Building & Masonry', 'HDW-BLD', ['Cement & Aggregates', 'Reinforcement & Steel', 'Timber & Sheet Boards']],
+      ['Plumbing & Water', 'HDW-PLM', ['Piping Systems', 'Fittings & Valves', 'Fixtures & Sanitary']],
+      ['Electrical & Wiring', 'HDW-ELE', ['Cables & Conduits', 'Switches & Protection', 'Lighting & Fixtures']],
+      ['Tools & Machinery', 'HDW-TLS', ['Hand Tools', 'Power Tools & Acc.']],
+      ['Paints & Finishes', 'HDW-PNT', ['Paints & Undercoats', 'Painting Sundries']],
+      ['Fasteners & Locks', 'HDW-FAS', ['Screws, Bolts & Nuts', 'Locks & Hardware']]
+    ],
+    retail: GENERAL_STORE,
+    // Kibanda: the general-store list, plus the two service departments kiosks already use.
+    kiosk: GENERAL_STORE.concat([['Airtime & Data', 'GEN-AIR', []], ['Mobile Money', 'GEN-MMO', []]]),
+    agrovet: [
+      ['Animal Feeds', 'AGR-FED', ['Poultry Feeds', 'Dairy & Livestock', 'Feed Supplements']],
+      ['Veterinary Products', 'AGR-VET', ['Healthcare & Parasiticides', 'External Parasiticides', 'Vet Equipment']],
+      ['Crop Protection', 'AGR-CRP', ['Herbicides (Weedkillers)', 'Insecticides & Fungicides']],
+      ['Seeds & Fertilizers', 'AGR-SDS', ['Certified Planting Seeds', 'Planting Fertilizers']],
+      ['Farm Equipment', 'AGR-EQU', ['Sprayers & Tools']]
+    ],
+    boutique: [
+      ['Women\'s Apparel', 'BTQ-WMN', ['Tops & Blouses', 'Bottoms & Dresses', 'Outerwear']],
+      ['Men\'s Apparel', 'BTQ-MEN', ['Shirts & Tops', 'Trousers & Suits', 'Outerwear']],
+      ['Footwear', 'BTQ-FTW', ['Women\'s Shoes', 'Men\'s Shoes']],
+      ['Accessories & Bags', 'BTQ-ACC', ['Handbags & Leather', 'Jewelry & Styling']],
+      ['Fragrances & Beauty', 'BTQ-FRG', ['Perfumes & Scents']]
+    ],
+    wines: [
+      ['Whiskies', 'WSP-WHS', ['Scotch Whisky (Blended)', 'Single Malt Scotch', 'Bourbon & American', 'Irish & Canadian']],
+      ['Vodka', 'WSP-VDK', ['Premium & Imported', 'Standard / Popular']],
+      ['Gin', 'WSP-GIN', ['London Dry & Premium', 'Local / Standard']],
+      ['Rum', 'WSP-RUM', ['Dark & Spiced', 'White Rum']],
+      ['Brandy & Cognac', 'WSP-BRN', ['Cognac (VS / VSOP / XO)', 'Brandy']],
+      ['Tequila & Mezcal', 'WSP-TEQ', ['Blanco / Reposado / Anejo']],
+      ['Red Wines', 'WSP-RED', ['Dry Red / Varietals', 'Sweet Red']],
+      ['White Wines', 'WSP-WHT', ['Dry White / Varietals', 'Sweet White']],
+      ['Rosé & Sparkling', 'WSP-ROS', ['Rosé & Blush', 'Sparkling & Champagne']],
+      ['Cream & Liqueurs', 'WSP-LIQ', ['Cream Liqueurs', 'Herbal & Digestifs']],
+      ['Beers & Ciders', 'WSP-BER', ['Lager & Stout', 'Ciders & RTDs']],
+      ['Mixers & Soft Drinks', 'WSP-MIX', ['Energy & Carbonated']]
+    ]
+  };
+  // 'General' stays last in every list: the app uses it as the default category when none is chosen.
+  const deptNames = key => TAXONOMY[key].map(d => d[0]).concat(['General']);
+
   const PROFILES = {
     supermarket: {
       key: 'supermarket', label: 'Supermarket',
-      categories: ['Fresh Produce', 'Meat & Fish', 'Dairy & Eggs', 'Bakery', 'Groceries & Staples', 'Cooking Oil & Fats',
-        'Beverages', 'Snacks & Confectionery', 'Frozen Foods', 'Household & Cleaning', 'Personal Care',
-        'Baby Products', 'Stationery', 'Airtime & Mobile Money', 'General'],
+      categories: deptNames('supermarket'),
       types: TYPES_GOODS, defaultType: 'Product',
       itemWord: 'Item', nameLabel: 'Product name', namePlaceholder: 'e.g. Brookside Milk 500ml',
       stockLabel: 'Initial stock (units)', reorderLabel: 'Reorder threshold',
@@ -25,9 +86,7 @@
     },
     hardware: {
       key: 'hardware', label: 'Hardware Store',
-      categories: ['Cement & Building', 'Iron Sheets & Roofing', 'Steel, Wire & Nails', 'Timber & Boards', 'Paint & Finishes',
-        'Plumbing & Pipes', 'Electrical', 'Tools & Equipment', 'Fasteners & Fittings', 'Doors, Windows & Locks',
-        'Tiles & Flooring', 'Safety & Workwear', 'Garden & Farm', 'General'],
+      categories: deptNames('hardware'),
       types: [{ value: 'Product', label: 'Material / Tool' }, { value: 'Service', label: 'Service (delivery, cutting, fitting)' }],
       defaultType: 'Product',
       itemWord: 'Item', nameLabel: 'Item name', namePlaceholder: 'e.g. Bamburi Cement 50kg',
@@ -51,8 +110,7 @@
     },
     kiosk: {
       key: 'kiosk', label: 'Kiosk / Kibanda',
-      categories: ['Milk & Dairy', 'Bread & Bakery', 'Eggs', 'Soft Drinks', 'Water & Juice', 'Snacks', 'Sweets & Biscuits',
-        'Airtime & Data', 'Mobile Money', 'Household Basics', 'General'],
+      categories: deptNames('kiosk'),
       types: [{ value: 'Product', label: 'Product' }, { value: 'Service', label: 'Service (airtime, M-Pesa, charging)' }],
       defaultType: 'Product',
       itemWord: 'Item', nameLabel: 'Item name', namePlaceholder: 'e.g. Fresh Milk 500ml',
@@ -87,14 +145,44 @@
     },
     retail: {
       key: 'retail', label: 'Retail Shop',
-      categories: ['Clothing', 'Shoes', 'Accessories', 'Bags', 'Electronics', 'Phones & Accessories', 'Cosmetics & Beauty',
-        'Home & Kitchen', 'Stationery', 'Toys & Gifts', 'General'],
+      categories: deptNames('retail'),
       types: TYPES_GOODS, defaultType: 'Product',
-      itemWord: 'Item', nameLabel: 'Product name', namePlaceholder: 'e.g. Men\'s Polo Shirt - Blue (M)',
+      itemWord: 'Item', nameLabel: 'Product name', namePlaceholder: 'e.g. Exercise Book A5 96 pages',
       stockLabel: 'Initial stock', reorderLabel: 'Reorder threshold',
-      descPlaceholder: 'Size, colour, brand...',
+      descPlaceholder: 'Size, brand, pack details...',
       subtitle: 'Add a new product to your shop catalogue',
       pageTitle: 'Product Catalogue', addLabel: 'New Product'
+    },
+    agrovet: {
+      key: 'agrovet', label: 'Agrovet',
+      categories: deptNames('agrovet'),
+      types: [{ value: 'Product', label: 'Product' }, { value: 'Service', label: 'Service (vet visit, delivery, spraying)' }],
+      defaultType: 'Product',
+      itemWord: 'Item', nameLabel: 'Product name', namePlaceholder: 'e.g. Layers Mash 70kg',
+      stockLabel: 'Initial stock (bags / bottles / packs)', reorderLabel: 'Reorder threshold',
+      descPlaceholder: 'Brand, pack size, active ingredient, dosage...',
+      subtitle: 'Add a feed, vet, crop or farm product to your agrovet catalogue',
+      pageTitle: 'Agrovet Catalogue', addLabel: 'New Product'
+    },
+    boutique: {
+      key: 'boutique', label: 'Boutique / Fashion',
+      categories: deptNames('boutique'),
+      types: TYPES_GOODS, defaultType: 'Product',
+      itemWord: 'Item', nameLabel: 'Product name', namePlaceholder: 'e.g. Floral Midi Dress - Blue (M)',
+      stockLabel: 'Initial stock', reorderLabel: 'Reorder threshold',
+      descPlaceholder: 'Size, colour, brand, fabric...',
+      subtitle: 'Add a new piece to your boutique catalogue',
+      pageTitle: 'Boutique Catalogue', addLabel: 'New Item'
+    },
+    wines: {
+      key: 'wines', label: 'Wines & Spirits',
+      categories: deptNames('wines'),
+      types: TYPES_GOODS, defaultType: 'Product',
+      itemWord: 'Item', nameLabel: 'Product name', namePlaceholder: 'e.g. Johnnie Walker Red Label 750ml',
+      stockLabel: 'Initial stock (bottles / cans)', reorderLabel: 'Reorder threshold',
+      descPlaceholder: 'Brand, age / vintage, volume...',
+      subtitle: 'Add a new drink to your wines & spirits catalogue',
+      pageTitle: 'Wines & Spirits Catalogue', addLabel: 'New Product'
     }
   };
 
@@ -110,7 +198,11 @@
     wholesale: U(['piece', 'Piece'], ['carton', 'Carton'], ['sack', 'Sack'], ['bale', 'Bale'], ['dozen', 'Dozen'], ['pack', 'Pack'],
       ['kg', 'Kilogram (kg)'], ['litre', 'Litre']),
     sme: U(['piece', 'Unit / job'], ['hour', 'Hour'], ['day', 'Day'], ['session', 'Session'], ['month', 'Month']),
-    retail: U(['piece', 'Piece'], ['pair', 'Pair'], ['set', 'Set'], ['pack', 'Pack'], ['box', 'Box'])
+    retail: U(['piece', 'Piece'], ['pair', 'Pair'], ['set', 'Set'], ['pack', 'Pack'], ['box', 'Box']),
+    agrovet: U(['piece', 'Piece'], ['bag', 'Bag'], ['kg', 'Kilogram (kg)'], ['litre', 'Litre'], ['bottle', 'Bottle'],
+      ['packet', 'Packet'], ['sachet', 'Sachet'], ['bucket', 'Bucket / container'], ['kit', 'Kit'], ['box', 'Box']),
+    boutique: U(['piece', 'Piece'], ['pair', 'Pair'], ['set', 'Set'], ['bottle', 'Bottle']),
+    wines: U(['piece', 'Bottle'], ['can', 'Can'], ['carton', 'Carton / case'], ['box', 'Box (wine box)'], ['litre', 'Litre'])
   };
 
   // Expense categories. 'Stock Purchases' must stay in every list (purchases.html books to it by
@@ -129,7 +221,13 @@
     sme: ['Rent', 'Utilities', SP, 'Salaries', 'Software & Subscriptions', 'Professional Fees', 'Travel & Transport', 'Licenses',
       'Equipment', 'Marketing', 'Petty Cash', 'Other'],
     retail: ['Rent', 'Utilities', SP, 'Salaries', 'Shop Fittings & Display', 'Packaging', 'Transport', 'Licenses', 'Equipment',
-      'Marketing', 'Petty Cash', 'Other']
+      'Marketing', 'Petty Cash', 'Other'],
+    agrovet: ['Rent', 'Utilities', SP, 'Salaries', 'Transport & Delivery', 'Storage & Cold Chain', 'Licenses & Permits',
+      'Equipment', 'Marketing', 'Petty Cash', 'Other'],
+    boutique: ['Rent', 'Utilities', SP, 'Salaries', 'Shop Fittings & Display', 'Packaging', 'Alterations & Tailoring',
+      'Transport', 'Licenses', 'Marketing', 'Petty Cash', 'Other'],
+    wines: ['Rent', 'Utilities', SP, 'Salaries', 'Licenses & Permits', 'Security', 'Refrigeration & Repairs',
+      'Transport & Delivery', 'Marketing', 'Petty Cash', 'Other']
   };
   Object.keys(PROFILES).forEach(k => { PROFILES[k].units = UNITS[k]; PROFILES[k].expenseCategories = EXPENSES[k]; });
 
@@ -137,6 +235,9 @@
   // ("Hotel / Restaurant", "Hardware Store", "SME / General Business").
   function profileFor(rawType) {
     const t = String(rawType || '').toLowerCase();
+    if (t.includes('agro')) return PROFILES.agrovet;
+    if (t.includes('boutique') || t.includes('fashion')) return PROFILES.boutique;
+    if (t.includes('wine') || t.includes('spirit') || t.includes('liquor')) return PROFILES.wines;
     if (t.includes('hotel') || t.includes('restaurant')) return PROFILES.restaurant;
     if (t.includes('hardware')) return PROFILES.hardware;
     if (t.includes('supermarket')) return PROFILES.supermarket;
@@ -173,5 +274,19 @@
     sel.value = value;
   }
 
-  window.DogoBiz = { PROFILES, profileFor, fillSelect, setValue };
+  // SKU prefix for a department of a business profile (e.g. 'WSP-WHS' for Whiskies), or '' if it has none.
+  function skuPrefixFor(profileKey, category) {
+    const dept = (TAXONOMY[profileKey] || []).find(d => d[0] === category);
+    return dept ? dept[1] : '';
+  }
+  // Next free code for a prefix: PREFIX-001, PREFIX-002 ... given the codes already in the catalogue.
+  function nextSku(prefix, existingCodes) {
+    if (!prefix) return '';
+    const re = new RegExp('^' + prefix.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '-(\\d+)$', 'i');
+    let max = 0;
+    (existingCodes || []).forEach(c => { const m = re.exec(String(c || '').trim()); if (m) max = Math.max(max, parseInt(m[1], 10)); });
+    return prefix + '-' + String(max + 1).padStart(3, '0');
+  }
+
+  window.DogoBiz = { PROFILES, TAXONOMY, profileFor, fillSelect, setValue, skuPrefixFor, nextSku };
 })();

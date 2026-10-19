@@ -367,8 +367,19 @@
     $('prev').onclick = () => { page--; draw(); }; $('next').onclick = () => { page++; draw(); };
     $('csvBtn').onclick = () => downloadCSV('products.csv', [['Code','Name','Category','Price','Buying price','VAT','Stock','Reorder']].concat(filtered().map(p => [p.code, p.name, p.category, p.price, p.cost, p.vat_rate, p.stock, p.reorder_level])));
 
+    // New item: picking a Department suggests the next SKU for it (e.g. WSP-WHS-004) while the code box is
+    // empty or still holds an earlier suggestion. Anything the user types themselves is never overwritten.
+    let autoSku = '';
+    $('fCat').addEventListener('change', () => {
+      if (editing) return;
+      const cur = $('fCode').value.trim();
+      if (cur && cur !== autoSku) return;
+      const sku = DogoBiz.nextSku(DogoBiz.skuPrefixFor(biz.key, $('fCat').value), products.map(x => x.code));
+      $('fCode').value = sku; autoSku = sku;
+    });
+
     function openModal(p) {
-      editing = p || null; $('mTitle').textContent = (p ? 'Edit ' : 'Create ') + biz.itemWord;
+      editing = p || null; autoSku = ''; $('mTitle').textContent = (p ? 'Edit ' : 'Create ') + biz.itemWord;
       DogoBiz.fillSelect($('fCat'), biz.categories, {
         placeholder: isMenu ? 'Select menu category' : 'Select Category (Optional)',
         keepValue: p && p.category

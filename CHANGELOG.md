@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Department / Category dropdowns per business type** (`assets/js/biz-profiles.js`): Supermarket, Hardware, General store / Retail and Kiosk (Kibanda) now use the Department lists from the business spec; new **Agrovet**, **Boutique / Fashion** and **Wines & Spirits** types have their own. The same list feeds the Catalogue, Purchases "new product" form and the main app's Create Item. "General" stays last in every list (the app uses it as the default). Kiosk keeps its existing "Airtime & Data" and "Mobile Money" departments after the general-store ones. Items saved under an old category keep it and show as "(existing)" when edited.
+- Picking a Department on a new Catalogue item suggests the next SKU for it (e.g. `WSP-WHS-004`) while the code box is empty. Anything typed by hand is never overwritten.
+- New business types are selectable at sign-up, in Settings and in the admin console filter. **Needs** `supabase/migrations/20261019_business_types_agrovet_boutique_wines.sql` (widens the `businesses.business_type` check; additive). No sample/demo products were added for the new types.
+- Service worker cache v33.
+- **Tested:** list contents and type matching in Node; Catalogue dropdown + SKU suggestion in a headless browser with a mocked backend. **Not tested** against the live database.
+
 - **Supermarket-style receipts**: item table with Qty / Unit Price / Ext Price (VAT-exclusive), Subtotal, 16% VAT, Receipt Total, Amount Tendered and Change Given, "You were served by", PIN, optional Buy Goods Till number and a Code 128 barcode of the receipt number. New Settings fields: Buy Goods Till No. and barcode on/off (kept on the device).
 - **Scan invoice** (Purchases): photo of a supplier invoice or receipt is read by AI when online and the server has `ANTHROPIC_API_KEY`, otherwise on the device with Tesseract OCR (fully offline inside the Android/Windows apps). Review and edit, match lines to products or create new ones, then it updates stock, weighted buying prices, suppliers and records the expense, or an unpaid invoice (payable) to mark as paid later.
 - New server endpoint `POST /api/scan-invoice` (signed-in users, per-user hourly limit).

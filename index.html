@@ -6354,6 +6354,9 @@
           <option value="Hotel">Hotel / Restaurant</option>
           <option value="Hardware">Hardware Store</option>
           <option value="Kiosk">Kiosk / Kibanda</option>
+          <option value="Agrovet">Agrovet</option>
+          <option value="Boutique">Boutique / Fashion</option>
+          <option value="Wines &amp; Spirits">Wines &amp; Spirits</option>
         </select>
         <div id="suBizTypeHint" style="font-size:12px; color:#2563eb; background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.2); border-radius:10px; padding:8px 12px; margin-top:-4px; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
           <i class="fa-solid fa-sparkles"></i> <span id="suBizTypeHintText">Includes barcode lookup, apparel variants, and modern retail receipts.</span>
@@ -8291,6 +8294,9 @@
         <option value="Hotel">Hotel / Restaurant</option>
         <option value="Hardware">Hardware Store</option>
         <option value="Kiosk">Kiosk / Kibanda</option>
+        <option value="Agrovet">Agrovet</option>
+        <option value="Boutique">Boutique / Fashion</option>
+        <option value="Wines &amp; Spirits">Wines &amp; Spirits</option>
       </select>
       <div id="setBizTypeHint" style="font-size:12px; color:#2563eb; background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.2); border-radius:10px; padding:8px 12px; margin-top:6px; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
         <i class="fa-solid fa-sparkles"></i> <span id="setBizTypeHintText">Select an industry to configure tailored pages, navigation, and catalog.</span>
@@ -8939,6 +8945,64 @@ const INDUSTRY_CONFIG = {
       { id: 'rt-8', code: 'CABLE-USBC-65W', name: 'Braided USB-C to USB-C Fast Charger Cable (1.5m)', category: 'ELECTRONICS', price: 400.00, vat: 0.16, stock: 35, reorder: 8, unit: 'piece', image: null }
     ]
   },
+  // Agrovet / Boutique / Wines & Spirits: no sample products on purpose (the demo widget falls back to its generic items).
+  'Agrovet': {
+    badge: 'AGROVET',
+    badgeIcon: 'fa-seedling',
+    posTitle: 'Agrovet Counter',
+    posSub: 'Feeds, veterinary products, crop protection, seeds, and fertilizers.',
+    defaultTab: 'sell',
+    searchPlaceholder: 'Search feeds, drugs, seeds, or SKU...',
+    catalogTitle: 'Agrovet Stock',
+    catalogSub: 'Animal feeds, vet products, crop protection, seeds, fertilizers, and farm equipment.',
+    customersTitle: 'Farmers',
+    hintText: 'Built for animal feeds, veterinary products, crop protection, seeds, fertilizers, and farm equipment.',
+    navLinks: [
+      { tab: 'sell', icon: 'fa-solid fa-cash-register', label: 'Counter' },
+      { tab: 'dash', icon: 'fa-solid fa-chart-pie', label: 'Dashboard' },
+      { tab: 'catalog', icon: 'fa-solid fa-seedling', label: 'Agrovet Stock' },
+      { tab: 'customers', icon: 'fa-solid fa-users', label: 'Farmers' },
+      { tab: 'reports', icon: 'fa-solid fa-chart-simple', label: 'Reports' }
+    ]
+  },
+  'Boutique': {
+    badge: 'BOUTIQUE / FASHION',
+    badgeIcon: 'fa-shirt',
+    posTitle: 'Boutique Checkout',
+    posSub: 'Women’s and men’s apparel, footwear, accessories, and fragrances.',
+    defaultTab: 'sell',
+    searchPlaceholder: 'Search clothes, shoes, accessories, or SKU...',
+    catalogTitle: 'Boutique Stock',
+    catalogSub: 'Apparel, footwear, accessories, bags, and fragrances by size and colour.',
+    customersTitle: 'Shoppers & Loyalty',
+    hintText: 'Built for apparel, footwear, accessories, bags, and fragrances.',
+    navLinks: [
+      { tab: 'sell', icon: 'fa-solid fa-cash-register', label: 'Checkout' },
+      { tab: 'dash', icon: 'fa-solid fa-chart-pie', label: 'Dashboard' },
+      { tab: 'catalog', icon: 'fa-solid fa-shirt', label: 'Products' },
+      { tab: 'customers', icon: 'fa-solid fa-users', label: 'Customers' },
+      { tab: 'reports', icon: 'fa-solid fa-chart-simple', label: 'Reports' }
+    ]
+  },
+  'Wines & Spirits': {
+    badge: 'WINES & SPIRITS',
+    badgeIcon: 'fa-wine-bottle',
+    posTitle: 'Wines & Spirits Till',
+    posSub: 'Whisky, vodka, gin, wines, beers, ciders, and mixers.',
+    defaultTab: 'sell',
+    searchPlaceholder: 'Search brand, drink, or SKU...',
+    catalogTitle: 'Wines & Spirits Stock',
+    catalogSub: 'Spirits, wines, beers, ciders, liqueurs, and mixers by volume.',
+    customersTitle: 'Regular Customers',
+    hintText: 'Built for whisky, vodka, gin, rum, brandy, wines, beers, ciders, and mixers sold by volume.',
+    navLinks: [
+      { tab: 'sell', icon: 'fa-solid fa-cash-register', label: 'Till' },
+      { tab: 'dash', icon: 'fa-solid fa-chart-pie', label: 'Dashboard' },
+      { tab: 'catalog', icon: 'fa-solid fa-wine-bottle', label: 'Stock' },
+      { tab: 'customers', icon: 'fa-solid fa-users', label: 'Customers' },
+      { tab: 'reports', icon: 'fa-solid fa-chart-simple', label: 'Reports' }
+    ]
+  },
   'SME': {
     badge: 'SME & SERVICES',
     badgeIcon: 'fa-briefcase',
@@ -8971,6 +9035,9 @@ const INDUSTRY_CONFIG = {
 function normalizeBizType(raw) {
   if (!raw) return 'Retail';
   const s = raw.toLowerCase().trim();
+  if (s.includes('agro')) return 'Agrovet';
+  if (s.includes('boutique') || s.includes('fashion')) return 'Boutique';
+  if (s.includes('wine') || s.includes('spirit') || s.includes('liquor')) return 'Wines & Spirits';
   if (s.includes('hotel') || s.includes('restaurant')) return 'Hotel';
   if (s.includes('supermarket')) return 'Supermarket';
   if (s.includes('wholesale')) return 'Wholesale';
