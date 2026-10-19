@@ -171,20 +171,9 @@
     <div id="viewLedger" style="display:none;">
       <div style="margin-bottom:16px;">
         <h1 style="font-size:24px;font-weight:800;margin:0 0 4px;color:var(--dogo-ink);">Inventory Ledger</h1>
-        <p style="font-size:14px;color:var(--dogo-text-muted);margin:0;">Audit trail of all stock inward and sales movements</p>
+        <p style="font-size:14px;color:var(--dogo-text-muted);margin:0;">Every stock change: purchases, sales, counts and edits, with the balance after each</p>
       </div>
-      <section class="dogo-card" style="padding:20px;">
-        <div class="dogo-table-wrap">
-          <table class="dogo-table">
-            <thead>
-              <tr><th>Date</th><th>Type</th><th>Product</th><th>Quantity Change</th><th>Balance</th></tr>
-            </thead>
-            <tbody id="ledgerRows">
-              <tr><td colspan="5" style="text-align:center;padding:36px;color:var(--dogo-text-muted);">No ledger entries recorded</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <div id="kardexMount"></div>
     </div>
 
     <!-- TAB 3: COGS Analytics -->
@@ -213,6 +202,7 @@
   <script src="assets/js/dogo-data.js"></script>
   <script src="assets/js/subscription-guard.js"></script>
   <script src="assets/js/app-shell.js"></script>
+  <script src="assets/js/inventory-extras.js"></script>
   <script>
   (async function () {
     const { sb, boot, toast, esc } = window.DogoData;
@@ -223,6 +213,7 @@
     const $ = id => document.getElementById(id);
 
     let products = [];
+    if (window.DogoInvExtras) window.DogoInvExtras.init({ sb, ctx, esc, ksh, toast, getProducts: () => products });
 
     // Tab Navigation
     $('tabBtnBalance').onclick = () => switchTab('balance');
@@ -237,7 +228,13 @@
       $('viewBalance').style.display = t === 'balance' ? 'block' : 'none';
       $('viewLedger').style.display = t === 'ledger' ? 'block' : 'none';
       $('viewCogs').style.display = t === 'cogs' ? 'block' : 'none';
+
+      // tabs added by assets/js/inventory-extras.js (stock counts, lots & expiry, cost history)
+      document.querySelectorAll('[data-inv-view]').forEach(el => { el.style.display = el.getAttribute('data-inv-view') === t ? 'block' : 'none'; });
+      document.querySelectorAll('[data-inv-tab]').forEach(b => b.classList.toggle('is-active', b.getAttribute('data-inv-tab') === t));
+      if (window.DogoInvExtras) window.DogoInvExtras.onTab(t);
     }
+    window.__invSwitchTab = switchTab;
 
     async function load() {
       const { data } = await sb.from('products').select('*').order('name');

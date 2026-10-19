@@ -48,6 +48,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
         <span>Goods Receipts</span>
       </button>
+      <button class="dogo-subnav-btn" id="tabBtnSuppliers" data-tab="suppliers">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Suppliers</span>
+      </button>
       <button class="dogo-subnav-btn" id="tabBtnPayments" data-tab="payments">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="14" x2="10" y2="14"/></svg>
         <span>Payment Methods</span>
@@ -189,6 +193,15 @@
     </div>
 
     <!-- TAB 3: PAYMENT METHODS -->
+    <!-- TAB: SUPPLIERS (what you owe, payments made) -->
+    <div id="viewSuppliers" style="display:none;">
+      <div style="margin-bottom:16px;">
+        <h1 style="font-size:24px;font-weight:800;margin:0 0 4px;color:var(--dogo-ink);">Suppliers</h1>
+        <p style="font-size:14px;color:var(--dogo-text-muted);margin:0;">What you owe each supplier, and the payments you have made</p>
+      </div>
+      <div id="supplierBoard"></div>
+    </div>
+
     <div id="viewPayments" style="display:none;">
       <div style="margin-bottom:16px;">
         <h1 style="font-size:24px;font-weight:800;margin:0 0 4px;color:var(--dogo-ink);">Payment Methods</h1>
@@ -363,6 +376,12 @@
           <button style="width:40px;height:40px;background:#d97706;color:#fff;border:none;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;flex:none;" id="btnAddLineItem" title="Add line item">+</button>
         </div>
 
+        <div id="lineLotRow" style="display:none;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+          <input class="dogo-input" id="lineLot" placeholder="Lot / batch no. (optional)">
+          <input class="dogo-input" id="lineExpiry" type="date" title="Expiry date">
+        </div>
+        <textarea class="dogo-input" id="lineSerials" rows="2" placeholder="Serial numbers, one per line (must match the quantity)" style="display:none;margin-top:6px;"></textarea>
+
         <!-- Added Lines Container -->
         <div id="addedLinesList" style="margin-top:10px;">
           <!-- Product lines rendered here -->
@@ -375,6 +394,10 @@
         </div>
         <div class="dogo-field">
           <input class="dogo-input" id="poNotes" placeholder="Optional notes">
+        </div>
+        <div class="dogo-form-row dogo-form-row--2" id="poPayRow" style="gap:8px;margin-top:8px;display:none;">
+          <select class="dogo-select" id="poPayMode"><option value="now">Paid now</option><option value="credit">On credit (pay later)</option></select>
+          <input class="dogo-input" id="poDueDate" type="date" title="Due date (if on credit)">
         </div>
       </div>
 
@@ -429,6 +452,22 @@
     </div>
   </div>
 
+  <div class="dogo-modal" id="payModal">
+    <div class="dogo-modal__box" style="max-width:420px;">
+      <h2 style="margin:0 0 4px;" id="payTitle">Record payment</h2>
+      <p style="margin:0 0 14px;font-size:13px;color:var(--dogo-text-muted);" id="paySub"></p>
+      <div class="dogo-field" style="margin-bottom:10px;"><input class="dogo-input" id="payAmount" type="number" min="0" step="0.01" placeholder="Amount"></div>
+      <div class="dogo-field" style="margin-bottom:10px;">
+        <select class="dogo-select" id="payMethod"><option>Cash</option><option>M-Pesa</option><option>Bank transfer</option><option>Cheque</option><option>Other</option></select>
+      </div>
+      <div class="dogo-field" style="margin-bottom:14px;"><input class="dogo-input" id="payRef" placeholder="Reference, e.g. M-Pesa code (optional)"></div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button class="dogo-btn dogo-btn--outline" id="payCancel">Cancel</button>
+        <button class="dogo-btn dogo-btn--primary" id="payConfirm">Record payment</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/dogo-data.js"></script>
   <script src="assets/js/subscription-guard.js"></script>
@@ -466,10 +505,13 @@
     let goodsReceipts = [];
     let selectedSupplier = null;
     let currentPoItems = [];
+    let dbMode = false;     // true once the 20261018 migration is in place: suppliers/POs/payments live in Supabase
+    let payments = [];      // supplier payments (server mode)
 
     // Local Storage keys
     const PO_KEY = 'dogo_pos_' + (businessId || 'def');
     const SUP_KEY = 'dogo_sups_' + (businessId || 'def');
+    const IMPORT_KEY = 'dogo_po_imported_' + (businessId || 'def');
 
     function loadPersisted() {
       try {
@@ -483,6 +525,7 @@
     }
 
     function savePersisted() {
+      if (dbMode) return;   // server mode: the database is the source of truth
       try {
         localStorage.setItem(PO_KEY, JSON.stringify(purchaseOrders));
         localStorage.setItem(SUP_KEY, JSON.stringify(suppliers));
@@ -495,15 +538,19 @@
       $('tabBtnOrders').classList.toggle('is-active', tab === 'orders');
       $('tabBtnReceipts').classList.toggle('is-active', tab === 'receipts');
       $('tabBtnPayments').classList.toggle('is-active', tab === 'payments');
+      $('tabBtnSuppliers').classList.toggle('is-active', tab === 'suppliers');
 
       $('viewOrders').style.display = tab === 'orders' ? 'block' : 'none';
       $('viewReceipts').style.display = tab === 'receipts' ? 'block' : 'none';
       $('viewPayments').style.display = tab === 'payments' ? 'block' : 'none';
+      $('viewSuppliers').style.display = tab === 'suppliers' ? 'block' : 'none';
+      if (tab === 'suppliers') renderSuppliersTab();
     }
 
     $('tabBtnOrders').onclick = () => setTab('orders');
     $('tabBtnReceipts').onclick = () => setTab('receipts');
     $('tabBtnPayments').onclick = () => setTab('payments');
+    $('tabBtnSuppliers').onclick = () => setTab('suppliers');
 
     // Load data from Supabase
     async function initData() {
@@ -512,6 +559,10 @@
       hasCostCol = !!(prods && prods.length && Object.prototype.hasOwnProperty.call(prods[0], 'cost'));
       products = (prods || []).filter(x => !x.archived);
       populateProductSelect();
+
+      // Server mode (suppliers, purchase orders and payments in Supabase). Falls back to this device's copy
+      // below when the database update has not been run yet.
+      if (await loadDb()) { renderAll(); return; }
 
       // Check expenses for any existing Stock Purchases
       const { data: exp } = await sb.from('expenses').select('*').eq('category', 'Stock Purchases').order('created_at', { ascending: false });
@@ -549,6 +600,182 @@
       renderReceiptsTable();
     }
 
+    // ---------- Server mode: suppliers, purchase orders, supplier payments ----------
+    const isMissingTable = e => !!e && (e.code === '42P01' || e.code === 'PGRST205' || e.code === 'PGRST202' || /does not exist|schema cache|Could not find/i.test(e.message || ''));
+
+    function mapPo(r) {
+      const items = r.items || [];
+      return { id: r.id, ref_no: r.ref_no, supplier: r.supplier_name, supplier_id: r.supplier_id, supplier_phone: r.supplier_phone, status: r.status || 'Received',
+        total_amount: Number(r.total_amount || 0), paid_amount: Number(r.paid_amount || 0), payment_status: r.payment_status, due_date: r.due_date || '',
+        date: r.po_date || (r.created_at || '').slice(0, 10), items, notes: r.notes, invoice_no: r.invoice_no || '', source: r.source, vat: Number(r.vat || 0),
+        total_units: items.reduce((a, i) => a + Number(i.qty || 0), 0) };
+    }
+    function buildReceipts() {
+      goodsReceipts = purchaseOrders.map((p, idx) => ({ id: 'gr-' + p.id, receipt_no: 'GR-' + (p.ref_no || String(idx + 1).padStart(4, '0')), po_id: p.id,
+        supplier: p.supplier, status: p.status || 'Received', total_amount: p.total_amount, date: p.date, items: p.items }));
+    }
+    function renderAll() { renderPoTable(); renderReceiptsTable(); renderSuppliersTab(); }
+
+    async function loadDb() {
+      const s = await sb.from('suppliers').select('*').order('name');
+      if (s.error) {
+        dbMode = false;
+        if (!isMissingTable(s.error)) toast('Could not reach the server; showing this device\'s copy of suppliers and purchase orders');
+        return false;
+      }
+      dbMode = true;
+      suppliers = s.data || [];
+      $('poPayRow').style.display = '';
+      await importLocalOnce();
+      const po = await sb.from('purchase_orders').select('*').order('created_at', { ascending: false }).limit(1000);
+      purchaseOrders = (po.data || []).map(mapPo);
+      const pay = await sb.from('supplier_payments').select('*').order('paid_at', { ascending: false }).limit(1000);
+      payments = pay.data || [];
+      buildReceipts();
+      $('btnMarkPaid').textContent = 'Record payment';
+      return true;
+    }
+
+    // One-time move of this device's suppliers and purchase orders (kept in the browser until now) to the server.
+    async function importLocalOnce() {
+      if (localStorage.getItem(IMPORT_KEY)) return;
+      let lp = [], ls = [];
+      try { lp = JSON.parse(localStorage.getItem(PO_KEY) || '[]') || []; } catch (e) {}
+      try { ls = JSON.parse(localStorage.getItem(SUP_KEY) || '[]') || []; } catch (e) {}
+      if (!lp.length && !ls.length) { localStorage.setItem(IMPORT_KEY, '1'); return; }
+      const sample = new Set(['sup-1', 'sup-2', 'sup-3', 'sup-4']);   // the demo suppliers the page used to ship with
+      const key = x => String(x || '').trim().toLowerCase();
+      const used = new Set(lp.map(p => key(p.supplier)));
+      const have = new Set(suppliers.map(x => key(x.name)));
+      const wanted = {};
+      ls.forEach(x => { const k = key(x.name); if (k && (!sample.has(x.id) || used.has(k))) wanted[k] = x; });
+      lp.forEach(p => { const k = key(p.supplier); if (k && !wanted[k]) wanted[k] = { name: p.supplier, phone: p.supplier_phone || '' }; });
+      const newSups = Object.keys(wanted).filter(k => !have.has(k)).map(k => ({ business_id: businessId, name: String(wanted[k].name).trim(), phone: wanted[k].phone || null, email: wanted[k].email || null, pin: wanted[k].pin || null }));
+      if (newSups.length) {
+        const r = await sb.from('suppliers').insert(newSups);
+        if (r.error) { toast('Could not move this device\'s suppliers to the server: ' + r.error.message); return; }
+      }
+      const sr = await sb.from('suppliers').select('*').order('name');
+      if (sr.data) suppliers = sr.data;
+      const byName = {}; suppliers.forEach(x => { byName[key(x.name)] = x; });
+      const ex = await sb.from('purchase_orders').select('ref_no').limit(5000);
+      const seen = new Set((ex.data || []).map(r => r.ref_no));
+      const today = new Date().toISOString().slice(0, 10);
+      const rows = [];
+      lp.forEach(p => {
+        if (!p.ref_no || seen.has(p.ref_no)) return;
+        seen.add(p.ref_no);
+        const total = Number(p.total_amount || 0), unpaid = p.payment_status === 'Unpaid', sp = byName[key(p.supplier)];
+        rows.push({ business_id: businessId, ref_no: p.ref_no, supplier_id: sp ? sp.id : null, supplier_name: p.supplier || 'Supplier', supplier_phone: p.supplier_phone || null,
+          invoice_no: p.invoice_no || null, status: 'Received', payment_status: unpaid ? 'Unpaid' : 'Paid', total_amount: total, paid_amount: unpaid ? 0 : total,
+          vat: Number(p.vat || 0), due_date: p.due_date || null, po_date: p.date || today, items: p.items || [], notes: p.notes || null, source: p.source || 'local-import',
+          created_by: profile ? profile.id : null });
+      });
+      if (rows.length) {
+        const r = await sb.from('purchase_orders').insert(rows);
+        if (r.error) { toast('Could not move this device\'s purchase orders to the server: ' + r.error.message); return; }
+      }
+      localStorage.setItem(IMPORT_KEY, '1');
+    }
+
+    // Lines go to the server in the product's base unit (bulk packs -> portions), same rule as restockItems.
+    function toReceiveLine(i) {
+      const prod = products.find(x => x.id === i.productId);
+      const per = prod && Number(prod.portion_size) > 0 && Number(prod.bulk_size) > 0 ? Math.floor(Number(prod.bulk_size) / Number(prod.portion_size) + 1e-9) : 1;
+      return { product_id: i.productId, qty: Number(i.qty) * per, unit_cost: Number(i.unitCost || 0) / per, lot_no: i.lot || '', expiry: i.expiry || '', serials: i.serials || [] };
+    }
+
+    // Creates the purchase order, receives the stock in one atomic call, and (if paid now) records the payment.
+    async function dbCreatePurchase(o) {
+      const nm = String(o.supplier.name || '').trim();
+      let sup = suppliers.find(x => x.id === o.supplier.id) || suppliers.find(x => String(x.name || '').toLowerCase() === nm.toLowerCase());
+      if (!sup) {
+        const r = await sb.from('suppliers').insert({ business_id: businessId, name: nm, phone: o.supplier.phone || null, email: o.supplier.email || null, pin: o.supplier.pin || null }).select().single();
+        if (r.error) throw r.error;
+        sup = r.data; suppliers.unshift(sup);
+      }
+      const total = o.total !== undefined ? Number(o.total) : o.items.reduce((a, i) => a + Number(i.total || 0), 0);
+      const today = new Date().toISOString().slice(0, 10);
+      const items = o.items.map(i => ({ productId: i.productId || null, name: i.name, qty: i.qty, unitCost: i.unitCost, total: i.total, lot: i.lot || '', expiry: i.expiry || '', serials: i.serials || [] }));
+      let po = null;
+      for (let attempt = 0; attempt < 5 && !po; attempt++) {
+        const refNo = 'PO-' + String(purchaseOrders.length + 1 + attempt).padStart(4, '0');
+        const r = await sb.from('purchase_orders').insert({ business_id: businessId, ref_no: refNo, supplier_id: sup.id, supplier_name: sup.name, supplier_phone: sup.phone || null,
+          invoice_no: o.invoiceNo || null, status: 'Received', payment_status: 'Unpaid', total_amount: total, paid_amount: 0, vat: o.vat || 0, due_date: o.dueDate || null,
+          po_date: o.date || today, items, notes: o.notes || null, source: o.source || 'manual', created_by: profile ? profile.id : null }).select().single();
+        if (!r.error) po = r.data; else if (r.error.code !== '23505') throw r.error;
+      }
+      if (!po) throw new Error('Could not allocate a purchase order number, please try again');
+      const lines = o.items.filter(i => i.productId).map(toReceiveLine);
+      if (lines.length) {
+        const rr = await sb.rpc('receive_stock', { p_business_id: businessId, p_items: lines, p_po_id: po.id });
+        if (rr.error) { await sb.from('purchase_orders').delete().eq('id', po.id); throw rr.error; }
+      }
+      let payErr = null;
+      if (o.payNow && total > 0) {
+        const pr = await sb.rpc('record_supplier_payment', { p_po_id: po.id, p_amount: total, p_method: o.payMethod || 'Cash', p_reference: o.invoiceNo || null, p_created_by: profile ? profile.id : null });
+        if (pr.error) payErr = pr.error;
+      }
+      return { po, payErr };
+    }
+
+    function openPay(poId) {
+      const po = purchaseOrders.find(x => x.id === poId); if (!po) return;
+      const bal = Math.max(0, Number(po.total_amount || 0) - Number(po.paid_amount || 0));
+      if (bal <= 0) return toast('Nothing is owed on this invoice');
+      window.__payPoId = poId;
+      $('payTitle').textContent = 'Pay ' + po.supplier;
+      $('paySub').textContent = po.ref_no + (po.invoice_no ? ' · invoice ' + po.invoice_no : '') + ' · balance ' + ksh(bal);
+      $('payAmount').value = bal.toFixed(2); $('payRef').value = '';
+      $('voucherModal').classList.remove('open'); $('payModal').classList.add('open');
+    }
+    $('payCancel').onclick = () => $('payModal').classList.remove('open');
+    $('payConfirm').onclick = async () => {
+      const id = window.__payPoId, amt = parseFloat($('payAmount').value);
+      if (!id || !(amt > 0)) return toast('Enter an amount above zero');
+      $('payConfirm').disabled = true;
+      try {
+        const r = await sb.rpc('record_supplier_payment', { p_po_id: id, p_amount: amt, p_method: $('payMethod').value, p_reference: $('payRef').value.trim() || null, p_created_by: profile ? profile.id : null });
+        if (r.error) throw r.error;
+        $('payModal').classList.remove('open');
+        await loadDb(); renderAll();
+        toast('Payment of ' + ksh(amt) + ' recorded');
+      } catch (e) { toast('Could not record the payment: ' + (e.message || e)); }
+      finally { $('payConfirm').disabled = false; }
+    };
+
+    function renderSuppliersTab() {
+      const box = $('supplierBoard'); if (!box) return;
+      if (!dbMode) { box.innerHTML = '<div class="dogo-card" style="padding:22px;color:var(--dogo-text-muted);">Supplier balances and payments need the database update 20261018_purchasing_inventory_control.sql. Ask your admin to run it in Supabase, then reload.</div>'; return; }
+      const by = {};
+      purchaseOrders.forEach(p => { const g = by[p.supplier] = by[p.supplier] || { name: p.supplier, pos: [], billed: 0, paid: 0 }; g.pos.push(p); g.billed += p.total_amount; g.paid += p.paid_amount; });
+      const groups = Object.keys(by).map(k => by[k]).sort((a, b) => (b.billed - b.paid) - (a.billed - a.paid));
+      const owedAll = groups.reduce((a, g) => a + (g.billed - g.paid), 0), today = new Date().toISOString().slice(0, 10);
+      if (!groups.length) { box.innerHTML = '<div class="dogo-card" style="padding:22px;color:var(--dogo-text-muted);">No purchases yet. Create a purchase order or scan a supplier invoice.</div>'; return; }
+      box.innerHTML = '<div class="dogo-card" style="padding:14px 18px;margin-bottom:14px;"><span style="color:var(--dogo-text-muted);font-size:13px;">Total owed to suppliers</span><div style="font-size:24px;font-weight:800;color:' + (owedAll > 0 ? '#b45309' : '#047857') + ';">' + ksh(owedAll) + '</div></div>' +
+        groups.map(g => {
+          const owed = g.billed - g.paid, open = g.pos.filter(p => p.total_amount - p.paid_amount > 0.005).sort((a, b) => String(a.due_date || a.date).localeCompare(String(b.due_date || b.date)));
+          const hist = payments.filter(x => x.supplier_name === g.name).slice(0, 5);
+          return '<section class="dogo-card" style="padding:16px 20px;margin-bottom:14px;"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline;"><h2 style="font-size:17px;margin:0;">' + esc(g.name) + '</h2>' +
+            '<div style="font-weight:800;color:' + (owed > 0.005 ? '#b45309' : '#047857') + ';">' + (owed > 0.005 ? 'Owed ' + ksh(owed) : 'Settled') + '</div></div>' +
+            '<div style="font-size:12.5px;color:var(--dogo-text-muted);margin:2px 0 8px;">Billed ' + ksh(g.billed) + ' · paid ' + ksh(g.paid) + ' · ' + g.pos.length + ' invoice' + (g.pos.length === 1 ? '' : 's') + '</div>' +
+            (open.length ? '<div class="dogo-table-wrap"><table class="dogo-table"><thead><tr><th>PO</th><th>Due</th><th style="text-align:right;">Total</th><th style="text-align:right;">Balance</th><th></th></tr></thead><tbody>' + open.map(p => {
+              const late = p.due_date && p.due_date < today;
+              return '<tr><td><strong>' + esc(p.ref_no) + '</strong>' + (p.invoice_no ? '<div style="font-size:11.5px;color:var(--dogo-text-muted);">inv ' + esc(p.invoice_no) + '</div>' : '') + '</td><td>' + (p.due_date ? esc(p.due_date) + (late ? ' <span style="color:#b91c1c;font-weight:700;">overdue</span>' : '') : '—') + '</td><td style="text-align:right;">' + ksh(p.total_amount) + '</td><td style="text-align:right;font-weight:700;">' + ksh(p.total_amount - p.paid_amount) + '</td><td><button class="dogo-btn dogo-btn--primary dogo-btn--sm" data-pay="' + esc(p.id) + '">Pay</button></td></tr>';
+            }).join('') + '</tbody></table></div>' : '') +
+            (hist.length ? '<div style="font-size:12.5px;color:var(--dogo-text-muted);margin-top:8px;">Recent payments: ' + hist.map(x => ksh(x.amount) + ' ' + esc(x.method) + ' on ' + esc(String(x.paid_at).slice(0, 10)) + (x.reference ? ' (' + esc(x.reference) + ')' : '')).join(' · ') + '</div>' : '') + '</section>';
+        }).join('');
+    }
+    $('supplierBoard').onclick = (e) => { const id = e.target.dataset && e.target.dataset.pay; if (id) openPay(id); };
+
+    // lot / serial inputs appear only for products that track them (switch on in Inventory > Lots & Expiry)
+    function updateLineExtras() {
+      const prod = products.find(x => x.id === $('lineSelectProduct').value);
+      $('lineLotRow').style.display = dbMode && prod && prod.track_lots ? 'grid' : 'none';
+      $('lineSerials').style.display = dbMode && prod && prod.track_serials ? 'block' : 'none';
+    }
+    $('lineSelectProduct').addEventListener('change', updateLineExtras);
+
     function populateProductSelect() {
       const sel = $('lineSelectProduct');
       sel.innerHTML = '<option value="">Search products...</option>' +
@@ -572,7 +799,7 @@
         <tr>
           <td><strong>${esc(p.ref_no || '—')}</strong></td>
           <td>${esc(p.supplier || '—')}</td>
-          <td>${p.payment_status === 'Unpaid' ? `<span class="dogo-badge" style="background:#fef3c7;color:#92400e;">Unpaid${p.due_date ? ' &middot; due ' + esc(p.due_date) : ''}</span>` : `<span class="dogo-badge dogo-badge--ok">${esc(p.status || 'Received')}</span>`}</td>
+          <td>${p.payment_status === 'Part-paid' ? `<span class="dogo-badge" style="background:#fef3c7;color:#92400e;">Part-paid &middot; owed ${ksh(Number(p.total_amount || 0) - Number(p.paid_amount || 0))}</span>` : p.payment_status === 'Unpaid' ? `<span class="dogo-badge" style="background:#fef3c7;color:#92400e;">Unpaid${p.due_date ? ' &middot; due ' + esc(p.due_date) : ''}</span>` : `<span class="dogo-badge dogo-badge--ok">${esc(p.status || 'Received')}</span>`}</td>
           <td><strong>${ksh(p.total_amount)}</strong></td>
           <td>${esc(p.date || '—')}</td>
           <td>
@@ -631,6 +858,9 @@
       $('selectedSupplierText').textContent = 'Search and select a supplier';
       $('selectedSupplierText').style.color = 'var(--dogo-text-muted)';
       $('poNotes').value = '';
+      $('poPayMode').value = 'now'; $('poDueDate').value = '';
+      $('lineLot').value = ''; $('lineExpiry').value = ''; $('lineSerials').value = '';
+      updateLineExtras();
       $('boxNewSupplier').style.display = 'none';
       $('boxNewProduct').style.display = 'none';
       $('supplierDropdownMenu').style.display = 'none';
@@ -705,14 +935,22 @@
     $('btnCloseNewSupplier').onclick = () => { $('boxNewSupplier').style.display = 'none'; };
     $('btnCancelNewSupplier').onclick = () => { $('boxNewSupplier').style.display = 'none'; };
 
-    $('btnAddSupplierSubmit').onclick = () => {
+    $('btnAddSupplierSubmit').onclick = async () => {
       const name = $('newSupName').value.trim();
       const phone = $('newSupPhone').value.trim();
       const email = $('newSupEmail').value.trim();
       if (!name) return toast('Please enter a supplier name');
 
-      const newSup = { id: 'sup-' + Date.now(), name, phone, email };
-      suppliers.unshift(newSup);
+      let newSup = { id: 'sup-' + Date.now(), name, phone, email };
+      if (dbMode) {
+        const dup = suppliers.find(x => String(x.name || '').toLowerCase() === name.toLowerCase());
+        if (dup) newSup = dup;
+        else {
+          const ins = await sb.from('suppliers').insert({ business_id: businessId, name, phone: phone || null, email: email || null }).select().single();
+          if (ins.error) return toast('Could not add the supplier: ' + ins.error.message);
+          newSup = ins.data; suppliers.unshift(newSup);
+        }
+      } else suppliers.unshift(newSup);
       savePersisted();
       selectedSupplier = newSup;
       $('selectedSupplierText').textContent = newSup.name;
@@ -784,15 +1022,24 @@
       if (unitCost < 0) return toast('Unit cost cannot be negative');
 
       const prod = products.find(p => p.id === prodId);
+      const serials = dbMode && prod && prod.track_serials ? $('lineSerials').value.split(/[\n,]+/).map(x => x.trim()).filter(Boolean) : [];
+      if (serials.length && serials.length !== qty) return toast('Enter exactly ' + qty + ' serial number' + (qty === 1 ? '' : 's') + ' (you entered ' + serials.length + ')');
+      if (new Set(serials).size !== serials.length) return toast('Each serial number must be different');
+      const tracksLots = dbMode && prod && prod.track_lots;
       currentPoItems.push({
         productId: prodId,
         name: prod ? prod.name + (Number(prod.portion_size) > 0 ? ' (bulk packs)' : '') : 'Product',
         qty,
         unitCost,
-        total: qty * unitCost
+        total: qty * unitCost,
+        lot: tracksLots ? $('lineLot').value.trim() : '',
+        expiry: tracksLots ? $('lineExpiry').value : '',
+        serials
       });
 
+      $('lineLot').value = ''; $('lineExpiry').value = ''; $('lineSerials').value = '';
       $('lineSelectProduct').value = '';
+      updateLineExtras();
       $('lineQty').value = '1';
       $('lineUnitCost').value = '';
       renderAddedLines();
@@ -808,7 +1055,7 @@
 
       container.innerHTML = currentPoItems.map((item, idx) => `
         <div class="po-line-item-row">
-          <div><strong>${esc(item.name)}</strong></div>
+          <div><strong>${esc(item.name)}</strong>${item.lot || item.expiry ? `<div style="font-size:11.5px;color:var(--dogo-text-muted);">${item.lot ? 'Lot ' + esc(item.lot) : ''}${item.expiry ? ' &middot; exp ' + esc(item.expiry) : ''}</div>` : ''}${item.serials && item.serials.length ? `<div style="font-size:11.5px;color:var(--dogo-text-muted);">${item.serials.length} serial no.</div>` : ''}</div>
           <div style="text-align:center;">x${item.qty}</div>
           <div>${ksh(item.unitCost)}</div>
           <div style="font-weight:700;text-align:right;">${ksh(item.total)}</div>
@@ -873,6 +1120,15 @@
       $('btnSubmitCreatePo').textContent = 'Creating PO...';
 
       try {
+        if (dbMode) {
+          const payNow = $('poPayMode').value !== 'credit';
+          const res = await dbCreatePurchase({ supplier: selectedSupplier, items: currentPoItems, invoiceNo: '', date: today, dueDate: $('poDueDate').value || null, vat: 0, notes, source: 'manual', payNow });
+          window.DogoData.notifyProductsChanged();
+          closeDrawer();
+          toast(`Purchase order ${res.po.ref_no} created and stock updated` + (res.payErr ? '. The payment could not be recorded: use Record payment.' : payNow ? '' : `. ${ksh(grandTotal)} owed to ${selectedSupplier.name}.`));
+          initData();
+          return;
+        }
         // 1. Restock products in Supabase
         await restockItems(currentPoItems);
         window.DogoData.notifyProductsChanged();
@@ -948,6 +1204,15 @@
         lines.push({ name: it.description, qty: it.qty, unitCost: it.unit_cost, total: it.total, productId: it.skip ? null : pid });
       }
       populateProductSelect();
+      if (dbMode) {
+        const res = await dbCreatePurchase({ supplier: { name: inv.supplier.name, phone: inv.supplier.phone || '', pin: inv.supplier.pin || '' }, items: lines, total: inv.total,
+          invoiceNo: inv.invoice_no || '', date: inv.date, dueDate: inv.due_date || null, vat: inv.vat || 0,
+          notes: 'Scanned invoice' + (inv.invoice_no ? ' ' + inv.invoice_no : ''), source: 'invoice-scan', payNow: !!inv.paid });
+        window.DogoData.notifyProductsChanged();
+        initData();
+        toast(res.payErr ? 'Stock updated, but the payment could not be saved. Use Record payment.' : inv.paid ? `Invoice saved: stock updated and ${ksh(inv.total)} paid` : `Stock updated. ${ksh(inv.total)} added to what you owe ${res.po.supplier_name}.`);
+        return;
+      }
       await restockItems(lines.filter(l => l.productId));
       window.DogoData.notifyProductsChanged();
 
@@ -987,17 +1252,17 @@
     };
 
     function renderPayables() {
-      const unpaid = purchaseOrders.filter(p => p.payment_status === 'Unpaid');
+      const unpaid = purchaseOrders.filter(p => p.payment_status === 'Unpaid' || p.payment_status === 'Part-paid');
       let box = $('payablesBanner');
       if (!box) return;
       if (!unpaid.length) { box.style.display = 'none'; return; }
-      const total = unpaid.reduce((a, p) => a + Number(p.total_amount || 0), 0);
+      const total = unpaid.reduce((a, p) => a + Number(p.total_amount || 0) - Number(p.paid_amount || 0), 0);
       const today = new Date().toISOString().slice(0, 10);
       const overdue = unpaid.filter(p => p.due_date && p.due_date < today).length;
       box.style.display = 'block';
       box.innerHTML = `<strong>Owed to suppliers: ${ksh(total)}</strong> across ${unpaid.length} unpaid invoice${unpaid.length > 1 ? 's' : ''}` +
         (overdue ? ` <span style="color:#b91c1c;font-weight:700;">&middot; ${overdue} overdue</span>` : '') +
-        '<div style="font-size:12.5px;margin-top:2px;">Open an invoice with View and choose Mark as paid once you have paid it.</div>';
+        '<div style="font-size:12.5px;margin-top:2px;">' + (dbMode ? 'Open the Suppliers tab to record payments, including part payments.' : 'Open an invoice with View and choose Mark as paid once you have paid it.') + '</div>';
     }
 
     async function markPaid(poId) {
@@ -1011,7 +1276,7 @@
       $('voucherModal').classList.remove('open');
       toast(`Marked as paid: ${ksh(po.total_amount)} recorded as an expense`);
     }
-    $('btnMarkPaid').onclick = () => { if (window.__voucherPoId) markPaid(window.__voucherPoId); };
+    $('btnMarkPaid').onclick = () => { if (!window.__voucherPoId) return; if (dbMode) openPay(window.__voucherPoId); else markPaid(window.__voucherPoId); };
 
     // --- View PO Voucher Details ---
     $('rowsPo').onclick = (e) => {
@@ -1036,8 +1301,9 @@
       $('vSupplier').textContent = rec.supplier;
       $('vDate').textContent = rec.date;
       $('vRef').textContent = rec.ref_no || rec.receipt_no;
-      const unpaid = rec.payment_status === 'Unpaid';
-      $('vPayment').textContent = unpaid ? 'UNPAID' + (rec.due_date ? ' - due ' + rec.due_date : '') : (rec.payment_status === 'Paid' ? 'Paid' : 'Completed (Inward)');
+      const unpaid = rec.payment_status === 'Unpaid' || rec.payment_status === 'Part-paid';
+      const owedNow = Number(rec.total_amount || 0) - Number(rec.paid_amount || 0);
+      $('vPayment').textContent = rec.payment_status === 'Part-paid' ? 'PART-PAID - owed ' + ksh(owedNow) + (rec.due_date ? ' - due ' + rec.due_date : '') : unpaid ? 'UNPAID' + (rec.due_date ? ' - due ' + rec.due_date : '') : (rec.payment_status === 'Paid' ? 'Paid' : 'Completed (Inward)');
       window.__voucherPoId = type === 'PO' && unpaid ? rec.id : null;
       $('btnMarkPaid').style.display = type === 'PO' && unpaid ? '' : 'none';
       $('vStatus').textContent = rec.status || 'Received';
@@ -1045,12 +1311,17 @@
 
       $('vItemsBody').innerHTML = (rec.items || []).map(i => `
         <tr>
-          <td><strong>${esc(i.name)}</strong></td>
+          <td><strong>${esc(i.name)}</strong>${i.lot || i.expiry ? `<div style="font-size:11.5px;color:var(--dogo-text-muted);">${i.lot ? 'Lot ' + esc(i.lot) : ''}${i.expiry ? ' &middot; exp ' + esc(i.expiry) : ''}</div>` : ''}${i.serials && i.serials.length ? `<div style="font-size:11.5px;color:var(--dogo-text-muted);">Serials: ${esc(i.serials.join(', '))}</div>` : ''}</td>
           <td style="text-align:right;">${i.qty}</td>
           <td style="text-align:right;">${ksh(i.unitCost || i.unit_cost || 0)}</td>
           <td style="text-align:right;"><strong>${ksh(i.total || (i.qty * (i.unitCost || i.unit_cost || 0)))}</strong></td>
         </tr>
       `).join('') || '<tr><td colspan="4" style="text-align:center;">No items recorded</td></tr>';
+      if (dbMode && type === 'PO') {
+        payments.filter(x => x.po_id === rec.id).forEach(x => {
+          $('vItemsBody').insertAdjacentHTML('beforeend', `<tr><td colspan="3" style="color:#047857;">Paid ${esc(String(x.paid_at).slice(0, 10))} &middot; ${esc(x.method)}${x.reference ? ' (' + esc(x.reference) + ')' : ''}</td><td style="text-align:right;color:#047857;">- ${ksh(x.amount)}</td></tr>`);
+        });
+      }
 
       $('voucherModal').classList.add('open');
     }
