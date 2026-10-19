@@ -10034,7 +10034,16 @@ function getCurrentBusinessPlan() {
   else if (/core/i.test(rawPlan)) planKey = 'Core';
   else planKey = 'Free';
 
-  const cfg = PLAN_FEATURES[planKey] || PLAN_FEATURES['Free'];
+  const baseCfg = PLAN_FEATURES[planKey] || PLAN_FEATURES['Free'];
+  // Per-business settings from the Admin Console: extra tellers/branches/products on top of the plan, and
+  // per-business on/off for plan features (only keys the platform admin set; the rest follow the plan).
+  const cfg = Object.assign({}, baseCfg);
+  const addOn = (v, extra) => (Number.isFinite(v) ? v + Math.max(0, Number(extra) || 0) : v);
+  cfg.maxUsers = addOn(cfg.maxUsers, business?.extra_tellers);
+  cfg.maxBranches = addOn(cfg.maxBranches, business?.extra_branches);
+  cfg.maxProducts = addOn(cfg.maxProducts, business?.extra_products);
+  const fo = business?.feature_overrides;
+  if (fo && typeof fo === 'object') Object.keys(fo).forEach(k => { if (typeof fo[k] === 'boolean') cfg[k] = fo[k]; });
   const status = business?.subscription_status || (planKey === 'Free' ? 'free' : 'active');
   const renewsAt = business?.subscription_renews_at ? new Date(business.subscription_renews_at) : null;
   return {
@@ -10070,10 +10079,12 @@ function selectPlanAndSignup(plan) {
 function checkProductLimitBeforeCreate() {
   const planInfo = getCurrentBusinessPlan();
   const currentCount = (CATALOG ? CATALOG.length : (products ? products.length : 0));
-  if (planInfo.plan === 'Free' && currentCount >= 5) {
+  // limit = the plan's catalog limit (plan_definitions) plus this business's extra_products; the database enforces it for real
+  const maxProductsAllowed = planInfo.features && planInfo.features.maxProducts;
+  if (planInfo.plan === 'Free' && Number.isFinite(maxProductsAllowed) && currentCount >= maxProductsAllowed) {
     showPlanUpgradePrompt(
       'Catalog Limit Reached (Free Plan)',
-      `The Free Starter plan includes up to 5 catalog products. You have ${currentCount} products. Upgrade to Core POS to add unlimited inventory, shifts, and M-Pesa STK push.`,
+      `Your Free Starter plan includes up to ${maxProductsAllowed} catalog products. You have ${currentCount} products. Upgrade to Core POS to add unlimited inventory, shifts, and M-Pesa STK push.`,
       'Core'
     );
     return false;

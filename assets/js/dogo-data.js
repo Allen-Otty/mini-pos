@@ -292,7 +292,17 @@
     if (/core/i.test(raw)) return 'Core';
     return 'Free';
   }
-  function planLimitsFor(business) { const key = planKeyFor(business); return Object.assign({ key }, PLAN_LIMITS[key]); }
+  // Plan limits plus the business's own add-ons (businesses.extra_tellers / extra_branches / extra_products, set by the
+  // platform admin in the Admin Console). Unlimited stays unlimited. maxUsers counts the owner, so extra tellers add directly.
+  function planLimitsFor(business) {
+    const key = planKeyFor(business), base = PLAN_LIMITS[key];
+    const add = (v, extra) => (Number.isFinite(v) ? v + Math.max(0, Number(extra) || 0) : v);
+    return Object.assign({ key }, base, {
+      maxUsers: add(base.maxUsers, business && business.extra_tellers),
+      maxBranches: add(base.maxBranches, business && business.extra_branches),
+      maxProducts: add(base.maxProducts, business && business.extra_products)
+    });
+  }
 
   // The Express payments API requires a signed-in session. Pages that call it add these headers.
   async function apiAuthHeaders(extra) {

@@ -1555,19 +1555,19 @@
   </div>
 </div>
 
-<!-- Manage Business Plan Modal -->
+<!-- Manage Business Plan Modal (plan + business controls) -->
 <div class="modal-overlay" id="planModal">
-  <div class="modal-box">
+  <div class="modal-box" style="max-height:90vh; overflow-y:auto;">
     <h3><i class="fa-solid fa-credit-card"></i> Manage Business Plan</h3>
-    <p class="card-sub" style="margin-bottom:16px;">Manually grant or modify a business's POS subscription plan</p>
-    
+    <p class="card-sub" style="margin-bottom:16px;">Manually grant or modify a business's POS subscription plan, limits and settings</p>
+
     <div class="form-group" style="margin-bottom:12px;">
       <label>Select Business</label>
-      <select id="planBizSelect" class="form-control"></select>
+      <select id="planBizSelect" class="form-control" onchange="loadBizControls(this.value)"></select>
     </div>
     <div class="form-group" style="margin-bottom:12px;">
       <label>Assign Plan</label>
-      <select id="planSelect" class="form-control">
+      <select id="planSelect" class="form-control" onchange="updateCtlHint()">
         <option value="Free">Free (Starter Store)</option>
         <option value="Core">Core POS (KES 999/mo)</option>
         <option value="Core Group">Core Group — up to 5 branches (KES 3,999/mo)</option>
@@ -1575,14 +1575,71 @@
         <option value="Control Group">Control Group — up to 5 branches (KES 7,999/mo)</option>
       </select>
     </div>
-    <div class="form-group" style="margin-bottom:16px;">
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Status</label>
+      <select id="planStatus" class="form-control">
+        <option value="active">Active (paid)</option>
+        <option value="trial">Trial</option>
+        <option value="free">Free</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
       <label>Days to Add</label>
       <input type="number" id="planDays" class="form-control" value="30">
     </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Or set an exact expiry date</label>
+      <input type="date" id="planExpiry" class="form-control">
+      <div class="card-sub" style="margin-top:4px; font-size:12px;">Only used if you change it. Otherwise the days above are counted from today.</div>
+    </div>
 
-    <div style="display:flex; justify-content:flex-end; gap:10px;">
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:6px;">
       <button class="btn-secondary" onclick="closePlanModal()">Cancel</button>
       <button class="btn-primary" onclick="confirmGrantPlan()"><i class="fa-solid fa-check"></i> Apply Plan</button>
+    </div>
+
+    <hr style="border:0; border-top:1px solid rgba(255,255,255,0.12); margin:18px 0;">
+    <h3 style="font-size:16px; margin-bottom:4px;"><i class="fa-solid fa-sliders"></i> Business controls</h3>
+    <p class="card-sub" style="margin-bottom:14px;">Saved separately from the plan above: these never change the plan or its expiry.</p>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Type of business</label>
+      <select id="ctlType" class="form-control">
+        <option value="Retail">Retail Shop &amp; Groceries</option>
+        <option value="Wholesale">Wholesale &amp; Distribution</option>
+        <option value="Supermarket">Supermarket &amp; Minimart</option>
+        <option value="SME">SME / General Merchandise</option>
+        <option value="Hotel">Hotel, Bar &amp; Restaurant</option>
+        <option value="Restaurant">Restaurant</option>
+        <option value="Hardware">Hardware Store &amp; Building Supplies</option>
+        <option value="Kiosk">Kiosk / Kibanda</option>
+        <option value="Pharmacy">Pharmacy</option>
+        <option value="Service">Service business</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Extras on top of the plan</label>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:8px;">
+        <div><div class="card-sub" style="font-size:12px; margin-bottom:3px;">Extra tellers</div><input type="number" min="0" id="ctlExtraTellers" class="form-control" value="0" oninput="updateCtlHint()"></div>
+        <div><div class="card-sub" style="font-size:12px; margin-bottom:3px;">Extra branches</div><input type="number" min="0" id="ctlExtraBranches" class="form-control" value="0" oninput="updateCtlHint()"></div>
+        <div><div class="card-sub" style="font-size:12px; margin-bottom:3px;">Extra products</div><input type="number" min="0" id="ctlExtraProducts" class="form-control" value="0" oninput="updateCtlHint()"></div>
+      </div>
+      <div class="card-sub" id="ctlLimitsHint" style="margin-top:6px; font-size:12.5px;"></div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Feature switches for this business</label>
+      <div id="ctlFlags"></div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Private notes (only you can see these)</label>
+      <textarea id="ctlNotes" class="form-control" rows="3" placeholder="e.g. Agreed +3 tills for the second counter, review in March"></textarea>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button class="btn-primary" onclick="saveBizControls()"><i class="fa-solid fa-floppy-disk"></i> Save Controls</button>
     </div>
   </div>
 </div>
@@ -2136,6 +2193,8 @@ function openGrantPlanModal(bizId) {
     if (sel) sel.value = bizId;
   }
   if (modal) modal.classList.add('show');
+  const sel2 = document.getElementById('planBizSelect');
+  if (sel2 && sel2.value) loadBizControls(sel2.value);
 }
 
 function closePlanModal() {
@@ -2147,14 +2206,20 @@ async function confirmGrantPlan() {
   const bizId = document.getElementById('planBizSelect')?.value;
   const plan = document.getElementById('planSelect')?.value || 'Core';
   const days = parseInt(document.getElementById('planDays')?.value || '30', 10);
+  const status = document.getElementById('planStatus')?.value || 'active';
+  const expiryVal = document.getElementById('planExpiry')?.value || '';
+  // an exact date is used only if it was changed from what the business already has
+  const useExact = !!expiryVal && (!ctlSnapshot || ctlSnapshot.bizId !== bizId || expiryVal !== ctlSnapshot.expiryDate);
+  const renewsAt = useExact ? new Date(expiryVal + 'T23:59:59+03:00') : new Date(Date.now() + days * 86400000);
 
   if (!bizId) { showToast('Select a business'); return; }
+  if (isNaN(renewsAt.getTime())) { showToast('That expiry date is not valid'); return; }
 
   const { error } = await sb.from('businesses').update({
     subscription_plan: plan,
-    subscription_status: 'active',
+    subscription_status: status,
     subscription_started_at: new Date().toISOString(),
-    subscription_renews_at: new Date(Date.now() + days * 86400000).toISOString()
+    subscription_renews_at: renewsAt.toISOString()
   }).eq('id', bizId);
   if (error) {
     const msg = error.message || '';
@@ -2171,8 +2236,126 @@ async function confirmGrantPlan() {
   closePlanModal();
   const matchedBiz = allBusinessesCache.find(b => b.id === bizId);
   const bizName = matchedBiz ? matchedBiz.name : bizId;
-  sendTelegramAlert(`📦 <b>Dogo POS Alert: Plan Assigned</b>\n\nStore: <b>${escapeHtml(bizName)}</b>\nPlan: <b>${plan}</b> (${days} days)`);
-  showToast(`Assigned ${plan} plan (${days} days) successfully!`);
+  const untilTxt = useExact ? `until ${expiryVal}` : `${days} days`;
+  sendTelegramAlert(`📦 <b>Dogo POS Alert: Plan Assigned</b>\n\nStore: <b>${escapeHtml(bizName)}</b>\nPlan: <b>${plan}</b> (${status}, ${untilTxt})`);
+  showToast(`Assigned ${plan} plan (${untilTxt}) successfully!`);
+  loadDashboard();
+}
+
+// ==========================================
+// BUSINESS CONTROLS (type, extra limits, feature switches, private notes)
+// Columns come from supabase/migrations/20261019_business_overrides.sql
+// ==========================================
+// The app only reads M-Pesa STK and KRA eTIMS from these switches today; the others are stored and ready.
+const CTL_ENFORCED_FLAGS = ['mpesaStk', 'etims'];
+let ctlSnapshot = null;
+
+function ctlNum(id) { return Math.max(0, parseInt(document.getElementById(id)?.value || '0', 10) || 0); }
+function ctlLimitText(v, one, many) { return (v === null || v === undefined || v >= 999999) ? 'unlimited ' + many : v + ' ' + (v === 1 ? one : many); }
+
+function updateCtlHint() {
+  const el = document.getElementById('ctlLimitsHint');
+  if (!el) return;
+  const planName = document.getElementById('planSelect')?.value;
+  const row = planCatalogCache.find(r => r.plan === planName);
+  if (!row) { el.textContent = 'Plan limits are not loaded yet. The extras are still saved.'; return; }
+  const eff = (base, extra) => (base === null || base === undefined ? null : base + extra);
+  const t = eff(row.max_tellers, ctlNum('ctlExtraTellers')), b = eff(row.max_branches, ctlNum('ctlExtraBranches')), p = eff(row.max_products, ctlNum('ctlExtraProducts'));
+  el.innerHTML = `${escapeHtml(row.display_name || row.plan)} allows ${ctlLimitText(row.max_tellers, 'teller', 'tellers')}, ${ctlLimitText(row.max_branches, 'branch', 'branches')}, ${ctlLimitText(row.max_products, 'product', 'products')}.<br><b>With these extras: ${ctlLimitText(t, 'teller', 'tellers')}, ${ctlLimitText(b, 'branch', 'branches')}, ${ctlLimitText(p, 'product', 'products')}.</b>`;
+}
+
+function renderCtlFlags(overrides) {
+  const box = document.getElementById('ctlFlags');
+  if (!box) return;
+  const planRow = planCatalogCache.find(r => r.plan === document.getElementById('planSelect')?.value);
+  const planFlags = (planRow && planRow.flags) || {};
+  const item = k => {
+    const cur = Object.prototype.hasOwnProperty.call(overrides, k) ? (overrides[k] ? 'on' : 'off') : 'plan';
+    const dflt = Object.prototype.hasOwnProperty.call(planFlags, k) ? (planFlags[k] ? 'on' : 'off') : 'unknown';
+    return `<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px;">
+      <span style="font-size:13.5px;">${escapeHtml(PLAN_FLAG_LABELS[k] || k)}</span>
+      <select data-flag="${k}" class="form-control" style="max-width:170px;">
+        <option value="plan"${cur === 'plan' ? ' selected' : ''}>Follow plan (${dflt})</option>
+        <option value="on"${cur === 'on' ? ' selected' : ''}>Force on</option>
+        <option value="off"${cur === 'off' ? ' selected' : ''}>Force off</option>
+      </select></div>`;
+  };
+  const keys = Object.keys(PLAN_FLAG_LABELS);
+  const main = keys.filter(k => CTL_ENFORCED_FLAGS.includes(k)), rest = keys.filter(k => !CTL_ENFORCED_FLAGS.includes(k));
+  box.innerHTML = main.map(item).join('') +
+    `<details style="margin-top:4px;"><summary style="cursor:pointer; font-size:12.5px; color:#94a3b8;">More switches (saved, but the app does not read them yet)</summary><div style="margin-top:8px;">${rest.map(item).join('')}</div></details>`;
+}
+
+async function loadBizControls(bizId) {
+  if (!bizId) return;
+  const cached = allBusinessesCache.find(x => x.id === bizId) || {};
+  const { data: fresh } = await sb.from('businesses').select('*').eq('id', bizId).maybeSingle();
+  const biz = Object.assign({}, cached, fresh || {});
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null) el.value = v; };
+  const planSel = document.getElementById('planSelect');
+  if (planSel && [...planSel.options].some(o => o.value === biz.subscription_plan)) planSel.value = biz.subscription_plan;
+  setVal('planStatus', ['active', 'trial', 'free'].includes(biz.subscription_status) ? biz.subscription_status : 'active');
+  const expiryDate = biz.subscription_renews_at ? new Date(biz.subscription_renews_at).toLocaleDateString('en-CA', { timeZone: 'Africa/Nairobi' }) : '';
+  setVal('planExpiry', expiryDate);
+  const typeSel = document.getElementById('ctlType');
+  if (typeSel && biz.business_type && ![...typeSel.options].some(o => o.value === biz.business_type)) {
+    const o = document.createElement('option'); o.value = biz.business_type; o.textContent = biz.business_type + ' (existing)'; typeSel.appendChild(o);
+  }
+  setVal('ctlType', biz.business_type || 'Retail');
+  setVal('ctlExtraTellers', biz.extra_tellers || 0);
+  setVal('ctlExtraBranches', biz.extra_branches || 0);
+  setVal('ctlExtraProducts', biz.extra_products || 0);
+  const overrides = (biz.feature_overrides && typeof biz.feature_overrides === 'object') ? biz.feature_overrides : {};
+  renderCtlFlags(overrides);
+  updateCtlHint();
+  const { data: noteRow } = await sb.from('business_admin_notes').select('notes').eq('business_id', bizId).maybeSingle();
+  setVal('ctlNotes', noteRow ? noteRow.notes : '');
+  ctlSnapshot = { bizId, expiryDate, type: biz.business_type || 'Retail', extraTellers: biz.extra_tellers || 0, extraBranches: biz.extra_branches || 0,
+    extraProducts: biz.extra_products || 0, overrides: JSON.stringify(overrides), notes: noteRow ? noteRow.notes : '' };
+}
+
+async function saveBizControls() {
+  const bizId = document.getElementById('planBizSelect')?.value;
+  if (!bizId) { showToast('Select a business'); return; }
+  const overrides = {};
+  document.querySelectorAll('#ctlFlags select[data-flag]').forEach(sel => {
+    if (sel.value === 'on') overrides[sel.dataset.flag] = true;
+    else if (sel.value === 'off') overrides[sel.dataset.flag] = false;
+  });
+  const upd = {
+    business_type: document.getElementById('ctlType').value,
+    extra_tellers: ctlNum('ctlExtraTellers'), extra_branches: ctlNum('ctlExtraBranches'), extra_products: ctlNum('ctlExtraProducts'),
+    feature_overrides: overrides
+  };
+  const { error } = await sb.from('businesses').update(upd).eq('id', bizId);
+  if (error) {
+    const msg = error.message || '';
+    if (/extra_tellers|extra_branches|extra_products|feature_overrides|schema cache|column .* does not exist/i.test(msg)) {
+      showToast('Database migration missing. Run supabase/migrations/20261019_business_overrides.sql in the Supabase SQL Editor, then retry.', 8000);
+    } else {
+      showToast('Could not save controls: ' + msg);
+    }
+    return;
+  }
+  const notes = document.getElementById('ctlNotes').value.trim();
+  const snap = (ctlSnapshot && ctlSnapshot.bizId === bizId) ? ctlSnapshot : {};
+  if (notes !== (snap.notes || '')) {
+    const n = await sb.from('business_admin_notes').upsert({ business_id: bizId, notes, updated_at: new Date().toISOString() }, { onConflict: 'business_id' });
+    if (n.error) showToast('Controls saved, but the notes could not be saved: ' + n.error.message);
+  }
+  const changes = [];
+  if (snap.type !== undefined && snap.type !== upd.business_type) changes.push(`Type: ${snap.type} → ${upd.business_type}`);
+  if (snap.extraTellers !== undefined && (snap.extraTellers !== upd.extra_tellers || snap.extraBranches !== upd.extra_branches || snap.extraProducts !== upd.extra_products)) {
+    changes.push(`Extras: +${upd.extra_tellers} tellers, +${upd.extra_branches} branches, +${upd.extra_products} products`);
+  }
+  if (snap.overrides !== undefined && snap.overrides !== JSON.stringify(overrides)) changes.push('Feature switches: ' + (Object.keys(overrides).map(k => `${k}=${overrides[k] ? 'on' : 'off'}`).join(', ') || 'all follow plan'));
+  const matchedBiz = allBusinessesCache.find(b => b.id === bizId);
+  if (matchedBiz) Object.assign(matchedBiz, upd);
+  ctlSnapshot = { bizId, expiryDate: snap.expiryDate || '', type: upd.business_type, extraTellers: upd.extra_tellers, extraBranches: upd.extra_branches,
+    extraProducts: upd.extra_products, overrides: JSON.stringify(overrides), notes };
+  if (changes.length) sendTelegramAlert(`🛠 <b>Dogo POS Alert: Business Controls Changed</b>\n\nStore: <b>${escapeHtml(matchedBiz ? matchedBiz.name : bizId)}</b>\n${changes.map(escapeHtml).join('\n')}`);
+  closePlanModal();
+  showToast('Business controls saved');
   loadDashboard();
 }
 

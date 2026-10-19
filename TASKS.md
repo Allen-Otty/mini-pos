@@ -2,12 +2,14 @@
 
 > **Rule:** this file is updated after every change made to the system (frontend, backend, or docs). Checked = verified done. Unchecked = still open. Each entry notes how/where it was verified, not just claimed.
 
-Last updated: 2026-08-31
+Last updated: 2026-10-19
 
 ---
 
 ## ✅ Completed (verified)
 
+- [x] Admin Console "Manage Business Plan": extra tellers/branches/products on top of the plan, business type, per-business feature switches, status + exact expiry, private notes (`admin/index.html`, `20261019_business_overrides.sql`) - migration tested in scratch Postgres, modal logic tested with a fake DB; **not yet run on live Supabase**
+- [x] Purchasing + inventory control Stage 1: server-side suppliers/POs/supplier payments, kardex, stock counts, lots/expiry/serials, cost history (`purchases.html`, `inventory.html`, `assets/js/inventory-extras.js`, `20261018_purchasing_inventory_control.sql`) - migration tested in scratch Postgres, pages tested with a fake DB; **not yet run on live Supabase**
 - [x] Offline mode for the new-look till (`sell.html`, `dogo-data.js`, `service-worker.js` v10) - logic tested with mocks; **real-device airplane-mode test still open**
 
 ### Backend — database
