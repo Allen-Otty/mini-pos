@@ -56,3 +56,18 @@ In Supabase → SQL Editor, run `supabase/migrations/20260930_subscription_enfor
 - [ ] `payment-complete.html` loads on the server host (Paystack return path)
 - [ ] GitHub token revoked (if it was ever exposed)
 - [ ] Supabase: review the `platform-admin` edge function (not in this repo)
+
+## 8. Android: APK download and Google Play
+
+The `native/` folder wraps the web app with Capacitor (app ID `com.dogo.pos`). `.github/workflows/build-apps.yml` builds on every push to `main`:
+`Dogo-POS.apk` (published on the `latest` release, linked from `download.html`) and, when signing secrets exist, `Dogo-POS.aab` (Artifacts of the run, **Dogo-POS-aab**; not published publicly).
+
+**Signing (one time, keep the key forever; losing it means users must reinstall):** add repo secrets `ANDROID_KEYSTORE_B64` (base64 of the `.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Without them only a debug APK is built.
+
+**Google Play, step by step**
+1. Create a Play Console developer account (one-time US$25) and the app "Dogo POS", package `com.dogo.pos`.
+2. Turn on **Play App Signing**; upload the `.aab` from the latest Actions run (Artifacts, Dogo-POS-aab). Each build has a higher version code automatically.
+3. Store listing: short and full description, 512x512 icon, feature graphic 1024x500, at least 2 phone screenshots, privacy policy URL (must say what sales, customer, M-Pesa and camera data is used for).
+4. Complete **App content**: Data safety form (account info, sales/financial records, camera for barcode scanning; data is sent to Supabase), content rating, target audience (adults), ads (none).
+5. New personal developer accounts must run a **closed test with 12+ testers for 14 days** before applying for production. Organisation accounts skip this.
+6. Release to production, then update `download.html` with the Play Store link next to the APK button.

@@ -44,8 +44,9 @@ jobs:
           if [ -n "$KS_B64" ]; then
             echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/dogo-release.jks"
             export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/dogo-release.jks"
-            ./gradlew assembleRelease
+            ./gradlew assembleRelease bundleRelease
             echo "apk=native/android/app/build/outputs/apk/release/app-release.apk" >> "$GITHUB_OUTPUT"
+            echo "aab=native/android/app/build/outputs/bundle/release/app-release.aab" >> "$GITHUB_OUTPUT"
           else
             echo "::warning::Signing secrets missing - building a debug APK (updates may fail to install)"
             ./gradlew assembleDebug
@@ -58,6 +59,16 @@ jobs:
         with:
           name: Dogo-POS-apk
           path: Dogo-POS.apk
+      # Google Play needs an .aab (app bundle), signed with the same key. Only built when signing secrets exist.
+      # Download it from this run's Artifacts (Dogo-POS-aab); it is not published on the public 'latest' release.
+      - name: Collect Play Store bundle
+        if: steps.signed.outputs.aab != ''
+        run: cp "${{ steps.signed.outputs.aab }}" Dogo-POS.aab
+      - uses: actions/upload-artifact@v4
+        if: steps.signed.outputs.aab != ''
+        with:
+          name: Dogo-POS-aab
+          path: Dogo-POS.aab
 
   windows:
     runs-on: windows-latest
@@ -101,4 +112,6 @@ jobs:
           name: Dogo POS - latest build
           target_commitish: ${{ github.sha }}
           make_latest: true
-          files: dist/*
+          files: |
+            dist/*.apk
+            dist/*.exe
