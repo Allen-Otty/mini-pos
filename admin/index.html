@@ -1613,6 +1613,9 @@
         <option value="Restaurant">Restaurant</option>
         <option value="Hardware">Hardware Store &amp; Building Supplies</option>
         <option value="Kiosk">Kiosk / Kibanda</option>
+        <option value="Agrovet">Agrovet</option>
+        <option value="Boutique">Boutique / Fashion</option>
+        <option value="Wines &amp; Spirits">Wines &amp; Spirits</option>
         <option value="Pharmacy">Pharmacy</option>
         <option value="Service">Service business</option>
       </select>
@@ -2332,6 +2335,8 @@ async function saveBizControls() {
     const msg = error.message || '';
     if (/extra_tellers|extra_branches|extra_products|feature_overrides|schema cache|column .* does not exist/i.test(msg)) {
       showToast('Database migration missing. Run supabase/migrations/20261019_business_overrides.sql in the Supabase SQL Editor, then retry.', 8000);
+    } else if (/business_type_check/i.test(msg)) {
+      showToast('That business type is not enabled in the database yet. Run supabase/migrations/20261019_business_types_agrovet_boutique_wines.sql in the Supabase SQL Editor, then retry.', 8000);
     } else {
       showToast('Could not save controls: ' + msg);
     }

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Admin Console: Manage Business > Type of business** now lists every type the database allows, including Agrovet, Boutique / Fashion and Wines & Spirits (it was missing those three). Saving one of them before `20261019_business_types_agrovet_boutique_wines.sql` has been run now says so plainly instead of showing a raw database error.
 - **Department / Category dropdowns per business type** (`assets/js/biz-profiles.js`): Supermarket, Hardware, General store / Retail and Kiosk (Kibanda) now use the Department lists from the business spec; new **Agrovet**, **Boutique / Fashion** and **Wines & Spirits** types have their own. The same list feeds the Catalogue, Purchases "new product" form and the main app's Create Item. "General" stays last in every list (the app uses it as the default). Kiosk keeps its existing "Airtime & Data" and "Mobile Money" departments after the general-store ones. Items saved under an old category keep it and show as "(existing)" when edited.
 - Picking a Department on a new Catalogue item suggests the next SKU for it (e.g. `WSP-WHS-004`) while the code box is empty. Anything typed by hand is never overwritten.
 - New business types are selectable at sign-up, in Settings and in the admin console filter. **Needs** `supabase/migrations/20261019_business_types_agrovet_boutique_wines.sql` (widens the `businesses.business_type` check; additive). No sample/demo products were added for the new types.
