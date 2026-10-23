@@ -797,6 +797,22 @@
     <div class="tab-view active" id="tab-overview">
       <div class="stat-grid" id="statGrid"></div>
 
+      <!-- App pages & features (links) -->
+      <div class="admin-card" id="appLinksCard">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title"><i class="fa-solid fa-link"></i> App pages &amp; features</h3>
+            <p class="card-sub">Every page of the app in one place. Opens in a new tab. Pages that need a business signed in use your current switched-in business.</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;"><a class="btn-secondary" href="../index.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-house"></i> Landing page</a><a class="btn-secondary" href="../dashboard.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-gauge"></i> Dashboard</a><a class="btn-secondary" href="../sell.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-cash-register"></i> Sales / Till</a><a class="btn-secondary" href="../catalog.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-boxes-stacked"></i> Catalogue</a><a class="btn-secondary" href="../customers.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-address-book"></i> Customers</a><a class="btn-secondary" href="../invoices.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-file-invoice"></i> Customer invoices</a><a class="btn-secondary" href="../purchases.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-truck-ramp-box"></i> Purchases & suppliers</a><a class="btn-secondary" href="../inventory.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-warehouse"></i> Inventory control</a><a class="btn-secondary" href="../expenses.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-receipt"></i> Expenses</a><a class="btn-secondary" href="../reports.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-chart-line"></i> Reports</a><a class="btn-secondary" href="../loans.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-hand-holding-dollar"></i> Loans</a><a class="btn-secondary" href="../equity.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-scale-balanced"></i> Equity</a><a class="btn-secondary" href="../fixedassets.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-building"></i> Fixed assets</a><a class="btn-secondary" href="../team.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-users"></i> Team & branches</a><a class="btn-secondary" href="../settings.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-gear"></i> Settings</a><a class="btn-secondary" href="../orders.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-utensils"></i> Restaurant orders</a><a class="btn-secondary" href="../kitchen.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-fire-burner"></i> Kitchen board</a><a class="btn-secondary" href="../tables.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-chair"></i> Tables</a><a class="btn-secondary" href="../bills.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-file-invoice-dollar"></i> Settle bills</a><a class="btn-secondary" href="../download.html" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-download"></i> Downloads (Android / Windows)</a><a class="btn-secondary" href="../index.html?legacy=1" target="_blank" rel="noopener" style="text-decoration:none;"><i class="fa-solid fa-clock-rotate-left"></i> Classic app</a></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px;">
+          <button class="btn-secondary" onclick="switchAdminTab('subscriptions')"><i class="fa-solid fa-file-invoice"></i> Subscription invoices</button>
+          <button class="btn-secondary" onclick="switchAdminTab('landing'); loadLandingCmsInfo(); loadLandingEditor()"><i class="fa-solid fa-pen-to-square"></i> Edit landing page</button>
+          <button class="btn-secondary" onclick="switchAdminTab('businesses')"><i class="fa-solid fa-store"></i> Plans, limits &amp; feature switches</button>
+        </div>
+      </div>
+
       <!-- Quick Platform Shortcuts -->
       <div class="admin-card">
         <div class="card-header-flex">
@@ -2250,7 +2266,7 @@ async function confirmGrantPlan() {
 // Columns come from supabase/migrations/20261019_business_overrides.sql
 // ==========================================
 // The app only reads M-Pesa STK and KRA eTIMS from these switches today; the others are stored and ready.
-const CTL_ENFORCED_FLAGS = ['mpesaStk', 'etims'];
+const CTL_ENFORCED_FLAGS = ['mpesaStk', 'etims'];  // invoicing is read by invoices.html; purchasesSuppliers, scanInvoice, inventoryControl, customers, accounting, receiptCustomisation, csvExport are stored; the other pages do not read them yet
 let ctlSnapshot = null;
 
 function ctlNum(id) { return Math.max(0, parseInt(document.getElementById(id)?.value || '0', 10) || 0); }
@@ -2447,7 +2463,9 @@ const DEFAULT_PLAN_PRICES = { 'Free': 0, 'Core': 999, 'Core Group': 3999, 'Contr
 const PLAN_FLAG_LABELS = {
   cashSales: 'Cash sales', basicReceipts: 'Basic receipts', scanner: 'Barcode scanner', offlineStorage: 'Offline storage',
   mpesaStk: 'M-Pesa STK Push', shifts: 'Shifts & float', restaurantKitchen: 'Tables & kitchen tickets', profitReports: 'Profit reports',
-  teamAccounts: 'Team accounts', etims: 'KRA eTIMS', advancedStockAlerts: 'Stock alerts', multiBranch: 'Multi-branch', prioritySupport: 'Priority support'
+  teamAccounts: 'Team accounts', etims: 'KRA eTIMS', advancedStockAlerts: 'Stock alerts', multiBranch: 'Multi-branch', prioritySupport: 'Priority support',
+  invoicing: 'Invoicing (customer invoices & credit sales)', purchasesSuppliers: 'Purchases & suppliers', scanInvoice: 'Scan supplier invoices', inventoryControl: 'Inventory control (counts, lots, expiry)',
+  customers: 'Customer accounts', accounting: 'Loans, equity & fixed assets', receiptCustomisation: 'Receipt customisation (logo, footer, barcode)', csvExport: 'CSV exports'
 };
 let planCatalogCache = [];
 

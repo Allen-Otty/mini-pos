@@ -39,7 +39,7 @@
     canManage = !!(ctx && ctx.profile && (ctx.profile.role === 'admin' || ctx.profile.role === 'manager'));
     var bar = document.querySelector('.dogo-subnav-bar'), after = $('viewCogs');
     if (!bar || !after) return;
-    [['counts', 'Stock Counts'], ['lots', 'Lots & Expiry'], ['costs', 'Cost History']].forEach(function (t) {
+    [['counts', 'Stock Counts'], ['lots', 'Lots & Expiry'], ['costs', 'Cost History'], ['transfers', 'Branch Transfers'], ['reorder', 'Reorder']].forEach(function (t) {
       var b = document.createElement('button');
       b.className = 'dogo-subnav-btn'; b.setAttribute('data-inv-tab', t[0]); b.innerHTML = '<span>' + t[1] + '</span>';
       b.onclick = function () { window.__invSwitchTab(t[0]); };
@@ -55,6 +55,8 @@
     else if (t === 'counts') renderCounts();
     else if (t === 'lots') renderLots();
     else if (t === 'costs') renderCosts();
+    else if (t === 'transfers') renderTransfers();
+    else if (t === 'reorder') renderReorder();
   }
 
   /* ------------------------------------------------------------------ kardex (Inventory Ledger tab) */
@@ -231,7 +233,7 @@
       '<div class="dogo-table-wrap"><table class="dogo-table"><thead><tr><th>Product</th><th>Lot</th><th>Expiry</th><th style="text-align:right;">Left</th><th style="text-align:right;">Cost</th><th></th></tr></thead><tbody id="lotRows"><tr><td colspan="6" style="padding:24px;text-align:center;color:var(--dogo-text-muted);">Loading…</td></tr></tbody></table></div></section>' +
       '<section class="dogo-card" style="padding:16px 20px;margin-bottom:14px;"><h2 style="font-size:16px;margin:0 0 8px;">Serial numbers</h2>' +
       '<input class="dogo-input" id="serQ" placeholder="Search a serial number…" style="max-width:320px;"><div class="dogo-table-wrap" style="margin-top:10px;"><table class="dogo-table"><thead><tr><th>Serial</th><th>Product</th><th>Status</th><th>Received</th></tr></thead><tbody id="serRows"><tr><td colspan="4" style="padding:18px;color:var(--dogo-text-muted);">Type to search.</td></tr></tbody></table></div>' +
-      '<p style="font-size:12.5px;color:var(--dogo-text-muted);margin:8px 0 0;">Serials are recorded when you receive stock. The till does not pick a serial yet, so set a serial to Sold here when you hand it over.</p></section>' +
+      '<p style="font-size:12.5px;color:var(--dogo-text-muted);margin:8px 0 0;">Serials are recorded when you receive stock. The till asks you to pick the serial numbers when it sells a serial-tracked product. You can also set a status by hand here.</p></section>' +
       '<section class="dogo-card" style="padding:16px 20px;"><h2 style="font-size:16px;margin:0 0 8px;">Tracking switches</h2><input class="dogo-input" id="trkQ" placeholder="Search product…" style="max-width:320px;margin-bottom:10px;"><div id="trkRows"></div></section>';
     $('lotFilter').onchange = loadLots; $('serQ').oninput = debounce(loadSerials, 300); $('trkQ').oninput = drawTracking;
     drawTracking(); loadLots();
@@ -314,6 +316,96 @@
         var pct = h.old_cost !== null && Number(h.old_cost) > 0 ? (Number(h.new_cost) - Number(h.old_cost)) / Number(h.old_cost) * 100 : null;
         return '<tr><td style="white-space:nowrap;">' + esc(when(h.created_at)) + '</td><td style="text-align:right;">' + (h.old_cost === null ? '—' : ksh(h.old_cost)) + '</td><td style="text-align:right;"><strong>' + ksh(h.new_cost) + '</strong></td><td style="text-align:right;font-weight:700;color:' + (pct === null ? 'inherit' : pct > 0 ? '#b91c1c' : '#047857') + ';">' + (pct === null ? '—' : (pct > 0 ? '+' : '') + pct.toFixed(1) + '%') + '</td><td>' + esc(why[h.reason] || h.reason || '') + '</td></tr>';
       }).join('') + '</tbody></table></div>' : 'No price changes recorded yet. They are tracked from now on.');
+  }
+
+  /* ------------------------------------------------------------------ branch transfers */
+  var xf = { branches: [], alloc: {}, lines: [] };
+  async function renderTransfers() {
+    var v = $('view_transfers'); if (!v) return;
+    v.innerHTML = head('Branch Transfers', 'Move stock between your main store and branches. Your business total does not change; this tracks where it is held.') +
+      '<div id="xfBody"><div class="dogo-card" style="padding:22px;color:var(--dogo-text-muted);">Loading…</div></div>';
+    var b = await sb.from('branches').select('id,name').eq('active', true).order('name');
+    var a = await sb.from('branch_stock').select('branch_id,product_id,qty');
+    if (a.error) { notice($('xfBody'), missing(a.error) ? 'This needs the database update 20261023_stock_transfers_serials_reorder.sql. Ask your admin to run it in Supabase, then reload.' : 'Could not load: ' + a.error.message); return; }
+    xf.branches = b.data || []; xf.alloc = {}; xf.lines = [];
+    (a.data || []).forEach(function (r) { (xf.alloc[r.product_id] = xf.alloc[r.product_id] || {})[r.branch_id] = Number(r.qty); });
+    if (!xf.branches.length) { notice($('xfBody'), 'Add a branch first (Team > Branches) to start moving stock.'); return; }
+    var locOpts = function (first) { return '<option value="">' + first + '</option>' + xf.branches.map(function (x) { return '<option value="' + esc(x.id) + '">' + esc(x.name) + '</option>'; }).join(''); };
+    var cols = xf.branches.map(function (x) { return '<th style="text-align:right;">' + esc(x.name) + '</th>'; }).join('');
+    var rows = getProducts().map(function (p) {
+      var al = xf.alloc[p.id] || {}, sum = 0, cells = xf.branches.map(function (x) { var q = al[x.id] || 0; sum += q; return '<td style="text-align:right;">' + (q ? fmt(q) : '—') + '</td>'; }).join('');
+      return '<tr><td><strong>' + esc(p.name) + '</strong></td><td style="text-align:right;">' + fmt(Math.max(0, Number(p.stock) - sum)) + '</td>' + cells + '<td style="text-align:right;font-weight:700;">' + fmt(p.stock) + '</td></tr>';
+    }).join('');
+    $('xfBody').innerHTML =
+      (canManage ? '<section class="dogo-card" style="padding:16px 20px;margin-bottom:12px;"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">' +
+        '<select class="dogo-select" id="xfFrom">' + locOpts('Main store') + '</select><span>&rarr;</span><select class="dogo-select" id="xfTo">' + locOpts('Main store') + '</select>' +
+        '<select class="dogo-select" id="xfProd" style="min-width:200px;flex:1;">' + prodOptions('Add a product…') + '</select></div>' +
+        '<div id="xfLines"></div><input class="dogo-input" id="xfNote" placeholder="Note (optional)" style="margin:10px 0;max-width:420px;"><br><button class="dogo-btn dogo-btn--primary" id="xfGo">Move stock</button></section>' : '') +
+      '<section class="dogo-card" style="padding:20px;"><div class="dogo-table-wrap"><table class="dogo-table"><thead><tr><th>Product</th><th style="text-align:right;">Main store</th>' + cols + '<th style="text-align:right;">Total</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>' +
+      '<section class="dogo-card" style="padding:20px;margin-top:12px;"><h3 style="margin:0 0 10px;font-size:16px;">Recent transfers</h3><div id="xfHist" style="color:var(--dogo-text-muted);">Loading…</div></section>';
+    if (canManage) {
+      $('xfProd').onchange = function () { var id = $('xfProd').value; if (id && !xf.lines.some(function (l) { return l.id === id; })) { xf.lines.push({ id: id, qty: 1 }); drawXfLines(); } $('xfProd').value = ''; };
+      $('xfGo').onclick = doTransfer;
+    }
+    loadXfHist();
+  }
+  function drawXfLines() {
+    var el = $('xfLines'); if (!el) return;
+    el.innerHTML = xf.lines.map(function (l, i) {
+      var p = getProducts().filter(function (x) { return x.id === l.id; })[0] || { name: '?' };
+      return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;"><span style="flex:1;">' + esc(p.name) + '</span><input class="dogo-input" type="number" min="0" step="any" value="' + l.qty + '" data-xq="' + i + '" style="width:100px;"><button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-xr="' + i + '">&times;</button></div>';
+    }).join('');
+    el.oninput = function (e) { var i = e.target.getAttribute('data-xq'); if (i !== null) xf.lines[i].qty = parseFloat(e.target.value) || 0; };
+    el.onclick = function (e) { var i = e.target.getAttribute('data-xr'); if (i !== null) { xf.lines.splice(i, 1); drawXfLines(); } };
+  }
+  async function doTransfer() {
+    var from = $('xfFrom').value || null, to = $('xfTo').value || null;
+    if (from === to) return toast('Choose two different locations');
+    var items = xf.lines.filter(function (l) { return l.qty > 0; }).map(function (l) { return { product_id: l.id, qty: l.qty }; });
+    if (!items.length) return toast('Add a product and a quantity');
+    var btn = $('xfGo'); btn.disabled = true;
+    var r = await sb.rpc('transfer_stock', { p_from: from, p_to: to, p_items: items, p_note: $('xfNote').value || null });
+    btn.disabled = false;
+    if (r.error) return toast(r.error.message);
+    toast('Stock moved'); renderTransfers();
+  }
+  async function loadXfHist() {
+    var r = await sb.from('stock_transfers').select('created_at,from_name,to_name,note,stock_transfer_items(qty,products(name))').order('created_at', { ascending: false }).limit(30);
+    var el = $('xfHist'); if (!el) return;
+    if (r.error) { el.textContent = 'Could not load: ' + r.error.message; return; }
+    el.innerHTML = (r.data || []).length ? '<div class="dogo-table-wrap"><table class="dogo-table"><thead><tr><th>Date</th><th>From</th><th>To</th><th>Items</th><th>Note</th></tr></thead><tbody>' + r.data.map(function (t) {
+      return '<tr><td style="white-space:nowrap;">' + esc(when(t.created_at)) + '</td><td>' + esc(t.from_name) + '</td><td>' + esc(t.to_name) + '</td><td>' + (t.stock_transfer_items || []).map(function (i) { return esc((i.products && i.products.name) || '?') + ' &times; ' + fmt(i.qty); }).join(', ') + '</td><td>' + esc(t.note || '') + '</td></tr>';
+    }).join('') + '</tbody></table></div>' : 'No transfers yet.';
+  }
+
+  /* ------------------------------------------------------------------ reorder suggestions */
+  async function renderReorder() {
+    var v = $('view_reorder'); if (!v) return;
+    v.innerHTML = head('Reorder suggestions', 'What to buy, worked out from what you actually sold.') +
+      '<section class="dogo-card" style="padding:16px 20px;margin-bottom:12px;"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">Look back <select class="dogo-select" id="roDays"><option>14</option><option selected>30</option><option>60</option><option>90</option></select> days, cover the next <select class="dogo-select" id="roCover"><option>7</option><option>14</option><option selected>30</option><option>45</option><option>60</option></select> days' +
+      '<button class="dogo-btn dogo-btn--outline" id="roCopy">Copy order list</button><button class="dogo-btn dogo-btn--outline" id="roCsv">Export CSV</button></div></section>' +
+      '<section class="dogo-card" style="padding:20px;"><div id="roBody" style="color:var(--dogo-text-muted);">Loading…</div></section>';
+    $('roDays').onchange = $('roCover').onchange = loadReorder; $('roCsv').onclick = function () {
+      csv('reorder_suggestions.csv', [['Product', 'Unit', 'In stock', 'Sold', 'Per day', 'Days left', 'Order qty', 'Last cost', 'Est. cost']].concat((window.__reorderRows || []).map(function (r) {
+        return [r.name, r.unit, r.stock, r.sold_qty, r.daily_velocity, r.days_left === null ? '' : r.days_left, r.suggested_qty, r.last_cost === null ? '' : r.last_cost, r.last_cost === null ? '' : (r.suggested_qty * r.last_cost).toFixed(2)];
+      })));
+    };
+    $('roCopy').onclick = async function () {
+      var t = 'Order list\n' + (window.__reorderRows || []).filter(function (r) { return r.suggested_qty > 0; }).map(function (r) { return '- ' + r.name + ': ' + r.suggested_qty + ' ' + (r.unit || ''); }).join('\n');
+      try { await navigator.clipboard.writeText(t); toast('Order list copied. Paste it into WhatsApp or email to your supplier.'); } catch (e) { prompt('Copy this list:', t); }
+    };
+    loadReorder();
+  }
+  async function loadReorder() {
+    var body = $('roBody'); body.textContent = 'Loading…';
+    var r = await sb.rpc('reorder_suggestions', { p_days: Number($('roDays').value), p_cover_days: Number($('roCover').value) });
+    if (r.error) { body.textContent = missing(r.error) ? 'This needs the database update 20261023_stock_transfers_serials_reorder.sql. Ask your admin to run it in Supabase, then reload.' : 'Could not load: ' + r.error.message; return; }
+    var rows = window.__reorderRows = r.data || [], est = 0;
+    body.innerHTML = rows.length ? '<div class="dogo-table-wrap"><table class="dogo-table"><thead><tr><th>Product</th><th style="text-align:right;">In stock</th><th style="text-align:right;">Sold</th><th style="text-align:right;">Per day</th><th style="text-align:right;">Days left</th><th style="text-align:right;">Order</th><th style="text-align:right;">Est. cost</th></tr></thead><tbody>' + rows.map(function (x) {
+      var c = x.last_cost === null || x.last_cost === undefined ? null : Number(x.suggested_qty) * Number(x.last_cost); if (c) est += c;
+      var urgent = x.days_left !== null && Number(x.days_left) <= 7 || Number(x.stock) <= 0;
+      return '<tr><td><strong>' + esc(x.name) + '</strong></td><td style="text-align:right;">' + fmt(x.stock) + '</td><td style="text-align:right;">' + fmt(x.sold_qty) + '</td><td style="text-align:right;">' + fmt(x.daily_velocity) + '</td><td style="text-align:right;color:' + (urgent ? '#b91c1c' : 'inherit') + ';font-weight:' + (urgent ? 700 : 400) + ';">' + (x.days_left === null ? '—' : fmt(x.days_left)) + '</td><td style="text-align:right;font-weight:700;">' + fmt(x.suggested_qty) + ' ' + esc(x.unit || '') + '</td><td style="text-align:right;">' + (c === null ? '—' : ksh(c)) + '</td></tr>';
+    }).join('') + '</tbody></table></div><div style="margin-top:10px;font-weight:700;">Estimated cost: ' + ksh(est) + '</div>' : 'Nothing needs reordering right now.';
   }
 
   window.DogoInvExtras = { init: init, onTab: onTab };

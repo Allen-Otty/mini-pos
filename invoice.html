@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Invoice · Dogo POS</title>
+<style>
+  body{margin:0;background:#f4f5f7;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111827}
+  .wrap{max-width:760px;margin:0 auto;padding:16px}
+  .doc{background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .hd{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  h1{margin:0;font-size:20px} h2{margin:0;font-size:18px}
+  table{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px}
+  th,td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:left} .r{text-align:right}
+  .tot{width:280px;margin-left:auto}
+  .pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;background:#fef3c7;color:#92400e}
+  .pill.ok{background:#d1fae5;color:#065f46}
+  .btn{margin-top:16px;padding:10px 16px;border:0;border-radius:8px;background:#111827;color:#fff;font-size:14px;cursor:pointer}
+  .muted{color:#6b7280;font-size:12px}
+  @media print{body{background:#fff}.btn{display:none}.doc{box-shadow:none}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="wrap"><div id="out" class="doc">Loading…</div></div>
+<script>
+(async () => {
+  const SB_URL = 'https://uzwomzkzqrpiumtnniik.supabase.co', SB_KEY = 'sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D';
+  const out = document.getElementById('out');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const kes = n => 'KES ' + Number(n || 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const token = new URLSearchParams(location.search).get('t');
+  const fail = m => { out.innerHTML = '<h2>' + m + '</h2><p class="muted">Ask the sender for a fresh link.</p>'; };
+  if (!token) return fail('This link is incomplete');
+  try {
+    const sb = (window.__sb) || window.supabase.createClient(SB_URL, SB_KEY);
+    const r = await sb.rpc('get_invoice_public', { p_token: token });
+    if (r.error || !r.data) return fail('Document not found');
+    const d = r.data, b = d.business || {}, t = d.doc_type;
+    const title = t === 'quote' ? 'QUOTATION' : t === 'credit_note' ? 'CREDIT NOTE' : 'TAX INVOICE';
+    const owed = Math.max(0, d.total - (d.credited_total || 0) - (d.amount_paid || 0));
+    let qr = '';
+    if (d.etims_qr_code && window.qrcode) { try { const q = window.qrcode(0, 'M'); q.addData(d.etims_qr_code); q.make(); qr = q.createImgTag(4); } catch (e) {} }
+    document.title = title + ' ' + d.invoice_no;
+    out.innerHTML = `<div class="hd"><div>${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="" style="max-height:48px"><br>` : ''}<h1>${esc(b.name)}</h1>
+      <div class="muted">${esc(b.location || '')}${b.kra_pin ? '<br>KRA PIN: ' + esc(b.kra_pin) : ''}${b.phone ? '<br>' + esc(b.phone) : ''}</div></div>
+      <div style="text-align:right"><h2>${title}</h2><b>${esc(d.invoice_no)}</b><br>Issued ${esc(d.issue_date)}${d.due_date ? '<br>' + (t === 'quote' ? 'Valid until ' : 'Due ') + esc(d.due_date) : ''}
+      ${d.against ? '<br>Against ' + esc(d.against) : ''}${d.etims_invc_no ? '<br>eTIMS no: ' + esc(d.etims_invc_no) : ''}</div></div>
+      <p><b>${t === 'credit_note' ? 'Credit to' : 'Bill to'}:</b> ${esc(d.customer_name)}${d.customer_pin ? '<br>PIN: ' + esc(d.customer_pin) : ''}</p>
+      <table><thead><tr><th>Description</th><th class="r">Qty</th><th class="r">Unit (excl. VAT)</th><th class="r">VAT %</th><th class="r">Total</th></tr></thead><tbody>
+      ${(d.items || []).map(l => `<tr><td>${esc(l.description)}</td><td class="r">${esc(l.qty)}</td><td class="r">${kes(l.unit_price_excl_vat)}</td><td class="r">${esc(l.vat_rate)}</td><td class="r">${kes(l.line_total)}</td></tr>`).join('')}
+      </tbody></table>
+      <table class="tot"><tr><td>Subtotal</td><td class="r">${kes(d.subtotal_excl_vat)}</td></tr><tr><td>VAT</td><td class="r">${kes(d.vat_total)}</td></tr>
+      <tr><td><b>Total</b></td><td class="r"><b>${kes(d.total)}</b></td></tr>
+      ${t === 'invoice' ? `${Number(d.credited_total) ? `<tr><td>Credit notes</td><td class="r">-${kes(d.credited_total)}</td></tr>` : ''}<tr><td>Paid</td><td class="r">${kes(d.amount_paid)}</td></tr>
+      <tr><td><b>Balance due</b></td><td class="r"><b>${kes(owed)}</b></td></tr>` : ''}</table>
+      ${t === 'invoice' ? `<p><span class="pill ${owed <= 0 ? 'ok' : ''}">${owed <= 0 ? 'Paid' : 'Payment due'}</span>${b.till && owed > 0 ? ' Pay via M-Pesa: <b>' + esc(b.till) + '</b>' : ''}</p>` : ''}
+      ${d.notes ? '<p><b>Notes:</b> ' + esc(d.notes) + '</p>' : ''}
+      ${qr ? '<div>' + qr + '<div class="muted">Scan to verify on KRA eTIMS</div></div>' : ''}
+      <button class="btn" onclick="window.print()">Print / Save as PDF</button>`;
+  } catch (e) { fail('Could not load this document'); }
+})();
+</script>
+</body>
+</html>

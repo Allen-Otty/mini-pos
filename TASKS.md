@@ -2,11 +2,17 @@
 
 > **Rule:** this file is updated after every change made to the system (frontend, backend, or docs). Checked = verified done. Unchecked = still open. Each entry notes how/where it was verified, not just claimed.
 
-Last updated: 2026-10-19
+Last updated: 2026-10-20
 
 ---
 
 ## ✅ Completed (verified)
+
+- [x] Match-iPos work: hardware (ESC/POS, drawer, scanners), full invoicing (quotes, credit notes, eTIMS queue, share link), branch transfers, serials at till, reorder suggestions - tested with mocks/scratch Postgres; **none of the new SQL is run on live yet**
+- [ ] Run on live, in order: 20261018_purchasing_inventory_control.sql, 20261021_customer_invoices.sql, 20261022_invoicing_full.sql, 20261023_stock_transfers_serials_reorder.sql
+- [ ] eTIMS: implement the real KRA call in `etims-submit` and configure device credentials (all submissions are `pending_credentials` today)
+- [ ] Test hardware on a real thermal printer, cash drawer and scanner
+- [ ] Per-branch sales/stock draw-down (needs branch on sales/products)
 
 - [x] Admin Console "Manage Business Plan": extra tellers/branches/products on top of the plan, business type, per-business feature switches, status + exact expiry, private notes (`admin/index.html`, `20261019_business_overrides.sql`) - migration tested in scratch Postgres, modal logic tested with a fake DB; **not yet run on live Supabase**
 - [x] Purchasing + inventory control Stage 1: server-side suppliers/POs/supplier payments, kardex, stock counts, lots/expiry/serials, cost history (`purchases.html`, `inventory.html`, `assets/js/inventory-extras.js`, `20261018_purchasing_inventory_control.sql`) - migration tested in scratch Postgres, pages tested with a fake DB; **not yet run on live Supabase**
@@ -110,6 +116,20 @@ Last updated: 2026-10-19
 - [x] Fixed real bug: camera scanner auto-started on every login (`initScanner()` in `afterLogin()`) and ran for the entire session regardless of tab. Added a Start/Stop button (`toggleScanner()`), removed the auto-start call, and scanner now stops automatically on switching away from the Sell tab.
 - [x] Fixed real bug: the open shift was found by `status === 'OPEN'` alone with no date scoping, so a shift opened yesterday and never closed would silently stay "current" today, carrying over its stale opening float and letting sales continue against a day-old shift. `currentShift` is now scoped to today's date only; a separate `staleOpenShift` is tracked and surfaced as a warning banner with a one-tap "close it now" action (`closeShift()` refactored to accept an optional shift param instead of only operating on the global). Opening float now defaults to a real `0.00` value (editable) each time the closed-shift view renders, instead of an empty field.
 - [x] Checkout now blocked entirely without an open shift for today — guarded in `checkout()` itself (covers both the Sell-tab and table-order paths, which both funnel through it) plus the two button-animation wrappers (`handleCheckoutClick`/`handleTableCheckoutClick`), so the truck/"Ordered" success animation can't play when the sale was actually blocked.
+
+## 2026-10-20 session (landing page + schema audit)
+
+- [x] Landing page pricing cards match live `plan_definitions` (verified by querying the live table and diffing the card text)
+- [x] Link check: every internal href/src exists, `#` anchors resolve, APK and EXE release links return 200
+- [ ] **Run on live Supabase (not yet applied):** `20261018_purchasing_inventory_control.sql`, `20261019_business_overrides.sql`, and the `landing_content` migration (`20261010_landing_content.sql`). The UI queries these missing tables: suppliers, purchase_orders, supplier_payments, stock_movements, stock_counts, stock_count_items, product_lots, product_serials, product_cost_history, business_admin_notes, landing_content
+- [ ] Control plan yearly price (KES 23,988) equals 12 x monthly - no yearly discount despite "2 months free" text; decide the price
+- [ ] Backend migration: repo still points at project `uzwomzkzqrpiumtnniik`; update URL/keys here once the new backend is confirmed
+- [ ] Live tables with no UI yet: loans, loan_payments, equity_transactions, fixed_assets, purchase_invoices (pages use local data)
+
+- [x] Admin Console: app-pages links card + 8 new plan feature switches (`admin/index.html`, `20261021_plan_feature_flags.sql`) - migration tested in scratch Postgres; **not yet run on live Supabase**
+- [ ] Enforce the remaining new switches (purchases, scan invoice, inventory control, accounting, receipt customisation, CSV exports) in their pages - stored only; `invoicing` is read by `invoices.html`
+- [x] Customer invoicing built: `invoices.html` + `20261021_customer_invoices.sql` - migration and page tested locally; **not yet run on live Supabase**, not yet in the app menu or service-worker cache
+- [ ] Launch invoicing: run the migration, add Invoices to `assets/js/app-shell.js` nav and `service-worker.js` (bump cache version), then enforce the `invoicing` switch for a plan
 
 ## How this file will be maintained
 

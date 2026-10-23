@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Invoices · Dogo POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .inv-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+    .inv-stat { background:var(--dogo-surface,#fff); border:1px solid #e5e7eb; border-radius:14px; padding:14px; }
+    .inv-stat b { display:block; font-size:20px; margin-top:4px; }
+    .inv-lines input, .inv-lines select { width:100%; }
+    .inv-lines td { padding:4px; }
+    #invPrint { display:none; }
+    @media print {
+      body > *:not(#invPrint) { display:none !important; }
+      #invPrint { display:block !important; color:#000; background:#fff; padding:24px; font-family:Arial,sans-serif; }
+      #invPrint table { width:100%; border-collapse:collapse; margin-top:16px; }
+      #invPrint th, #invPrint td { border-bottom:1px solid #ccc; padding:6px; text-align:left; font-size:13px; }
+      #invPrint .r { text-align:right; }
+    }
+  </style>
+</head>
+<body>
+  <div id="dogoHeaderRoot"></div>
+  <div id="dogoNavRoot"></div>
+
+  <main class="dogo-page">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1 style="font-size:24px;font-weight:800;margin:0 0 4px;color:var(--dogo-ink);">Invoices &amp; quotes</h1>
+        <p style="font-size:14px;color:var(--dogo-text-muted);margin:0;">Quotes, invoices and credit notes. Share a link, take part payments, send to KRA eTIMS</p>
+      </div>
+      <button class="dogo-btn" id="btnNew" style="border-radius:999px;padding:9px 22px;font-weight:700;">+ New invoice</button>
+    </div>
+
+    <div id="notice"></div>
+    <div id="tabs" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+      <button class="dogo-btn dogo-btn--primary" data-tab="invoice">Invoices</button>
+      <button class="dogo-btn dogo-btn--outline" data-tab="quote">Quotes</button>
+      <button class="dogo-btn dogo-btn--outline" data-tab="credit_note">Credit notes</button>
+    </div>
+
+    <div class="inv-grid" id="stats"></div>
+
+    <section class="dogo-card" style="padding:20px;">
+      <div class="dogo-table-top-bar">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <select class="dogo-input" id="fStatus" style="max-width:170px;">
+            <option value="">All statuses</option><option value="sent">Unpaid / open</option><option value="partial">Part paid</option>
+            <option value="paid">Paid</option><option value="overdue">Overdue</option><option value="void">Void</option><option value="converted">Converted</option>
+          </select>
+          <button class="dogo-btn-pill-outline" id="btnExport">Export CSV</button>
+        </div>
+        <div class="dogo-search-pill-wrap"><span>SEARCH:</span><input class="dogo-search-pill-input" id="q" placeholder="Invoice # or customer"></div>
+      </div>
+      <div class="dogo-table-wrap">
+        <table class="dogo-table">
+          <thead><tr><th>NO.</th><th>CUSTOMER</th><th>ISSUED</th><th id="thDue">DUE</th><th>TOTAL</th><th id="thPaid">PAID</th><th id="thBal">BALANCE</th><th>STATUS</th><th>eTIMS</th><th>ACTIONS</th></tr></thead>
+          <tbody id="rows"><tr><td colspan="10" style="text-align:center;padding:40px;color:var(--dogo-text-muted);">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- New invoice -->
+    <div class="dogo-modal" id="newModal">
+      <div class="dogo-modal__box" style="max-width:760px;border-radius:18px;padding:24px;max-height:90vh;overflow:auto;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+          <h2 style="font-size:20px;font-weight:800;margin:0;" id="newTitle">New invoice</h2>
+          <button style="border:none;background:transparent;font-size:22px;cursor:pointer;" id="newClose">&times;</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
+          <div class="dogo-field"><label>Customer</label>
+            <select class="dogo-input" id="nCust"><option value="">— Type a new customer below —</option></select></div>
+          <div class="dogo-field"><label>Customer name *</label><input class="dogo-input" id="nName"></div>
+          <div class="dogo-field"><label>Phone</label><input class="dogo-input" id="nPhone"></div>
+          <div class="dogo-field"><label>Email</label><input class="dogo-input" id="nEmail" type="email"></div>
+          <div class="dogo-field"><label>Customer KRA PIN</label><input class="dogo-input" id="nPin"></div>
+          <div class="dogo-field"><label>Issue date</label><input class="dogo-input" id="nIssue" type="date"></div>
+          <div class="dogo-field"><label id="dueLabel">Due date</label><input class="dogo-input" id="nDue" type="date"></div>
+        </div>
+        <div style="margin:14px 0 6px;font-size:12px;font-weight:800;color:var(--dogo-text-muted);">ITEMS (prices exclude VAT)</div>
+        <table class="inv-lines" style="width:100%;">
+          <thead><tr><th style="text-align:left;">Item</th><th style="width:80px;">Qty</th><th style="width:110px;">Unit price</th><th style="width:150px;">VAT class</th><th style="width:100px;">Total</th><th style="width:30px;"></th></tr></thead>
+          <tbody id="lines"></tbody>
+        </table>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+          <button class="dogo-btn dogo-btn--outline dogo-btn--sm" id="addLine">+ Add line</button>
+          <select class="dogo-input" id="addProd" style="max-width:260px;"><option value="">+ Add from catalogue…</option></select>
+        </div>
+        <div class="dogo-field" style="margin-top:12px;"><label>Notes</label><textarea class="dogo-input" id="nNotes" rows="2" placeholder="Payment terms, bank/till details…"></textarea></div>
+        <div style="text-align:right;margin:12px 0;font-size:14px;" id="nTotals"></div>
+        <div style="display:flex;justify-content:flex-end;gap:12px;">
+          <button class="dogo-btn dogo-btn--outline" id="newCancel">Cancel</button>
+          <button class="dogo-btn" id="newSave" style="border-radius:999px;">Save invoice</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Credit note -->
+    <div class="dogo-modal" id="cnModal">
+      <div class="dogo-modal__box" style="max-width:420px;border-radius:18px;padding:24px;">
+        <h2 style="font-size:20px;font-weight:800;margin:0 0 4px;" id="cnTitle">Credit note</h2>
+        <div id="cnLeft" style="font-size:13px;color:var(--dogo-text-muted);margin-bottom:12px;"></div>
+        <div class="dogo-field"><label>Amount to credit (incl. VAT)</label><input class="dogo-input" id="cnAmt" type="number" step="0.01" min="0"></div>
+        <div class="dogo-field"><label>Reason</label><input class="dogo-input" id="cnReason" placeholder="Returned goods, price correction..."></div>
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:14px;">
+          <button class="dogo-btn dogo-btn--outline" id="cnCancel">Cancel</button>
+          <button class="dogo-btn" id="cnSave" style="border-radius:999px;">Issue credit note</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment -->
+    <div class="dogo-modal" id="payModal">
+      <div class="dogo-modal__box" style="max-width:420px;border-radius:18px;padding:24px;">
+        <h2 style="font-size:20px;font-weight:800;margin:0 0 4px;" id="payTitle">Record payment</h2>
+        <div id="payOwed" style="font-size:13px;color:var(--dogo-text-muted);margin-bottom:12px;"></div>
+        <div class="dogo-field"><label>Amount</label><input class="dogo-input" id="pAmt" type="number" step="0.01" min="0"></div>
+        <div class="dogo-field"><label>Method</label>
+          <select class="dogo-input" id="pMethod"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option><option value="bank">Bank</option><option value="card">Card</option><option value="cheque">Cheque</option></select></div>
+        <div class="dogo-field"><label>Reference (M-Pesa code, cheque no.)</label><input class="dogo-input" id="pRef"></div>
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:14px;">
+          <button class="dogo-btn dogo-btn--outline" id="payCancel">Cancel</button>
+          <button class="dogo-btn" id="paySave" style="border-radius:999px;">Save payment</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="invPrint"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script src="assets/js/dogo-data.js"></script>
+  <script src="assets/js/subscription-guard.js"></script>
+  <script src="assets/js/app-shell.js"></script>
+  <script>
+  (async function () {
+    const { boot, toast, downloadCSV, esc, sb } = window.DogoData;
+    const ctx = await boot('invoices');
+    if (!ctx) return;
+    const { businessId } = ctx;
+    const $ = id => document.getElementById(id);
+    const kes = n => 'KES ' + Number(n || 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const today = () => new Date().toISOString().slice(0, 10);
+    let invoices = [], customers = [], products = [], payInv = null, cnInv = null, tab = 'invoice';
+    const DOC = { invoice: 'invoice', quote: 'quote', credit_note: 'credit note' };
+    const TAX = { B: ['16% (B)', 16], E: ['8% (E)', 8], C: ['Zero-rated (C)', 0], A: ['Exempt (A)', 0] };
+
+    /* Plan switch: only blocks when the platform admin has explicitly turned invoicing OFF for the plan or the business. */
+    async function invoicingAllowed() {
+      try {
+        const plan = ctx.business && ctx.business.subscription_plan;
+        const { data } = await sb.from('plan_definitions').select('flags').eq('plan', plan).maybeSingle();
+        const ov = ctx.business && ctx.business.feature_overrides;
+        if (ov && ov.invoicing === false) return false;
+        if (ov && ov.invoicing === true) return true;
+        return !(data && data.flags && data.flags.invoicing === false);
+      } catch (e) { return true; }
+    }
+    if (!(await invoicingAllowed())) {
+      document.querySelector('main').innerHTML = '<div class="dogo-card" style="padding:24px;"><h2>Invoicing is not on your plan</h2><p>Upgrade your plan to bill customers with invoices and take part payments.</p></div>';
+      return;
+    }
+
+    const isOverdue = i => i.doc_type === 'invoice' && i.due_date && !['paid', 'void', 'credited'].includes(i.status) && i.due_date < today();
+    const label = i => ({ void: 'Void', paid: 'Paid', partial: 'Part paid', draft: 'Draft', converted: 'Converted', credited: 'Credited', accepted: 'Accepted', declined: 'Declined' }[i.status] ||
+      (isOverdue(i) ? 'Overdue' : (i.doc_type === 'invoice' ? 'Unpaid' : i.doc_type === 'quote' ? 'Open' : 'Issued')));
+    const badge = i => (i.status === 'paid' || i.status === 'converted' || i.status === 'accepted') ? 'dogo-badge--ok' : 'dogo-badge--warn';
+    const bal = i => Math.max(0, Number(i.total) - Number(i.credited_total || 0) - Number(i.amount_paid || 0));
+    const etimsTxt = i => i.doc_type === 'quote' ? '—' : ({ signed: 'Signed', pending_credentials: 'Queued', not_submitted: 'Not sent' }[i.etims_status] || i.etims_status || 'Not sent');
+    const errText = e => (e && (e.message || e.details || e.hint)) || String(e);
+
+    async function load() {
+      const r = await sb.from('customer_invoices').select('*').eq('business_id', businessId).order('created_at', { ascending: false }).limit(1000);
+      if (r.error) {
+        const missing = /relation|does not exist|schema cache|customer_invoices/i.test(r.error.message || '');
+        $('notice').innerHTML = '<div class="dogo-card" style="padding:16px;margin-bottom:12px;border-left:4px solid #d97706;">' +
+          (missing ? '<b>Invoicing is not set up yet.</b> Ask your platform admin to run <code>20261021_customer_invoices.sql</code> and then <code>20261022_invoicing_full.sql</code> in the Supabase SQL Editor.' : 'Could not load: ' + esc(r.error.message)) + '</div>';
+        $('btnNew').disabled = true; $('rows').innerHTML = ''; return;
+      }
+      invoices = r.data || [];
+      if (invoices.length && invoices[0].doc_type === undefined) {
+        $('notice').innerHTML = '<div class="dogo-card" style="padding:16px;margin-bottom:12px;border-left:4px solid #d97706;">Quotes, credit notes and eTIMS need <code>20261022_invoicing_full.sql</code> to be run. Plain invoices still work.</div>';
+        invoices.forEach(i => { i.doc_type = 'invoice'; });
+      }
+      render();
+    }
+
+    function setTab(t) {
+      tab = t;
+      document.querySelectorAll('#tabs button').forEach(b => { b.className = 'dogo-btn ' + (b.dataset.tab === t ? 'dogo-btn--primary' : 'dogo-btn--outline'); });
+      $('btnNew').style.display = t === 'credit_note' ? 'none' : '';
+      $('btnNew').textContent = '+ New ' + DOC[t];
+      $('thDue').textContent = t === 'quote' ? 'VALID UNTIL' : 'DUE';
+      $('thPaid').textContent = t === 'invoice' ? 'PAID' : 'CREDITED'; $('thPaid').style.display = $('thBal').style.display = t === 'invoice' ? '' : 'none';
+      render();
+    }
+    $('tabs').onclick = e => { if (e.target.dataset.tab) setTab(e.target.dataset.tab); };
+
+    function render() {
+      const q = ($('q').value || '').trim().toLowerCase(), f = $('fStatus').value;
+      const docs = invoices.filter(i => (i.doc_type || 'invoice') === tab);
+      const list = docs.filter(i => (!q || (i.invoice_no || '').toLowerCase().includes(q) || (i.customer_name || '').toLowerCase().includes(q)) &&
+        (!f || (f === 'overdue' ? isOverdue(i) : f === 'sent' ? ['sent', 'accepted'].includes(i.status) : i.status === f)));
+      const inv = invoices.filter(i => (i.doc_type || 'invoice') === 'invoice' && !['void', 'draft'].includes(i.status));
+      const open = inv.filter(i => !['paid', 'credited'].includes(i.status));
+      $('stats').innerHTML = [
+        ['Invoiced', kes(inv.reduce((a, i) => a + Number(i.total), 0))],
+        ['Credited', kes(inv.reduce((a, i) => a + Number(i.credited_total || 0), 0))],
+        ['Collected', kes(inv.reduce((a, i) => a + Number(i.amount_paid || 0), 0))],
+        ['Outstanding', kes(open.reduce((a, i) => a + bal(i), 0))],
+        ['Overdue', kes(invoices.filter(isOverdue).reduce((a, i) => a + bal(i), 0))]
+      ].map(s => `<div class="inv-stat"><span style="font-size:12px;color:var(--dogo-text-muted);">${s[0]}</span><b>${s[1]}</b></div>`).join('');
+      const isInv = tab === 'invoice';
+      $('rows').innerHTML = list.length ? list.map(i => {
+        const done = ['void', 'declined', 'converted', 'credited'].includes(i.status);
+        const acts = [`<button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-print="${i.id}">Print</button>`,
+          `<button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-share="${i.id}">Share</button>`];
+        if (isInv && !done && i.status !== 'paid') acts.push(`<button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-pay="${i.id}">Pay</button>`);
+        if (isInv && !['void', 'draft'].includes(i.status)) acts.push(`<button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-credit="${i.id}">Credit</button>`);
+        if (isInv && !done && !i.delivered_at) acts.push(`<button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-deliver="${i.id}">Deliver</button>`);
+        if (tab === 'quote' && !done) acts.push(`<button class="dogo-btn dogo-btn--sm" data-convert="${i.id}">Make invoice</button>`, `<button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-decline="${i.id}">Decline</button>`);
+        if (tab !== 'quote' && i.etims_status !== 'signed' && !['void', 'draft'].includes(i.status)) acts.push(`<button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-etims="${i.id}">eTIMS</button>`);
+        if (isInv && !['void', 'credited'].includes(i.status) && !Number(i.amount_paid) && !Number(i.credited_total)) acts.push(`<button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-void="${i.id}">Void</button>`);
+        return `<tr><td><strong>${esc(i.invoice_no)}</strong>${i.delivered_at ? '<div class="dogo-muted" style="font-size:11px;">Stock out</div>' : ''}</td><td>${esc(i.customer_name)}</td><td>${esc(i.issue_date)}</td><td>${esc(i.due_date || '—')}</td>
+          <td>${kes(i.total)}</td>${isInv ? `<td>${kes(i.amount_paid)}</td><td>${kes(bal(i))}</td>` : '<td style="display:none"></td><td style="display:none"></td>'}
+          <td><span class="dogo-badge ${badge(i)}">${label(i)}</span></td><td>${etimsTxt(i)}</td><td style="white-space:nowrap;">${acts.join(' ')}</td></tr>`;
+      }).join('') : `<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--dogo-text-muted);">No ${DOC[tab]}s yet${tab === 'credit_note' ? '. Issue one from an invoice with the Credit button.' : ''}</td></tr>`;
+    }
+
+    /* ---- new invoice / quote ---- */
+    function lineRow(l) {
+      l = l || {};
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><input class="dogo-input" data-k="description" value="${esc(l.description || '')}" placeholder="Description"></td>
+        <td><input class="dogo-input" data-k="qty" type="number" min="0" step="any" value="${l.qty || 1}"></td>
+        <td><input class="dogo-input" data-k="price" type="number" min="0" step="0.01" value="${l.price || 0}"></td>
+        <td><select class="dogo-input" data-k="tax">${Object.keys(TAX).map(k => `<option value="${k}"${k === (l.tax || 'B') ? ' selected' : ''}>${TAX[k][0]}</option>`).join('')}</select></td>
+        <td class="lt" style="text-align:right;"></td><td><button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-rm>×</button></td>`;
+      if (l.product_id) tr.dataset.product = l.product_id;
+      $('lines').appendChild(tr); return tr;
+    }
+    function readLines() {
+      return [...$('lines').children].map((tr, n) => {
+        const g = k => tr.querySelector(`[data-k="${k}"]`).value;
+        const qty = parseFloat(g('qty')) || 0, price = parseFloat(g('price')) || 0, tax = g('tax'), vat = TAX[tax][1];
+        return { line_no: n + 1, product_id: tr.dataset.product || null, description: g('description').trim(), qty, unit_price_excl_vat: price, vat_rate: vat, tax_code: tax,
+                 line_total: Math.round(qty * price * (1 + vat / 100) * 100) / 100, net: qty * price };
+      });
+    }
+    function recalc() {
+      const ls = readLines(); let net = 0, tot = 0;
+      [...$('lines').children].forEach((tr, i) => { tr.querySelector('.lt').textContent = kes(ls[i].line_total); });
+      ls.forEach(l => { net += l.net; tot += l.line_total; });
+      $('nTotals').innerHTML = `Subtotal ${kes(net)} · VAT ${kes(tot - net)} · <b>Total ${kes(tot)}</b>`;
+      return { net: Math.round(net * 100) / 100, tot: Math.round(tot * 100) / 100 };
+    }
+    async function openNew() {
+      $('newTitle').textContent = 'New ' + DOC[tab]; $('dueLabel').textContent = tab === 'quote' ? 'Valid until' : 'Due date';
+      ['nName', 'nPhone', 'nEmail', 'nPin', 'nNotes'].forEach(id => $(id).value = '');
+      $('nIssue').value = today();
+      const d = new Date(); d.setDate(d.getDate() + (tab === 'quote' ? 30 : 14)); $('nDue').value = d.toISOString().slice(0, 10);
+      $('lines').innerHTML = ''; lineRow(); recalc();
+      if (!customers.length) { const c = await sb.from('customers').select('id,name,phone').eq('business_id', businessId).order('name').limit(500); customers = c.data || []; }
+      $('nCust').innerHTML = '<option value="">— Type a new customer below —</option>' + customers.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+      if (!products.length) { const p = await sb.from('products').select('id,name,price,vat_rate').eq('business_id', businessId).eq('archived', false).order('name').limit(1000); products = p.data || []; }
+      $('addProd').innerHTML = '<option value="">+ Add from catalogue…</option>' + products.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+      $('newModal').classList.add('open');
+    }
+    $('btnNew').onclick = openNew;
+    const closeNew = () => $('newModal').classList.remove('open');
+    $('newClose').onclick = closeNew; $('newCancel').onclick = closeNew;
+    $('addLine').onclick = () => { lineRow(); recalc(); };
+    $('lines').addEventListener('input', recalc); $('lines').addEventListener('change', recalc);
+    $('lines').addEventListener('click', e => { if (e.target.dataset.rm !== undefined) { e.target.closest('tr').remove(); recalc(); } });
+    $('addProd').onchange = e => {
+      const p = products.find(x => x.id === e.target.value); if (!p) return;
+      const rate = Number(p.vat_rate || 0), net = rate ? Number(p.price) / (1 + rate) : Number(p.price);   // catalogue prices include VAT (rate is a fraction)
+      lineRow({ description: p.name, qty: 1, price: Math.round(net * 100) / 100, tax: rate >= 0.16 ? 'B' : rate >= 0.08 ? 'E' : 'C', product_id: p.id }); e.target.value = ''; recalc();
+    };
+    $('nCust').onchange = e => { const c = customers.find(x => x.id === e.target.value); if (c) { $('nName').value = c.name || ''; $('nPhone').value = c.phone || ''; } };
+
+    $('newSave').onclick = async () => {
+      const ls = readLines().filter(l => l.description && l.qty > 0);
+      if (!$('nName').value.trim()) return toast('Enter the customer name');
+      if (!ls.length) return toast('Add at least one item');
+      const t = recalc(); const btn = $('newSave'); btn.disabled = true;
+      try {
+        const ins = await sb.from('customer_invoices').insert({
+          business_id: businessId, invoice_no: '', doc_type: tab, customer_id: $('nCust').value || null, customer_name: $('nName').value.trim(),
+          customer_phone: $('nPhone').value.trim() || null, customer_email: $('nEmail').value.trim() || null, customer_pin: $('nPin').value.trim() || null,
+          issue_date: $('nIssue').value || today(), due_date: $('nDue').value || null, status: 'sent',
+          subtotal_excl_vat: t.net, vat_total: Math.round((t.tot - t.net) * 100) / 100, total: t.tot, notes: $('nNotes').value.trim() || null
+        }).select().single();
+        if (ins.error) throw ins.error;
+        const items = await sb.from('customer_invoice_items').insert(ls.map(l => ({
+          invoice_id: ins.data.id, business_id: businessId, line_no: l.line_no, product_id: l.product_id, description: l.description,
+          qty: l.qty, unit_price_excl_vat: l.unit_price_excl_vat, vat_rate: l.vat_rate, tax_code: l.tax_code, line_total: l.line_total })));
+        if (items.error) { await sb.from('customer_invoices').delete().eq('id', ins.data.id); throw items.error; }
+        closeNew(); toast(ins.data.invoice_no + ' saved'); await load();
+      } catch (e) { toast('Could not save: ' + errText(e)); }
+      btn.disabled = false;
+    };
+
+    /* ---- actions ---- */
+    const find = id => invoices.find(i => i.id === id);
+    const rpc = async (fn, args, ok) => { const r = await sb.rpc(fn, args); if (r.error) { toast(errText(r.error)); return null; } if (ok) toast(ok); await load(); return r.data || true; };
+    $('rows').onclick = async e => {
+      const d = e.target.dataset;
+      if (d.pay) { payInv = find(d.pay); $('payTitle').textContent = 'Payment for ' + payInv.invoice_no;
+        $('payOwed').textContent = 'Balance owed: ' + kes(bal(payInv)); $('pAmt').value = bal(payInv).toFixed(2); $('pRef').value = ''; $('payModal').classList.add('open'); }
+      if (d.credit) { cnInv = find(d.credit); $('cnTitle').textContent = 'Credit note for ' + cnInv.invoice_no;
+        const left = Number(cnInv.total) - Number(cnInv.credited_total || 0); $('cnLeft').textContent = 'Can still be credited: ' + kes(left); $('cnAmt').value = left.toFixed(2); $('cnReason').value = ''; $('cnModal').classList.add('open'); }
+      if (d.convert && confirm('Create an invoice from this quote?')) rpc('convert_quote_to_invoice', { p_quote_id: d.convert }, 'Invoice created from the quote').then(r => { if (r) setTab('invoice'); });
+      if (d.decline) { const r = await sb.from('customer_invoices').update({ status: 'declined' }).eq('id', d.decline); if (r.error) toast(errText(r.error)); else { toast('Quote declined'); load(); } }
+      if (d.void && confirm('Void this invoice? It stays on record but stops counting as owed.')) {
+        const r = await sb.from('customer_invoices').update({ status: 'void' }).eq('id', d.void); if (r.error) toast(errText(r.error)); else { toast('Invoice voided'); load(); } }
+      if (d.etims) rpc('queue_invoice_etims', { p_invoice_id: d.etims }).then(r => { if (r) toast(r === 'signed' ? 'Already signed by KRA' : 'Prepared for KRA eTIMS and queued. It shows Signed once your eTIMS device credentials are connected.'); });
+      if (d.deliver && confirm('Take the items on this invoice out of stock now? This can only be done once.')) rpc('deliver_invoice', { p_invoice_id: d.deliver }, 'Stock updated');
+      if (d.share) shareLink(find(d.share));
+      if (d.print) printInvoice(find(d.print));
+    };
+    function linkFor(i) { return new URL('invoice.html?t=' + encodeURIComponent(i.share_token), location.href).href; }
+    async function shareLink(i) {
+      if (!i.share_token) return toast('Run 20261022_invoicing_full.sql to enable sharing links.');
+      const url = linkFor(i), text = (DOC[i.doc_type || 'invoice']) + ' ' + i.invoice_no + ' from ' + ((ctx.business && ctx.business.name) || 'us');
+      try { if (navigator.share) { await navigator.share({ title: text, text, url }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+      try { await navigator.clipboard.writeText(url); toast('Link copied. Anyone with it can view this ' + DOC[i.doc_type || 'invoice'] + '.'); } catch (e) { prompt('Copy this link:', url); }
+    }
+    $('payCancel').onclick = () => $('payModal').classList.remove('open');
+    $('paySave').onclick = async () => {
+      const amt = parseFloat($('pAmt').value);
+      if (!(amt > 0)) return toast('Enter an amount');
+      if (amt > bal(payInv) + 0.005) return toast('That is more than the balance owed');
+      const r = await sb.from('customer_invoice_payments').insert({ invoice_id: payInv.id, business_id: businessId, amount: amt, method: $('pMethod').value, reference: $('pRef').value.trim() || null });
+      if (r.error) return toast(errText(r.error));
+      $('payModal').classList.remove('open'); toast('Payment recorded'); load();
+    };
+    $('cnCancel').onclick = () => $('cnModal').classList.remove('open');
+    $('cnSave').onclick = async () => {
+      const amt = parseFloat($('cnAmt').value); if (!(amt > 0)) return toast('Enter an amount');
+      $('cnModal').classList.remove('open');
+      const r = await rpc('create_credit_note', { p_invoice_id: cnInv.id, p_reason: $('cnReason').value.trim(), p_amount: amt }, 'Credit note issued');
+      if (r) setTab('credit_note');
+    };
+
+    async function printInvoice(i) {
+      const it = await sb.from('customer_invoice_items').select('*').eq('invoice_id', i.id).order('line_no');
+      const b = ctx.business || {}, type = i.doc_type || 'invoice';
+      const title = type === 'quote' ? 'QUOTATION' : type === 'credit_note' ? 'CREDIT NOTE' : (i.status === 'paid' ? 'TAX INVOICE — PAID' : 'TAX INVOICE');
+      let qr = '';
+      if (i.etims_qr_code && window.qrcode) { try { const q = window.qrcode(0, 'M'); q.addData(i.etims_qr_code); q.make(); qr = q.createImgTag(3); } catch (e) {} }
+      const owed = bal(i);
+      $('invPrint').innerHTML = `
+        <div style="display:flex;justify-content:space-between;">
+          <div><h1 style="margin:0;">${esc(b.name || 'Invoice')}</h1><div>${esc(b.location || '')}</div><div>${b.kra_pin ? 'KRA PIN: ' + esc(b.kra_pin) : ''}</div><div>${esc(b.receipt_phone || '')}</div></div>
+          <div style="text-align:right;"><h2 style="margin:0;">${title}</h2><div><b>${esc(i.invoice_no)}</b></div><div>Issued: ${esc(i.issue_date)}</div><div>${type === 'quote' ? 'Valid until' : 'Due'}: ${esc(i.due_date || 'On receipt')}</div>
+          ${i.etims_invc_no ? '<div>eTIMS no: ' + esc(i.etims_invc_no) + '</div>' : (type !== 'quote' ? '<div style="font-size:11px;">eTIMS: ' + esc(etimsTxt(i)) + '</div>' : '')}</div>
+        </div>
+        <div style="margin-top:16px;"><b>${type === 'credit_note' ? 'Credit to' : 'Bill to'}:</b> ${esc(i.customer_name)}<br>${esc(i.customer_phone || '')} ${esc(i.customer_email || '')}<br>${i.customer_pin ? 'PIN: ' + esc(i.customer_pin) : ''}</div>
+        <table><thead><tr><th>Description</th><th class="r">Qty</th><th class="r">Unit (excl. VAT)</th><th class="r">VAT %</th><th class="r">Total</th></tr></thead><tbody>
+        ${(it.data || []).map(l => `<tr><td>${esc(l.description)}</td><td class="r">${l.qty}</td><td class="r">${kes(l.unit_price_excl_vat)}</td><td class="r">${l.vat_rate}</td><td class="r">${kes(l.line_total)}</td></tr>`).join('')}
+        </tbody></table>
+        <table style="width:300px;margin-left:auto;"><tr><td>Subtotal</td><td class="r">${kes(i.subtotal_excl_vat)}</td></tr><tr><td>VAT</td><td class="r">${kes(i.vat_total)}</td></tr>
+        <tr><td><b>Total</b></td><td class="r"><b>${kes(i.total)}</b></td></tr>
+        ${type === 'invoice' ? `${Number(i.credited_total) ? `<tr><td>Credit notes</td><td class="r">-${kes(i.credited_total)}</td></tr>` : ''}<tr><td>Paid</td><td class="r">${kes(i.amount_paid)}</td></tr><tr><td><b>Balance due</b></td><td class="r"><b>${kes(owed)}</b></td></tr>` : ''}</table>
+        ${i.notes ? '<p style="margin-top:16px;"><b>Notes:</b> ' + esc(i.notes) + '</p>' : ''}
+        ${qr ? '<div style="margin-top:16px;">' + qr + '<div style="font-size:11px;">Scan to verify on KRA eTIMS</div></div>' : ''}`;
+      window.print();
+    }
+
+    $('q').oninput = render; $('fStatus').onchange = render;
+    $('btnExport').onclick = () => downloadCSV(DOC[tab].replace(' ', '_') + 's.csv', [['No.', 'Customer', 'Issued', 'Due', 'Total', 'Paid', 'Credited', 'Balance', 'Status', 'eTIMS']].concat(
+      invoices.filter(i => (i.doc_type || 'invoice') === tab).map(i => [i.invoice_no, i.customer_name, i.issue_date, i.due_date, i.total, i.amount_paid, i.credited_total || 0, bal(i), label(i), etimsTxt(i)])));
+    setTab('invoice');
+    load();
+  })();
+  </script>
+</body>
+</html>

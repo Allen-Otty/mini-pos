@@ -357,6 +357,8 @@
   <script src="assets/js/dogo-data.js"></script>
   <script src="assets/js/subscription-guard.js"></script>
   <script src="assets/js/app-shell.js"></script>
+  <script src="assets/js/receipt-format.js"></script>
+  <script src="assets/js/hardware.js"></script>
   <script>
   (async function () {
     const { sb, kes, esc, boot, toast } = window.DogoData;
@@ -775,6 +777,13 @@
       // no exact code match → leave text for the normal search filter
     });
 
+    // Keyboard-style USB/Bluetooth scanners work without tapping the search box first (Settings > Hardware).
+    if (window.DogoHardware) window.DogoHardware.listenScans(code => {
+      if (busy || $('receiptModal').classList.contains('open')) return;
+      $('q').value = code;
+      $('q').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    });
+
     function drawGrid() {
       const q = $('q').value.trim().toLowerCase();
       const list = products.filter(x => !q || (x.name || '').toLowerCase().includes(q) || (x.code || '').toLowerCase().includes(q));
@@ -889,6 +898,41 @@
     const snapOf = list => list.map(l => ({ product_id: l.p.id, code: l.p.code, name: l.p.name, qty: l.qty, price: Number(l.p.price), vat_rate: Number(l.p.vat_rate || 0), unit: l.p.unit || 'piece', breaks: l.p.price_breaks || null }));
     const toLines = snap => snap.map(l => { const t = window.DogoData.bundleTotal(l.qty, l.price, l.breaks); const eff = l.qty ? +(t / l.qty).toFixed(4) : Number(l.price); return { product_id: l.product_id, code: l.code, name: l.name, qty: l.qty, price: t < l.qty * Number(l.price) - 0.001 ? eff : Number(l.price), vat_rate: Number(l.vat_rate || 0), unit: l.unit || 'piece', line_total: t }; });
 
+    /* Serial numbers: products with "track serials" on need the exact units picked before the sale is taken.
+       Needs 20261018 (product_serials) and 20261023 (sell_serials). Online only, since the stock list lives on the server. */
+    function pickSerials(lines) {
+      return new Promise(async resolve => {
+        const need = lines.filter(l => l.p.track_serials);
+        const ov = document.createElement('div'); ov.className = 'modal-overlay is-active';
+        ov.innerHTML = '<div class="modal-dialog" style="max-width:480px;"><h3 style="margin:0 0 4px;">Choose serial numbers</h3><p class="dogo-muted" style="margin:0 0 12px;font-size:13px;">Tick the exact units being sold.</p><div id="serBody" style="max-height:55vh;overflow:auto;">Loading…</div><div style="display:flex;gap:8px;margin-top:14px;"><button class="dogo-btn dogo-btn--outline" id="serCancel" style="flex:1;">Cancel</button><button class="dogo-btn dogo-btn--primary" id="serOk" style="flex:1;">Confirm</button></div></div>';
+        document.body.appendChild(ov);
+        const done = v => { ov.remove(); resolve(v); };
+        ov.querySelector('#serCancel').onclick = () => done(null);
+        const lists = [];
+        for (const l of need) {
+          const r = await sb.from('product_serials').select('serial_no').eq('product_id', l.p.id).eq('status', 'in_stock').order('received_at').limit(500);
+          if (r.error) { toast('Could not load serial numbers: ' + r.error.message); return done(null); }
+          lists.push({ l, serials: (r.data || []).map(x => x.serial_no) });
+        }
+        const bad = lists.find(x => x.serials.length < x.l.qty || !Number.isInteger(Number(x.l.qty)));
+        if (bad) { toast(bad.l.p.name + ': only ' + bad.serials.length + ' serial number(s) in stock for ' + bad.l.qty + ' unit(s). Receive the serials first.'); return done(null); }
+        const body = ov.querySelector('#serBody');
+        body.innerHTML = lists.map((x, i) => '<div style="margin-bottom:12px;"><b>' + esc(x.l.p.name) + '</b> <span class="dogo-muted">(pick ' + x.l.qty + ')</span><input class="dogo-input" data-f="' + i + '" placeholder="Type or scan to filter" style="margin:6px 0;">' +
+          '<div data-l="' + i + '">' + x.serials.map(sn => '<label style="display:block;padding:3px 0;"><input type="checkbox" data-i="' + i + '" value="' + esc(sn) + '"> ' + esc(sn) + '</label>').join('') + '</div></div>').join('');
+        body.oninput = e => { const i = e.target.getAttribute('data-f'); if (i === null) return; const q = e.target.value.trim().toLowerCase();
+          body.querySelectorAll('[data-l="' + i + '"] label').forEach(lb => { lb.style.display = !q || lb.textContent.toLowerCase().includes(q) ? 'block' : 'none'; });
+          if (q) { const hit = [...body.querySelectorAll('[data-l="' + i + '"] input')].filter(c => c.value.toLowerCase() === q); if (hit.length === 1 && !hit[0].checked) { hit[0].checked = true; e.target.value = ''; e.target.dispatchEvent(new Event('input', { bubbles: true })); } } };
+        ov.querySelector('#serOk').onclick = () => {
+          const out = [];
+          for (let i = 0; i < lists.length; i++) {
+            const picked = [...body.querySelectorAll('input[type=checkbox][data-i="' + i + '"]:checked')].map(c => c.value);
+            if (picked.length !== Number(lists[i].l.qty)) return toast(lists[i].l.p.name + ': pick exactly ' + lists[i].l.qty);
+            out.push({ product_id: lists[i].l.p.id, serials: picked });
+          }
+          done(out);
+        };
+      });
+    }
     async function recordSale({ snap, customerId, shiftId, pay, ref, uuid }) {
       let sub = 0, vat = 0, grand = 0; const items = toLines(snap);
       items.forEach(i => { const lv = i.line_total - i.line_total / (1 + i.vat_rate); sub += i.line_total - lv; vat += lv; grand += i.line_total; });
@@ -973,8 +1017,20 @@
         <div class="dogo-total-row"><span>Total</span><span>${kes(r.grand)}</span></div>
         <div class="dogo-list-row"><span class="dogo-muted">Paid by</span><strong>${esc(NAMES[pay] || pay)}</strong></div>
         ${ref ? `<div class="dogo-list-row"><span class="dogo-muted">Reference</span><strong>${esc(ref)}</strong></div>` : ''}
-        <div class="dogo-btn-row" style="justify-content:flex-end;margin-top:16px;"><button class="dogo-btn dogo-btn--outline" onclick="window.print()">Print</button><button class="dogo-btn dogo-btn--primary" id="rcClose">Done</button></div>`;
+        <div class="dogo-btn-row" style="justify-content:flex-end;margin-top:16px;"><button class="dogo-btn dogo-btn--outline" id="rcPrintBtn" onclick="window.print()">Print</button><button class="dogo-btn dogo-btn--primary" id="rcClose">Done</button></div>`;
       $('receiptModal').classList.add('open'); $('rcClose').onclick = () => $('receiptModal').classList.remove('open');
+      // Thermal printer / cash drawer (Settings > Hardware, saved per device). Falls back to the normal Print button.
+      const HW = window.DogoHardware, hs = HW && HW.getSettings();
+      if (HW && hs.mode !== 'browser') {
+        const extra = (window.DogoReceipt && window.DogoReceipt.getExtra(ctx.business && ctx.business.id)) || {};
+        const opts = { business: ctx.business, profile: ctx.profile, receiptNo: r.receipt, extra, payMethod: pay,
+          mpesaReceipt: ref || '', gatewayName: NAMES[pay] || pay,
+          items: r.items.map(i => ({ name: i.name, qty: i.qty, price: i.qty ? i.line_total / i.qty : i.price, vat: i.vat_rate, unit: i.unit, line_total: i.line_total })), grand: r.grand };
+        const go = async () => { const x = await HW.printReceipt(opts); if (!x.ok) toast('Could not print: ' + x.error); };
+        $('rcPrintBtn').textContent = 'Print receipt'; $('rcPrintBtn').onclick = go;
+        if (hs.autoPrint) go();
+        else if (hs.drawer && pay === 'cash') HW.openDrawer().then(x => { if (!x.ok) toast(x.error); });
+      }
     }
 
     const fnError = async err => { let m = err.message || 'Payment request failed'; try { const t = await err.context.text(); const j = JSON.parse(t); m = j.error || j.message || m; } catch (_) {} return m; };
@@ -1053,6 +1109,13 @@
       if (!currentShift) { toast('Open a shift first before making a sale.'); return; }
       if (!cart.length || busy) return;
       const method = $('payMethod').value;
+      let serialPicks = null;
+      if (cart.some(l => l.p.track_serials)) {
+        if (!OFF.isOnline()) return toast('Serial-number items need a connection to pick the units.');
+        if (DIGITAL[method]) return toast('Serial-number items: take cash, card or M-Pesa till for now so the units can be recorded.');
+        serialPicks = await pickSerials(cart);
+        if (!serialPicks) return;
+      }
       if (DIGITAL[method]) {
         if (!OFF.isOnline()) return toast(DIGITAL[method].name + ' needs a connection. Take cash or card-terminal payment while offline.');
         return startDigital(method);
@@ -1072,6 +1135,11 @@
       $('payBtn').disabled = true;
       const r = await recordSale({ snap: snapOf(cart), customerId: $('cust').value || null, shiftId: currentShift.id, pay: method, ref: pochiRef });
       if (r.error) { toast(r.error.message.includes('Insufficient stock') ? r.error.message : 'Could not complete sale: ' + r.error.message); drawCart(); return; }
+      if (serialPicks && !r.offline) {
+        const sv = await sb.rpc('sell_serials', { p_sale_id: r.id, p_items: serialPicks });
+        if (sv.error) toast('Sale saved, but the serial numbers could not be recorded: ' + sv.error.message + '. Mark them sold in Inventory > Lots & Expiry.');
+        else r.serials = serialPicks;
+      }
       cart = []; $('cust').value = ''; if ($('pochiCode')) $('pochiCode').value = ''; showReceipt(r, method, pochiRef || undefined); afterSale();
     };
 

@@ -143,6 +143,10 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         Receipts
       </button>
+      <button class="settings-tab-btn" data-tab="tab-hardware">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Hardware
+      </button>
       <button class="settings-tab-btn" data-tab="tab-mpesa">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
         Safaricom M-Pesa
@@ -353,6 +357,41 @@
     </div>
 
     <!-- TAB 3: Safaricom M-Pesa -->
+    <!-- TAB: Hardware (printer, cash drawer, scanner) - saved on this device only -->
+    <div class="settings-tab-pane" id="tab-hardware">
+      <section class="dogo-card" style="max-width:820px;">
+        <div class="dogo-card__title" style="margin-bottom:6px;">Receipt printer, cash drawer &amp; scanner</div>
+        <div class="dogo-muted" style="font-size:13px;margin-bottom:14px;">These settings belong to <strong>this device</strong> (the printer is connected to it). Set them up on each till.</div>
+        <div class="dogo-field">
+          <label>How does this device print?</label>
+          <select class="dogo-select" id="hwMode">
+            <option value="browser">Browser print dialog (any printer, A4 or paper roll)</option>
+            <option value="bluetooth">Bluetooth thermal printer (58/80 mm)</option>
+            <option value="usb">USB thermal printer (58/80 mm)</option>
+            <option value="rawbt">RawBT app (Android)</option>
+          </select>
+          <div class="dogo-muted" id="hwSupport" style="font-size:12.5px;margin-top:6px;"></div>
+        </div>
+        <div class="dogo-field">
+          <label>Paper width</label>
+          <select class="dogo-select" id="hwPaper"><option value="58">58 mm (32 characters per line)</option><option value="80">80 mm (48 characters per line)</option></select>
+        </div>
+        <div class="dogo-field"><label>Connected printer</label><div id="hwDevice" style="font-weight:700;">None</div></div>
+        <div class="dogo-btn-row" style="gap:10px;flex-wrap:wrap;margin:8px 0 14px;">
+          <button class="dogo-btn dogo-btn--outline" type="button" id="hwPair">Pair printer</button>
+          <button class="dogo-btn dogo-btn--primary" type="button" id="hwTest">Test print</button>
+          <button class="dogo-btn dogo-btn--outline" type="button" id="hwDrawerNow">Open cash drawer now</button>
+        </div>
+        <div id="hwMsg" class="dogo-muted" style="font-size:13px;min-height:18px;margin-bottom:10px;"></div>
+        <label class="switch-label"><div><strong>Print receipt automatically after each sale</strong><div class="dogo-muted" style="font-size:12.5px;">Bluetooth may ask you to reconnect after the page reloads; the Print button always works</div></div>
+          <input type="checkbox" id="hwAuto" style="width:20px;height:20px;accent-color:var(--dogo-neon);"></label>
+        <label class="switch-label"><div><strong>Open the cash drawer on cash sales</strong><div class="dogo-muted" style="font-size:12.5px;">The drawer must be plugged into the receipt printer's drawer port</div></div>
+          <input type="checkbox" id="hwDrawer" style="width:20px;height:20px;accent-color:var(--dogo-neon);"></label>
+        <label class="switch-label"><div><strong>USB / Bluetooth barcode scanner</strong><div class="dogo-muted" style="font-size:12.5px;">Scanners that type like a keyboard add items on the Sales page without tapping the search box. The camera scanner still works.</div></div>
+          <input type="checkbox" id="hwScanner" checked style="width:20px;height:20px;accent-color:var(--dogo-neon);"></label>
+      </section>
+    </div>
+
     <div class="settings-tab-pane" id="tab-mpesa">
       <section class="dogo-card" style="max-width:820px;margin-bottom:16px;">
         <div style="font-weight:800;font-size:18px;">Pochi la Biashara</div>
@@ -697,6 +736,7 @@
   <script src="assets/js/subscription-guard.js"></script>
   <script src="assets/js/app-shell.js"></script>
   <script src="assets/js/receipt-format.js"></script>
+  <script src="assets/js/hardware.js"></script>
   <script>
   (async function () {
     const { sb, kes, esc, boot, toast, logout } = window.DogoData;
@@ -722,6 +762,31 @@
         if (btn.dataset.tab === 'tab-team') openTeamTab();
       });
     });
+
+    // Hardware tab (assets/js/hardware.js) - per device
+    (function () {
+      const H = window.DogoHardware; if (!H) return;
+      const s = H.getSettings(), sup = H.supports();
+      $('hwMode').value = s.mode; $('hwPaper').value = String(s.paper);
+      $('hwAuto').checked = !!s.autoPrint; $('hwDrawer').checked = !!s.drawer; $('hwScanner').checked = s.scanner !== false;
+      $('hwSupport').textContent = 'This browser supports: ' + ['Bluetooth ' + (sup.bluetooth ? 'yes' : 'no'), 'USB ' + (sup.usb ? 'yes' : 'no'), 'RawBT ' + (sup.rawbt ? 'yes' : 'no')].join(', ') + '. Chrome on Android supports all three.';
+      const msg = (t, bad) => { $('hwMsg').textContent = t; $('hwMsg').style.color = bad ? '#dc2626' : ''; };
+      const showDev = () => { const c = H.getSettings(); $('hwDevice').textContent = c.mode === 'bluetooth' ? (c.btName || 'Not paired yet') : c.mode === 'usb' ? (c.usbName || 'Not paired yet') : c.mode === 'rawbt' ? 'RawBT app' : 'Browser print dialog'; };
+      showDev();
+      $('hwMode').onchange = () => { H.setSettings({ mode: $('hwMode').value }); showDev(); msg(''); };
+      $('hwPaper').onchange = () => H.setSettings({ paper: Number($('hwPaper').value) });
+      $('hwAuto').onchange = () => H.setSettings({ autoPrint: $('hwAuto').checked });
+      $('hwDrawer').onchange = () => H.setSettings({ drawer: $('hwDrawer').checked });
+      $('hwScanner').onchange = () => H.setSettings({ scanner: $('hwScanner').checked });
+      $('hwPair').onclick = async () => {
+        const m = $('hwMode').value;
+        if (m === 'browser' || m === 'rawbt') return msg(m === 'rawbt' ? 'RawBT needs no pairing: install the RawBT app and pair the printer there.' : 'The browser print dialog needs no pairing.');
+        try { msg('Choose your printer in the pop-up...'); const n = await H.pair(); showDev(); msg('Connected to ' + n + '. Tap Test print.'); }
+        catch (e) { msg(e && e.name === 'NotFoundError' ? 'No printer was chosen.' : (e.message || String(e)), true); }
+      };
+      $('hwTest').onclick = async () => { const r = await H.testPrint(); msg(r.ok ? 'Test receipt sent (' + r.via + ').' : r.error, !r.ok); };
+      $('hwDrawerNow').onclick = async () => { const r = await H.openDrawer(); msg(r.ok ? 'Drawer signal sent.' : r.error, !r.ok); };
+    })();
     function openTeamTab() {
       const f = $('teamFrame');
       if (f && !f.getAttribute('src')) f.setAttribute('src', 'team.html?embed=1');
