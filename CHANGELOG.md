@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Landing page** feature grid and FAQ updated to match the app: printers/drawers/scanners, stock counts/batches/serials/ledger, invoices-quotes-credit-notes (wording says "prepared for KRA eTIMS", not signed), suppliers & purchasing with on-device invoice reading, branch stock & reordering. Pricing cards unchanged (invoicing bullets still to be added at launch).
+
 - **Scan invoice, no AI.** Purchases > Scan invoice now reads entirely on the device. New: **PDF upload** (reads the text already inside the PDF, exact, no OCR; scanned PDFs fall back to OCR). Photos and PDFs are read by **table columns** (header row Qty / Description / Price / Amount, with VAT or code columns ignored), so numbers land in the right column; if no header row is found it uses the old line-by-line reader. Supplier name ignores web addresses, "template", "powered by" and address lines; item codes are dropped from descriptions; `$ £ €` amounts and month-first dates (10-02-2025 with due 10-16-2025) are understood. The server AI route is no longer called. Handwriting cannot be read; type those in. Service worker cache v37 (PDF.js cached for offline).
 - **Tested:** generated typed invoices (USD template and a Kenyan wholesaler with code/VAT columns) as PDF (all lines, totals, dates, supplier correct) and as images through real Tesseract (template: all correct; wholesaler: header row misread by OCR, so line-by-line fallback gave correct quantities and prices, one description lost its second line). Old text parser unchanged on till-receipt samples. **Not tested** on real phone photos of supplier invoices.
 
