@@ -1,4 +1,4 @@
-/* "Scan invoice" flow: photo -> read (AI when online, on-device OCR otherwise) -> review/edit -> commit.
+/* "Scan invoice" flow: photo or PDF -> read on this device (PDF text layer, or OCR + column layout; no AI) -> review/edit -> commit.
    The commit itself (stock, buying prices, supplier, expense/payable) is done by the page via onCommit(),
    so it reuses the exact same safe stock-update code as manual purchase orders. */
 (function (root) {
@@ -48,34 +48,42 @@
     try {
       await worker.loadLanguage('eng'); await worker.initialize('eng');
       var r = await worker.recognize(enhance(canvas));
-      return (r && r.data && r.data.text) || '';
+      var d = (r && r.data) || {};
+      var words = (d.words || []).filter(function (w) { return w && w.text && w.bbox && (w.confidence == null || w.confidence >= 25); })
+        .map(function (w) { return { t: w.text, x0: w.bbox.x0, y0: w.bbox.y0, x1: w.bbox.x1, y1: w.bbox.y1 }; });
+      return { text: d.text || '', words: words };
     } finally { try { await worker.terminate(); } catch (e) { /* ignore */ } }
   }
 
-  function apiBase() {
-    var custom = localStorage.getItem('dogo_api_url') || (root.DOGO_CONFIG && root.DOGO_CONFIG.api_url);
-    if (custom) return custom.replace(/\/+$/, '');
-    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return '';
-    return null;
-  }
-  async function aiExtract(canvas, getToken) {
-    var base = apiBase();
-    if (base === null || navigator.onLine === false) return null;
-    var off = Number(sessionStorage.getItem('dogo_ai_scan_off') || 0);
-    if (off && Date.now() - off < 10 * 60 * 1000) return null;       // server said "not available" recently
-    var ctl = new AbortController(), timer = setTimeout(function () { ctl.abort(); }, 45000);
-    try {
-      var token = getToken ? await getToken() : null;
-      var resp = await fetch(base + '/api/scan-invoice', {
-        method: 'POST', signal: ctl.signal,
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (token || '') },
-        body: JSON.stringify({ image: canvas.toDataURL('image/jpeg', 0.85).split(',')[1], mime: 'image/jpeg' })
+
+  /* ---------------- PDF: read the text that is already inside the file (exact, no OCR) ---------------- */
+  var PDFJS_VER = '3.11.174', PDFJS_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + PDFJS_VER + '/';
+  async function readPdf(file, base) {
+    base = base || PDFJS_BASE;
+    if (!root.pdfjsLib) await loadScript(base + 'pdf.min.js');
+    root.pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js';
+    var pdf = await root.pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+    var words = [], yBase = 0, pages = Math.min(pdf.numPages, 3), preview = null, scale = 2;
+    for (var n = 1; n <= pages; n++) {
+      var page = await pdf.getPage(n), vp = page.getViewport({ scale: scale }), tc = await page.getTextContent();
+      tc.items.forEach(function (it) {
+        var str = String(it.str || ''); if (!str.trim()) return;
+        var x = it.transform[4] * scale, y = vp.height - it.transform[5] * scale, w = (it.width || 0) * scale, h = Math.abs(it.height || it.transform[3] || 10) * scale;
+        var parts = str.split(/(\s+)/), total = Math.max(1, str.length), pos = 0;
+        parts.forEach(function (part) {
+          if (part && !/^\s+$/.test(part)) words.push({ t: part, x0: x + w * pos / total, x1: x + w * (pos + part.length) / total, y0: yBase + y - h, y1: yBase + y });
+          pos += part.length;
+        });
       });
-      if (!resp.ok) { if (resp.status === 404 || resp.status === 501 || resp.status === 503) sessionStorage.setItem('dogo_ai_scan_off', String(Date.now())); return null; }
-      var j = await resp.json();
-      return j && j.invoice ? normalizeAi(j.invoice) : null;
-    } catch (e) { return null; } finally { clearTimeout(timer); }
+      if (n === 1) {
+        preview = document.createElement('canvas'); preview.width = Math.round(vp.width); preview.height = Math.round(vp.height);
+        await page.render({ canvasContext: preview.getContext('2d'), viewport: vp }).promise;
+      }
+      yBase += vp.height + 200;     // later pages sit below earlier ones so rows stay in order
+    }
+    return { words: words, canvas: preview, chars: words.reduce(function (a, w) { return a + w.t.length; }, 0) };
   }
+
   function normalizeAi(a) {
     var out = { supplier: { name: String((a.supplier && a.supplier.name) || a.supplier_name || ''), phone: String((a.supplier && a.supplier.phone) || ''), pin: String((a.supplier && a.supplier.pin) || '') },
       invoice_no: String(a.invoice_no || ''), date: P.parseDate(String(a.date || '')) || String(a.date || ''), due_date: String(a.due_date || ''),
@@ -117,7 +125,7 @@
     var suppliers = ctx.suppliers || [];
     var el = document.createElement('div'); el.className = 'dis';
     document.body.appendChild(el);
-    var canvas = null, inv = null, busy = false, paid = true;
+    var canvas = null, inv = null, busy = false, paid = true, pdfWords = null;
 
     function close() { if (el.parentNode) el.parentNode.removeChild(el); }
     function shell(title, inner) {
@@ -129,22 +137,24 @@
       shell('Scan invoice', (err ? '<div class="dis-warn">' + esc(err) + '</div>' : '') +
         '<div class="dis-card">' + (canvas ? '<img class="dis-img" src="' + canvas.toDataURL('image/jpeg', 0.5) + '" alt="Invoice preview">' : '<p class="dis-muted" style="margin-top:0">Take a clear, well-lit photo of the supplier invoice or delivery note. Keep the whole page in view and flat.</p>') +
         '<label class="dis-btn" style="cursor:pointer">&#128247; ' + (canvas ? 'Retake photo' : 'Take photo') + '<input type="file" accept="image/*" capture="environment" data-a="file" hidden></label>' +
-        '<label class="dis-btn alt" style="cursor:pointer;margin-top:8px">&#128444; Choose from gallery<input type="file" accept="image/*" data-a="file" hidden></label>' +
+        '<label class="dis-btn alt" style="cursor:pointer;margin-top:8px">&#128444; Choose photo or PDF<input type="file" accept="image/*,application/pdf,.pdf" data-a="file" hidden></label>' +
         (canvas ? '<button class="dis-btn" style="margin-top:10px;background:#047857" data-a="read"' + (busy ? ' disabled' : '') + '>' + (busy ? esc(msg || 'Reading…') : 'Read invoice') + '</button>' : '') +
         '<button class="dis-btn alt" style="margin-top:8px" data-a="manual">Type it in by hand instead</button></div>' +
-        '<p class="dis-muted">Reads with AI when you are online and the server supports it, otherwise on this device (works offline). You can correct everything before it is saved.</p>');
+        '<p class="dis-muted">Read on this device, with no AI and no upload (works offline). PDFs are read exactly; photos work best when typed, flat and well lit. Handwriting cannot be read, so type those in. You can correct everything before it is saved.</p>');
     }
     async function doRead() {
       if (!canvas || busy) return;
       busy = true; stepCapture('Reading…');
       var setMsg = function (t) { var b = el.querySelector('[data-a="read"]'); if (b) b.textContent = t; };
       try {
-        setMsg('Reading with AI…');
-        var r = await aiExtract(canvas, ctx.getToken);
-        if (!r) {
+        var r;
+        if (pdfWords && pdfWords.length) { setMsg('Reading the PDF…'); r = P.parseWords(pdfWords); r.source = 'pdf'; }
+        else {
           setMsg('Reading on this device…');
-          var text = await ocr(canvas, function (p) { setMsg('Reading on this device… ' + p + '%'); });
-          r = P.parse(text); r.source = 'ocr'; r.rawText = text;
+          var o = await ocr(canvas, function (p) { setMsg('Reading on this device… ' + p + '%'); });
+          var rw = P.parseWords(o.words);
+          r = rw.layout ? rw : P.parse(o.text);     // table columns when a header row is found, line-by-line otherwise
+          r.source = 'ocr'; r.rawText = o.text;
         }
         inv = r; paid = r.paid_hint !== false; busy = false; stepReview();
       } catch (e) { busy = false; stepCapture('', (e && e.message) || 'Could not read the invoice.'); }
@@ -245,7 +255,16 @@
     el.addEventListener('change', async function (e) {
       var t = e.target;
       if (t.matches('input[type=file]') && t.files && t.files[0]) {
-        try { canvas = toCanvas(await loadImage(t.files[0]), 1800); stepCapture(); } catch (err) { stepCapture('', err.message); }
+        var f0 = t.files[0]; if (!f0) return;
+        try {
+          if (/pdf/i.test(f0.type) || /\.pdf$/i.test(f0.name)) {
+            stepCapture('Opening the PDF…');
+            var pr = await readPdf(f0);
+            canvas = pr.canvas;
+            pdfWords = pr.chars >= 20 ? pr.words : null;         // a scanned PDF has no text layer: fall back to reading the picture
+          } else { canvas = toCanvas(await loadImage(f0), 2200); pdfWords = null; }
+          stepCapture();
+        } catch (err) { stepCapture('', err.message); }
         return;
       }
       if (!inv) return;
@@ -273,5 +292,11 @@
     return { close: close };
   }
 
-  root.DogoInvoiceScan = { open: open, normalizeAi: normalizeAi };
+  /* test hook: run the on-device reader on a base64 PNG and return the parsed invoice */
+  async function _test(b64) {
+    var img = new Image(); await new Promise(function (r, j) { img.onload = r; img.onerror = j; img.src = 'data:image/png;base64,' + b64; });
+    var o = await ocr(toCanvas(img, 2200)), rw = P.parseWords(o.words), r = rw.layout ? rw : P.parse(o.text); r.rawText = o.text; return r;
+  }
+
+  root.DogoInvoiceScan = { _test: _test, open: open, normalizeAi: normalizeAi, readPdf: readPdf };
 })(typeof window !== 'undefined' ? window : globalThis);
