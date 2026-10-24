@@ -730,6 +730,74 @@
   .hero-perk i { color: #16a34a; }
   [data-theme="dark"] .hero-perk i { color: var(--accent); }
 
+
+  /* =====================================================================
+     HERO v2: story-led stage (shop scene + phone), business-type chips
+  ===================================================================== */
+  .hx-stage {
+    position: relative; overflow: hidden; text-align: left;
+    display: grid; grid-template-columns: 1fr; gap: 8px;
+    padding: 28px 22px 8px; border-radius: 28px;
+    background: radial-gradient(120% 90% at 85% 0%, #14532d 0%, #0b2a3d 55%, #07121f 100%);
+    color: #f8fafc; box-shadow: 0 24px 60px rgba(2, 20, 12, .35);
+  }
+  .hx-stage::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+    background-image: radial-gradient(rgba(250,204,21,.18) 1px, transparent 1.4px); background-size: 22px 22px;
+    -webkit-mask-image: linear-gradient(115deg, #000 0%, transparent 60%); mask-image: linear-gradient(115deg, #000 0%, transparent 60%);
+  }
+  .hx-copy, .hx-visual { position: relative; z-index: 1; }
+  .hx-pill {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; margin-bottom: 18px;
+    background: rgba(250,204,21,.14); border: 1px solid rgba(250,204,21,.4); color: #fde68a;
+    font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  }
+  .hx-pill .ping-dot { background: #facc15; flex: none; }
+  .hx-title { font-size: clamp(2.5rem, 9vw, 4.6rem); line-height: 1.02; font-weight: 800; letter-spacing: -0.035em; margin: 0 0 16px; color: #fff; }
+  .hx-accent { color: #facc15; }
+  .hx-sub { font-size: clamp(15px, 2.2vw, 18px); line-height: 1.6; color: rgba(248,250,252,.82); max-width: 520px; margin: 0 0 24px; }
+  .hx-cta { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 22px; }
+  .hx-btn-primary {
+    height: 56px; padding: 0 34px; border-radius: 999px; border: 0; cursor: pointer; font-size: 16px; font-weight: 800;
+    background: #facc15; color: #0f172a; display: inline-flex; align-items: center; gap: 10px;
+    box-shadow: 0 10px 28px rgba(250,204,21,.35); transition: transform .18s, box-shadow .18s; margin: 0;
+  }
+  .hx-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(250,204,21,.45); }
+  .hx-link { color: #fff; font-weight: 700; font-size: 15px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 2px; }
+  .hx-link:hover { border-color: #facc15; color: #facc15; }
+  .hx-perks { list-style: none; padding: 0; margin: 0 0 18px; display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; font-weight: 700; color: rgba(248,250,252,.85); }
+  .hx-perks i { color: #4ade80; margin-right: 6px; }
+  .hx-get { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12.5px; color: rgba(248,250,252,.65); }
+  .hx-get a { color: #fff; text-decoration: none; font-weight: 700; padding: 6px 12px; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; }
+  .hx-get a:hover { border-color: #facc15; color: #facc15; }
+  .hx-visual { position: relative; margin: 6px -6px 0; }
+  .hx-scene { width: 100%; height: auto; display: block; max-height: 460px; filter: drop-shadow(0 18px 30px rgba(0,0,0,.35)); }
+  .hx-float {
+    position: absolute; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 16px;
+    background: rgba(255,255,255,.92); color: #0f172a; box-shadow: 0 12px 30px rgba(0,0,0,.28);
+    backdrop-filter: blur(8px); font-size: 12px; line-height: 1.3; animation: hxFloat 6s ease-in-out infinite;
+  }
+  .hx-float i { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; font-size: 14px; flex: none; }
+  .hx-float b { display: block; font-size: 12.5px; } .hx-float span { color: #475569; font-size: 11.5px; }
+  .hx-f1 { top: 6%; left: 2%; } .hx-f1 i { background: #dcfce7; color: #16a34a; }
+  .hx-f2 { top: 44%; right: 0%; animation-delay: -2s; } .hx-f2 i { background: #fef3c7; color: #d97706; }
+  .hx-f3 { bottom: 4%; left: 4%; animation-delay: -4s; } .hx-f3 i { background: #dbeafe; color: #2563eb; }
+  @keyframes hxFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  .hx-types { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin: 22px 0 8px; }
+  .hx-types-label { width: 100%; text-align: center; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-secondary); }
+  .hx-types button {
+    border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); border-radius: 999px; padding: 10px 16px;
+    font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin: 0; transition: all .18s; box-shadow: var(--shadow-sm);
+  }
+  .hx-types button i { color: #16a34a; }
+  .hx-types button:hover { border-color: var(--accent); transform: translateY(-2px); }
+  @media (min-width: 900px) {
+    .hx-stage { grid-template-columns: 1.05fr .95fr; align-items: center; padding: 56px 48px 40px; gap: 24px; }
+    .hx-visual { margin: 0; }
+  }
+  @media (max-width: 520px) { .hx-f2 { display: none; } .hx-f1, .hx-f3 { left: 0; } .hx-float span { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .hx-float, .ping-dot::after { animation: none; } .hx-btn-primary, .hx-types button { transition: none; } }
+
   /* =====================================================================
      INTERACTIVE LIVE DEMO WIDGET (Dogo POS Feature)
   ===================================================================== */
@@ -5672,50 +5740,88 @@
 
   <!-- Hero Section -->
   <section class="dogo-hero" id="hero">
-    <div class="hero-pill-badge">
-      <span class="ping-dot"></span>
-      <span>Built for businesses everywhere</span>
+    <div class="hx-stage">
+      <div class="hx-copy">
+        <div class="hx-pill"><span class="ping-dot"></span><span>Sell faster &middot; Know your stock &middot; Grow with control</span></div>
+        <h1 class="hx-title">Your shop,<br><span class="hx-accent">in your pocket.</span></h1>
+        <p class="hx-sub">Sell, get paid by M-Pesa, and see your profit, even when the internet is down. Built for the duka, the supermarket and the restaurant.</p>
+        <div class="hx-cta">
+          <button class="hx-btn-primary" onclick="openAuthModal('signup')"><span>Start free</span> <i class="fa-solid fa-arrow-right"></i></button>
+          <a href="#demo" class="hx-link"><i class="fa-solid fa-circle-play"></i> Try the live demo</a>
+        </div>
+        <ul class="hx-perks">
+          <li><i class="fa-solid fa-circle-check"></i> Free forever plan</li>
+          <li><i class="fa-solid fa-circle-check"></i> No card required</li>
+          <li><i class="fa-solid fa-circle-check"></i> Works offline</li>
+        </ul>
+        <div class="hx-get js-web-only">
+          <span>Get the app</span>
+          <a href="https://github.com/Allen-Otty/mini-pos/releases/download/latest/Dogo-POS.apk" aria-label="Download for Android"><i class="fa-brands fa-android"></i> Android</a>
+          <a href="https://github.com/Allen-Otty/mini-pos/releases/download/latest/Dogo-POS-Setup.exe" aria-label="Download for Windows"><i class="fa-brands fa-windows"></i> Windows</a>
+        </div>
+      </div>
+
+      <div class="hx-visual" aria-hidden="true">
+        <svg class="hx-scene" viewBox="0 0 520 440" role="img" focusable="false">
+          <defs>
+            <linearGradient id="hxSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fde68a" stop-opacity=".55"/><stop offset="1" stop-color="#fde68a" stop-opacity="0"/></linearGradient>
+            <linearGradient id="hxWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8fafc"/><stop offset="1" stop-color="#e2e8f0"/></linearGradient>
+            <clipPath id="hxAwn"><path d="M60 128h330l14 50H46z"/></clipPath>
+          </defs>
+          <circle cx="440" cy="70" r="46" fill="url(#hxSky)"/>
+          <ellipse cx="240" cy="408" rx="230" ry="16" fill="#000" opacity=".22"/>
+          <!-- shop front -->
+          <rect x="60" y="176" width="330" height="224" rx="6" fill="url(#hxWall)"/>
+          <rect x="60" y="360" width="330" height="40" fill="#14532d"/>
+          <!-- awning -->
+          <g clip-path="url(#hxAwn)">
+            <rect x="40" y="120" width="380" height="70" fill="#16a34a"/>
+            <g fill="#facc15"><rect x="60" y="120" width="30" height="70"/><rect x="120" y="120" width="30" height="70"/><rect x="180" y="120" width="30" height="70"/><rect x="240" y="120" width="30" height="70"/><rect x="300" y="120" width="30" height="70"/><rect x="360" y="120" width="30" height="70"/></g>
+          </g>
+          <rect x="130" y="92" width="190" height="34" rx="8" fill="#052e16"/>
+          <text x="225" y="115" text-anchor="middle" font-family="system-ui,Arial" font-weight="800" font-size="18" fill="#facc15" letter-spacing="3">OPEN &middot; DUKA</text>
+          <!-- shelves with stock -->
+          <rect x="84" y="206" width="282" height="8" rx="3" fill="#94a3b8"/>
+          <rect x="84" y="262" width="282" height="8" rx="3" fill="#94a3b8"/>
+          <rect x="84" y="318" width="282" height="8" rx="3" fill="#94a3b8"/>
+          <g>
+            <rect x="94" y="176" width="26" height="30" rx="3" fill="#ef4444"/><rect x="126" y="182" width="22" height="24" rx="3" fill="#f59e0b"/><rect x="154" y="170" width="28" height="36" rx="3" fill="#3b82f6"/><rect x="188" y="180" width="24" height="26" rx="3" fill="#10b981"/><rect x="218" y="174" width="30" height="32" rx="3" fill="#a855f7"/><rect x="254" y="184" width="22" height="22" rx="3" fill="#ef4444"/><rect x="282" y="176" width="26" height="30" rx="3" fill="#f59e0b"/><rect x="314" y="182" width="40" height="24" rx="3" fill="#3b82f6"/>
+            <rect x="94" y="234" width="34" height="28" rx="3" fill="#10b981"/><rect x="134" y="226" width="26" height="36" rx="3" fill="#ef4444"/><rect x="166" y="238" width="32" height="24" rx="3" fill="#f59e0b"/><rect x="204" y="230" width="24" height="32" rx="3" fill="#a855f7"/><rect x="234" y="236" width="36" height="26" rx="3" fill="#3b82f6"/><rect x="276" y="228" width="26" height="34" rx="3" fill="#10b981"/><rect x="308" y="238" width="44" height="24" rx="3" fill="#ef4444"/>
+            <rect x="94" y="290" width="28" height="28" rx="3" fill="#f59e0b"/><rect x="128" y="284" width="36" height="34" rx="3" fill="#3b82f6"/><rect x="170" y="292" width="24" height="26" rx="3" fill="#ef4444"/><rect x="200" y="286" width="30" height="32" rx="3" fill="#10b981"/><rect x="236" y="294" width="34" height="24" rx="3" fill="#a855f7"/><rect x="276" y="288" width="26" height="30" rx="3" fill="#f59e0b"/><rect x="308" y="292" width="44" height="26" rx="3" fill="#3b82f6"/>
+          </g>
+          <!-- counter -->
+          <rect x="44" y="332" width="362" height="68" rx="8" fill="#0f766e"/>
+          <rect x="44" y="326" width="362" height="12" rx="6" fill="#134e4a"/>
+          <rect x="300" y="300" width="70" height="30" rx="5" fill="#0f172a"/><rect x="306" y="305" width="58" height="14" rx="3" fill="#22c55e"/><rect x="312" y="322" width="46" height="4" rx="2" fill="#64748b"/>
+          <!-- phone -->
+          <g transform="translate(330 150) rotate(6)">
+            <rect x="0" y="0" width="150" height="270" rx="26" fill="#0b1220" stroke="#1f2a44" stroke-width="3"/>
+            <rect x="10" y="14" width="130" height="242" rx="18" fill="#f8fafc"/>
+            <rect x="52" y="20" width="46" height="8" rx="4" fill="#0b1220"/>
+            <text x="22" y="52" font-family="system-ui,Arial" font-weight="800" font-size="11" fill="#0f172a">Sale &middot; Sample</text>
+            <rect x="20" y="62" width="110" height="36" rx="8" fill="#ecfdf5"/><text x="28" y="78" font-family="system-ui,Arial" font-size="9" fill="#065f46">Unga 2kg &times; 2</text><text x="122" y="78" text-anchor="end" font-family="system-ui,Arial" font-weight="700" font-size="9" fill="#065f46">270.00</text><text x="28" y="91" font-family="system-ui,Arial" font-size="9" fill="#065f46">Sugar 1kg &times; 1</text><text x="122" y="91" text-anchor="end" font-family="system-ui,Arial" font-weight="700" font-size="9" fill="#065f46">180.00</text>
+            <text x="22" y="124" font-family="system-ui,Arial" font-size="10" fill="#475569">Total</text><text x="128" y="126" text-anchor="end" font-family="system-ui,Arial" font-weight="800" font-size="18" fill="#0f172a">KES 450</text>
+            <rect x="20" y="140" width="110" height="34" rx="17" fill="#16a34a"/><text x="75" y="162" text-anchor="middle" font-family="system-ui,Arial" font-weight="800" font-size="11" fill="#fff">M-Pesa STK</text>
+            <circle cx="75" cy="208" r="20" fill="#dcfce7"/><path d="M65 208l7 7 13-14" fill="none" stroke="#16a34a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="75" y="242" text-anchor="middle" font-family="system-ui,Arial" font-weight="700" font-size="10" fill="#166534">Paid</text>
+          </g>
+        </svg>
+        <div class="hx-float hx-f1"><i class="fa-solid fa-mobile-screen-button"></i><div><b>M-Pesa received</b><span>KES 450.00 &middot; just now</span></div></div>
+        <div class="hx-float hx-f2"><i class="fa-solid fa-triangle-exclamation"></i><div><b>Low stock</b><span>Sugar 1kg &middot; 3 left</span></div></div>
+        <div class="hx-float hx-f3"><i class="fa-solid fa-wifi"></i><div><b>Offline? Keep selling</b><span>Syncs when you reconnect</span></div></div>
+      </div>
     </div>
 
-    <h1 class="hero-heading">
-      Sell faster. <span class="text-lime">Know your stock.</span><br>
-      Grow with control.
-    </h1>
-
-    <p class="hero-subheading">
-      POS platform for shops, supermarkets, and restaurants worldwide. Sell in your currency, record M-Pesa or cash, manage stock, and know your profit.
-    </p>
-
-    <div class="hero-ctas">
-      <button class="hero-btn-primary" onclick="openAuthModal('signup')">
-        <span>Start free today</span> <i class="fa-solid fa-arrow-right"></i>
-      </button>
-      <a href="#demo" class="hero-btn-secondary">
-        <i class="fa-solid fa-play"></i> <span>Try live demo</span>
-      </a>
+    <div class="hx-types" role="group" aria-label="Pick your kind of business">
+      <span class="hx-types-label">Try it for your business</span>
+      <button type="button" onclick="hxPick('Retail')"><i class="fa-solid fa-bag-shopping"></i> Retail shop</button>
+      <button type="button" onclick="hxPick('Kiosk')"><i class="fa-solid fa-shop"></i> Kiosk / Kibanda</button>
+      <button type="button" onclick="hxPick('Supermarket')"><i class="fa-solid fa-barcode"></i> Supermarket</button>
+      <button type="button" onclick="hxPick('Wholesale')"><i class="fa-solid fa-boxes-packing"></i> Wholesale</button>
+      <button type="button" onclick="hxPick('Hotel')"><i class="fa-solid fa-utensils"></i> Restaurant</button>
+      <button type="button" onclick="hxPick('Hardware')"><i class="fa-solid fa-screwdriver-wrench"></i> Hardware</button>
+      <button type="button" onclick="hxPick('SME')"><i class="fa-solid fa-briefcase"></i> Other business</button>
     </div>
-
-    <div class="hero-ctas js-web-only" style="margin-top:12px;">
-      <a href="https://github.com/Allen-Otty/mini-pos/releases/download/latest/Dogo-POS.apk" class="hero-btn-secondary">
-        <i class="fa-brands fa-android"></i> <span>Download for Android</span>
-      </a>
-      <a href="https://github.com/Allen-Otty/mini-pos/releases/download/latest/Dogo-POS-Setup.exe" class="hero-btn-secondary">
-        <i class="fa-brands fa-windows"></i> <span>Download for Windows</span>
-      </a>
-    </div>
-
-    
-    <div class="hero-perks">
-      <div class="hero-perk"><i class="fa-solid fa-circle-check"></i> Free forever plan</div>
-      <div class="hero-perk"><i class="fa-solid fa-circle-check"></i> No card required</div>
-      <div class="hero-perk"><i class="fa-solid fa-circle-check"></i> Multi-currency ready</div>
-    </div>
-
-    <!-- Dogo POS Platform Laptop Mockup Showcase -->
-    <div class="hero-laptop-wrap">
-      <img src="images/laptop.png" alt="POS Platform Showcase" class="hero-laptop-img" loading="eager">
-    </div>
-
 
     <!-- Interactive Live POS Demo Widget -->
     <div class="demo-widget-container" id="demo">
@@ -9425,6 +9531,10 @@ function getActiveDemoProducts() {
   ];
 }
 
+function hxPick(type) {
+  try { if (typeof switchDemoBusinessType === 'function') switchDemoBusinessType(type); } catch (e) {}
+  var d = document.getElementById('demo'); if (d) d.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 function selectTopBarBizType(bizType) {
   switchDemoBusinessType(bizType);
   const demoEl = document.getElementById('demo');

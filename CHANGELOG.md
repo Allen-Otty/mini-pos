@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Landing hero redesigned (story-led).** New stage: "Your shop, in your pocket." headline, one primary button (Start free) with a text link to the live demo, perks line, small Android/Windows links, an original illustrated duka scene with a phone showing a sample M-Pesa sale, floating status cards, and tappable business-type chips that switch the live demo. Works in light and dark themes, respects reduced-motion. Replaces the stacked four-button hero and the laptop screenshot (old hero CSS left in place, unused). Checked in a headless browser at 390 px and 1280 px; not yet viewed on a real phone.
+
 - **Landing page** feature grid and FAQ updated to match the app: printers/drawers/scanners, stock counts/batches/serials/ledger, invoices-quotes-credit-notes (wording says "prepared for KRA eTIMS", not signed), suppliers & purchasing with on-device invoice reading, branch stock & reordering. Pricing cards unchanged (invoicing bullets still to be added at launch).
 
 - **Scan invoice, no AI.** Purchases > Scan invoice now reads entirely on the device. New: **PDF upload** (reads the text already inside the PDF, exact, no OCR; scanned PDFs fall back to OCR). Photos and PDFs are read by **table columns** (header row Qty / Description / Price / Amount, with VAT or code columns ignored), so numbers land in the right column; if no header row is found it uses the old line-by-line reader. Supplier name ignores web addresses, "template", "powered by" and address lines; item codes are dropped from descriptions; `$ £ €` amounts and month-first dates (10-02-2025 with due 10-16-2025) are understood. The server AI route is no longer called. Handwriting cannot be read; type those in. Service worker cache v37 (PDF.js cached for offline).
