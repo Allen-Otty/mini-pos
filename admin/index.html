@@ -731,7 +731,15 @@
   <input type="text" id="pcEmail" placeholder="admin@dogopos.com">
   <input type="password" id="pcPassword" placeholder="Password">
   <button onclick="platformLogin()">Sign In to Console</button>
+  <div style="text-align:center; margin-top:10px;"><a href="#" onclick="adminForgot(); return false;" style="font-size:13px; color:var(--gold);">Forgot password?</a></div>
   <div id="loginError"></div>
+  <div id="loginInfoMsg" style="color:#4ade80; font-size:13px; font-weight:600; margin-top:10px; text-align:center;"></div>
+  <div id="adminResetBox" style="display:none; margin-top:14px; border-top:1px solid var(--border); padding-top:14px;">
+    <div style="font-weight:800; margin-bottom:6px;">Choose a new password</div>
+    <input type="password" id="adminNewPw" placeholder="New password (8+ chars, Aa1)">
+    <input type="password" id="adminNewPw2" placeholder="Repeat new password">
+    <button onclick="adminSetNewPassword()">Save new password</button>
+  </div>
 </div>
 
 <!-- Main Admin Dashboard -->
@@ -1639,6 +1647,15 @@
 
     <!-- TAB 11: SUPER ADMINS -->
     <div class="tab-view" id="tab-admins">
+      <div class="admin-card" style="margin-bottom:16px;">
+        <h3 class="card-title"><i class="fa-solid fa-envelope-circle-check"></i> Email verification for new signups</h3>
+        <p class="card-sub">When ON, a new shop owner must click a link we email before they can sign in. When OFF (default), accounts are active immediately.</p>
+        <label style="display:flex; gap:8px; align-items:center; margin:10px 0; font-size:13.5px; font-weight:700;">
+          <input type="checkbox" id="reqVerifyToggle" onchange="saveVerifyToggle(this.checked)"> Require email verification
+        </label>
+        <p style="font-size:12px; color:var(--text-muted); margin:0;">⚠ Turn this on only after custom SMTP is set up in Supabase (Authentication → Emails → SMTP Settings) and "Confirm email" is enabled. The built-in Supabase mailer only emails your own team and is limited to a few messages an hour, so real customers would never get the link. Password reset emails need the same SMTP.</p>
+        <p id="reqVerifyMsg" style="font-size:12px; margin:6px 0 0;"></p>
+      </div>
       <div class="admin-card">
         <div class="card-header-flex">
           <div>
@@ -1994,6 +2011,46 @@ function switchAdminTab(tabId, btn) {
   }
 }
 
+// ---- Password recovery (Super Admin) ----
+async function adminForgot() {
+  const el = document.getElementById('loginError'), ok = document.getElementById('loginInfoMsg');
+  el.textContent = ''; ok.textContent = '';
+  const email = document.getElementById('pcEmail').value.trim();
+  if (!email) { el.textContent = 'Type your admin email above, then tap Forgot password.'; return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  if (error && /rate|seconds|too many/i.test(error.message)) { el.textContent = 'Please wait a minute and try again.'; return; }
+  ok.textContent = 'If that is a registered admin email, a reset link is on its way.';
+}
+window.__adminRecovery = /[#&]type=recovery/.test(location.hash);
+sb.auth.onAuthStateChange((event) => {
+  if (event === 'PASSWORD_RECOVERY' || window.__adminRecovery) {
+    window.__adminRecovery = true;
+    const b = document.getElementById('adminResetBox'); if (b) b.style.display = 'block';
+    document.getElementById('dashboardWrap').style.display = 'none';
+    document.getElementById('loginBox').style.display = 'block';
+  }
+});
+async function adminSetNewPassword() {
+  const el = document.getElementById('loginError'), ok = document.getElementById('loginInfoMsg');
+  el.textContent = ''; ok.textContent = '';
+  const a = document.getElementById('adminNewPw').value, b = document.getElementById('adminNewPw2').value;
+  if (a !== b) { el.textContent = 'Passwords do not match.'; return; }
+  if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(a)) { el.textContent = 'Use 8+ characters with an uppercase letter, a lowercase letter and a number.'; return; }
+  const { error } = await sb.auth.updateUser({ password: a });
+  if (error) { el.textContent = /expired|session/i.test(error.message) ? 'That link expired — request a new one.' : error.message; return; }
+  window.__adminRecovery = false;
+  await sb.auth.signOut();
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  document.getElementById('adminResetBox').style.display = 'none';
+  ok.textContent = 'Password updated. Sign in with your new password.';
+}
+async function saveVerifyToggle(on) {
+  const msg = document.getElementById('reqVerifyMsg');
+  const { error } = await sb.from('platform_settings').update({ require_email_verification: !!on }).eq('id', true);
+  if (error) { msg.style.color = '#f87171'; msg.textContent = 'Could not save: ' + error.message; document.getElementById('reqVerifyToggle').checked = !on; return; }
+  msg.style.color = '#4ade80'; msg.textContent = on ? 'ON — new signups must verify their email.' : 'OFF — new signups are active immediately.';
+}
+
 async function platformLogin() {
   const email = document.getElementById('pcEmail').value.trim();
   const password = document.getElementById('pcPassword').value;
@@ -2050,6 +2107,7 @@ async function callPlatformFn(action, payload) {
 
 async function loadDashboard() {
   await loadPlatformSettingsFromDB();
+  { const t = document.getElementById('reqVerifyToggle'); if (t) t.checked = !!(platformSettingsCache && platformSettingsCache.require_email_verification); }
   await loadPlanCatalogAdmin();
   loadAnalyticsFields();
   loadBroadcastFields();

@@ -6446,10 +6446,51 @@
           <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Toggle password"><i class="fa-solid fa-eye"></i></button>
         </div>
 
+        <div style="text-align:right; margin:-4px 0 8px;"><a href="#" onclick="showAuthTab('forgot'); document.getElementById('fpEmail').value = document.getElementById('loginIdentifier').value; return false;" style="font-size:13px; color:#15803d; font-weight:600;">Forgot password?</a></div>
         <button class="auth-btn" onclick="handleLogin()">Sign In</button>
         <div class="auth-error" id="loginError"></div>
         <div class="auth-info" id="loginInfo"></div>
+        <div id="resendVerifyWrap" style="display:none; text-align:center; margin-top:8px;"><button type="button" class="auth-btn" style="background:#f1f5f9; color:#0f172a;" onclick="resendVerification(document.getElementById('loginIdentifier').value.trim(), 'loginInfo')">Resend verification email</button></div>
         <div class="auth-link">Don't have a business account? <a href="#authSection" onclick="showAuthTab('signup'); return false;" style="color:#15803d; font-weight:700;">Create one free</a></div>
+      </div>
+
+      <!-- FORGOT PASSWORD PANEL -->
+      <div class="auth-panel" id="authPanelForgot">
+        <h2>Reset your password</h2>
+        <div class="sub">Enter the email you signed up with and we'll send a reset link.</div>
+        <label>Email</label>
+        <input type="email" id="fpEmail" placeholder="you@business.com" autocomplete="email">
+        <button class="auth-btn" id="fpBtn" onclick="handleForgot()">Send reset link</button>
+        <div class="auth-error" id="forgotError"></div>
+        <div class="auth-info" id="forgotInfo"></div>
+        <div class="auth-link"><a href="#" onclick="showAuthTab('login'); return false;" style="color:#15803d; font-weight:700;">Back to Sign In</a></div>
+        <div style="font-size:12px; color:#64748b; margin-top:10px;">Shop tellers: ask your business Admin to reset your password from Team.</div>
+      </div>
+
+      <!-- SET NEW PASSWORD PANEL (opened from the email link) -->
+      <div class="auth-panel" id="authPanelReset">
+        <h2>Choose a new password</h2>
+        <div class="sub">Pick something strong you don't use anywhere else.</div>
+        <label>New password</label>
+        <div class="pw-wrap">
+          <input type="password" id="rpPassword" placeholder="New password" autocomplete="new-password">
+          <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('rpPassword', this)" aria-label="Toggle password"><i class="fa-solid fa-eye"></i></button>
+        </div>
+        <label>Confirm new password</label>
+        <input type="password" id="rpConfirm" placeholder="Repeat password" autocomplete="new-password">
+        <div style="font-size:12px; color:#64748b; margin:4px 0 8px;">8+ characters with an uppercase letter, a lowercase letter and a number.</div>
+        <button class="auth-btn" id="rpBtn" onclick="handleResetPassword()">Save new password</button>
+        <div class="auth-error" id="resetError"></div>
+      </div>
+
+      <!-- CHECK YOUR EMAIL PANEL -->
+      <div class="auth-panel" id="authPanelVerify">
+        <h2>Check your email ✉️</h2>
+        <div class="sub" id="verifySub">We sent a verification link to your email. Click it to activate your account, then sign in.</div>
+        <div class="auth-info" id="verifyInfo" style="display:none;"></div>
+        <button class="auth-btn" onclick="resendVerification(window.__verifyEmail, 'verifyInfo')">Resend email</button>
+        <div style="font-size:12px; color:#64748b; margin:8px 0;">Can't see it? Check spam / promotions. The link works for 24 hours.</div>
+        <div class="auth-link"><a href="#" onclick="showAuthTab('login'); return false;" style="color:#15803d; font-weight:700;">Back to Sign In</a></div>
       </div>
 
       <!-- SIGNUP PANEL -->
@@ -8763,6 +8804,10 @@
 ===================================================================== */
 const SUPABASE_URL = "https://uzwomzkzqrpiumtnniik.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D";
+// Password-recovery / email-link detection must run before supabase-js clears the URL hash.
+window.__dogoRecovery = /[#&]type=recovery/.test(location.hash);
+window.__dogoLinkError = (location.hash.match(/error_description=([^&]+)/) || [])[1] || '';
+const SITE_URL = /^https?:$/.test(location.protocol) ? location.origin + '/' : 'https://dogo-pos-app.netlify.app/';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true }
 });
@@ -10476,14 +10521,16 @@ function showToast(msg) {
 function showAuthTab(name) {
   document.getElementById('tabLoginBtn').classList.toggle('active', name === 'login');
   document.getElementById('tabSignupBtn').classList.toggle('active', name === 'signup');
-  document.getElementById('authPanelLogin').classList.toggle('active', name === 'login');
-  document.getElementById('authPanelSignup').classList.toggle('active', name === 'signup');
+  ['Login', 'Signup', 'Forgot', 'Reset', 'Verify'].forEach(n =>
+    document.getElementById('authPanel' + n).classList.toggle('active', name === n.toLowerCase()));
   clearAuthMessages();
+  const rw = document.getElementById('resendVerifyWrap'); if (rw) rw.style.display = 'none';
 }
 
 function clearAuthMessages() {
-  ['loginError','loginInfo','signupError','signupInfo'].forEach(id => {
+  ['loginError','loginInfo','signupError','signupInfo','forgotError','forgotInfo','resetError','verifyInfo'].forEach(id => {
     const el = document.getElementById(id);
+    if (!el) return;
     el.style.display = 'none';
     el.textContent = '';
   });
@@ -10601,7 +10648,7 @@ async function handleSignup() {
 
   // Creates the auth user (pre-confirmed, no email OTP step), the business,
   // and the admin profile all in one server-side call.
-  const resp = await callEdgeFunction('create-business', { business_name, business_type, full_name, email, password, phone: contactPhone });
+  const resp = await callEdgeFunction('create-business', { business_name, business_type, full_name, email, password, phone: contactPhone, redirect_to: SITE_URL });
 
   if (resp.error) {
     if (btn) { btn.disabled = false; btn.textContent = 'Create Business Account'; }
@@ -10618,6 +10665,17 @@ async function handleSignup() {
   }
 
   const selectedPlan = document.getElementById('suSelectedPlan')?.value || 'Free';
+
+  if (resp.verification_required) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Create Business Account'; }
+    try { localStorage.setItem('dogo_pending_signup_plan', selectedPlan); } catch (e) {}
+    window.__verifyEmail = email;
+    showAuthTab('verify');
+    const sub = document.getElementById('verifySub');
+    if (sub) sub.textContent = 'We sent a verification link to ' + email + '. Click it to activate your account, then sign in.';
+    if (resp.verification_email_error) showAuthMsg('verifyInfo', 'We could not send the email automatically (' + resp.verification_email_error + '). Tap "Resend email" in a minute.');
+    return;
+  }
 
   const result = await performLogin(email, password);
   if (btn) { btn.disabled = false; btn.textContent = 'Create Business Account'; }
@@ -10720,6 +10778,56 @@ async function dogoOfflineLogin(identifier, password) {
   } catch (e) { return { error: 'Offline sign-in is not available on this browser. Connect to the internet to sign in.' }; }
 }
 
+/* ---- Password recovery & email verification ---- */
+async function handleForgot() {
+  clearAuthMessages();
+  const email = document.getElementById('fpEmail').value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { showAuthMsg('forgotError', 'Enter the email address you signed up with.'); return; }
+  const btn = document.getElementById('fpBtn'); btn.disabled = true; btn.textContent = 'Sending…';
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: SITE_URL });
+  btn.disabled = false; btn.textContent = 'Send reset link';
+  if (error && /rate|too many|seconds/i.test(error.message)) { showAuthMsg('forgotError', 'Please wait a minute before asking for another link.'); return; }
+  if (error && /smtp|email.*(send|sent)|sending/i.test(error.message)) { showAuthMsg('forgotError', 'We could not send email right now. Please contact support.'); return; }
+  // Same message whether or not the account exists, so nobody can probe which emails are registered.
+  showAuthMsg('forgotInfo', 'If an account exists for ' + email + ', a reset link is on its way. Check your inbox and spam folder.');
+}
+
+function openResetPanel() {
+  const a = document.getElementById('authScreen'); if (a) a.style.display = 'block';
+  const sh = document.getElementById('appShell'); if (sh) sh.style.display = 'none';
+  showAuthTab('reset');
+  try { a.scrollIntoView(); } catch (e) {}
+}
+
+async function handleResetPassword() {
+  clearAuthMessages();
+  const pw = document.getElementById('rpPassword').value, pw2 = document.getElementById('rpConfirm').value;
+  if (pw !== pw2) { showAuthMsg('resetError', 'Passwords do not match.'); return; }
+  if (!isStrongPassword(pw)) { showAuthMsg('resetError', PASSWORD_HINT); return; }
+  const btn = document.getElementById('rpBtn'); btn.disabled = true; btn.textContent = 'Saving…';
+  const { error } = await sb.auth.updateUser({ password: pw });
+  btn.disabled = false; btn.textContent = 'Save new password';
+  if (error) {
+    showAuthMsg('resetError', /session|expired|missing/i.test(error.message)
+      ? 'This reset link has expired. Request a new one from "Forgot password?".' : error.message);
+    return;
+  }
+  window.__dogoRecovery = false;
+  try { await sb.auth.signOut(); } catch (e) {}
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  document.getElementById('rpPassword').value = ''; document.getElementById('rpConfirm').value = '';
+  showAuthTab('login');
+  showAuthMsg('loginInfo', 'Password updated ✔ Sign in with your new password.');
+}
+
+async function resendVerification(email, infoId) {
+  if (!email) { showAuthMsg(infoId || 'loginInfo', 'Enter your email above first.'); return; }
+  const { error } = await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: SITE_URL } });
+  showAuthMsg(infoId || 'loginInfo', error
+    ? (/rate|too many|seconds/i.test(error.message) ? 'Please wait a minute before asking for another email.' : 'Could not send: ' + error.message)
+    : 'Verification email sent to ' + email + '. Check your inbox and spam folder.');
+}
+
 async function handleLogin() {
   clearAuthMessages();
   const identifier = document.getElementById('loginIdentifier').value.trim();
@@ -10737,6 +10845,11 @@ async function handleLogin() {
   if (!navigator.onLine) return goOffline();
   const result = await performLogin(identifier, password);
   if (result.error && /failed to fetch|network|load failed/i.test(result.error)) return goOffline();   // online flag lied / connection died
+  if (result.error && (/EMAIL_NOT_VERIFIED|not confirmed/i.test(result.error))) {
+    showAuthMsg('loginError', 'Please verify your email first — we sent you a link. Check your inbox and spam folder.');
+    const rw = document.getElementById('resendVerifyWrap'); if (rw) rw.style.display = 'block';
+    return;
+  }
   if (result.error) { showAuthMsg('loginError', result.error); return; }
   try {
     const { data: { session: s2 } } = await sb.auth.getSession();
@@ -15229,6 +15342,7 @@ function resetInactivityTimer() {
    signed in as whoever last used the device.
 ===================================================================== */
 sb.auth.onAuthStateChange((event, s) => {
+  if (event === 'PASSWORD_RECOVERY') { window.__dogoRecovery = true; openResetPanel(); return; }
   if (event === 'SIGNED_OUT') {
     session = null; profile = null; business = null;
     clearTimeout(inactivityTimer);
@@ -16705,6 +16819,16 @@ async function saveNewProductFromPage() {
       document.getElementById('portalSidebar')?.classList.add('sidebar-hidden');
     }
   } catch(e) {}
+
+  // Opened from a password-reset email: show the new-password form, never drop into the app.
+  if (window.__dogoRecovery) { openResetPanel(); return; }
+  if (window.__dogoLinkError) {
+    showAuthTab('login');
+    showAuthMsg('loginError', /expired|invalid/i.test(decodeURIComponent(window.__dogoLinkError.replace(/\+/g, ' ')))
+      ? 'That email link has expired or was already used. Request a new one (Forgot password? or Resend verification).'
+      : decodeURIComponent(window.__dogoLinkError.replace(/\+/g, ' ')));
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  }
 
   // Check if session is active or user was logged in
   let hasValidSession = false;

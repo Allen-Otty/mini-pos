@@ -15,7 +15,7 @@ Deno.serve(async (req: Request) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceKey);
 
-    const { business_name, business_type, full_name, email, password, phone } = await req.json();
+    const { business_name, business_type, full_name, email, password, phone, redirect_to } = await req.json();
     if (!business_name || !full_name || !email || !password) {
       return new Response(JSON.stringify({ error: "Business name, your name, email, and password are all required" }), { status: 400, headers: J });
     }
@@ -31,10 +31,15 @@ Deno.serve(async (req: Request) => {
         : /^[17]\d{8}$/.test(d) ? "254" + d : d.slice(0, 20) || null;
     }
 
-    // Create the auth user directly via the Admin API, pre-confirmed - no email
-    // OTP/confirmation step. This endpoint IS the signup flow (verify_jwt=false).
+    // Email verification is a platform switch (Admin > Team > Security). OFF = account is pre-confirmed
+    // (works without any email service). ON = the owner must click the emailed link before signing in;
+    // turn it on only after SMTP is set up in Supabase, or no one will receive the link.
+    const { data: ps } = await adminClient.from("platform_settings").select("require_email_verification").eq("id", true).maybeSingle();
+    const needVerify = !!(ps && ps.require_email_verification);
+
+    // Create the auth user directly via the Admin API. This endpoint IS the signup flow (verify_jwt=false).
     const { data: created, error: createErr } = await adminClient.auth.admin.createUser({
-      email, password, email_confirm: true,
+      email, password, email_confirm: !needVerify,
     });
     if (createErr) {
       const msg = /already.*registered|already.*exists/i.test(createErr.message)
@@ -68,7 +73,21 @@ Deno.serve(async (req: Request) => {
       .update({ owner_email: String(email).toLowerCase(), owner_phone: cleanPhone })
       .eq("id", biz.id);
 
-    return new Response(JSON.stringify({ success: true, business_id: biz.id }), { headers: J });
+    let verificationEmailError: string | null = null;
+    if (needVerify) {
+      // Only send links that return to our own site
+      const safeRedirect = typeof redirect_to === "string" && /^https:\/\/(dogo-pos-app\.netlify\.app|[a-z0-9-]+\.netlify\.app)\//i.test(redirect_to)
+        ? redirect_to : "https://dogo-pos-app.netlify.app/";
+      const anon = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
+      const { error: mailErr } = await anon.auth.resend({ type: "signup", email, options: { emailRedirectTo: safeRedirect } });
+      if (mailErr) verificationEmailError = mailErr.message;
+    }
+
+    return new Response(JSON.stringify({
+      success: true, business_id: biz.id,
+      verification_required: needVerify,
+      verification_email_error: verificationEmailError,
+    }), { headers: J });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: J });
   }
