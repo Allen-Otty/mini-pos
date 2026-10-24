@@ -235,6 +235,29 @@
       return null;
     }
     Offline.watch(ctx);
+    // Ask existing shop owners (once per session) for a contact number so the Dogo team can reach them.
+    try {
+      if (ctx.isAdmin && ctx.business && 'owner_phone' in ctx.business && !ctx.business.owner_phone && isOnline() && !sessionStorage.getItem('dogo_phone_ask')) {
+        const main = document.querySelector('main');
+        if (main) {
+          const bar = document.createElement('div');
+          bar.style.cssText = 'margin:0 0 12px;padding:10px 12px;border-radius:12px;background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d;display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px';
+          bar.innerHTML = '<span style="flex:1;min-width:200px">📱 Add your phone / WhatsApp number so the Dogo team can help you quickly.</span>' +
+            '<input type="tel" placeholder="0712 345 678" style="padding:7px 9px;border:1px solid #86efac;border-radius:8px;width:150px">' +
+            '<button style="padding:7px 12px;border:0;border-radius:8px;background:#16a34a;color:#fff;font-weight:700;cursor:pointer">Save</button>' +
+            '<button style="padding:7px 10px;border:0;background:none;color:#166534;cursor:pointer" aria-label="Dismiss">✕</button>';
+          const [inp, save, x] = bar.querySelectorAll('input,button');
+          x.onclick = () => { sessionStorage.setItem('dogo_phone_ask', '1'); bar.remove(); };
+          save.onclick = async () => {
+            if (inp.value.replace(/\D/g, '').length < 9) { inp.style.borderColor = '#dc2626'; return; }
+            const { error } = await sb.rpc('set_my_contact', { p_phone: inp.value.trim() });
+            if (error) { inp.style.borderColor = '#dc2626'; return; }
+            sessionStorage.setItem('dogo_phone_ask', '1'); bar.innerHTML = '✅ Thanks — saved.'; setTimeout(() => bar.remove(), 2500);
+          };
+          main.insertBefore(bar, main.firstChild);
+        }
+      }
+    } catch (e) {}
     // 3-day warning / expired lock screen (assets/js/subscription-guard.js). Never blocks page start-up.
     try {
       if (window.DogoSubGuard && ctx.businessId) {

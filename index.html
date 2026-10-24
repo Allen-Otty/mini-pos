@@ -6527,6 +6527,10 @@
           </div>
         </div>
 
+        <label>Phone / WhatsApp number</label>
+        <input type="tel" id="suContactPhone" inputmode="tel" autocomplete="tel" placeholder="e.g. 0712 345 678">
+        <div style="font-size:11px; color:#64748b; margin:-2px 0 6px;">So our team can help you set up. We never share it.</div>
+
         <label>Password</label>
         <div class="pw-wrap">
           <input type="password" id="suPassword" placeholder="Create a strong password" oninput="checkPasswordRules()">
@@ -10569,6 +10573,11 @@ async function handleSignup() {
     return;
   }
   const email = document.getElementById('suEmail').value.trim();
+  const contactPhone = (document.getElementById('suContactPhone')?.value || '').trim();
+  if (contactPhone.replace(/\D/g, '').length < 9) {
+    showAuthMsg('signupError', 'Please enter your phone / WhatsApp number so we can help you get started.');
+    return;
+  }
 
   if (!business_name || !full_name || !email || !password) {
     showAuthMsg('signupError', 'Please fill in all fields.');
@@ -10592,7 +10601,7 @@ async function handleSignup() {
 
   // Creates the auth user (pre-confirmed, no email OTP step), the business,
   // and the admin profile all in one server-side call.
-  const resp = await callEdgeFunction('create-business', { business_name, business_type, full_name, email, password });
+  const resp = await callEdgeFunction('create-business', { business_name, business_type, full_name, email, password, phone: contactPhone });
 
   if (resp.error) {
     if (btn) { btn.disabled = false; btn.textContent = 'Create Business Account'; }
@@ -16882,6 +16891,7 @@ async function saveNewProductFromPage() {
       </div>
     </div>
   </div>
+  <script src="assets/js/dogo-helper.js" defer></script>
 </body>
 </html>
 

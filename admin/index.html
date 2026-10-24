@@ -856,16 +856,66 @@
           <button class="btn-secondary" onclick="clearAiChat()"><i class="fa-solid fa-broom"></i> Clear Chat</button>
         </div>
 
+        <details id="aiSettings" class="ai-settings" style="margin:0 0 14px; border:1px solid var(--border); border-radius:12px; padding:12px 14px;">
+          <summary style="cursor:pointer; font-weight:800; font-size:13px;">
+            <i class="fa-solid fa-sliders"></i> AI settings
+            <span id="aiStatusPill" class="tag" style="margin-left:8px;">checking…</span>
+          </summary>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; margin-top:12px;">
+            <div>
+              <label style="font-size:11px; font-weight:700;">Provider (all have a free tier)</label>
+              <select id="aiProvider" class="form-control" onchange="aiProviderChanged()">
+                <option value="gemini">Google Gemini — free key at aistudio.google.com</option>
+                <option value="groq">Groq — free key at console.groq.com</option>
+                <option value="openrouter">OpenRouter — free models at openrouter.ai</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px; font-weight:700;">Model (blank = recommended)</label>
+              <input id="aiModel" class="form-control" placeholder="">
+            </div>
+            <div>
+              <label style="font-size:11px; font-weight:700;">API key <span id="aiKeyHint" style="color:var(--text-muted);"></span></label>
+              <input id="aiKey" type="password" class="form-control" placeholder="Paste key (stored on the server only)" autocomplete="off">
+            </div>
+            <div>
+              <label style="font-size:11px; font-weight:700;">Daily limits (per shop / help bot)</label>
+              <div style="display:flex; gap:6px;">
+                <input id="aiLimitBiz" type="number" class="form-control" value="30" min="1">
+                <input id="aiLimitHelp" type="number" class="form-control" value="200" min="1">
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:14px; margin:12px 0; font-size:12.5px;">
+            <label><input type="checkbox" id="aiOn"> <strong>AI switched on</strong></label>
+            <label><input type="checkbox" id="aiOnAdmin" checked> Admin Copilot</label>
+            <label><input type="checkbox" id="aiOnBiz" checked> Assistant inside shops</label>
+            <label><input type="checkbox" id="aiOnHelp" checked> Help bot (website &amp; app)</label>
+          </div>
+          <label style="font-size:11px; font-weight:700;">Extra knowledge the AI should know (pricing changes, promos, policies, WhatsApp number…)</label>
+          <textarea id="aiKnowledge" class="form-control" rows="4" placeholder="e.g. Support WhatsApp: 07xx. Promo this month: first 2 months of Core at 50%."></textarea>
+          <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+            <button class="btn-primary" onclick="saveAiConfig()"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+            <button class="btn-secondary" onclick="testAiConnection()"><i class="fa-solid fa-plug"></i> Save &amp; test</button>
+            <button class="btn-secondary" onclick="clearAiKey()" style="color:var(--red);"><i class="fa-solid fa-key"></i> Remove key</button>
+          </div>
+          <p id="aiSettingsMsg" style="font-size:12px; margin:8px 0 0; color:var(--text-muted);"></p>
+          <p style="font-size:11.5px; color:var(--text-muted); margin:6px 0 0;">The key is saved in your database and used only by the server function; browsers can never read it back. The AI is read-only — it can read live data and draft messages but cannot change anything or send anything itself.</p>
+        </details>
+
         <div class="ai-layout">
           <!-- AI Context & Shortcut Prompts -->
           <div class="ai-sidebar">
             <div>
               <span style="font-size:11px; font-weight:800; color:var(--gold); text-transform:uppercase; letter-spacing:0.05em;">Live Knowledge Engine</span>
-              <p style="font-size:12px; color:var(--text-muted); margin:4px 0 0;">The AI ingests your live database statistics automatically on every prompt.</p>
+              <p style="font-size:12px; color:var(--text-muted); margin:4px 0 0;">Every question is answered by a real AI using a fresh read of your live platform data (stores, sales, subscriptions, security signals). It is read-only.</p>
             </div>
 
             <div class="ai-chip-list">
               <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Quick Analytical Prompts</span>
+              <button class="ai-prompt-chip" onclick="sendAiPrompt('Who signed up recently and needs a follow-up call or WhatsApp today? Give me a prioritised list.')">
+                <i class="fa-solid fa-address-book" style="color:var(--gold);"></i> Who should I contact today?
+              </button>
               <button class="ai-prompt-chip" onclick="sendAiPrompt('Analyze our platform growth, MRR, and subscription health.')">
                 <i class="fa-solid fa-chart-pie" style="color:var(--gold);"></i> Platform Growth &amp; MRR
               </button>
@@ -895,16 +945,21 @@
             <div class="ai-chat-header">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span class="system-health-pill"><span class="dot"></span> Online</span>
-                <span style="font-size:13px; font-weight:700;">Dogo Copilot v2.4</span>
+                <span style="font-size:13px; font-weight:700;">Dogo Copilot</span>
+                <select id="aiPersona" class="form-control" style="padding:3px 8px; font-size:12px; width:auto;" title="Which hat the AI wears">
+                  <option value="auto">Auto</option>
+                  <option value="sentinel">🛡️ Security Sentinel</option>
+                  <option value="manager">📋 Manager</option>
+                  <option value="growth">📈 Growth &amp; Support</option>
+                </select>
               </div>
               <span style="font-size:11.5px; color:var(--text-muted);" id="aiContextIndicator">Context: Live Platform Data</span>
             </div>
 
             <div class="ai-chat-body" id="aiChatBody">
               <div class="ai-bubble bot">
-                👋 <strong>Hello Super Admin!</strong> I am your <strong>Dogo AI Platform Assistant</strong>.<br>
-                I have full real-time awareness of your businesses, active subscriptions, revenue trends, and security status.<br><br>
-                How can I assist your platform management today? Tap any of the quick prompts on the left or type your question below!
+                👋 Hi! I'm your Dogo Copilot — your <strong>security sentinel</strong>, <strong>platform manager</strong> and <strong>growth &amp; support</strong> partner.<br>
+                Ask me anything in plain language (English, Swahili or Sheng): "who signed up this week?", "anything suspicious today?", "draft a WhatsApp to the stores with no sales yet".
               </div>
             </div>
 
@@ -1082,8 +1137,13 @@
             <h3 class="card-title"><i class="fa-solid fa-store"></i> Registered Businesses</h3>
             <p class="card-sub">Manage stores, view sales volume, handle churn, and provide instant support</p>
           </div>
-          <button class="btn-secondary" onclick="loadDashboard()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn-secondary" onclick="exportContactsCsv()"><i class="fa-solid fa-file-csv"></i> Export contacts</button>
+            <button class="btn-secondary" onclick="copyAllNumbers()"><i class="fa-brands fa-whatsapp"></i> Copy all numbers</button>
+            <button class="btn-secondary" onclick="loadDashboard()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
         </div>
+        <div id="contactsBanner" style="display:none; font-size:12.5px; margin:0 0 10px; padding:8px 12px; border-radius:10px; background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.35);"></div>
 
         <div class="search-filter-bar">
           <input type="text" id="bizSearchInput" class="form-control" placeholder="Search by business name or ID..." oninput="filterBusinesses()">
@@ -1113,6 +1173,7 @@
             <thead>
               <tr>
                 <th>Business Name</th>
+                <th>Owner contact</th>
                 <th>Industry</th>
                 <th>Status</th>
                 <th>Plan</th>
@@ -1165,6 +1226,7 @@
                 <th>Date</th>
                 <th>Business</th>
                 <th>Plan Requested</th>
+                <th>Contact</th>
                 <th>Amount</th>
                 <th>M-Pesa Reference</th>
                 <th>Action</th>
@@ -1182,6 +1244,7 @@
             <thead>
               <tr>
                 <th>Business</th>
+                <th>Contact</th>
                 <th>Plan</th>
                 <th>Status</th>
                 <th>Amount</th>
@@ -1564,6 +1627,38 @@
   </main>
 </div>
 
+<!-- Contact client modal -->
+<div class="modal-overlay" id="contactModal">
+  <div class="modal-box" style="max-width:560px; max-height:90vh; overflow-y:auto;">
+    <h3 id="ctTitle">Contact client</h3>
+    <div id="ctInfo" style="font-size:13px; margin-bottom:10px;"></div>
+    <label style="font-size:11px; font-weight:700;">Phone / WhatsApp (edit if wrong or missing)</label>
+    <input id="ctPhone" class="form-control" placeholder="0712345678">
+    <label style="font-size:11px; font-weight:700; margin-top:10px; display:block;">Message</label>
+    <div style="display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap;">
+      <select id="ctTemplate" class="form-control" style="flex:1; min-width:170px;" onchange="ctApplyTemplate()">
+        <option value="welcome">Welcome / onboarding help</option>
+        <option value="nosales">No sales yet — check-in</option>
+        <option value="paid">Payment received — plan active</option>
+        <option value="renew">Renewal reminder</option>
+        <option value="custom">Blank</option>
+      </select>
+      <button class="btn-secondary" id="ctAiBtn" onclick="ctDraftWithAi()"><i class="fa-solid fa-wand-magic-sparkles"></i> Draft with AI</button>
+    </div>
+    <textarea id="ctMsg" class="form-control" rows="6"></textarea>
+    <label style="font-size:11px; font-weight:700; margin-top:10px; display:block;">Private note (only you see this)</label>
+    <textarea id="ctNote" class="form-control" rows="2" placeholder="e.g. Called, wants printer help Friday"></textarea>
+    <p id="ctMsgStatus" style="font-size:12px; color:var(--text-muted); margin:6px 0 0;"></p>
+    <div style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; justify-content:flex-end;">
+      <button class="btn-secondary" onclick="closeContactModal()">Close</button>
+      <button class="btn-secondary" onclick="ctCopy()"><i class="fa-solid fa-copy"></i> Copy</button>
+      <button class="btn-secondary" onclick="ctEmail()"><i class="fa-solid fa-envelope"></i> Email</button>
+      <button class="btn-primary" onclick="ctWhatsApp()" style="background:#16a34a;"><i class="fa-brands fa-whatsapp"></i> Open WhatsApp</button>
+    </div>
+    <p style="font-size:11.5px; color:var(--text-muted); margin:10px 0 0;">WhatsApp opens with the message ready — you tap Send. (Fully automatic sending needs a paid WhatsApp/SMS provider.)</p>
+  </div>
+</div>
+
 <!-- Business Detail Modal -->
 <div class="modal-overlay" id="detailModal">
   <div class="modal-box">
@@ -1943,12 +2038,15 @@ async function loadDashboard() {
   const businesses = await callPlatformFn('list_businesses', {});
   if (!businesses.error) {
     allBusinessesCache = businesses || [];
+    await loadContacts();
     const countEl = document.getElementById('navBizCount');
     if (countEl) countEl.textContent = allBusinessesCache.length;
     renderBusinessesTable(allBusinessesCache);
     populatePlanBizDropdown(allBusinessesCache);
     await renderSubscriptionsViews(allBusinessesCache);
   }
+
+  loadAiConfig();
 
   // 3. Super Admins
   const admins = await callPlatformFn('list_platform_admins', {});
@@ -2000,20 +2098,21 @@ function renderBusinessesTable(list) {
   if (!tbody) return;
 
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#888; padding:32px;">No businesses match filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#888; padding:32px;">No businesses match filters.</td></tr>';
     return;
   }
 
   const plansMap = getStoredBusinessPlans();
 
   tbody.innerHTML = list.map((b, idx) => {
-    const planInfo = plansMap[b.id] || { plan: 'Free', status: 'Active' };
+    const planInfo = b.subscription_plan ? { plan: b.subscription_plan, status: b.subscription_status || 'active' } : (plansMap[b.id] || { plan: 'Free', status: 'Active' });
     const planTagClass = planInfo.plan === 'Control' ? 'tag-plan-control' : (planInfo.plan === 'Core' ? 'tag-plan-core' : 'tag-plan-free');
     const isAtRisk = (idx % 4 === 1 && !b.active); // heuristic churn indicator
 
     return `
       <tr>
-        <td><strong>${escapeHtml(b.name)}</strong></td>
+        <td><strong>${escapeHtml(b.name)}</strong>${isNewBiz(b) ? ' <span class="tag tag-active" style="font-size:10px;">NEW</span>' : ''}</td>
+        <td>${contactCell(b.id)}</td>
         <td><span class="tag" style="background:rgba(255,255,255,0.07); color:#e2e8f0;">${escapeHtml(b.business_type || 'Retail')}</span></td>
         <td><span class="tag ${b.active ? 'tag-active' : 'tag-suspended'}">${b.active ? 'Active' : 'Suspended'}</span></td>
         <td><span class="tag ${planTagClass}">${escapeHtml(planInfo.plan)}</span></td>
@@ -2116,12 +2215,13 @@ async function renderSubscriptionsViews(businesses) {
   const pBody = document.getElementById('pendingSubsBody');
   if (pBody) {
     pBody.innerHTML = pendingList.length === 0
-      ? '<tr><td colspan="6" style="text-align:center; color:#888; padding:20px;">No pending payment verifications.</td></tr>'
+      ? '<tr><td colspan="7" style="text-align:center; color:#888; padding:20px;">No pending payment verifications.</td></tr>'
       : pendingList.map(item => `
         <tr>
           <td>${new Date(item.created_at).toLocaleDateString()}</td>
           <td><strong>${escapeHtml(bizName(item.business_id))}</strong></td>
           <td><span class="tag tag-plan-${item.plan.toLowerCase().replace(/\s+/g,'-')}">${escapeHtml(item.plan)}</span></td>
+          <td>${contactCell(item.business_id, item.phone)}</td>
           <td><strong>KES ${Number(item.amount || 0).toLocaleString()}</strong></td>
           <td><span style="font-family:monospace; background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:6px; color:var(--gold);">${escapeHtml(item.mpesa_code)}</span></td>
           <td class="actions">
@@ -2141,6 +2241,7 @@ async function renderSubscriptionsViews(businesses) {
       return `
         <tr>
           <td><strong>${escapeHtml(b.name)}</strong></td>
+          <td>${contactCell(b.id)}</td>
           <td><span class="tag tag-plan-${plan.toLowerCase().replace(/\s+/g,'-')}">${escapeHtml(plan)}</span></td>
           <td><span class="tag ${b.subscription_status === 'active' ? 'tag-active' : 'tag-plan-free'}">${escapeHtml(b.subscription_status || 'free')}</span></td>
           <td>KES ${amount.toLocaleString()}/mo</td>
@@ -2836,36 +2937,281 @@ function clearAiChat() {
   }
 }
 
+// ───────────── Real AI Copilot (server-side provider; see supabase/functions/ai-assistant) ─────────────
+let aiHistory = [];
+let aiConfigured = null; // null unknown, true/false
+
+function aiMd(t) {
+  let h = escapeHtml(String(t || ''));
+  h = h.replace(/```([\s\S]*?)```/g, (m, c) => '<pre style="white-space:pre-wrap; background:rgba(0,0,0,.25); padding:8px; border-radius:8px;">' + c.trim() + '</pre>');
+  h = h.replace(/`([^`\n]+)`/g, '<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  h = h.replace(/(^|\n)#{1,4} ?([^\n]+)/g, '$1<strong>$2</strong>');
+  h = h.replace(/(^|\n)[-*•] +([^\n]+)/g, '$1• $2');
+  return h.replace(/\n/g, '<br>');
+}
+
+async function aiCall(messages, persona) {
+  const { data: { session } } = await sb.auth.getSession();
+  const { data, error } = await sb.functions.invoke('ai-assistant', {
+    body: { mode: 'admin', persona: persona || 'auto', messages, page: 'admin' },
+    headers: { Authorization: 'Bearer ' + (session ? session.access_token : '') }
+  });
+  if (error) {
+    let body = null;
+    try { body = await error.context.json(); } catch (e) {}
+    return { error: (body && (body.message || body.error)) || error.message, code: body && body.error };
+  }
+  return data;
+}
+
 function submitAiMessage() {
   const input = document.getElementById('aiUserInput');
   const text = (input?.value || '').trim();
   if (!text) return;
-
   const body = document.getElementById('aiChatBody');
   if (!body) return;
 
-  // Add user bubble
   const userDiv = document.createElement('div');
   userDiv.className = 'ai-bubble user';
   userDiv.textContent = text;
   body.appendChild(userDiv);
   input.value = '';
 
-  // Add typing placeholder
   const botDiv = document.createElement('div');
   botDiv.className = 'ai-bubble bot';
-  botDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing live platform data...';
+  botDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Thinking…';
   body.appendChild(botDiv);
   body.scrollTop = body.scrollHeight;
 
-  // Generate system-aware intelligence response
-  setTimeout(() => {
-    const response = generateAiSystemResponse(text);
-    botDiv.innerHTML = response;
+  aiHistory.push({ role: 'user', content: text });
+  const persona = document.getElementById('aiPersona')?.value || 'auto';
+  aiCall(aiHistory, persona).then(res => {
+    if (res && res.reply) {
+      aiHistory.push({ role: 'assistant', content: res.reply });
+      botDiv.innerHTML = aiMd(res.reply);
+    } else {
+      aiHistory.pop();
+      const notSet = res && (res.code === 'ai_not_configured' || res.code === 'ai_disabled');
+      const offline = generateAiSystemResponse(text);
+      botDiv.innerHTML = (notSet
+        ? '<div style="font-size:12px; color:var(--gold); margin-bottom:8px;"><i class="fa-solid fa-circle-info"></i> No AI is connected yet, so this is the built-in offline fallback (fixed answers). Open <strong>AI settings</strong> above, paste a free key and switch AI on for real conversations.</div>'
+        : '<div style="font-size:12px; color:#f87171; margin-bottom:8px;"><i class="fa-solid fa-triangle-exclamation"></i> The AI could not answer: ' + escapeHtml((res && res.error) || 'unknown error') + '. Showing the built-in offline fallback.</div>') + offline;
+    }
     body.scrollTop = body.scrollHeight;
-  }, 700);
+  });
 }
 
+function aiProviderChanged() {
+  const ph = { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct:free' };
+  const m = document.getElementById('aiModel');
+  if (m) m.placeholder = ph[document.getElementById('aiProvider').value] || '';
+}
+
+async function loadAiConfig() {
+  const { data, error } = await sb.rpc('ai_get_config');
+  const pill = document.getElementById('aiStatusPill');
+  if (error) {
+    if (pill) { pill.textContent = 'database update needed'; pill.className = 'tag tag-suspended'; }
+    aiConfigured = false;
+    return;
+  }
+  const c = data || {};
+  document.getElementById('aiProvider').value = c.provider || 'gemini';
+  document.getElementById('aiModel').value = c.model || '';
+  document.getElementById('aiKey').value = '';
+  document.getElementById('aiKeyHint').textContent = c.key_set ? '(saved ' + (c.key_hint || '') + ' — leave blank to keep)' : '(not set)';
+  document.getElementById('aiOn').checked = !!c.enabled;
+  document.getElementById('aiOnAdmin').checked = c.admin_enabled !== false;
+  document.getElementById('aiOnBiz').checked = c.business_enabled !== false;
+  document.getElementById('aiOnHelp').checked = c.help_enabled !== false;
+  document.getElementById('aiLimitBiz').value = c.daily_limit_per_business || 30;
+  document.getElementById('aiLimitHelp').value = c.daily_limit_help || 200;
+  document.getElementById('aiKnowledge').value = c.knowledge || '';
+  aiProviderChanged();
+  aiConfigured = !!(c.enabled && c.key_set);
+  if (pill) {
+    pill.textContent = aiConfigured ? ('live · ' + c.provider + ' · ' + (c.calls_today || 0) + ' calls today') : (c.key_set ? 'key saved, switched off' : 'not connected');
+    pill.className = 'tag ' + (aiConfigured ? 'tag-active' : 'tag-suspended');
+  }
+  const det = document.getElementById('aiSettings');
+  if (det && !aiConfigured) det.open = true;
+}
+
+async function saveAiConfig(silent) {
+  const msg = document.getElementById('aiSettingsMsg');
+  const p = {
+    provider: document.getElementById('aiProvider').value,
+    model: document.getElementById('aiModel').value.trim(),
+    api_key: document.getElementById('aiKey').value.trim(),
+    enabled: document.getElementById('aiOn').checked,
+    admin_enabled: document.getElementById('aiOnAdmin').checked,
+    business_enabled: document.getElementById('aiOnBiz').checked,
+    help_enabled: document.getElementById('aiOnHelp').checked,
+    daily_limit_per_business: parseInt(document.getElementById('aiLimitBiz').value, 10) || 30,
+    daily_limit_help: parseInt(document.getElementById('aiLimitHelp').value, 10) || 200,
+    knowledge: document.getElementById('aiKnowledge').value
+  };
+  const { error } = await sb.rpc('ai_set_config', { p });
+  if (error) { if (msg) msg.textContent = 'Could not save: ' + error.message + ' (run the 20261024 SQL first?)'; return false; }
+  if (msg && !silent) msg.textContent = 'Saved.';
+  await loadAiConfig();
+  return true;
+}
+
+async function testAiConnection() {
+  const msg = document.getElementById('aiSettingsMsg');
+  if (!(await saveAiConfig(true))) return;
+  if (msg) msg.textContent = 'Testing…';
+  const r = await aiCall([{ role: 'user', content: 'Reply with one short sentence confirming you are connected, and state how many businesses are on the platform.' }], 'manager');
+  if (msg) msg.innerHTML = r.reply
+    ? '<span style="color:#4ade80;">✔ Working ('+ escapeHtml(r.provider + ' / ' + r.model) +'):</span> ' + escapeHtml(r.reply)
+    : '<span style="color:#f87171;">✖ ' + escapeHtml(r.error || 'failed') + '</span>' + (r.code === 'ai_not_configured' ? ' — tick "AI switched on" and paste a key.' : '');
+}
+
+async function clearAiKey() {
+  if (!confirm('Remove the saved API key and switch the AI off?')) return;
+  const { error } = await sb.rpc('ai_set_config', { p: { clear_key: 'true', enabled: false } });
+  showToast(error ? 'Could not remove: ' + error.message : 'Key removed.');
+  loadAiConfig();
+}
+
+// ───────────── Client contacts ─────────────
+let contactsById = {};
+let contactsReady = false;
+
+async function loadContacts() {
+  const banner = document.getElementById('contactsBanner');
+  const { data, error } = await sb.rpc('platform_contacts');
+  if (error) {
+    contactsReady = false;
+    if (banner) { banner.style.display = 'block'; banner.innerHTML = '<strong>Contacts need a database update.</strong> Run <code>RUN_THIS_ai_contacts.sql</code> in the Supabase SQL Editor, then Refresh.'; }
+    return;
+  }
+  contactsReady = true;
+  if (banner) banner.style.display = 'none';
+  contactsById = {};
+  (data || []).forEach(c => { contactsById[c.business_id] = c; });
+}
+
+function waNumber(raw) {
+  let d = String(raw || '').replace(/[^\d]/g, '');
+  if (!d) return '';
+  if (/^0[17]\d{8}$/.test(d)) d = '254' + d.slice(1);
+  else if (/^[17]\d{8}$/.test(d)) d = '254' + d;
+  return d;
+}
+function isNewBiz(b) { return b && b.created_at && (Date.now() - new Date(b.created_at).getTime()) < 7 * 864e5; }
+
+function contactCell(bizId, fallbackPhone) {
+  const c = contactsById[bizId] || {};
+  const phone = c.owner_phone || fallbackPhone || '';
+  const email = c.owner_email || '';
+  const wa = waNumber(phone);
+  const name = c.owner_name ? `<div style="font-size:12px; font-weight:700;">${escapeHtml(c.owner_name)}</div>` : '';
+  const phoneHtml = phone
+    ? `<div style="font-size:12px;"><i class="fa-solid fa-phone" style="opacity:.6"></i> ${escapeHtml(phone)}</div>`
+    : `<div style="font-size:11.5px; color:var(--gold);">no phone yet</div>`;
+  const emailHtml = email ? `<div style="font-size:11.5px; color:var(--text-muted); word-break:break-all;">${escapeHtml(email)}</div>` : '';
+  const btns = `
+    <div style="display:flex; gap:4px; margin-top:4px;">
+      ${wa ? `<a href="https://wa.me/${wa}" target="_blank" rel="noopener" class="btn-reactivate" style="padding:3px 8px; text-decoration:none;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+      <a href="tel:+${wa}" class="btn-view" style="padding:3px 8px; text-decoration:none;" title="Call"><i class="fa-solid fa-phone"></i></a>` : ''}
+      ${email ? `<a href="mailto:${encodeURIComponent(email)}" class="btn-view" style="padding:3px 8px; text-decoration:none;" title="Email"><i class="fa-solid fa-envelope"></i></a>` : ''}
+      <button class="btn-plan" style="padding:3px 8px;" onclick="openContactModal('${bizId}')" title="Message / notes"><i class="fa-solid fa-comment-dots"></i></button>
+    </div>`;
+  const last = c.last_contacted_at ? `<div style="font-size:10.5px; color:var(--text-muted);">contacted ${new Date(c.last_contacted_at).toLocaleDateString()}</div>` : '';
+  return name + phoneHtml + emailHtml + last + btns;
+}
+
+let ctBizId = null;
+function bizById(id) { return allBusinessesCache.find(b => b.id === id) || {}; }
+function ctFirstName(c) { return (c.owner_name || '').trim().split(/\s+/)[0] || 'there'; }
+
+function openContactModal(id) {
+  ctBizId = id;
+  const b = bizById(id), c = contactsById[id] || {};
+  document.getElementById('ctTitle').textContent = b.name || 'Contact client';
+  document.getElementById('ctInfo').innerHTML =
+    `${escapeHtml(c.owner_name || 'Owner')} · ${escapeHtml(b.business_type || '')} · plan <strong>${escapeHtml(b.subscription_plan || 'Free')}</strong><br>
+     ${c.owner_email ? escapeHtml(c.owner_email) : 'no email'} · joined ${b.created_at ? new Date(b.created_at).toLocaleDateString() : '—'}`;
+  document.getElementById('ctPhone').value = c.owner_phone || '';
+  document.getElementById('ctNote').value = c.contact_notes || '';
+  document.getElementById('ctMsgStatus').textContent = '';
+  document.getElementById('ctTemplate').value = (b.subscription_plan && b.subscription_plan !== 'Free') ? 'paid' : 'welcome';
+  ctApplyTemplate();
+  document.getElementById('contactModal').classList.add('show');
+}
+function closeContactModal() { document.getElementById('contactModal').classList.remove('show'); }
+
+function ctApplyTemplate() {
+  const b = bizById(ctBizId), c = contactsById[ctBizId] || {};
+  const n = ctFirstName(c), biz = b.name || 'your shop', plan = b.subscription_plan || 'Free';
+  const T = {
+    welcome: `Hi ${n}, welcome to Dogo POS! 🎉 This is the Dogo team. I saw ${biz} just joined. Can I help you add your products, connect a printer or set up M-Pesa? Just reply here and we'll sort it out together.`,
+    nosales: `Hi ${n}, this is the Dogo team checking in on ${biz}. I noticed you haven't made a sale on Dogo yet. Is something stopping you — products, printer, M-Pesa or just not sure where to start? Reply and I'll walk you through it in 10 minutes.`,
+    paid: `Hi ${n}, thank you! ✅ Your ${plan} plan for ${biz} is now active. If you need anything — new tellers, branches, invoicing or stock help — message us here anytime.`,
+    renew: `Hi ${n}, a friendly reminder that the ${plan} plan for ${biz} is due for renewal${b.subscription_renews_at ? ' on ' + new Date(b.subscription_renews_at).toLocaleDateString() : ' soon'}. You can pay by M-Pesa in the app (Billing). Reply if you need any help 🙏`,
+    custom: ''
+  };
+  document.getElementById('ctMsg').value = T[document.getElementById('ctTemplate').value] || '';
+}
+
+async function ctDraftWithAi() {
+  const b = bizById(ctBizId), c = contactsById[ctBizId] || {};
+  const st = document.getElementById('ctMsgStatus'), btn = document.getElementById('ctAiBtn');
+  const goal = ({ welcome: 'welcome them and offer onboarding help', nosales: 'gently find out why they have not made a sale yet and offer help', paid: 'thank them for paying and confirm their plan is active', renew: 'remind them that their plan is due for renewal', custom: 'follow up helpfully' })[document.getElementById('ctTemplate').value];
+  st.textContent = 'Drafting…'; btn.disabled = true;
+  const facts = `Client: ${c.owner_name || 'unknown'} owner of "${b.name}" (${b.business_type || 'shop'}), plan ${b.subscription_plan || 'Free'}, joined ${b.created_at}, last contacted ${c.last_contacted_at || 'never'}. Private notes: ${c.contact_notes || 'none'}.`;
+  const r = await aiCall([{ role: 'user', content: `Write ONE WhatsApp message (under 70 words, friendly Kenyan tone, one clear call to action, no placeholders) to this client. Goal: ${goal}. ${facts} Output only the message text.` }], 'growth');
+  btn.disabled = false;
+  if (r.reply) { document.getElementById('ctMsg').value = r.reply.replace(/^["“]|["”]$/g, '').trim(); st.textContent = 'AI draft ready — edit if you like.'; }
+  else st.textContent = 'AI unavailable: ' + (r.error || 'error') + ' — template kept.';
+}
+
+async function ctMarkContacted() {
+  const phone = document.getElementById('ctPhone').value.trim();
+  const note = document.getElementById('ctNote').value.trim();
+  const { error } = await sb.rpc('platform_note_contact', { p_business: ctBizId, p_note: note || null, p_phone: phone || null });
+  if (error) { showToast('Could not save contact note: ' + error.message); return; }
+  await loadContacts();
+  renderBusinessesTable(allBusinessesCache);
+  renderSubscriptionsViews(allBusinessesCache);
+}
+function ctWhatsApp() {
+  const wa = waNumber(document.getElementById('ctPhone').value);
+  if (!wa) return showToast('Add a phone number first.');
+  const msg = document.getElementById('ctMsg').value;
+  window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+  ctMarkContacted();
+}
+function ctEmail() {
+  const c = contactsById[ctBizId] || {};
+  if (!c.owner_email) return showToast('No email on file.');
+  window.location.href = `mailto:${encodeURIComponent(c.owner_email)}?subject=${encodeURIComponent('Dogo POS')}&body=${encodeURIComponent(document.getElementById('ctMsg').value)}`;
+  ctMarkContacted();
+}
+function ctCopy() {
+  navigator.clipboard?.writeText(document.getElementById('ctMsg').value).then(() => showToast('Message copied.'));
+  ctMarkContacted();
+}
+
+function exportContactsCsv() {
+  const rows = Object.values(contactsById);
+  if (!rows.length) return showToast('No contacts loaded yet.');
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const csv = ['Business,Owner,Phone,Email,Type,Plan,Joined,Last contacted,Notes']
+    .concat(rows.map(c => { const b = bizById(c.business_id); return [c.name, c.owner_name, c.owner_phone, c.owner_email, c.business_type, b.subscription_plan || 'Free', c.created_at, c.last_contacted_at, c.contact_notes].map(q).join(','); })).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = 'dogo-clients.csv'; a.click();
+}
+function copyAllNumbers() {
+  const nums = Object.values(contactsById).map(c => waNumber(c.owner_phone)).filter(Boolean);
+  if (!nums.length) return showToast('No phone numbers on file yet.');
+  navigator.clipboard?.writeText(nums.join('\n')).then(() => showToast(nums.length + ' numbers copied (one per line).'));
+}
+
+// Built-in offline fallback — only shown when no AI is connected or the AI call fails.
 function generateAiSystemResponse(query) {
   const q = query.toLowerCase();
   const totalBiz = allBusinessesCache.length;

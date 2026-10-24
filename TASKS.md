@@ -142,3 +142,10 @@ Every future change (schema migration, edge function, frontend edit, doc update)
 - [x] `flags` column added to production (`20261009_plan_definitions_flags.sql`, applied 2026-10-09).
 - [x] Repo migrations synced with production for `plan_tier_limits` and `plan_definitions`. Not copied: `20261005071455_secure_process_sale` (applied in prod, not in repo).
 - Teller semantics: `max_tellers` counts non-admin staff; the owner is extra. Core = 1 teller in production.
+
+## 2026-10-24 session (AI Copilot + client contacts)
+- ✅ ai-assistant edge function (Gemini/Groq/OpenRouter), ai_config/ai_usage/knowledge, platform + shop snapshots, admin AI settings, personas, help widget.
+- ✅ Contacts: phone at signup, owner_email/owner_phone/notes/last_contacted on businesses, admin contact cells + composer + CSV.
+- 🚧 Owner must run `20261024_ai_assistant.sql` and paste a free provider key (Admin > AI Copilot > AI settings).
+- 🚧 Automatic WhatsApp/SMS sending (paid provider) not built; wa.me links need a manual Send tap.
+- 🚧 AI cannot take actions (suspend, grant plans) - deliberately read-only for now.
