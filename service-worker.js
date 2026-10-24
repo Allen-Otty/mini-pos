@@ -1,4 +1,4 @@
-const CACHE_NAME = "dogo-pos-cache-v37";
+const CACHE_NAME = "dogo-pos-cache-v38";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
@@ -39,6 +39,13 @@ const ASSETS_TO_CACHE = [
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
   "./manifest.json",
   "./icons/icon-192.png",
+  "./icons/icon-512-any.png",
+  "./icons/favicon-32.png",
+  "./icons/favicon-48.png",
+  "./icons/apple-touch-icon.png",
+  "./images/dogo-logo.png",
+  "./images/dogo-mark.png",
+  "./images/dogo-mark-sm.png",
   "./icons/icon-512.png",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
   "https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js",

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **New Dogo POS logo everywhere.** Logo (background removed) on the landing nav, hero, footer, in-app header and Admin Console; favicons (32/48), Apple touch icon, PWA manifest icons (maskable + any), service worker cache v38. **Android app icon** (legacy, round and adaptive foreground on a deep-green background) and **splash screens** regenerated, and the Windows installer icon. The APK/EXE pick these up on the next build (GitHub Action runs on every push to main). Not yet seen on a real phone launcher.
+
 - **Landing hero redesigned (story-led).** New stage: "Your shop, in your pocket." headline, one primary button (Start free) with a text link to the live demo, perks line, small Android/Windows links, an original illustrated duka scene with a phone showing a sample M-Pesa sale, floating status cards, and tappable business-type chips that switch the live demo. Works in light and dark themes, respects reduced-motion. Replaces the stacked four-button hero and the laptop screenshot (old hero CSS left in place, unused). Checked in a headless browser at 390 px and 1280 px; not yet viewed on a real phone.
 
 - **Landing page** feature grid and FAQ updated to match the app: printers/drawers/scanners, stock counts/batches/serials/ledger, invoices-quotes-credit-notes (wording says "prepared for KRA eTIMS", not signed), suppliers & purchasing with on-device invoice reading, branch stock & reordering. Pricing cards unchanged (invoicing bullets still to be added at launch).

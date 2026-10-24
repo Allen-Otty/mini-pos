@@ -31,13 +31,15 @@
   })();
 </script>
 <meta charset="UTF-8">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Dogo POS">
 <meta name="theme-color" content="#0f172a">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+
 <title>Dogo POS — Modern POS &amp; Restaurant Platform</title>
 
 <!-- Fonts: Instrument Sans from Google Fonts -->
@@ -747,6 +749,8 @@
     -webkit-mask-image: linear-gradient(115deg, #000 0%, transparent 60%); mask-image: linear-gradient(115deg, #000 0%, transparent 60%);
   }
   .hx-copy, .hx-visual { position: relative; z-index: 1; }
+  .hx-logo { display: block; width: 84px; height: auto; margin: 0 0 14px; filter: drop-shadow(0 8px 18px rgba(0,0,0,.4)); }
+  @media (max-width: 480px) { .dogo-brand-badge { display: none; } }
   .hx-pill {
     display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; margin-bottom: 18px;
     background: rgba(250,204,21,.14); border: 1px solid rgba(250,204,21,.4); color: #fde68a;
@@ -1701,7 +1705,7 @@
     width: 38px;
     height: 38px;
     border-radius: 12px;
-    background: var(--accent);
+    background: #0a2a14;
     color: var(--accent-text);
     display: grid;
     place-items: center;
@@ -5625,10 +5629,8 @@
   <header class="dogo-nav" id="dogoNav">
     <div class="dogo-nav-inner">
       <a href="#hero" class="dogo-brand" style="display:flex; align-items:center; gap:10px; text-decoration:none;">
-        <div style="background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color:#facc15; width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; box-shadow:0 3px 8px rgba(37,99,235,0.35);">
-          <i class="fa-solid fa-receipt"></i>
-        </div>
-        <span style="font-size:20px; font-weight:800; letter-spacing:-0.03em; color:var(--text);"><span style="color:#2563eb;">Dogo</span> POS</span>
+        <img src="images/dogo-mark-sm.png" alt="" width="44" height="37" style="height:37px; width:auto; display:block; filter:drop-shadow(0 3px 6px rgba(20,83,45,.35));">
+        <span style="font-size:20px; font-weight:800; letter-spacing:-0.03em; color:var(--text); white-space:nowrap;"><span style="color:#16a34a;">Dogo</span> POS</span>
         <span class="dogo-brand-badge" style="background:#facc15; color:#0f172a; font-weight:800; padding:2px 8px; border-radius:999px; font-size:11px;">Global</span>
       </a>
 
@@ -5742,6 +5744,7 @@
   <section class="dogo-hero" id="hero">
     <div class="hx-stage">
       <div class="hx-copy">
+        <img class="hx-logo" src="images/dogo-logo.png" alt="Dogo POS" width="96" height="114">
         <div class="hx-pill"><span class="ping-dot"></span><span>Sell faster &middot; Know your stock &middot; Grow with control</span></div>
         <h1 class="hx-title">Your shop,<br><span class="hx-accent">in your pocket.</span></h1>
         <p class="hx-sub">Sell, get paid by M-Pesa, and see your profit, even when the internet is down. Built for the duka, the supermarket and the restaurant.</p>
@@ -5768,7 +5771,6 @@
             <linearGradient id="hxWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8fafc"/><stop offset="1" stop-color="#e2e8f0"/></linearGradient>
             <clipPath id="hxAwn"><path d="M60 128h330l14 50H46z"/></clipPath>
           </defs>
-          <circle cx="440" cy="70" r="46" fill="url(#hxSky)"/>
           <ellipse cx="240" cy="408" rx="230" ry="16" fill="#000" opacity=".22"/>
           <!-- shop front -->
           <rect x="60" y="176" width="330" height="224" rx="6" fill="url(#hxWall)"/>
@@ -6555,7 +6557,7 @@
   <footer class="landing-footer">
     <div class="landing-footer-inner">
       <div style="display:flex; align-items:center; gap:10px;">
-        <div class="dogo-brand-icon" style="width:30px; height:30px; font-size:13px;"><i class="fa-solid fa-receipt"></i></div>
+        <img src="images/dogo-mark-sm.png" alt="" width="36" height="30" style="height:30px; width:auto;">
         <span style="font-weight:800; font-size:16px;">Dogo POS</span>
         <span style="font-size:12px; color:var(--text-secondary);">· Multi-tenant point of sale</span>
       </div>
@@ -6747,7 +6749,7 @@
     <div class="app-header-container">
       <div class="app-header-left">
         <div class="app-header-logo-badge">
-          <i class="fa-solid fa-receipt"></i>
+          <img src="images/dogo-mark-sm.png" alt="" style="width:30px; height:auto; display:block;">
         </div>
         <div class="app-header-titles">
           <div id="headerLogoWrap"></div>
