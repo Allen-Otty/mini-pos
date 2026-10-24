@@ -767,6 +767,9 @@
     <button class="admin-nav-btn" data-tab="threats" onclick="switchAdminTab('threats', this)">
       <i class="fa-solid fa-shield-halved"></i> Threat Scan <span class="pill-count" id="navThreatCount" style="display:none;">!</span>
     </button>
+    <button class="admin-nav-btn" data-tab="clients" onclick="switchAdminTab('clients', this)">
+      <i class="fa-solid fa-address-book"></i> Clients <span class="pill-count" id="navClientCount">0</span>
+    </button>
     <button class="admin-nav-btn" data-tab="businesses" onclick="switchAdminTab('businesses', this)">
       <i class="fa-solid fa-store"></i> Stores <span class="pill-count" id="navBizCount">0</span>
     </button>
@@ -1130,6 +1133,59 @@
     </div>
 
     <!-- TAB 5: BUSINESSES -->
+    <div class="tab-view" id="tab-clients">
+      <div class="admin-card">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title"><i class="fa-solid fa-address-book"></i> Client List</h3>
+            <p class="card-sub">Every business that signed up, with the owner's contact details, plan and activity. Tap a button to WhatsApp, call or email.</p>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn-secondary" onclick="exportContactsCsv()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+            <button class="btn-secondary" onclick="copyAllNumbers()"><i class="fa-brands fa-whatsapp"></i> Copy numbers</button>
+            <button class="btn-secondary" onclick="loadDashboard()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+        </div>
+        <div id="clientsBanner" style="display:none; font-size:12.5px; margin:0 0 10px; padding:8px 12px; border-radius:10px; background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.35);"></div>
+        <div id="clientStats" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;"></div>
+        <div class="search-filter-bar">
+          <input type="text" id="clientSearch" class="form-control" placeholder="Search name, owner, phone, email, location…" oninput="renderClients()">
+          <select id="clientFilter" class="form-control" onchange="renderClients()">
+            <option value="">All clients</option>
+            <option value="new">New this week</option>
+            <option value="nophone">Missing phone number</option>
+            <option value="never">Never contacted</option>
+            <option value="paid">Paying (Core / Control)</option>
+            <option value="free">Free plan</option>
+            <option value="nosales">No sales yet</option>
+            <option value="suspended">Suspended</option>
+          </select>
+          <select id="clientSort" class="form-control" onchange="renderClients()">
+            <option value="joined">Newest first</option>
+            <option value="name">Name A–Z</option>
+            <option value="sales">Most sales (30 days)</option>
+            <option value="contacted">Longest since contacted</option>
+          </select>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Owner &amp; contact</th>
+                <th>Plan</th>
+                <th>Joined</th>
+                <th>Activity</th>
+                <th>Contacted</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="clientsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <div class="tab-view" id="tab-businesses">
       <div class="admin-card">
         <div class="card-header-flex">
@@ -2039,6 +2095,7 @@ async function loadDashboard() {
   if (!businesses.error) {
     allBusinessesCache = businesses || [];
     await loadContacts();
+    renderClients();
     const countEl = document.getElementById('navBizCount');
     if (countEl) countEl.textContent = allBusinessesCache.length;
     renderBusinessesTable(allBusinessesCache);
@@ -3176,6 +3233,7 @@ async function ctMarkContacted() {
   await loadContacts();
   renderBusinessesTable(allBusinessesCache);
   renderSubscriptionsViews(allBusinessesCache);
+  renderClients();
 }
 function ctWhatsApp() {
   const wa = waNumber(document.getElementById('ctPhone').value);
@@ -3205,6 +3263,96 @@ function exportContactsCsv() {
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
   a.download = 'dogo-clients.csv'; a.click();
 }
+function renderClients() {
+  const body = document.getElementById('clientsBody');
+  if (!body) return;
+  const banner = document.getElementById('clientsBanner');
+  if (banner) {
+    banner.style.display = contactsReady ? 'none' : 'block';
+    banner.innerHTML = '<strong>Contact details could not be loaded.</strong> Press Refresh. If it keeps failing, the database update for contacts has not been applied yet.';
+  }
+  // One row per business. Contact data is the base; fall back to the store list if contacts are unavailable.
+  const rows = allBusinessesCache.map(b => {
+    const c = contactsById[b.id] || {};
+    return {
+      id: b.id, name: b.name, type: b.business_type || c.business_type || '', location: c.location || b.location || '',
+      owner: c.owner_name || '', phone: c.owner_phone || '', email: c.owner_email || '',
+      plan: b.subscription_plan || c.subscription_plan || 'Free', status: b.subscription_status || c.subscription_status || '',
+      active: b.active !== false, joined: b.created_at || c.created_at, staff: c.staff_count != null ? Number(c.staff_count) : (b.profiles?.[0]?.count ?? null),
+      products: c.product_count != null ? Number(c.product_count) : null,
+      lastSale: c.last_sale_at || null, sales30: c.sales_30d_value != null ? Number(c.sales_30d_value) : null,
+      salesTotal: c.sales_total != null ? Number(c.sales_total) : null,
+      contacted: c.last_contacted_at || null, notes: c.contact_notes || '', renews: b.subscription_renews_at || c.subscription_renews_at
+    };
+  });
+  const extra = rows.some(r => r.sales30 != null);
+  const now = Date.now(), week = 7 * 864e5;
+
+  const st = document.getElementById('clientStats');
+  if (st) {
+    const chip = (n, l, c) => `<span class="tag" style="font-size:12px; padding:5px 10px; ${c ? 'background:' + c + ';' : ''}"><strong>${n}</strong> ${l}</span>`;
+    st.innerHTML =
+      chip(rows.length, 'clients') +
+      chip(rows.filter(r => r.joined && now - new Date(r.joined) < week).length, 'new this week', 'rgba(34,197,94,.18)') +
+      chip(rows.filter(r => r.plan !== 'Free').length, 'paying', 'rgba(250,204,21,.18)') +
+      chip(rows.filter(r => !r.phone).length, 'missing phone', 'rgba(245,158,11,.2)') +
+      chip(rows.filter(r => !r.contacted).length, 'never contacted', 'rgba(59,130,246,.18)');
+  }
+  const ncEl = document.getElementById('navClientCount'); if (ncEl) ncEl.textContent = rows.length;
+
+  const q = (document.getElementById('clientSearch')?.value || '').toLowerCase().trim();
+  const f = document.getElementById('clientFilter')?.value || '';
+  const sort = document.getElementById('clientSort')?.value || 'joined';
+  let list = rows.filter(r => {
+    if (q && ![r.name, r.owner, r.phone, r.email, r.location, r.type].join(' ').toLowerCase().includes(q)) return false;
+    if (f === 'new' && !(r.joined && now - new Date(r.joined) < week)) return false;
+    if (f === 'nophone' && r.phone) return false;
+    if (f === 'never' && r.contacted) return false;
+    if (f === 'paid' && r.plan === 'Free') return false;
+    if (f === 'free' && r.plan !== 'Free') return false;
+    if (f === 'nosales' && !(extra && r.salesTotal === 0)) return false;
+    if (f === 'suspended' && r.active) return false;
+    return true;
+  });
+  list.sort((a, b) =>
+    sort === 'name' ? a.name.localeCompare(b.name) :
+    sort === 'sales' ? (b.sales30 || 0) - (a.sales30 || 0) :
+    sort === 'contacted' ? (a.contacted ? new Date(a.contacted) : 0) - (b.contacted ? new Date(b.contacted) : 0) :
+    new Date(b.joined || 0) - new Date(a.joined || 0));
+
+  if (!list.length) { body.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#888; padding:28px;">No clients match.</td></tr>'; return; }
+  const d = v => v ? new Date(v).toLocaleDateString() : '—';
+  body.innerHTML = list.map(r => {
+    const wa = waNumber(r.phone);
+    const planTag = r.plan === 'Control' ? 'tag-plan-control' : (r.plan === 'Core' ? 'tag-plan-core' : 'tag-plan-free');
+    const isNew = r.joined && now - new Date(r.joined) < week;
+    const activity = extra
+      ? `<div style="font-size:12px;"><strong>KES ${Math.round(r.sales30 || 0).toLocaleString()}</strong> · 30 days</div>
+         <div style="font-size:11.5px; color:var(--text-muted);">${r.salesTotal === 0 ? 'no sales yet' : 'last sale ' + d(r.lastSale)}</div>
+         <div style="font-size:11.5px; color:var(--text-muted);">${r.products ?? '—'} products · ${r.staff ?? '—'} staff</div>`
+      : `<div style="font-size:12px; color:var(--text-muted);">${r.staff ?? '—'} staff</div>`;
+    return `<tr>
+      <td><strong>${escapeHtml(r.name)}</strong>${isNew ? ' <span class="tag tag-active" style="font-size:10px;">NEW</span>' : ''}${r.active ? '' : ' <span class="tag tag-suspended" style="font-size:10px;">SUSPENDED</span>'}
+        <div style="font-size:11.5px; color:var(--text-muted);">${escapeHtml(r.type)}${r.location ? ' · ' + escapeHtml(r.location) : ''}</div></td>
+      <td>${r.owner ? `<div style="font-weight:700; font-size:12.5px;">${escapeHtml(r.owner)}</div>` : ''}
+        ${r.phone ? `<div style="font-size:12.5px;"><i class="fa-solid fa-phone" style="opacity:.6"></i> ${escapeHtml(r.phone)}</div>` : '<div style="font-size:12px; color:var(--gold);">no phone yet</div>'}
+        ${r.email ? `<div style="font-size:11.5px; color:var(--text-muted); word-break:break-all;">${escapeHtml(r.email)}</div>` : ''}</td>
+      <td><span class="tag ${planTag}">${escapeHtml(r.plan)}</span>
+        ${r.renews && r.plan !== 'Free' ? `<div style="font-size:11px; color:var(--text-muted);">renews ${d(r.renews)}</div>` : ''}</td>
+      <td style="font-size:12.5px;">${d(r.joined)}</td>
+      <td>${activity}</td>
+      <td style="font-size:12px;">${r.contacted ? d(r.contacted) : '<span style="color:var(--gold);">never</span>'}${r.notes ? `<div style="font-size:11px; color:var(--text-muted); max-width:160px;">${escapeHtml(r.notes)}</div>` : ''}</td>
+      <td class="actions"><div style="display:flex; gap:4px; flex-wrap:wrap;">
+        ${wa ? `<a href="https://wa.me/${wa}" target="_blank" rel="noopener" class="btn-reactivate" style="padding:4px 9px; text-decoration:none;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+        <a href="tel:+${wa}" class="btn-view" style="padding:4px 9px; text-decoration:none;" title="Call"><i class="fa-solid fa-phone"></i></a>` : ''}
+        ${r.email ? `<a href="mailto:${encodeURIComponent(r.email)}" class="btn-view" style="padding:4px 9px; text-decoration:none;" title="Email"><i class="fa-solid fa-envelope"></i></a>` : ''}
+        <button class="btn-plan" style="padding:4px 9px;" onclick="openContactModal('${r.id}')" title="Message, notes, edit phone"><i class="fa-solid fa-comment-dots"></i></button>
+        <button class="btn-view" style="padding:4px 9px;" onclick="viewBusiness('${r.id}')" title="Details"><i class="fa-solid fa-eye"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
 function copyAllNumbers() {
   const nums = Object.values(contactsById).map(c => waNumber(c.owner_phone)).filter(Boolean);
   if (!nums.length) return showToast('No phone numbers on file yet.');
