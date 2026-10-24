@@ -76,8 +76,8 @@ Deno.serve(async (req: Request) => {
     let verificationEmailError: string | null = null;
     if (needVerify) {
       // Only send links that return to our own site
-      const safeRedirect = typeof redirect_to === "string" && /^https:\/\/(dogo-pos-app\.netlify\.app|[a-z0-9-]+\.netlify\.app)\//i.test(redirect_to)
-        ? redirect_to : "https://dogo-pos-app.netlify.app/";
+      const safeRedirect = typeof redirect_to === "string" && /^https:\/\/(dogopos\.allenotiende\.workers\.dev|dogo-pos-app\.netlify\.app)\//i.test(redirect_to)
+        ? redirect_to : "https://dogopos.allenotiende.workers.dev/";
       const anon = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
       const { error: mailErr } = await anon.auth.resend({ type: "signup", email, options: { emailRedirectTo: safeRedirect } });
       if (mailErr) verificationEmailError = mailErr.message;

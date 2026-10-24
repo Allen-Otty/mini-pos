@@ -8807,7 +8807,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D";
 // Password-recovery / email-link detection must run before supabase-js clears the URL hash.
 window.__dogoRecovery = /[#&]type=recovery/.test(location.hash);
 window.__dogoLinkError = (location.hash.match(/error_description=([^&]+)/) || [])[1] || '';
-const SITE_URL = /^https?:$/.test(location.protocol) ? location.origin + '/' : 'https://dogo-pos-app.netlify.app/';
+const SITE_URL = /^https?:$/.test(location.protocol) ? location.origin + '/' : 'https://dogopos.allenotiende.workers.dev/';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true }
 });
