@@ -429,7 +429,7 @@
           </div>
           <div class="dogo-field">
             <label>Till or Paybill Shortcode</label>
-            <input class="dogo-input" type="text" id="mpesaShortcode" placeholder="e.g. 174379">
+            <input class="dogo-input" type="text" id="mpesaShortcode" placeholder="Your own Till or Paybill number">
           </div>
         </div>
 
@@ -445,7 +445,7 @@
 
         <div class="dogo-field">
           <label>Online Lipa Na M-Pesa Passkey</label>
-          <input class="dogo-input" type="password" id="mpesaPasskey" placeholder="bfb279f9aa9bdb88ef1ee97f82b5450e40d12b1847e30b... (Sandbox / Live)">
+          <input class="dogo-input" type="password" id="mpesaPasskey" placeholder="Paste your Online Passkey from Daraja">
         </div>
 
         <div class="dogo-field">
@@ -459,12 +459,14 @@
         <div style="margin:14px 0;">
           <button type="button" class="dogo-btn dogo-btn--sm dogo-btn--outline" onclick="fillMpesaSandbox()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            Auto-Fill Safaricom Sandbox Defaults (Shortcode 174379)
+            Switch to Sandbox (testing) mode
           </button>
+          <div class="dogo-muted" style="font-size:12px;margin-top:6px;">Only changes the environment. It never fills in your Till or Paybill number.</div>
         </div>
 
         <div class="dogo-btn-row" style="margin-top:20px;">
           <button class="dogo-btn dogo-btn--primary" id="btnSaveMpesa">Save M-Pesa Gateway</button>
+          <button class="dogo-btn dogo-btn--outline" id="btnTestMpesa">Test connection</button>
           <button class="dogo-btn dogo-btn--outline" id="btnResetMpesa" style="color:#dc2626;">Reset Settings</button>
         </div>
 
@@ -897,29 +899,50 @@
     };
 
     // 4. M-Pesa Settings
+    // Sandbox mode only switches the environment. It must never fill in a shortcode.
     window.fillMpesaSandbox = () => {
-      $('mpesaShortcode').value = '174379';
-      $('mpesaPaymentType').value = 'till';
       $('mpesaEnv').value = 'false';
-      $('mpesaPasskey').value = 'bfb279f9aa9bdb88ef1ee97f82b5450e40d12b1847e30b6e506cd7d69d5e3be5e2dcee';
-      toast('Safaricom sandbox defaults loaded (174379)');
+      toast('Sandbox (testing) mode selected. Enter your Till or Paybill number and your Daraja test keys.');
     };
 
-    // Load existing payment configs from local storage or server
-    function loadSavedGatewayConfigs() {
-      try {
-        const raw = localStorage.getItem('dogo_platform_settings');
-        if (raw) {
-          const cfg = JSON.parse(raw);
-          if (cfg.mpesa_till || cfg.mpesa_paybill) {
-            $('mpesaShortcode').value = cfg.mpesa_till || cfg.mpesa_paybill || '';
-            $('mpesaPaymentType').value = cfg.mpesa_paybill ? 'paybill' : 'till';
-            $('mpesaEnv').value = String(cfg.daraja_env === 'production');
-            $('badgeMpesaConfig').textContent = cfg.daraja_env === 'production' ? 'PRODUCTION' : 'SANDBOX READY';
-            $('mpesaStatusText').textContent = 'Configured and synchronized for instant STK push.';
+    // Calls the mpesa-settings edge function and unwraps its error message.
+    const mpesaCall = async (body) => {
+      const { data, error } = await sb.functions.invoke('mpesa-settings', { body });
+      if (error) {
+        let msg = error.message || 'Request failed';
+        try {
+          if (error.context && typeof error.context.text === 'function') {
+            const j = JSON.parse(await error.context.text());
+            if (j && j.error) msg = j.error;
           }
-        }
-      } catch (e) {}
+        } catch (_) {}
+        return { error: msg };
+      }
+      return data || {};
+    };
+
+    // Shows what is REALLY saved in the database for this business (not what this browser remembers).
+    async function loadSavedGatewayConfigs() {
+      const r = await mpesaCall({ action: 'status' });
+      if (r.error) {
+        $('mpesaStatusText').textContent = /Only Admins/i.test(r.error) ? 'Only the business Admin can change M-Pesa settings.' : 'Could not read M-Pesa status: ' + r.error;
+        return;
+      }
+      const m = r.data;
+      if (!m) {
+        $('badgeMpesaConfig').textContent = 'NOT SET UP';
+        $('mpesaStatusText').textContent = 'M-Pesa is not set up yet. Enter your Till or Paybill details below and tap Save.';
+        return;
+      }
+      $('mpesaShortcode').value = m.shortcode || '';
+      $('mpesaPaymentType').value = m.payment_type === 'paybill' ? 'paybill' : 'till';
+      $('mpesaEnv').value = String(!!m.is_production);
+      $('badgeMpesaConfig').textContent = m.is_production ? 'PRODUCTION' : 'SANDBOX';
+      if (m.is_production && m.shortcode === '174379') {
+        $('mpesaStatusText').textContent = 'Problem: this is set to Live Production but uses Safaricom\'s sandbox shortcode 174379, so payments will fail. Enter your own Till or Paybill number and live keys, then save.';
+      } else {
+        $('mpesaStatusText').textContent = 'Saved for ' + (m.is_production ? 'Live Production' : 'Sandbox') + '. Keys are hidden for your safety. Tap Test connection to check they still work.';
+      }
     }
     loadSavedGatewayConfigs();
 
@@ -939,34 +962,44 @@
     $('btnClearPochi').onclick = () => { $('pochiNumber').value = ''; savePochi(''); };
 
     $('btnSaveMpesa').onclick = async () => {
-      const shortcode = $('mpesaShortcode').value.trim();
+      const btn = $('btnSaveMpesa');
+      const shortcode = $('mpesaShortcode').value.replace(/\s/g, '');
       const pType = $('mpesaPaymentType').value;
       const isProd = $('mpesaEnv').value === 'true';
+      const key = $('mpesaConsumerKey').value.trim();
+      const secret = $('mpesaConsumerSecret').value.trim();
+      const passkey = $('mpesaPasskey').value.trim();
 
-      if (!shortcode) return toast('Enter the Till or Paybill shortcode');
+      if (!shortcode || !key || !secret || !passkey) return toast('Fill in the Till/Paybill number, Consumer Key, Consumer Secret and Passkey');
+      if (isProd && shortcode === '174379') return toast('174379 is Safaricom\'s sandbox shortcode. Enter your own Till or Paybill number for Live Production.');
 
-      try {
-        const raw = localStorage.getItem('dogo_platform_settings') || '{}';
-        const cfg = JSON.parse(raw);
-        if (pType === 'paybill') cfg.mpesa_paybill = shortcode;
-        else cfg.mpesa_till = shortcode;
-        cfg.daraja_env = isProd ? 'production' : 'sandbox';
-        cfg.daraja_consumer_key = $('mpesaConsumerKey').value.trim();
-        cfg.daraja_consumer_secret = $('mpesaConsumerSecret').value.trim();
-        cfg.daraja_passkey = $('mpesaPasskey').value.trim();
-        localStorage.setItem('dogo_platform_settings', JSON.stringify(cfg));
-      } catch (e) {}
+      btn.disabled = true; const label = btn.textContent; btn.textContent = 'Checking with Safaricom...';
+      const r = await mpesaCall({ action: 'save', payment_type: pType, shortcode, consumer_key: key, consumer_secret: secret, passkey, is_production: isProd });
+      btn.disabled = false; btn.textContent = label;
 
-      $('badgeMpesaConfig').textContent = isProd ? 'PRODUCTION' : 'SANDBOX READY';
-      $('mpesaStatusText').textContent = 'M-Pesa gateway settings updated and saved.';
-      toast('M-Pesa gateway settings saved successfully!');
+      if (r.error) { $('mpesaStatusText').textContent = r.error; return toast(r.error); }
+      ['mpesaConsumerKey', 'mpesaConsumerSecret', 'mpesaPasskey'].forEach(id => { $(id).value = ''; });
+      toast(r.warning || 'M-Pesa saved and verified with Safaricom.');
+      loadSavedGatewayConfigs();
     };
 
-    $('btnResetMpesa').onclick = () => {
-      if (confirm('Reset M-Pesa gateway settings to defaults?')) {
-        fillMpesaSandbox();
-        toast('M-Pesa settings reset.');
-      }
+    $('btnTestMpesa').onclick = async () => {
+      const btn = $('btnTestMpesa');
+      btn.disabled = true; const label = btn.textContent; btn.textContent = 'Testing...';
+      const r = await mpesaCall({ action: 'test' });
+      btn.disabled = false; btn.textContent = label;
+      const msg = r.error || (r.success ? r.message : (r.error || 'Test failed'));
+      $('mpesaStatusText').textContent = msg;
+      toast(msg);
+    };
+
+    $('btnResetMpesa').onclick = async () => {
+      if (!confirm('Remove this business\'s M-Pesa settings? Customers will no longer be able to pay by M-Pesa prompt until you set it up again.')) return;
+      const r = await mpesaCall({ action: 'remove' });
+      if (r.error) return toast('Could not remove: ' + r.error);
+      ['mpesaShortcode', 'mpesaConsumerKey', 'mpesaConsumerSecret', 'mpesaPasskey'].forEach(id => { $(id).value = ''; });
+      toast('M-Pesa settings removed.');
+      loadSavedGatewayConfigs();
     };
 
     // 5. KCB Gateway

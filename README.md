@@ -97,6 +97,19 @@ git commit -m "describe the change"
 git push origin main
 ```
 
+## Subscription payments (Oct 27)
+
+- Paying for a plan sends an M-Pesa prompt to the **platform** till (set in the Admin Console, never a business's own till). Edge functions `sub-stk-push` (starts it, price read from `plan_definitions`), `sub-stk-callback` (Safaricom webhook, re-confirmed with STK Query before anything is granted) and `sub-stk-status` (polled by the upgrade screen; reconciles if the callback never arrives). Table: `subscription_payments` (migration `20261027_subscription_payments.sql`).
+- The plan upgrades automatically once Safaricom confirms. Underpayments are recorded and flagged (`needs_review`) and do NOT upgrade; replayed receipts are rejected. Sandbox mode is limited to platform admins.
+- The manual M-Pesa code box still creates a pending claim that the platform admin approves.
+- The upgrade screen now reads the real platform till from the `platform_payment_destination` view instead of a hardcoded sandbox till.
+
+## M-Pesa setup safety (Oct 27)
+
+- The "sandbox defaults" buttons no longer fill in a Till/Paybill number: they only switch the environment to Sandbox.
+- `mpesa-settings` (edge function v3) refuses `174379` (Safaricom's sandbox shortcode) in Live Production, checks the Consumer Key/Secret with Safaricom before saving, and has a `test` action behind the new **Test connection** button.
+- `settings.html` Safaricom tab used to save only to the browser while saying "saved". It now saves to the database and shows what is really stored.
+
 ## 7. Security notes
 
 - Browser only ever holds a publishable Supabase key — RLS enforces the rest
