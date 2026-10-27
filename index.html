@@ -8535,7 +8535,7 @@
           <option value="till">Till Number / Pochi la Biashara</option>
           <option value="paybill">Paybill</option>
         </select>
-        <input type="text" id="mpesaShortcode" placeholder="Till / Paybill Number (e.g. 174379)">
+        <input type="text" id="mpesaShortcode" placeholder="Your own Till / Paybill number">
       </div>
       <input type="text" id="mpesaConsumerKey" placeholder="Consumer Key (from Daraja Portal)">
       <input type="password" id="mpesaConsumerSecret" placeholder="Consumer Secret (from Daraja Portal)">
@@ -8544,7 +8544,7 @@
         <option value="false">Sandbox (Test credentials &amp; simulation)</option>
         <option value="true">Production (Live Daraja API)</option>
       </select>
-      <button type="button" class="btn-blue" style="width:100%; margin:8px 0 6px; font-size:12px; font-weight:700; cursor:pointer;" onclick="fillSandboxDefaults()"><i class="fa-solid fa-bolt"></i> Auto-Fill Sandbox Test Defaults (Shortcode 174379)</button>
+      <button type="button" class="btn-blue" style="width:100%; margin:8px 0 6px; font-size:12px; font-weight:700; cursor:pointer;" onclick="fillSandboxDefaults()"><i class="fa-solid fa-bolt"></i> Switch to Sandbox (testing) mode</button>
       <div style="display:flex; gap:8px; margin-top:6px;">
         <button class="btn-green" style="flex:1;" onclick="saveMpesaSettings()">Save M-Pesa Gateway</button>
         <button class="btn-red" style="padding:0 16px;" onclick="removeMpesaSettings()">Reset</button>
@@ -10348,10 +10348,10 @@ function showPlanUpgradePrompt(featureTitle, featureDesc, targetPlan = 'Core') {
           Upgrade to ${escapeHtml(planName)} &middot; ${planPrice}
         </button>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Core');" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#15803d; font-weight:700; font-size:12px; border:1.5px solid #16a34a; cursor:pointer;">Core · 999</button>
-          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Control');" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#0369a1; font-weight:700; font-size:12px; border:1.5px solid #0284c7; cursor:pointer;">Control · 1,999</button>
-          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Core Group');" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#166534; font-weight:700; font-size:12px; border:1.5px solid #22c55e; cursor:pointer;">Core Group · 3,999</button>
-          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Control Group');" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#92400e; font-weight:700; font-size:12px; border:1.5px solid #f59e0b; cursor:pointer;">Control Group · 7,999</button>
+          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Core');" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#15803d; font-weight:700; font-size:12px; border:1.5px solid #16a34a; cursor:pointer;">Core · ${livePlanPrice('Core','monthly').toLocaleString()}</button>
+          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Control');" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#0369a1; font-weight:700; font-size:12px; border:1.5px solid #0284c7; cursor:pointer;">Control · ${livePlanPrice('Control','monthly').toLocaleString()}</button>
+          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Core Group');" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#166534; font-weight:700; font-size:12px; border:1.5px solid #22c55e; cursor:pointer;">Core Group · ${livePlanPrice('Core Group','monthly').toLocaleString()}</button>
+          <button onclick="closePlanUpgradePrompt(); openUpgradePlanModal('Control Group');" style="padding:10px 6px; border-radius:999px; background:#ffffff; color:#92400e; font-weight:700; font-size:12px; border:1.5px solid #f59e0b; cursor:pointer;">Control Group · ${livePlanPrice('Control Group','monthly').toLocaleString()}</button>
         </div>
         <button onclick="closePlanUpgradePrompt(); activateFreeTrial('${targetPlan}');" style="width:100%; padding:11px; border-radius:999px; background:#f1f5f9; color:#0f172a; font-weight:700; font-size:13px; border:1px solid #e2e8f0; cursor:pointer;">
           Start 7-Day Free Trial (Instant Activation)
@@ -14305,7 +14305,8 @@ async function forceSyncPlatformDarajaSettings() {
     const cfg = JSON.parse(raw);
     if (!cfg.daraja_consumer_key || !cfg.daraja_consumer_secret) return false;
 
-    const shortcode = cfg.mpesa_till || cfg.mpesa_paybill || '174379';
+    const shortcode = cfg.mpesa_till || cfg.mpesa_paybill;
+    if (!shortcode) return false;
     const payment_type = cfg.mpesa_paybill ? 'paybill' : 'till';
     const is_production = cfg.daraja_env === 'production';
 
@@ -14704,7 +14705,7 @@ function handleCreateBranchClick() {
   if (currentBranches >= maxBranches) {
     showPlanUpgradePrompt(
       'Multi-Branch Expansion (Group Plan)',
-      `Your current plan (${planInfo.name}) supports ${maxBranches} branch. Upgrade to Core Group (KES ${(PLAN_FEATURES['Core Group']||{}).priceMonth?.toLocaleString() || '3,999'}/mo) or Control Group (KES ${(PLAN_FEATURES['Control Group']||{}).priceMonth?.toLocaleString() || '7,999'}/mo) to manage up to 5 branch locations with unified inventory.`,
+      `Your current plan (${planInfo.name}) supports ${maxBranches} branch. Upgrade to Core Group (KES ${(PLAN_FEATURES['Core Group']||{}).priceMonth?.toLocaleString() || '3,999'}/mo) or Control Group (KES ${(PLAN_FEATURES['Control Group']||{}).priceMonth?.toLocaleString() || '4,999'}/mo) to manage up to 5 branch locations with unified inventory.`,
       planInfo.name.includes('Control') ? 'Control Group' : 'Core Group'
     );
     return;
@@ -14834,8 +14835,8 @@ async function loadAllGatewaySettings() {
       if (rawPlatform) {
         try {
           const pCfg = JSON.parse(rawPlatform);
-          if (pCfg.daraja_consumer_key && pCfg.daraja_consumer_secret) {
-            const sc = pCfg.mpesa_till || pCfg.mpesa_paybill || '174379';
+          if (pCfg.daraja_consumer_key && pCfg.daraja_consumer_secret && (pCfg.mpesa_till || pCfg.mpesa_paybill)) {
+            const sc = pCfg.mpesa_till || pCfg.mpesa_paybill;
             const pt = pCfg.mpesa_paybill ? 'paybill' : 'till';
             const isProd = pCfg.daraja_env === 'production';
             if (document.getElementById('mpesaShortcode')) document.getElementById('mpesaShortcode').value = sc;
@@ -14921,12 +14922,10 @@ const loadMpesaStatus = loadAllGatewaySettings;
 
 function fillSandboxDefaults() {
   if (document.getElementById('mpesaPaymentType')) document.getElementById('mpesaPaymentType').value = 'paybill';
-  if (document.getElementById('mpesaShortcode')) document.getElementById('mpesaShortcode').value = '174379';
-  if (document.getElementById('mpesaPasskey')) document.getElementById('mpesaPasskey').value = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
   if (document.getElementById('mpesaEnv')) document.getElementById('mpesaEnv').value = 'false';
   const ck = document.getElementById('mpesaConsumerKey');
   if (ck && !ck.value) ck.focus();
-  showToast('Safaricom Sandbox defaults set (Shortcode 174379). Paste your Consumer Key & Secret from Daraja Portal.');
+  showToast('Sandbox (testing) mode selected. Enter your own Till or Paybill number and your Daraja test keys.');
 }
 
 async function saveMpesaSettings() {
@@ -14940,8 +14939,12 @@ async function saveMpesaSettings() {
   if (!shortcode || !consumer_key || !consumer_secret || !passkey) {
     showToast('Fill in all M-Pesa fields'); return;
   }
+  if (is_production && shortcode === '174379') {
+    showToast('174379 is Safaricom\'s sandbox shortcode. Enter your own Till or Paybill number for Live Production.'); return;
+  }
 
   let saved = false;
+  let serverError = null;
 
   // 1. Save to Supabase cloud (for GitHub Pages & Netlify production)
   try {
@@ -14951,6 +14954,7 @@ async function saveMpesaSettings() {
     if (edgeResp && !edgeResp.error) saved = true;
     else if (edgeResp && edgeResp.error) {
       console.warn('M-Pesa edge save error:', edgeResp.error);
+      serverError = edgeResp.error;
     }
   } catch(e) {}
 
@@ -14966,6 +14970,9 @@ async function saveMpesaSettings() {
       if (res.ok && res.data && res.data.success) saved = true;
     } catch(e) {}
   }
+
+  // The server refused these settings (wrong keys, sandbox shortcode in Live mode...): say so, do not pretend it saved.
+  if (!saved && serverError) { showToast(serverError); return; }
 
   // 3. Always synchronize with dogo_platform_settings in localStorage
   try {
@@ -16132,24 +16139,20 @@ function openUpgradePlanModal(tier = 'Control', price = null, planTitle = 'Contr
   currentSelectedBranches = String(branches || '1');
   currentSelectedBilling = billing || 'monthly';
 
-  let cfg = {};
-  try {
-    const raw = localStorage.getItem('dogo_platform_settings');
-    if (raw) cfg = JSON.parse(raw);
-  } catch(e) {}
-
-  // Populate M-Pesa destination
+  // Where to send the money: read the platform's real till/paybill from the database (never a sandbox default).
   const destEl = document.getElementById('modalMpesaDestText');
   if (destEl) {
-    if (cfg.mpesa_till) {
-      destEl.innerHTML = `Buy Goods Till: <strong>${escapeHtml(cfg.mpesa_till)}</strong> (${escapeHtml(cfg.mpesa_account_name || 'Dogo POS')})`;
-    } else if (cfg.mpesa_paybill) {
-      destEl.innerHTML = `Paybill: <strong>${escapeHtml(cfg.mpesa_paybill)}</strong>, Account: <strong>${escapeHtml(business?.name || 'Dogo POS')}</strong> (${escapeHtml(cfg.mpesa_account_name || 'Dogo POS')})`;
-    } else if (cfg.mpesa_phone) {
-      destEl.innerHTML = `M-Pesa Pochi / Send Money: <strong>${escapeHtml(cfg.mpesa_phone)}</strong> (${escapeHtml(cfg.mpesa_account_name || 'Dogo POS')})`;
-    } else {
-      destEl.innerHTML = `Buy Goods Till: <strong>174379</strong> (Dogo POS Technologies)`;
-    }
+    destEl.textContent = 'Loading payment details...';
+    (async () => {
+      try {
+        const { data: d } = await sb.from('platform_payment_destination').select('*').maybeSingle();
+        const acct = escapeHtml((d && d.mpesa_account_name) || 'Dogo POS');
+        if (d && d.mpesa_till) destEl.innerHTML = `Buy Goods Till: <strong>${escapeHtml(d.mpesa_till)}</strong> (${acct})`;
+        else if (d && d.mpesa_paybill) destEl.innerHTML = `Paybill: <strong>${escapeHtml(d.mpesa_paybill)}</strong>, Account: <strong>${escapeHtml(business?.name || 'Dogo POS')}</strong> (${acct})`;
+        else if (d && d.mpesa_phone) destEl.innerHTML = `M-Pesa Pochi / Send Money: <strong>${escapeHtml(d.mpesa_phone)}</strong> (${acct})`;
+        else destEl.textContent = 'Payment details are unavailable right now. Please contact support.';
+      } catch (e) { destEl.textContent = 'Payment details are unavailable right now. Please contact support.'; }
+    })();
   }
 
   // Pre-fill phone if available
@@ -16232,166 +16235,123 @@ function switchModalPayTab(tab) {
   }
 }
 
+// Plan name shown in the upgrade modal -> the plan key the server prices from plan_definitions.
+function subPlanKey(name) {
+  const n = String(name || '');
+  if (/control.*group/i.test(n)) return 'Control Group';
+  if (/control/i.test(n)) return 'Control';
+  if (/core.*group/i.test(n)) return 'Core Group';
+  if (/core/i.test(n)) return 'Core';
+  return 'Free';
+}
+
+// Pay for a plan with an M-Pesa prompt to the PLATFORM till. The price is decided by the server
+// (never by this page), and the plan switches on automatically once Safaricom confirms payment.
 async function submitModalStkPush() {
   const phone = document.getElementById('modalStkPhone')?.value.trim();
-  if (!phone) {
-    showToast('Please enter your M-Pesa phone number');
-    return;
-  }
+  if (!phone) { showToast('Please enter your M-Pesa phone number'); return; }
+  const planKey = subPlanKey(currentSelectedPlan);
+  if (planKey === 'Free') { showToast('Pick a paid plan first'); return; }
 
   const btn = document.getElementById('modalStkBtn');
   const msgEl = document.getElementById('modalPayStatusMsg');
-
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Contacting Safaricom Daraja...';
-  }
-  if (msgEl) {
+  const resetBtn = (label) => {
+    if (btn) { btn.disabled = false; btn.innerHTML = label || '<i class="fa-solid fa-paper-plane"></i> Send M-Pesa STK Push'; }
+  };
+  const showMsg = (color, html) => {
+    if (!msgEl) return;
     msgEl.style.display = 'block';
-    msgEl.style.color = '#0284c7';
-    msgEl.innerHTML = `<strong>Initiating STK Push to ${escapeHtml(phone)}...</strong>`;
+    msgEl.style.color = color;
+    msgEl.innerHTML = html;
+  };
+  const box = (bg, border, fg, html) =>
+    `<div style="background:${bg}; border:1px solid ${border}; border-radius:12px; padding:12px; color:${fg};">${html}</div>`;
+
+  if (window._subStkPollInterval) { clearInterval(window._subStkPollInterval); window._subStkPollInterval = null; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Contacting Safaricom...'; }
+  showMsg('#0284c7', `<strong>Sending M-Pesa prompt to ${escapeHtml(phone)}...</strong>`);
+
+  const init = await callEdgeFunction('sub-stk-push', {
+    plan: planKey, billing: currentSelectedBilling || 'monthly', phone
+  });
+  if (!init || init.error || !init.payment_id) {
+    resetBtn();
+    const why = (init && init.error) || 'Could not start the payment.';
+    showMsg('#dc2626', box('#fef2f2', '#fecaca', '#b91c1c',
+      `<i class="fa-solid fa-circle-xmark"></i> <strong>Payment not started</strong><br><span style="font-size:12.5px;">${escapeHtml(why)}</span>`));
+    return;
   }
 
-  try {
-    const payload = {
-      gateway: 'mpesa',
-      amount: currentSelectedPrice,
-      phone: phone,
-      metadata: {
-        type: 'subscription',
-        plan: currentSelectedPlan,
-        branches: currentSelectedBranches || 1,
-        billing: currentSelectedBilling || 'monthly',
-        business_id: activeBusinessId || (business ? business.id : 'current_biz'),
-        business_name: business ? business.name : 'Store'
+  const paymentId = init.payment_id;
+  const amount = Number(init.amount || currentSelectedPrice || 0);
+  const started = Date.now();
+  const UI_WAIT_MS = 120000; // the server keeps reconciling for 10 minutes; this is only how long we watch here
+
+  showMsg('#15803d', box('#f0fdf4', '#bbf7d0', '#166534',
+    `<div style="font-weight:800; font-size:14px; margin-bottom:4px;"><i class="fa-solid fa-mobile-screen fa-bounce"></i> M-Pesa prompt sent</div>` +
+    `<div style="font-size:13px; line-height:1.4;">Check your phone (<strong>${escapeHtml(phone)}</strong>) and enter your <strong>M-Pesa PIN</strong> to pay <strong>KES ${amount.toLocaleString()}</strong>.</div>` +
+    `<div style="font-size:12px; color:#64748b; margin-top:6px;"><i class="fa-regular fa-clock"></i> Waiting for Safaricom to confirm...</div>`));
+  if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Waiting for M-Pesa PIN...';
+  trackPlatformEvent('subscription_stk_sent', { plan: planKey, value: amount });
+
+  let polling = false;
+  const stop = () => { if (window._subStkPollInterval) { clearInterval(window._subStkPollInterval); window._subStkPollInterval = null; } };
+
+  window._subStkPollInterval = setInterval(async () => {
+    if (polling) return;
+    polling = true;
+    try {
+      const st = await callEdgeFunction('sub-stk-status', { payment_id: paymentId });
+      if (!st || st.error) {
+        if (Date.now() - started > UI_WAIT_MS) { stop(); resetBtn('<i class="fa-solid fa-rotate-right"></i> Check again later'); }
+        return;
       }
-    };
 
-    const initResult = await initiatePaymentRequest(payload);
+      if (st.status === 'paid') {
+        stop();
+        showMsg('#15803d', box('#f0fdf4', '#86efac', '#15803d',
+          `<i class="fa-solid fa-circle-check"></i> <strong>Payment confirmed!</strong><br>` +
+          `<span style="font-size:12px; font-weight:600;">${escapeHtml(st.plan || planKey)} is now active${st.mpesa_receipt ? ' &middot; M-Pesa ref ' + escapeHtml(st.mpesa_receipt) : ''}.</span>`));
+        trackPlatformEvent('subscription_payment_confirmed', { plan: planKey, value: amount });
+        try {
+          const bid = activeBusinessId || (business && business.id);
+          const { data: biz } = await sb.from('businesses').select('*').eq('id', bid).single();
+          if (biz) business = biz;
+          applyPlanFeaturesVisibility();
+          renderSubscriptionTab();
+        } catch (e) { console.warn('Plan refresh failed:', e); }
+        showToast('Payment received. Your ' + (st.plan || planKey) + ' plan is active.');
+        // Reload so every screen, and the expiry lock if it was showing, picks up the new plan.
+        setTimeout(() => { closeUpgradePlanModal(); location.reload(); }, 2200);
 
-    if (!initResult.success) {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send M-Pesa STK Push';
+      } else if (st.status === 'underpaid') {
+        stop();
+        resetBtn();
+        showMsg('#b45309', box('#fffbeb', '#fde68a', '#92400e',
+          `<i class="fa-solid fa-triangle-exclamation"></i> <strong>We received KES ${Number(st.amount_paid || 0).toLocaleString()}, but this plan costs KES ${Number(st.amount_expected || amount).toLocaleString()}</strong><br>` +
+          `<span style="font-size:12.5px;">Your plan was not changed. Contact support with M-Pesa ref ${escapeHtml(st.mpesa_receipt || 'on your SMS')} and we will sort it out.</span>`));
+
+      } else if (st.status === 'cancelled' || st.status === 'failed' || st.status === 'timeout') {
+        stop();
+        resetBtn('<i class="fa-solid fa-rotate-right"></i> Try Again');
+        const label = st.status === 'cancelled' ? 'Payment cancelled' : (st.status === 'timeout' ? 'Payment timed out' : 'Payment failed');
+        showMsg('#dc2626', box('#fef2f2', '#fecaca', '#b91c1c',
+          `<i class="fa-solid fa-circle-xmark"></i> <strong>${label}</strong><br><span style="font-size:12.5px;">${escapeHtml(st.message || 'Your plan was not changed and you were not charged.')}</span>`));
+
+      } else if (Date.now() - started > UI_WAIT_MS) {
+        // Still pending: the payment may yet go through, so don't call it failed.
+        stop();
+        resetBtn('<i class="fa-solid fa-rotate-right"></i> Send again');
+        showMsg('#b45309', box('#fffbeb', '#fde68a', '#92400e',
+          `<i class="fa-regular fa-clock"></i> <strong>Still waiting for confirmation</strong><br>` +
+          `<span style="font-size:12.5px;">If you already entered your PIN, your plan switches on automatically within a few minutes. Otherwise tap Send again.</span>`));
       }
-      if (msgEl) {
-        msgEl.style.color = '#dc2626';
-        msgEl.innerHTML = `❌ <strong>Failed to initiate Daraja STK:</strong> ${escapeHtml(initResult.error || 'Check phone number and credentials')}`;
-      }
-      showToast('M-Pesa STK initiation failed: ' + (initResult.error || ''));
-      return;
+    } catch (err) {
+      console.warn('Poll error:', err);
+    } finally {
+      polling = false;
     }
-
-    const paymentReqId = initResult.payment_request_id;
-    let secondsLeft = 70;
-
-    if (msgEl) {
-      msgEl.style.color = '#15803d';
-      msgEl.innerHTML = `
-        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px; margin-top:8px;">
-          <div style="font-weight:800; font-size:14px; margin-bottom:4px;"><i class="fa-solid fa-mobile-screen fa-bounce"></i> STK Prompt Sent!</div>
-          <div style="font-size:13px; color:#166534; line-height:1.4;">
-            Please check your phone (<strong>${escapeHtml(phone)}</strong>) and enter your <strong>M-Pesa PIN</strong> to pay <strong>KES ${Number(currentSelectedPrice).toLocaleString()}</strong>.
-          </div>
-          <div style="font-size:12px; color:#64748b; margin-top:6px;" id="stkTimerNotice">
-            <i class="fa-regular fa-clock"></i> Waiting for Daraja confirmation (<span id="stkSecondsCount">${secondsLeft}</span>s)...
-          </div>
-        </div>
-      `;
-    }
-
-    if (btn) {
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Waiting for M-Pesa PIN...';
-    }
-
-    if (window._subStkPollInterval) clearInterval(window._subStkPollInterval);
-
-    window._subStkPollInterval = setInterval(async () => {
-      secondsLeft -= 2;
-      const countEl = document.getElementById('stkSecondsCount');
-      if (countEl) countEl.textContent = Math.max(0, secondsLeft);
-
-      try {
-        const data = await checkPaymentStatus(paymentReqId, initResult.channel);
-        if (!data) return;
-
-        if (data.status === 'success') {
-          clearInterval(window._subStkPollInterval);
-          window._subStkPollInterval = null;
-
-          const realMpesaRef = data.receipt_reference || `MP${Date.now().toString(36).toUpperCase()}`;
-
-          if (msgEl) {
-            msgEl.innerHTML = `
-              <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:12px; padding:12px; color:#15803d; font-weight:800;">
-                <i class="fa-solid fa-circle-check"></i> Payment Confirmed by Safaricom!<br>
-                <span style="font-size:12px; font-weight:600; color:#166534;">M-Pesa Ref: ${escapeHtml(realMpesaRef)}</span>
-              </div>
-            `;
-          }
-
-          setTimeout(async () => {
-            await applySubscriptionSuccess(currentSelectedPlan, realMpesaRef, phone, false, currentSelectedBranches, currentSelectedBilling);
-            if (btn) {
-              btn.disabled = false;
-              btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send M-Pesa STK Push';
-            }
-          }, 1200);
-
-        } else if (data.status === 'failed' || data.status === 'cancelled') {
-          clearInterval(window._subStkPollInterval);
-          window._subStkPollInterval = null;
-
-          if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Try Again';
-          }
-          if (msgEl) {
-            msgEl.style.color = '#dc2626';
-            msgEl.innerHTML = `
-              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:12px; color:#b91c1c;">
-                <i class="fa-solid fa-circle-xmark"></i> <strong>M-Pesa Payment Rejected</strong><br>
-                <span style="font-size:12.5px;">${escapeHtml(data.result_desc || 'Transaction cancelled or insufficient funds. Subscription was not activated.')}</span>
-              </div>
-            `;
-          }
-          showToast('Payment rejected: ' + (data.result_desc || 'Cancelled by user'));
-
-        } else if (secondsLeft <= 0) {
-          clearInterval(window._subStkPollInterval);
-          window._subStkPollInterval = null;
-
-          if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry STK Push';
-          }
-          if (msgEl) {
-            msgEl.style.color = '#dc2626';
-            msgEl.innerHTML = `
-              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:12px; color:#b91c1c;">
-                <i class="fa-solid fa-triangle-exclamation"></i> <strong>Payment Timed Out</strong><br>
-                <span style="font-size:12.5px;">No PIN was entered on phone within 70 seconds. Subscription was not activated.</span>
-              </div>
-            `;
-          }
-          showToast('Daraja payment timed out. Please try again.');
-        }
-      } catch (err) {
-        console.warn('Poll error:', err);
-      }
-    }, 2000);
-
-  } catch (err) {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send M-Pesa STK Push';
-    }
-    if (msgEl) {
-      msgEl.style.color = '#dc2626';
-      msgEl.innerHTML = `❌ Network error connecting to payment gateway: ${escapeHtml(err.message)}`;
-    }
-    showToast('Network error: ' + err.message);
-  }
+  }, 3000);
 }
 
 async function submitModalManualCode() {
@@ -16976,7 +16936,7 @@ async function saveNewProductFromPage() {
             <i class="fa-solid fa-mobile-screen"></i> M-Pesa Payment Details
           </div>
           <div id="modalMpesaDestText" style="font-size:13.5px; font-weight:700; color:#0f172a;">
-            Buy Goods Till: <strong>174379</strong> (Dogo POS Technologies)
+            Loading payment details...
           </div>
           <div style="font-size:11.5px; color:#64748b; margin-top:3px;">
             Payments are verified immediately and your account activates automatically.
