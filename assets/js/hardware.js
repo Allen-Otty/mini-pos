@@ -137,7 +137,8 @@
   }
 
   /* ---------- settings (per device) ---------- */
-  var DEFAULTS = { mode: 'browser', paper: 58, autoPrint: false, drawer: false, btName: '', usbName: '', scanner: true };
+  var DEFAULTS = { mode: 'browser', paper: 58, autoPrint: false, drawer: false, btName: '', usbName: '', scanner: true,
+    devId: '', devVendor: 0, devProduct: 0, bleService: '', bleChar: '' };
   var KEY = 'dogo_hardware_v1';
   var mem = {};      // used when the browser blocks localStorage (private window), so settings still hold for this visit
   function getSettings() {
@@ -233,6 +234,108 @@
     for (var i = 0; i < bytes.length; i += 4096) await usb.device.transferOut(usb.ep, bytes.slice(i, i + 4096));
   }
 
+
+  /* ---------- Android app (Capacitor): native Bluetooth, Bluetooth LE and USB ----------
+     Web Bluetooth / WebUSB do not exist inside the Android app's WebView, so the same ESC/POS bytes go through
+     native plugins instead (DogoPrinter = classic Bluetooth + USB, BluetoothLe = low-energy printers). */
+  function cap() { return root.Capacitor && root.Capacitor.isNativePlatform && root.Capacitor.isNativePlatform() ? root.Capacitor : null; }
+  function plug(name) {
+    var c = cap();
+    if (!c || !c.Plugins || !c.Plugins[name]) throw new Error('This feature needs the Dogo POS Android app (update to the latest version).');
+    return c.Plugins[name];
+  }
+  function toHex(bytes) { var h = ''; for (var i = 0; i < bytes.length; i++) h += (bytes[i] < 16 ? '0' : '') + bytes[i].toString(16); return h; }
+  function errText(e) { return e && e.message ? e.message : String(e); }
+
+  // Small pick-a-device dialog (the paired Bluetooth or USB printers found on this device)
+  function choose(title, items) {
+    return new Promise(function (resolve, reject) {
+      if (items.length === 1) return resolve(items[0]);
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
+      var box = document.createElement('div');
+      box.style.cssText = 'background:#fff;color:#111;border-radius:14px;max-width:360px;width:100%;padding:18px;font-family:inherit;';
+      var h = document.createElement('div'); h.textContent = title; h.style.cssText = 'font-weight:700;margin-bottom:10px;';
+      box.appendChild(h);
+      items.forEach(function (it) {
+        var b = document.createElement('button'); b.type = 'button'; b.textContent = it.name;
+        b.style.cssText = 'display:block;width:100%;text-align:left;padding:12px;margin:6px 0;border:1px solid #d1d5db;border-radius:10px;background:#f9fafb;font-size:15px;';
+        b.onclick = function () { document.body.removeChild(wrap); resolve(it); };
+        box.appendChild(b);
+      });
+      var c = document.createElement('button'); c.type = 'button'; c.textContent = 'Cancel';
+      c.style.cssText = 'display:block;width:100%;padding:10px;margin-top:8px;border:0;background:none;color:#6b7280;font-size:14px;';
+      c.onclick = function () { document.body.removeChild(wrap); var e = new Error('No printer was chosen.'); e.name = 'NotFoundError'; reject(e); };
+      box.appendChild(c); wrap.appendChild(box); document.body.appendChild(wrap);
+    });
+  }
+
+  // classic Bluetooth (most 58/80 mm thermal printers) - pair the printer in Android Bluetooth settings first
+  async function nbtPair() {
+    var r = await plug('DogoPrinter').btList();
+    if (!r.devices.length) throw new Error('No paired Bluetooth devices. Turn the printer on, pair it in Android Settings > Bluetooth (PIN is usually 0000 or 1234), then try again.');
+    var d = await choose('Choose your printer', r.devices);
+    setSettings({ mode: 'native-bt', btName: d.name, devId: d.address });
+    return d.name;
+  }
+  async function nbtSend(bytes) {
+    var id = getSettings().devId;
+    if (!id) throw new Error('Printer not set up. Open Settings > Hardware and tap Pair printer.');
+    await plug('DogoPrinter').btWrite({ address: id, data: toBase64(bytes) });
+  }
+
+  // Bluetooth Low Energy printers
+  async function bleInit() { await plug('BluetoothLe').initialize({ androidNeverForLocation: true }); }
+  async function bleFindChar(deviceId) {
+    var r = await plug('BluetoothLe').getServices({ deviceId: deviceId }), best = null;
+    (r.services || []).forEach(function (svc) {
+      (svc.characteristics || []).forEach(function (ch) {
+        var p = ch.properties || {};
+        if (!(p.write || p.writeWithoutResponse)) return;
+        if (!best || (p.writeWithoutResponse && !best.noResp)) best = { service: svc.uuid, char: ch.uuid, noResp: !!p.writeWithoutResponse };
+      });
+    });
+    if (!best) throw new Error('No writable printer channel found on this Bluetooth device.');
+    return best;
+  }
+  async function nblePair() {
+    await bleInit();
+    var dev = await plug('BluetoothLe').requestDevice({ optionalServices: BT_SERVICES });
+    await plug('BluetoothLe').connect({ deviceId: dev.deviceId });
+    var c = await bleFindChar(dev.deviceId);
+    setSettings({ mode: 'native-ble', btName: dev.name || 'Bluetooth printer', devId: dev.deviceId, bleService: c.service, bleChar: c.char });
+    return dev.name || 'Bluetooth printer';
+  }
+  async function nbleSend(bytes) {
+    var s = getSettings(), L = plug('BluetoothLe');
+    if (!s.devId) throw new Error('Printer not set up. Open Settings > Hardware and tap Pair printer.');
+    await bleInit();
+    try { await L.connect({ deviceId: s.devId }); } catch (e) { throw new Error('Could not reach the printer. Check it is on and in range, or pair it again.'); }
+    var svc = s.bleService, ch = s.bleChar;
+    if (!svc || !ch) { var f = await bleFindChar(s.devId); svc = f.service; ch = f.char; setSettings({ bleService: svc, bleChar: ch }); }
+    for (var i = 0; i < bytes.length; i += 100) {
+      var arg = { deviceId: s.devId, service: svc, characteristic: ch, value: toHex(bytes.slice(i, i + 100)) };
+      try { await L.writeWithoutResponse(arg); } catch (e) { await L.write(arg); }
+      await sleep(20);
+    }
+  }
+
+  // USB (OTG cable)
+  async function nusbPair() {
+    var r = await plug('DogoPrinter').usbList();
+    if (!r.devices.length) throw new Error('No USB printer found. Plug the printer in with the OTG cable and try again.');
+    var d = await choose('Choose your USB printer', r.devices);
+    setSettings({ mode: 'native-usb', usbName: d.name, devId: d.id, devVendor: d.vendorId, devProduct: d.productId });
+    return d.name;
+  }
+  async function nusbSend(bytes) {
+    var s = getSettings(), P = plug('DogoPrinter');
+    var r = await P.usbList(), id = null;           // the device path changes when the cable is replugged: match on vendor/product
+    r.devices.forEach(function (d) { if (!id && d.vendorId === s.devVendor && d.productId === s.devProduct) id = d.id; });
+    if (!id) throw new Error('USB printer not connected. Plug it in, or open Settings > Hardware and tap Pair printer.');
+    await P.usbWrite({ id: id, data: toBase64(bytes) });
+  }
+
   function toBase64(bytes) {
     var s = ''; for (var i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
     return btoa(s);
@@ -244,6 +347,9 @@
     if (mode === 'bluetooth') return btSend(bytes);
     if (mode === 'usb') return usbSend(bytes);
     if (mode === 'rawbt') return rawbtSend(bytes);
+    if (mode === 'native-bt') return nbtSend(bytes);
+    if (mode === 'native-ble') return nbleSend(bytes);
+    if (mode === 'native-usb') return nusbSend(bytes);
     throw new Error('NO_RAW_PRINTER');
   }
 
@@ -253,6 +359,7 @@
   async function printReceipt(opts) {
     var s = getSettings();
     opts = Object.assign({ width: width(), openDrawer: s.drawer && opts && opts.payMethod === 'cash' }, opts || {});
+    if (s.mode === 'browser' && cap()) return { ok: false, via: 'browser', error: 'No printer set up on this device. Open Settings > Hardware, choose your printer and tap Pair printer.' };
     if (s.mode === 'browser') { if (root.print) root.print(); return { ok: true, via: 'browser' }; }
     try {
       await send(buildReceipt(opts));
@@ -263,7 +370,7 @@
   }
   async function openDrawer() {
     var s = getSettings();
-    if (s.mode === 'browser') return { ok: false, error: 'A cash drawer needs a receipt printer connected by Bluetooth, USB or RawBT.' };
+    if (s.mode === 'browser') return { ok: false, error: 'A cash drawer needs a receipt printer connected by Bluetooth or USB.' };
     try { await send(new Encoder(width()).init().drawer().bytes()); return { ok: true }; }
     catch (err) { return { ok: false, error: err && err.message ? err.message : String(err) }; }
   }
@@ -275,12 +382,15 @@
   }
   async function pair() {
     var mode = getSettings().mode;
+    if (mode === 'native-bt') return nbtPair();
+    if (mode === 'native-ble') return nblePair();
+    if (mode === 'native-usb') return nusbPair();
     if (mode === 'usb') return usbPair();
     return btPair();
   }
   function supports() {
     var nav = root.navigator || {};
-    return { bluetooth: !!nav.bluetooth, usb: !!nav.usb, rawbt: /android/i.test(nav.userAgent || ''), browser: true };
+    return { bluetooth: !!nav.bluetooth, usb: !!nav.usb, rawbt: /android/i.test(nav.userAgent || ''), browser: true, native: !!cap() };
   }
 
   /* ---------- keyboard-wedge scanner ---------- */
@@ -309,9 +419,22 @@
     return scanCleanup;
   }
 
+
+  /* ---------- Android app: native camera barcode scanner (Google ML Kit, works offline) ---------- */
+  async function nativeScan() {
+    var B = plug('BarcodeScanner');
+    try {
+      var av = await B.isGoogleBarcodeScannerModuleAvailable();
+      if (av && av.available === false) await B.installGoogleBarcodeScannerModule();
+    } catch (e) { /* older Play services: scan() will report the real problem */ }
+    var r = await B.scan({ formats: ['EAN_13', 'EAN_8', 'UPC_A', 'UPC_E', 'CODE_128', 'CODE_39', 'QR_CODE'] });
+    var b = r && r.barcodes && r.barcodes[0];
+    return b ? (b.rawValue || b.displayValue || '') : '';
+  }
+
   root.DogoHardware = {
     Encoder: Encoder, buildReceipt: buildReceipt, getSettings: getSettings, setSettings: setSettings,
     pair: pair, printReceipt: printReceipt, testPrint: testPrint, openDrawer: openDrawer, supports: supports,
-    listenScans: listenScans, _internals: { wrap: wrap, lr: lr, ascii: ascii, toBase64: toBase64 }
+    listenScans: listenScans, nativeScan: nativeScan, _internals: { wrap: wrap, lr: lr, ascii: ascii, toBase64: toBase64 }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

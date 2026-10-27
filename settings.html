@@ -369,6 +369,9 @@
           <label>How does this device print?</label>
           <select class="dogo-select" id="hwMode">
             <option value="browser">Browser print dialog (any printer, A4 or paper roll)</option>
+            <option value="native-bt">Bluetooth thermal printer (58/80 mm)</option>
+            <option value="native-ble">Bluetooth Low Energy printer (58/80 mm)</option>
+            <option value="native-usb">USB thermal printer (OTG cable)</option>
             <option value="bluetooth">Bluetooth thermal printer (58/80 mm)</option>
             <option value="usb">USB thermal printer (58/80 mm)</option>
             <option value="rawbt">RawBT app (Android)</option>
@@ -772,13 +775,21 @@
     (function () {
       const H = window.DogoHardware; if (!H) return;
       const s = H.getSettings(), sup = H.supports();
-      $('hwMode').value = s.mode; $('hwPaper').value = String(s.paper);
+      // Inside the Android app only the native options work; in a browser only the web ones do.
+      Array.from($('hwMode').options).forEach(o => {
+        const isNative = o.value.indexOf('native-') === 0, isWeb = o.value === 'bluetooth' || o.value === 'usb' || o.value === 'rawbt';
+        if ((sup.native && (isWeb || o.value === 'browser')) || (!sup.native && isNative)) o.remove();
+      });
+      // a fresh install still has the browser default saved; show the first real option instead (saved when the user pairs)
+      $('hwMode').value = Array.from($('hwMode').options).some(o => o.value === s.mode) ? s.mode : $('hwMode').options[0].value;
+      $('hwPaper').value = String(s.paper);
       $('hwAuto').checked = !!s.autoPrint; $('hwDrawer').checked = !!s.drawer; $('hwScanner').checked = s.scanner !== false;
-      $('hwSupport').textContent = 'This browser supports: ' + ['Bluetooth ' + (sup.bluetooth ? 'yes' : 'no'), 'USB ' + (sup.usb ? 'yes' : 'no'), 'RawBT ' + (sup.rawbt ? 'yes' : 'no')].join(', ') + '. Chrome on Android supports all three.';
+      if (sup.native) $('hwSupport').textContent = 'Android app: classic Bluetooth printers must be paired in Android Settings > Bluetooth first. USB printers connect with an OTG cable.';
+      else $('hwSupport').textContent = 'This browser supports: ' + ['Bluetooth ' + (sup.bluetooth ? 'yes' : 'no'), 'USB ' + (sup.usb ? 'yes' : 'no'), 'RawBT ' + (sup.rawbt ? 'yes' : 'no')].join(', ') + '. Chrome on Android supports all three.';
       const msg = (t, bad) => { $('hwMsg').textContent = t; $('hwMsg').style.color = bad ? '#dc2626' : ''; };
-      const showDev = () => { const c = H.getSettings(); $('hwDevice').textContent = c.mode === 'bluetooth' ? (c.btName || 'Not paired yet') : c.mode === 'usb' ? (c.usbName || 'Not paired yet') : c.mode === 'rawbt' ? 'RawBT app' : 'Browser print dialog'; };
+      const showDev = () => { const c = H.getSettings(); $('hwDevice').textContent = (c.mode === 'bluetooth' || c.mode === 'native-bt' || c.mode === 'native-ble') ? (c.btName || 'Not paired yet') : (c.mode === 'usb' || c.mode === 'native-usb') ? (c.usbName || 'Not paired yet') : c.mode === 'rawbt' ? 'RawBT app' : (H.supports().native ? 'None yet' : 'Browser print dialog'); };
       showDev();
-      $('hwMode').onchange = () => { H.setSettings({ mode: $('hwMode').value }); showDev(); msg(''); };
+      $('hwMode').onchange = () => { H.setSettings({ mode: $('hwMode').value, devId: '', btName: '', usbName: '', devVendor: 0, devProduct: 0, bleService: '', bleChar: '' }); showDev(); msg(''); };
       $('hwPaper').onchange = () => H.setSettings({ paper: Number($('hwPaper').value) });
       $('hwAuto').onchange = () => H.setSettings({ autoPrint: $('hwAuto').checked });
       $('hwDrawer').onchange = () => H.setSettings({ drawer: $('hwDrawer').checked });
@@ -786,7 +797,8 @@
       $('hwPair').onclick = async () => {
         const m = $('hwMode').value;
         if (m === 'browser' || m === 'rawbt') return msg(m === 'rawbt' ? 'RawBT needs no pairing: install the RawBT app and pair the printer there.' : 'The browser print dialog needs no pairing.');
-        try { msg('Choose your printer in the pop-up...'); const n = await H.pair(); showDev(); msg('Connected to ' + n + '. Tap Test print.'); }
+        H.setSettings({ mode: m });
+        try { msg(H.supports().native ? 'Looking for printers...' : 'Choose your printer in the pop-up...'); const n = await H.pair(); showDev(); msg('Connected to ' + n + '. Tap Test print.'); }
         catch (e) { msg(e && e.name === 'NotFoundError' ? 'No printer was chosen.' : (e.message || String(e)), true); }
       };
       $('hwTest').onclick = async () => { const r = await H.testPrint(); msg(r.ok ? 'Test receipt sent (' + r.via + ').' : r.error, !r.ok); };

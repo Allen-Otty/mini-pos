@@ -715,6 +715,18 @@
 
     async function toggleScan() {
       const panel = $('scannerPanel'), btn = $('scanBtn'), msg = $('scanMsg');
+      // Android app: use the phone's native scanner (Google ML Kit): faster, works in low light and offline
+      if (window.DogoHardware && window.DogoHardware.supports().native) {
+        panel.style.display = 'block';
+        try {
+          const code = await window.DogoHardware.nativeScan();
+          if (code) onScan(code); else if (msg) { msg.textContent = 'No barcode scanned.'; msg.style.color = 'var(--dogo-text-muted)'; }
+        } catch (err) {
+          const t = String((err && err.message) || err);
+          if (msg) { msg.textContent = /cancel/i.test(t) ? 'Scan cancelled.' : 'Could not scan: ' + t; msg.style.color = /cancel/i.test(t) ? 'var(--dogo-text-muted)' : '#dc2626'; }
+        }
+        return;
+      }
       if (scanRunning) {
         scanRunning = false;
         try { await qrScanner.stop(); } catch (e) {}
@@ -1024,7 +1036,7 @@
       $('receiptModal').classList.add('open'); $('rcClose').onclick = () => $('receiptModal').classList.remove('open');
       // Thermal printer / cash drawer (Settings > Hardware, saved per device). Falls back to the normal Print button.
       const HW = window.DogoHardware, hs = HW && HW.getSettings();
-      if (HW && hs.mode !== 'browser') {
+      if (HW && (hs.mode !== 'browser' || HW.supports().native)) {
         const extra = (window.DogoReceipt && window.DogoReceipt.getExtra(ctx.business && ctx.business.id)) || {};
         const opts = { business: ctx.business, profile: ctx.profile, receiptNo: r.receipt, extra, payMethod: pay,
           mpesaReceipt: ref || '', gatewayName: NAMES[pay] || pay,

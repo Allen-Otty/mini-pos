@@ -62,7 +62,20 @@ In Supabase → SQL Editor, run `supabase/migrations/20260930_subscription_enfor
 The `native/` folder wraps the web app with Capacitor (app ID `com.dogo.pos`). `.github/workflows/build-apps.yml` builds on every push to `main`:
 `Dogo-POS.apk` (published on the `latest` release, linked from `download.html`) and, when signing secrets exist, `Dogo-POS.aab` (Artifacts of the run, **Dogo-POS-aab**; not published publicly).
 
-**Signing (one time, keep the key forever; losing it means users must reinstall):** add repo secrets `ANDROID_KEYSTORE_B64` (base64 of the `.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Without them only a debug APK is built.
+**Signing (one time, keep the key forever; losing it means users must reinstall).** Create the key on your own computer (needs Java; never share the file or passwords in chat):
+
+```bash
+keytool -genkeypair -v -keystore dogo-release.jks -alias dogo -keyalg RSA -keysize 2048 -validity 10000
+# it asks for a keystore password, a key password and your name/organisation. Remember both passwords.
+base64 -w0 dogo-release.jks > dogo-release.jks.b64     # macOS: base64 -i dogo-release.jks -o dogo-release.jks.b64
+# Windows PowerShell: [Convert]::ToBase64String([IO.File]::ReadAllBytes("dogo-release.jks")) | Set-Content dogo-release.jks.b64
+```
+
+Then in GitHub: repo > Settings > Secrets and variables > Actions > New repository secret, add four secrets:
+`ANDROID_KEYSTORE_B64` (the contents of `dogo-release.jks.b64`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` (`dogo` above) and `ANDROID_KEY_PASSWORD`.
+Back the `.jks` file and both passwords up somewhere safe (a password manager plus an offline copy). Without the secrets only a debug APK is built, and a signed APK cannot update a debug one (uninstall first, once).
+
+**Phones and printers (Android app).** Settings > Hardware in the app now offers Bluetooth, Bluetooth Low Energy and USB (OTG) printers through native plugins (the browser's Web Bluetooth/WebUSB do not exist inside the app). Classic Bluetooth printers must be paired once in Android Settings > Bluetooth (PIN usually 0000 or 1234); the app then lists the paired devices. The Scan button on the till uses the phone's native scanner (Google ML Kit). Check each build on a real phone and printer: the native code compiles in CI but has not been run on hardware yet.
 
 **Google Play, step by step**
 1. Create a Play Console developer account (one-time US$25) and the app "Dogo POS", package `com.dogo.pos`.
