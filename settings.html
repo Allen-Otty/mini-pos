@@ -232,6 +232,21 @@
         </section>
 
         <section class="dogo-card">
+          <div class="dogo-card__title" style="margin-bottom:6px;">Trading Hours</div>
+          <p style="margin:0 0 12px;font-size:13px;color:#64748b;">When switched on, tellers cannot make sales before opening time or after closing time. Admins are not affected.</p>
+          <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-weight:600;">
+            <input type="checkbox" id="setHoursOn"> Restrict tellers to trading hours
+          </label>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:130px;"><label>Opening time</label><input type="time" class="dogo-input" id="setOpenTime" value="08:00"></div>
+            <div style="flex:1;min-width:130px;"><label>Closing time</label><input type="time" class="dogo-input" id="setCloseTime" value="21:00"></div>
+          </div>
+          <div class="dogo-btn-row" style="margin-top:16px;">
+            <button class="dogo-btn dogo-btn--primary" id="btnSaveHours">Save Trading Hours</button>
+          </div>
+        </section>
+
+        <section class="dogo-card">
           <div class="dogo-card__title" style="margin-bottom:14px;">Store Branding &amp; Logo</div>
           <p class="dogo-muted" style="font-size:13.5px;margin-top:0;">
             Upload your high-resolution store logo. It will appear on the top header, printable receipts, and customer payment summaries.
@@ -852,6 +867,19 @@
       Object.assign(b, updates);
       updateReceiptPreview();
       toast('Business profile saved successfully!');
+    };
+
+    // Trading hours
+    $('setHoursOn').checked = !!b.hours_enabled;
+    $('setOpenTime').value = b.opening_time || '08:00';
+    $('setCloseTime').value = b.closing_time || '21:00';
+    $('btnSaveHours').onclick = async () => {
+      const updates = { hours_enabled: $('setHoursOn').checked, opening_time: $('setOpenTime').value || '08:00', closing_time: $('setCloseTime').value || '21:00' };
+      if (updates.hours_enabled && updates.opening_time === updates.closing_time) return toast('Opening and closing time cannot be the same.');
+      const { error } = await sb.from('businesses').update(updates).eq('id', ctx.businessId);
+      if (error) return toast('Could not save trading hours: ' + error.message);
+      Object.assign(b, updates);
+      toast('Trading hours saved.');
     };
 
     // 3. Receipt Settings

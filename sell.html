@@ -371,6 +371,17 @@
 
     const $ = id => document.getElementById(id);
     let products = [], cart = [], currentShift = null, shiftSales = [];
+    // Trading hours: tellers can only sell between opening and closing time (admins are exempt). Overnight hours (e.g. 18:00-02:00) work too.
+    function tradingOpen() {
+      const b = ctx.business || {};
+      if (ctx.isAdmin || !b.hours_enabled) return true;
+      const toMin = t => { const m = /^(\d{1,2}):(\d{2})/.exec(t || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; };
+      const o = toMin(b.opening_time), c = toMin(b.closing_time);
+      if (o === null || c === null || o === c) return true;
+      const d = new Date(), now = d.getHours() * 60 + d.getMinutes();
+      return o < c ? (now >= o && now < c) : (now >= o || now < c);
+    }
+    function hoursMsg() { const b = ctx.business || {}; return 'Sales are closed. Trading hours are ' + b.opening_time + ' to ' + b.closing_time + '.'; }
     let busy = false, pollTimer = null, tickTimer = null;
 
     const OFF = window.DogoData.Offline, uid = ctx.profile.id;
@@ -826,7 +837,7 @@
         </div>
       `).join('') : '<div class="dogo-card__empty">Cart is empty. Tap a product to add it.</div>';
 
-      $('payBtn').disabled = busy || !cart.length || !currentShift;
+      $('payBtn').disabled = busy || !cart.length || !currentShift || !tradingOpen();
     }
 
     $('grid').onclick = e => {
@@ -1004,6 +1015,7 @@
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshStock(); });
     window.addEventListener('focus', () => refreshStock());
     window.addEventListener('online', () => refreshStock(true));
+    setInterval(() => { if (!tradingOpen()) $('payBtn').disabled = true; else if (cart.length && currentShift && !busy) $('payBtn').disabled = false; }, 30000); // lock/unlock the button at closing/opening time
     window.addEventListener('storage', e => { if (e.key === 'dogo_products_changed') refreshStock(true); });
     setInterval(() => refreshStock(), 90000);
     window.addEventListener('dogo:synced', e => {
@@ -1109,6 +1121,7 @@
       localStorage.setItem(PENDING_KEY, JSON.stringify(pd)); startPolling(pd);
     }
     $('payBtn').onclick = async () => {
+      if (!tradingOpen()) { toast(hoursMsg()); return; }
       if (!currentShift) { toast('Open a shift first before making a sale.'); return; }
       if (!cart.length || busy) return;
       const method = $('payMethod').value;
