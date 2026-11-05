@@ -1,18 +1,15 @@
--- STATUS: NOT YET APPLIED to the live database (waiting for owner approval). Do not run blindly: it drops and recreates process_sale.
--- Server-side trading-hours enforcement inside process_sale.
--- Tellers cannot record a sale outside businesses.opening_time..closing_time (Africa/Nairobi) when
--- businesses.hours_enabled is true. Admins and the service role are exempt.
--- p_sold_at: sales rung up offline pass the time they were made, so a sale made during opening hours
--- still syncs after closing. It is only honoured when it is >2 min old and <72 h old; otherwise server time is used.
--- Replaces the 12-arg signature with a 13-arg one (new trailing param has a default, so existing callers keep working).
-begin;
-drop function if exists public.process_sale(uuid,uuid,text,uuid,numeric,numeric,numeric,text,jsonb,text,uuid,text);
+-- APPLIED to the live database on 2026-11-05 (as migration "trading_hours_server_check_v2").
+-- Server-side trading-hours enforcement inside process_sale. Tellers cannot record a sale outside
+-- businesses.opening_time..closing_time (Africa/Nairobi) when businesses.hours_enabled is true.
+-- Admins and the service role are exempt. Signature of process_sale is unchanged (nothing dropped).
+-- process_sale_offline: used by the offline sync; passes the time the sale was really made (honoured only if
+-- >2 min and <72 h old) via a transaction-local setting, so a sale made in hours still syncs after closing.
+-- Requires 20261105_business_trading_hours.sql (hours columns) first.
 
 create or replace function public.process_sale(
   p_business_id uuid, p_cashier_id uuid, p_receipt_no text, p_customer_id uuid,
   p_subtotal_excl_vat numeric, p_vat_total numeric, p_total numeric, p_offline_uuid text, p_items jsonb,
-  p_payment_method text default 'cash'::text, p_shift_id uuid default null::uuid, p_mpesa_receipt_no text default null::text,
-  p_sold_at timestamptz default null
+  p_payment_method text default 'cash'::text, p_shift_id uuid default null::uuid, p_mpesa_receipt_no text default null::text
 ) returns uuid
 language plpgsql security definer set search_path to 'public'
 as $function$
@@ -21,7 +18,7 @@ declare
   v_safe_shift_id uuid; v_safe_customer_id uuid;
   v_uid uuid := auth.uid();
   v_is_service boolean := coalesce(auth.role() = 'service_role', false);
-  v_h record; v_when timestamptz; v_t time; v_open time; v_close time; v_ok boolean;
+  v_h record; v_when timestamptz; v_sold timestamptz; v_t time; v_open time; v_close time; v_ok boolean;
 begin
   if not v_is_service then
     if v_uid is null then
@@ -41,13 +38,17 @@ begin
     if v_sale_id is not null then return v_sale_id; end if;
   end if;
 
-  -- Trading hours (tellers only)
+  -- Trading hours (tellers only; admins and service role exempt)
   if not v_is_service and not exists (select 1 from public.profiles where id = v_uid and role = 'admin') then
     select hours_enabled, opening_time, closing_time into v_h from public.businesses where id = p_business_id;
     if found and v_h.hours_enabled then
       v_when := now();
-      if p_sold_at is not null and p_sold_at < now() - interval '2 minutes' and p_sold_at > now() - interval '72 hours' then
-        v_when := p_sold_at;
+      begin
+        v_sold := nullif(current_setting('app.sold_at', true), '')::timestamptz;
+      exception when others then v_sold := null;
+      end;
+      if v_sold is not null and v_sold < now() - interval '2 minutes' and v_sold > now() - interval '72 hours' then
+        v_when := v_sold;
       end if;
       v_t := (v_when at time zone 'Africa/Nairobi')::time;
       v_open := v_h.opening_time::time; v_close := v_h.closing_time::time;
@@ -110,6 +111,20 @@ begin
 end;
 $function$;
 
-revoke all on function public.process_sale(uuid,uuid,text,uuid,numeric,numeric,numeric,text,jsonb,text,uuid,text,timestamptz) from public, anon;
-grant execute on function public.process_sale(uuid,uuid,text,uuid,numeric,numeric,numeric,text,jsonb,text,uuid,text,timestamptz) to authenticated, service_role;
-commit;
+create or replace function public.process_sale_offline(
+  p_business_id uuid, p_cashier_id uuid, p_receipt_no text, p_customer_id uuid,
+  p_subtotal_excl_vat numeric, p_vat_total numeric, p_total numeric, p_offline_uuid text, p_items jsonb,
+  p_payment_method text default 'cash'::text, p_shift_id uuid default null::uuid, p_mpesa_receipt_no text default null::text,
+  p_sold_at timestamptz default null
+) returns uuid
+language plpgsql security invoker set search_path to 'public'
+as $function$
+begin
+  perform set_config('app.sold_at', coalesce(p_sold_at::text, ''), true);
+  return public.process_sale(p_business_id, p_cashier_id, p_receipt_no, p_customer_id, p_subtotal_excl_vat,
+    p_vat_total, p_total, p_offline_uuid, p_items, p_payment_method, p_shift_id, p_mpesa_receipt_no);
+end;
+$function$;
+
+revoke all on function public.process_sale_offline(uuid,uuid,text,uuid,numeric,numeric,numeric,text,jsonb,text,uuid,text,timestamptz) from public, anon;
+grant execute on function public.process_sale_offline(uuid,uuid,text,uuid,numeric,numeric,numeric,text,jsonb,text,uuid,text,timestamptz) to authenticated, service_role;

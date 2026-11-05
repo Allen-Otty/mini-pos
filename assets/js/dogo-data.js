@@ -160,7 +160,8 @@
           const e = q[0];
           const { count } = await sb.from('sales').select('id', { count: 'exact', head: true });
           const receipt = 'RC-' + String((count || 0) + 1).padStart(4, '0');
-          const { error } = await sb.rpc('process_sale', Object.assign({}, e.args, { p_receipt_no: receipt }));
+          // process_sale_offline = process_sale + the time the sale was really made, so trading hours are judged on that time, not the sync time
+          const { error } = await sb.rpc('process_sale_offline', Object.assign({}, e.args, { p_receipt_no: receipt, p_sold_at: e.at ? new Date(e.at).toISOString() : null }));
           if (error) {
             if (isNetworkErr(error) || !isOnline()) { lastError = 'Connection dropped - will retry.'; break; }
             const f = failed(uid); f.push({ entry: e, reason: error.message, at: Date.now() }); saveFailed(uid, f);
