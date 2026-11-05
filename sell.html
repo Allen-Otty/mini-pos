@@ -479,7 +479,7 @@
           </div>
         `;
         $('shiftLockNotice').style.display = 'none';
-        $('payBtn').disabled = !cart.length;
+        $('payBtn').disabled = !cart.length || !OFF.isOnline();
 
         $('btnTriggerCloseShift').onclick = openCloseShiftModal;
       } else {
@@ -826,7 +826,7 @@
         </div>
       `).join('') : '<div class="dogo-card__empty">Cart is empty. Tap a product to add it.</div>';
 
-      $('payBtn').disabled = busy || !cart.length || !currentShift;
+      $('payBtn').disabled = busy || !cart.length || !currentShift || !OFF.isOnline();
     }
 
     $('grid').onclick = e => {
@@ -1004,6 +1004,8 @@
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshStock(); });
     window.addEventListener('focus', () => refreshStock());
     window.addEventListener('online', () => refreshStock(true));
+    window.addEventListener('online', () => drawCart());
+    window.addEventListener('offline', () => drawCart());
     window.addEventListener('storage', e => { if (e.key === 'dogo_products_changed') refreshStock(true); });
     setInterval(() => refreshStock(), 90000);
     window.addEventListener('dogo:synced', e => {
@@ -1109,6 +1111,7 @@
       localStorage.setItem(PENDING_KEY, JSON.stringify(pd)); startPolling(pd);
     }
     $('payBtn').onclick = async () => {
+      if (!OFF.isOnline()) { toast('You are offline. Reconnect to complete a sale.'); return; }
       if (!currentShift) { toast('Open a shift first before making a sale.'); return; }
       if (!cart.length || busy) return;
       const method = $('payMethod').value;

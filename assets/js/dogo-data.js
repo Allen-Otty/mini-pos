@@ -195,7 +195,7 @@
       bar.style.display = 'block';
       bar.style.background = off ? '#fef3c7' : (bad ? '#fee2e2' : '#0f172a');
       bar.style.color = off ? '#92400e' : (bad ? '#991b1b' : '#facc15');
-      bar.textContent = (off ? 'Offline — sales and catalogue changes save on this device and sync when you reconnect.' : '')
+      bar.textContent = off ? 'Offline mode' : ''
         + (np ? (off ? ' ' : '') + np + ' catalogue change' + (np === 1 ? '' : 's') + ' waiting to sync' + (off ? '.' : ' — tap to sync now.') : '')
         + (sh && !n ? (off ? ' ' : '') + 'Shift waiting to sync' + (off ? '.' : ' - tap to sync now.') : '')
         + (n ? (off ? ' ' : '') + n + ' sale' + (n === 1 ? '' : 's') + ' waiting to sync' + (off ? '.' : ' — tap to sync now.') : '')
