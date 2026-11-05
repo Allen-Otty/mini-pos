@@ -10971,6 +10971,10 @@ async function afterLogin() {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) { handleLogout(); return; }
 
+  // Last-seen heartbeat for the platform admin console (fire and forget)
+  const __beat = () => { if (document.visibilityState !== 'hidden' && navigator.onLine !== false) sb.rpc('touch_last_seen', { p_platform: (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'android' : (/electron/i.test(navigator.userAgent) ? 'windows' : 'web') }).then(() => {}, () => {}); };
+  __beat(); if (!window.__dogoBeatTimer) window.__dogoBeatTimer = setInterval(__beat, 5 * 60 * 1000);
+
   // 1. Check if user is a Platform Admin (e.g. Allen Otiende)
   await checkPlatformAdminStatus();
 

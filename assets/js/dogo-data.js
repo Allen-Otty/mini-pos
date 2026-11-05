@@ -353,5 +353,29 @@
     return { basis: 'cost', missing: live.filter(p => Number(p.stock) > 0 && !hasCost(p)).length,
              value: costed.reduce((a, p) => a + Math.max(0, Number(p.stock || 0)) * Number(p.cost), 0) };
   }
+  /* ---- Last-seen heartbeat: lets the platform admin see when each business last used the app ---- */
+  function seenPlatform() {
+    try {
+      if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return /android/i.test(navigator.userAgent) ? 'android' : 'ios';
+      if (/electron/i.test(navigator.userAgent)) return 'windows';
+    } catch (e) {}
+    return 'web';
+  }
+  let lastBeat = 0;
+  async function beat(force) {
+    if (document.visibilityState === 'hidden' || !isOnline()) return;
+    if (!force && Date.now() - lastBeat < 4 * 60 * 1000) return;
+    try {
+      const { data } = await sb.auth.getSession();
+      if (!data || !data.session) return;
+      lastBeat = Date.now();
+      await sb.rpc('touch_last_seen', { p_platform: seenPlatform() });
+    } catch (e) { /* offline or not signed in: ignore */ }
+  }
+  setTimeout(() => beat(true), 2500);
+  setInterval(() => beat(false), 5 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') beat(false); });
+  window.addEventListener('online', () => beat(true));
+
   window.DogoData = { notifyProductsChanged, stockValue, bundleTotal, Offline, isOnline, sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor, apiAuthHeaders };
 })();
