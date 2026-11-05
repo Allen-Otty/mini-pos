@@ -193,7 +193,8 @@
         document.body.appendChild(bar);
       }
       bar.style.display = 'block';
-      bar.style.background = off ? '#fef3c7' : (bad ? '#fee2e2' : '#0f172a');
+      bar.style.background = off ? 'transparent' : (bad ? '#fee2e2' : '#0f172a');
+      bar.style.pointerEvents = off ? 'none' : 'auto';
       bar.style.color = off ? '#92400e' : (bad ? '#991b1b' : '#facc15');
       bar.textContent = off ? 'Offline mode' : ''
         + (np ? (off ? ' ' : '') + np + ' catalogue change' + (np === 1 ? '' : 's') + ' waiting to sync' + (off ? '.' : ' — tap to sync now.') : '')
