@@ -18,6 +18,9 @@
   const isOnline = () => navigator.onLine !== false;
   const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+  // Give a network call at most `ms` before treating it as "no connection" (a weak signal can hang for a minute).
+  // The rejection looks like a network error, so every existing offline fallback catches it.
+  const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('network timeout'), { status: 0 })), ms))]);
   const isNetworkErr = e => !!e && !e.code && (!e.status || e.status === 0 || /fetch|network|load failed/i.test(String(e.message || e)));
 
   /* Bulk offers: breaks = [{ qty: 3, price: 10 }] means "3 for 10". Returns the cheapest total for buying exactly
@@ -34,7 +37,7 @@
   }
 
   function cachedResult(c) {
-    return { session: { user: { id: c.userId }, access_token: null, offline: true }, profile: c.profile, business: c.business, offline: true };
+    return { session: { user: { id: c.userId }, access_token: null, offline: true }, profile: c.profile, business: c.business, platform: c.platform || null, offline: true };
   }
 
   // Returns { session, profile, business } or redirects to the sign-in page.
@@ -43,22 +46,44 @@
     // After any logout the device stays "locked" until the password is entered again (online or offline).
     if (localStorage.getItem('dogo_locked') === '1') { await toSignIn(); return null; }
     const cached = lsGet(CTX_KEY, null);
+    // Offline with a remembered sign-in: open straight away, no waiting on the network.
+    if (cached && !isOnline()) return cachedResult(cached);
     let session = null, sessErr = null;
-    try { const r = await sb.auth.getSession(); session = r.data && r.data.session; sessErr = r.error; } catch (e) { sessErr = e; }
+    try { const r = await withTimeout(sb.auth.getSession(), cached ? 2500 : 15000); session = r.data && r.data.session; sessErr = r.error; } catch (e) { sessErr = e; }
     if (!session) {
       if (cached && (!isOnline() || isNetworkErr(sessErr))) return cachedResult(cached);
       await toSignIn(); return null;
     }
-    try {
+    // Same user as the remembered sign-in: show the page from the saved copy if the server is slow (2.5s),
+    // and let the refresh finish quietly so the saved copy stays current.
+    const load = (async () => {
       const { data: profile, error: pErr } = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-      if (pErr && cached && cached.userId === session.user.id && isNetworkErr(pErr)) return cachedResult(cached);
-      if (!profile) { await toSignIn(); return null; }
-      // Look the business up by the profile's own id (platform admins can see many businesses)
-      const { data: business } = await sb.from('businesses').select('*').eq('id', profile.business_id).maybeSingle();
-      lsSet(CTX_KEY, { userId: session.user.id, profile, business, savedAt: Date.now() });
-      return { session, profile, business };
+      if (pErr) throw pErr;
+      if (!profile) return { none: true };
+      // Platform admins (the Dogo owner) can test any business: the server remembers which one is active.
+      let platform = null, prof = profile, bizId = profile.business_id;
+      try {
+        const paKey = 'dogo_pa_' + session.user.id; const seen = lsGet(paKey, null);
+        if (!(seen && seen.pa === false && Date.now() - seen.t < 864e5)) {
+          const r = await withTimeout(sb.functions.invoke('platform-switch-business', { body: { action: 'list' } }), 2500);
+          if (r && r.data && !r.error && Array.isArray(r.data.businesses)) {
+            platform = { ownId: profile.business_id, activeId: r.data.active_business_id || profile.business_id, businesses: r.data.businesses };
+            lsSet(paKey, { pa: true, t: Date.now() });
+            if (platform.activeId !== profile.business_id) { bizId = platform.activeId; prof = Object.assign({}, profile, { business_id: bizId }); }
+          } else lsSet(paKey, { pa: false, t: Date.now() });
+        }
+      } catch (e) {}
+      const { data: business } = await sb.from('businesses').select('*').eq('id', bizId).maybeSingle();
+      lsSet(CTX_KEY, { userId: session.user.id, profile: prof, business, platform, savedAt: Date.now() });
+      return { session, profile: prof, business, platform };
+    })();
+    try {
+      const out = (cached && cached.userId === session.user.id) ? await withTimeout(load, 2500) : await load;
+      if (out.none) { await toSignIn(); return null; }
+      return out;
     } catch (e) {
-      if (cached && cached.userId === session.user.id) return cachedResult(cached);
+      load.catch(() => {});   // the slow refresh may still land later; ignore its failure
+      if (cached && cached.userId === session.user.id && (isNetworkErr(e) || !isOnline())) return cachedResult(cached);
       throw e;
     }
   }
@@ -216,6 +241,16 @@
       cacheSet: (name, uid, v) => lsSet(k('cache_' + name, uid), v) };
   })();
 
+  // Platform admin: switch to another business (or back, with null). The page reloads on the new business.
+  async function platformSwitch(id) {
+    try {
+      const r = await sb.functions.invoke('platform-switch-business', { body: id ? { action: 'switch', business_id: id } : { action: 'clear' } });
+      if (r.error || (r.data && r.data.error)) { toast('Could not switch: ' + ((r.data && r.data.error) || r.error.message || 'try again')); return; }
+      try { localStorage.removeItem(CTX_KEY); sessionStorage.removeItem('dogo_phone_ask'); } catch (e) {}
+      location.reload();
+    } catch (e) { toast('Could not switch business'); }
+  }
+
   // Common page start-up: renders header/nav, enforces login, returns context.
   async function boot(active, opts) {
     opts = opts || {};
@@ -229,7 +264,7 @@
     const rawType = (ctx.business && ctx.business.business_type || '').toLowerCase();
     ctx.isHotelOrRestaurant = rawType.includes('hotel') || rawType.includes('restaurant');
     if (name) {
-      DogoShell.render({ active, businessName: name, onLogout: logout, showTables: ctx.isHotelOrRestaurant });
+      DogoShell.render({ active, businessName: name, onLogout: logout, showTables: ctx.isHotelOrRestaurant, businessType: ctx.business && ctx.business.business_type, userName: (ctx.profile && (ctx.profile.full_name || ctx.profile.name)) || (ctx.session && ctx.session.user && ctx.session.user.email) || name, roleLabel: ctx.isAdmin ? 'Owner / Admin' : ((ctx.profile && ctx.profile.role) || 'Staff'), isAdmin: ctx.isAdmin, themeColor: ctx.business && ctx.business.theme_color, logoUrl: ctx.business && ctx.business.logo_url, platform: ctx.platform, onSwitch: platformSwitch, avatarUrl: ctx.profile && ctx.profile.avatar_url });
       const sub = document.getElementById('bizName'); if (sub) sub.textContent = name;
     }
     if (opts.adminOnly && !ctx.isAdmin) {
@@ -377,5 +412,5 @@
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') beat(false); });
   window.addEventListener('online', () => beat(true));
 
-  window.DogoData = { notifyProductsChanged, stockValue, bundleTotal, Offline, isOnline, sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor, apiAuthHeaders };
+  window.DogoData = { withTimeout, platformSwitch, notifyProductsChanged, stockValue, bundleTotal, Offline, isOnline, sb, kes, esc, requireSession, logout, toast, boot, downloadCSV, planLimitsFor, apiAuthHeaders };
 })();

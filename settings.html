@@ -220,6 +220,7 @@
               <option value="Hotel">Hotel, Bar &amp; Restaurant</option>
               <option value="Hardware">Hardware Store &amp; Building Supplies</option>
               <option value="Kiosk">Kiosk / Kibanda</option>
+              <option value="Pharmacy">Pharmacy</option>
               <option value="Agrovet">Agrovet</option>
               <option value="Boutique">Boutique / Fashion</option>
               <option value="Wines &amp; Spirits">Wines &amp; Spirits</option>
@@ -677,38 +678,37 @@
     <!-- TAB 8: Appearance & Theme -->
     <div class="settings-tab-pane" id="tab-appearance">
       <section class="dogo-card" style="max-width:820px;">
-        <div class="dogo-card__title" style="margin-bottom:14px;">POS System Theme &amp; Color Scheme</div>
-        
-        <div style="background:#091710;border:2px solid var(--dogo-gold);border-radius:var(--dogo-radius);padding:18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:36px;height:36px;border-radius:50%;background:var(--dogo-neon);border:2px solid var(--dogo-gold);display:flex;align-items:center;justify-content:center;font-weight:900;color:#04140b;">
-              ★
-            </div>
-            <div>
-              <div style="font-weight:800;font-size:16px;color:#fff;">Active Theme: Neon Green, White &amp; Gold</div>
-              <div style="font-size:12.5px;color:rgba(255,255,255,0.75);">High-contrast, retail-grade vibrant aesthetic across all registers</div>
-            </div>
-          </div>
-          <span style="background:var(--dogo-gold);color:#151100;font-weight:800;font-size:12px;padding:4px 12px;border-radius:var(--dogo-radius-pill);">ACTIVE DEFAULT</span>
-        </div>
-
-        <div class="dogo-field">
-          <label>Display Contrast Mode</label>
-          <div style="display:flex;gap:10px;">
-            <button class="dogo-btn dogo-btn--primary dogo-btn--sm" id="btnThemeDefault">
-              Neon Green, White &amp; Gold
-            </button>
-          </div>
-          <p class="dogo-muted" style="font-size:12.5px;margin-top:8px;">
-            Features electric neon accents, pure white surfaces, and radiant metallic gold highlights tailored for optimal cashier visibility.
-          </p>
-        </div>
+        <div class="dogo-card__title" style="margin-bottom:6px;">Colour theme</div>
+        <p class="dogo-muted" style="font-size:13px;margin:0 0 14px;">Pick the colours for the menu, buttons and highlights of this business. It applies on every screen and every device signed in to it.</p>
+        <div id="themePresets" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
+        <p class="dogo-muted" id="themeMsg" style="font-size:12.5px;margin-top:12px;"></p>
       </section>
     </div>
 
     <!-- TAB 9: Account & Admin -->
     <div class="settings-tab-pane" id="tab-account">
       <div class="dogo-split">
+        <section class="dogo-card" id="myProfileCard" style="grid-column:1/-1;">
+          <div class="dogo-card__title" style="margin-bottom:14px;">My profile</div>
+          <div style="text-align:center;">
+            <div class="dogo-pfp" id="pfpBox"><span id="pfpInit">?</span></div>
+            <input type="file" id="pfpFile" accept="image/png,image/jpeg,image/webp" hidden>
+            <button class="dogo-btn dogo-btn--primary dogo-btn--block" id="pfpBtn" type="button">Upload photo</button>
+            <p class="dogo-muted" style="font-size:12.5px;margin:8px 0 0;">JPG, PNG or WebP, up to 2 MB.</p>
+          </div>
+          <div class="dogo-form-row dogo-form-row--2" style="margin-top:16px;">
+            <div class="dogo-field"><label>Full name</label><input class="dogo-input" id="pfName"></div>
+            <div class="dogo-field"><label>Email</label><input class="dogo-input" id="pfEmail" disabled></div>
+          </div>
+          <div class="dogo-btn-row"><button class="dogo-btn dogo-btn--outline" id="pfSave" type="button">Save name</button></div>
+          <div class="dogo-card__title" style="margin:22px 0 12px;font-size:15px;">Change password</div>
+          <div class="dogo-form-row dogo-form-row--2">
+            <div class="dogo-field"><label>Current password</label><input class="dogo-input" id="pwOld" type="password" autocomplete="current-password"></div>
+            <div class="dogo-field"><label>New password</label><input class="dogo-input" id="pwNew" type="password" autocomplete="new-password" placeholder="At least 8 characters"></div>
+            <div class="dogo-field"><label>Confirm new password</label><input class="dogo-input" id="pwNew2" type="password" autocomplete="new-password"></div>
+            <div class="dogo-field" style="align-self:end;"><button class="dogo-btn dogo-btn--primary dogo-btn--block" id="pwSave" type="button">Update password</button></div>
+          </div>
+        </section>
         <section class="dogo-card">
           <div class="dogo-card__title" style="margin-bottom:14px;">Current Cashier / User Session</div>
           <div class="dogo-list-row"><span class="dogo-muted">Signed In As</span><strong id="sUser">—</strong></div>
@@ -724,7 +724,7 @@
         </section>
 
         <!-- Platform Admin Multi-Business Switcher -->
-        <section class="dogo-card" id="adminSwitcherCard" style="border:1.5px solid var(--dogo-gold);">
+        <section class="dogo-card" id="adminSwitcherCard" style="display:none;border:1.5px solid var(--dogo-gold);">
           <div class="dogo-card__title" style="margin-bottom:8px;color:var(--dogo-gold-dark);display:flex;align-items:center;gap:8px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
             Platform Administration
@@ -811,7 +811,31 @@
       const f = $('teamFrame');
       if (f && !f.getAttribute('src')) f.setAttribute('src', 'team.html?embed=1');
     }
-    if (/[#&]team\b/.test(location.hash)) { const tb = document.querySelector('[data-tab="tab-team"]'); if (tb) tb.click(); }
+    function tabFromHash() {
+      const h = location.hash.replace('#', '');
+      const tb = h && document.querySelector('.settings-tab-btn[data-tab="' + (h === 'team' ? 'tab-team' : h) + '"]');
+      if (tb) tb.click();
+    }
+    window.addEventListener('hashchange', tabFromHash);
+    tabFromHash();
+
+    // Colour theme presets
+    (function () {
+      const T = window.DogoShell.THEMES, wrap = $('themePresets');
+      const cur = () => { const c = String(b.theme_color || '').toLowerCase(); return T[c] ? c : '#003032'; };
+      function draw() {
+        wrap.innerHTML = Object.keys(T).map(k => `<button type="button" class="dogo-btn" data-k="${k}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;${k === cur() ? 'box-shadow:inset 3px 3px 7px rgba(150,166,164,.45),0 0 0 2px var(--dogo-lime-2);' : ''}">
+          <span style="display:inline-flex"><i style="width:18px;height:18px;border-radius:50%;background:${k}"></i><i style="width:18px;height:18px;border-radius:50%;background:${T[k].accent};margin-left:-6px"></i></span>${T[k].name}</button>`).join('');
+      }
+      wrap.onclick = async e => {
+        const btn = e.target.closest('[data-k]'); if (!btn) return;
+        const k = btn.dataset.k;
+        window.DogoShell.applyTheme(k); b.theme_color = k; draw();
+        const { error } = await sb.from('businesses').update({ theme_color: k }).eq('id', ctx.businessId);
+        $('themeMsg').textContent = error ? 'Could not save the colour: ' + error.message : T[k].name + ' theme saved.';
+      };
+      draw();
+    })();
 
     // 2. Populate Business Profile
     $('setBizName').value = b.name || '';
@@ -1083,24 +1107,63 @@
     $('sBizId').textContent = ctx.businessId;
     $('outBtn').onclick = logout;
 
-    // Load available businesses for switcher
-    try {
-      const { data } = await sb.from('businesses').select('id,name,business_type').order('name');
-      if (data && data.length) {
-        $('platformBusinessSelect').innerHTML = data.map(bz => `
-          <option value="${bz.id}" ${bz.id === ctx.businessId ? 'selected' : ''}>
-            ${esc(bz.name)} (${bz.business_type || 'Retail'})
-          </option>
-        `).join('');
-      }
-    } catch (e) {}
+    // Platform administration: only the platform owner's account sees this (the server checks it too).
+    if (ctx.platform && ctx.platform.businesses && ctx.platform.businesses.length) {
+      $('adminSwitcherCard').style.display = '';
+      $('platformBusinessSelect').innerHTML = ctx.platform.businesses.map(bz => `<option value="${esc(bz.id)}" ${bz.id === ctx.businessId ? 'selected' : ''}>${esc(bz.name)} (${esc(bz.business_type || 'Retail')})</option>`).join('');
+      $('btnSwitchBusiness').onclick = async () => {
+        const newId = $('platformBusinessSelect').value;
+        if (!newId || newId === ctx.businessId) return toast('Already on this business.');
+        toast('Switching business…');
+        const ok = await window.DogoData.platformSwitch(newId === ctx.platform.ownId ? null : newId);
+        if (ok === false) return toast('Could not switch business.');
+      };
+    }
 
-    $('btnSwitchBusiness').onclick = async () => {
-      const newId = $('platformBusinessSelect').value;
-      if (!newId || newId === ctx.businessId) return toast('Already on this business.');
-      localStorage.setItem('dogo_active_business_id', newId);
-      toast('Switching business context...');
-      setTimeout(() => window.location.reload(), 500);
+    // My profile: photo, name, password
+    const uid = ctx.session.user.id, email = ctx.session.user.email || '';
+    const nm = ctx.profile.full_name || email;
+    $('pfName').value = ctx.profile.full_name || ''; $('pfEmail').value = email;
+    const drawPfp = url => { $('pfpBox').innerHTML = (url ? `<img src="${esc(url)}" alt="">` : '') + `<span id="pfpInit">${esc((nm.trim()[0] || '?').toUpperCase())}</span>`; };
+    drawPfp(ctx.profile.avatar_url);
+    $('pfpBtn').onclick = () => $('pfpFile').click();
+    $('pfpFile').onchange = async e => {
+      const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      if (!/^image\/(png|jpeg|webp)$/.test(f.type)) return toast('Choose a JPG, PNG or WebP picture.');
+      if (f.size > 2 * 1024 * 1024) return toast('That picture is over 2 MB. Choose a smaller one.');
+      $('pfpBtn').disabled = true; $('pfpBtn').textContent = 'Uploading…';
+      try {
+        const path = uid + '/avatar-' + Date.now() + '.' + (f.type === 'image/png' ? 'png' : f.type === 'image/webp' ? 'webp' : 'jpg');
+        const up = await sb.storage.from('avatars').upload(path, f, { contentType: f.type, upsert: true });
+        if (up.error) throw up.error;
+        const url = sb.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+        const r = await sb.from('profiles').update({ avatar_url: url }).eq('id', uid);
+        if (r.error) throw r.error;
+        ctx.profile.avatar_url = url; drawPfp(url); toast('Photo updated.');
+        document.querySelectorAll('.dogo-avatar').forEach(a => { let im = a.querySelector('img'); if (!im) { im = document.createElement('img'); a.prepend(im); } im.src = url; });
+      } catch (err) { toast('Could not upload the photo: ' + (err.message || err)); }
+      $('pfpBtn').disabled = false; $('pfpBtn').textContent = 'Upload photo';
+    };
+    $('pfSave').onclick = async () => {
+      const v = $('pfName').value.trim(); if (!v) return toast('Enter your name.');
+      const r = await sb.from('profiles').update({ full_name: v }).eq('id', uid);
+      toast(r.error ? 'Could not save: ' + r.error.message : 'Name saved.');
+    };
+    $('pwSave').onclick = async () => {
+      const o = $('pwOld').value, n = $('pwNew').value, n2 = $('pwNew2').value;
+      if (!o || !n) return toast('Enter your current and new password.');
+      if (n.length < 8) return toast('The new password needs at least 8 characters.');
+      if (n !== n2) return toast('The two new passwords do not match.');
+      if (n === o) return toast('Choose a password different from the current one.');
+      $('pwSave').disabled = true;
+      try {
+        const chk = await sb.auth.signInWithPassword({ email, password: o });
+        if (chk.error) throw new Error('Current password is wrong.');
+        const u = await sb.auth.updateUser({ password: n });
+        if (u.error) throw u.error;
+        $('pwOld').value = $('pwNew').value = $('pwNew2').value = ''; toast('Password updated.');
+      } catch (err) { toast(err.message || 'Could not update the password.'); }
+      $('pwSave').disabled = false;
     };
   })();
   </script>

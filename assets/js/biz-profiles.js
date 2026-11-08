@@ -55,6 +55,19 @@
       ['Accessories & Bags', 'BTQ-ACC', ['Handbags & Leather', 'Jewelry & Styling']],
       ['Fragrances & Beauty', 'BTQ-FRG', ['Perfumes & Scents']]
     ],
+    pharmacy: [
+      ['Antibiotics', 'PHM-ABX', ['Penicillins', 'Macrolides & Others']],
+      ['Analgesics', 'PHM-ANL', ['Pain & Fever', 'Anti-inflammatories']],
+      ['Gastrointestinal', 'PHM-GIT', ['Antacids & Ulcer', 'Anti-diarrhoeals & ORS']],
+      ['Cardiovascular', 'PHM-CVS', ['Blood Pressure', 'Cholesterol & Heart']],
+      ['Diabetes', 'PHM-DIA', ['Oral Antidiabetics', 'Insulin & Testing']],
+      ['Antimalarials', 'PHM-MAL', ['Treatment', 'Prevention']],
+      ['Respiratory & Allergy', 'PHM-RSP', ['Cough & Cold', 'Asthma & Allergy']],
+      ['Vitamins & Supplements', 'PHM-VIT', ['Vitamins & Minerals', 'Nutrition']],
+      ['Skin & Topicals', 'PHM-SKN', ['Creams & Ointments', 'Antiseptics']],
+      ['Medical Supplies', 'PHM-SUP', ['Dressings & Syringes', 'Devices & Testing']],
+      ['Personal Care', 'PHM-PCR', ['Baby & Mother', 'Hygiene']]
+    ],
     wines: [
       ['Whiskies', 'WSP-WHS', ['Scotch Whisky (Blended)', 'Single Malt Scotch', 'Bourbon & American', 'Irish & Canadian']],
       ['Vodka', 'WSP-VDK', ['Premium & Imported', 'Standard / Popular']],
@@ -174,6 +187,17 @@
       subtitle: 'Add a new piece to your boutique catalogue',
       pageTitle: 'Boutique Catalogue', addLabel: 'New Item'
     },
+    pharmacy: {
+      key: 'pharmacy', label: 'Pharmacy',
+      categories: deptNames('pharmacy'),
+      types: [{ value: 'Product', label: 'Medicine / Product' }, { value: 'Service', label: 'Service (consultation, test, injection)' }],
+      defaultType: 'Product',
+      itemWord: 'Medicine', nameLabel: 'Medicine / product name', namePlaceholder: 'e.g. Amoxicillin 500mg Capsules',
+      stockLabel: 'Initial stock (tablets / packs / bottles)', reorderLabel: 'Reorder threshold',
+      descPlaceholder: 'Strength, form, manufacturer, dosage notes...',
+      subtitle: 'Add a medicine or health product to your pharmacy inventory',
+      pageTitle: 'Medicines', addLabel: 'Add Medicine'
+    },
     wines: {
       key: 'wines', label: 'Wines & Spirits',
       categories: deptNames('wines'),
@@ -202,6 +226,8 @@
     agrovet: U(['piece', 'Piece'], ['bag', 'Bag'], ['kg', 'Kilogram (kg)'], ['litre', 'Litre'], ['bottle', 'Bottle'],
       ['packet', 'Packet'], ['sachet', 'Sachet'], ['bucket', 'Bucket / container'], ['kit', 'Kit'], ['box', 'Box']),
     boutique: U(['piece', 'Piece'], ['pair', 'Pair'], ['set', 'Set'], ['bottle', 'Bottle']),
+    pharmacy: U(['piece', 'Tablet / capsule'], ['pack', 'Pack / strip'], ['bottle', 'Bottle'], ['tube', 'Tube'], ['sachet', 'Sachet'],
+      ['vial', 'Vial / ampoule'], ['box', 'Box'], ['strip', 'Blister strip']),
     wines: U(['piece', 'Bottle'], ['can', 'Can'], ['carton', 'Carton / case'], ['box', 'Box (wine box)'], ['litre', 'Litre'])
   };
 
@@ -226,6 +252,9 @@
       'Equipment', 'Marketing', 'Petty Cash', 'Other'],
     boutique: ['Rent', 'Utilities', SP, 'Salaries', 'Shop Fittings & Display', 'Packaging', 'Alterations & Tailoring',
       'Transport', 'Licenses', 'Marketing', 'Petty Cash', 'Other'],
+    pharmacy: ['Rent', 'Utilities', { value: 'Stock Purchases', label: 'Stock Purchases (medicines & supplies)' }, 'Salaries',
+      'Pharmacy Board Licences', 'Cold Chain & Refrigeration', 'Expired Stock Write-off', 'Packaging & Bags',
+      'Transport & Delivery', 'Marketing', 'Petty Cash', 'Other'],
     wines: ['Rent', 'Utilities', SP, 'Salaries', 'Licenses & Permits', 'Security', 'Refrigeration & Repairs',
       'Transport & Delivery', 'Marketing', 'Petty Cash', 'Other']
   };
@@ -235,6 +264,7 @@
   // ("Hotel / Restaurant", "Hardware Store", "SME / General Business").
   function profileFor(rawType) {
     const t = String(rawType || '').toLowerCase();
+    if (t.includes('pharm') || t.includes('chemist')) return PROFILES.pharmacy;
     if (t.includes('agro')) return PROFILES.agrovet;
     if (t.includes('boutique') || t.includes('fashion')) return PROFILES.boutique;
     if (t.includes('wine') || t.includes('spirit') || t.includes('liquor')) return PROFILES.wines;

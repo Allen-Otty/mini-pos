@@ -380,7 +380,9 @@
     $('q').oninput = render; $('fStatus').onchange = render;
     $('btnExport').onclick = () => downloadCSV(DOC[tab].replace(' ', '_') + 's.csv', [['No.', 'Customer', 'Issued', 'Due', 'Total', 'Paid', 'Credited', 'Balance', 'Status', 'eTIMS']].concat(
       invoices.filter(i => (i.doc_type || 'invoice') === tab).map(i => [i.invoice_no, i.customer_name, i.issue_date, i.due_date, i.total, i.amount_paid, i.credited_total || 0, bal(i), label(i), etimsTxt(i)])));
-    setTab('invoice');
+    const hashTab = () => { const h = location.hash.replace('#', ''); return ['invoice', 'quote', 'credit_note'].includes(h) ? h : 'invoice'; };
+    window.addEventListener('hashchange', () => setTab(hashTab()));
+    setTab(hashTab());
     load();
   })();
   </script>

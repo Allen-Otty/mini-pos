@@ -332,7 +332,11 @@
       // push anything saved offline first so the list below already includes it
       if (OFF.isOnline() && uid && OFF.productQueue(uid).length) { try { await OFF.syncSales(ctx); } catch (e) {} }
       let res;
-      try { res = await sb.from('products').select('*').order('name'); } catch (e) { res = { error: e }; }
+      try {
+        // No connection: use the saved copy at once. Weak signal: give up after 4s and use it.
+        if (!OFF.isOnline() && OFF.cacheGet('sell_products', uid)) throw Object.assign(new Error('offline'), { status: 0 });
+        res = await window.DogoData.withTimeout(sb.from('products').select('*').order('name'), OFF.cacheGet('sell_products', uid) ? 4000 : 20000);
+      } catch (e) { res = { error: e }; }
       if (res.error && (OFF.isNetworkErr(res.error) || !OFF.isOnline())) {
         const cp = OFF.cacheGet('sell_products', uid);
         products = cp || [];

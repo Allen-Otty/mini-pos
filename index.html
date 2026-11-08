@@ -6539,7 +6539,8 @@
           <option value="Hotel">Hotel / Restaurant</option>
           <option value="Hardware">Hardware Store</option>
           <option value="Kiosk">Kiosk / Kibanda</option>
-          <option value="Agrovet">Agrovet</option>
+          <option value="Pharmacy">Pharmacy</option>
+        <option value="Agrovet">Agrovet</option>
           <option value="Boutique">Boutique / Fashion</option>
           <option value="Wines &amp; Spirits">Wines &amp; Spirits</option>
         </select>
@@ -8483,6 +8484,7 @@
         <option value="Hotel">Hotel / Restaurant</option>
         <option value="Hardware">Hardware Store</option>
         <option value="Kiosk">Kiosk / Kibanda</option>
+        <option value="Pharmacy">Pharmacy</option>
         <option value="Agrovet">Agrovet</option>
         <option value="Boutique">Boutique / Fashion</option>
         <option value="Wines &amp; Spirits">Wines &amp; Spirits</option>
@@ -9158,6 +9160,25 @@ const INDUSTRY_CONFIG = {
       { tab: 'reports', icon: 'fa-solid fa-chart-simple', label: 'Reports' }
     ]
   },
+  'Pharmacy': {
+    badge: 'PHARMACY',
+    badgeIcon: 'fa-pills',
+    posTitle: 'Dispensing Counter',
+    posSub: 'Prescription and over-the-counter medicines, supplements and medical supplies.',
+    defaultTab: 'sell',
+    searchPlaceholder: 'Search medicine, generic name, or SKU...',
+    catalogTitle: 'Medicines',
+    catalogSub: 'Medicines, supplements and medical supplies with batch and expiry tracking.',
+    customersTitle: 'Patients',
+    hintText: 'Built for medicines with generic names, batch and expiry tracking, and expired-stock blocking.',
+    navLinks: [
+      { tab: 'sell', icon: 'fa-solid fa-cash-register', label: 'Dispensing' },
+      { tab: 'dash', icon: 'fa-solid fa-chart-pie', label: 'Dashboard' },
+      { tab: 'catalog', icon: 'fa-solid fa-pills', label: 'Medicines' },
+      { tab: 'customers', icon: 'fa-solid fa-users', label: 'Patients' },
+      { tab: 'reports', icon: 'fa-solid fa-chart-simple', label: 'Reports' }
+    ]
+  },
   'Boutique': {
     badge: 'BOUTIQUE / FASHION',
     badgeIcon: 'fa-shirt',
@@ -9228,6 +9249,7 @@ const INDUSTRY_CONFIG = {
 function normalizeBizType(raw) {
   if (!raw) return 'Retail';
   const s = raw.toLowerCase().trim();
+  if (s.includes('pharm') || s.includes('chemist')) return 'Pharmacy';
   if (s.includes('agro')) return 'Agrovet';
   if (s.includes('boutique') || s.includes('fashion')) return 'Boutique';
   if (s.includes('wine') || s.includes('spirit') || s.includes('liquor')) return 'Wines & Spirits';
