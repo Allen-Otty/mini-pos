@@ -1,4 +1,4 @@
-const CACHE_NAME = "dogo-pos-cache-v47";
+const CACHE_NAME = "dogo-pos-cache-v53";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
@@ -75,10 +75,15 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Network-first (so updates always arrive when online), falling back to the cache when the
-// network fails or is too slow to be useful (flaky "lie-fi"). Supabase calls, backend /api/
-// endpoints and payment gateways are never intercepted - the app handles those itself.
-const NETWORK_TIMEOUT_MS = 4000;
+// Speed strategy:
+//  - No connection: answer straight from the cache (no waiting on a network that is not there).
+//  - Static files (scripts, styles, icons, images, CDN libraries, fonts): cache first, refreshed quietly in the
+//    background, so every page opens instantly even on a weak "lie-fi" signal. A new release bumps CACHE_NAME,
+//    which re-downloads all of them, so updates still arrive.
+//  - Pages (HTML) and everything else: network first so changes show up, but give up after 1.5s and use the cache.
+// Supabase calls, backend /api/ endpoints and payment gateways are never intercepted - the app handles those itself.
+const NETWORK_TIMEOUT_MS = 1500;
+const STATIC_RE = /\/(assets|icons|images)\/|fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com|unpkg\.com|\.(png|jpe?g|svg|webp|ico|woff2?)(\?|$)/i;
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
@@ -101,6 +106,33 @@ self.addEventListener("fetch", (event) => {
       return Response.error();
     });
 
+  const store = (response) => {
+    if (response && (response.status === 200 || response.type === "opaque")) {
+      const clone = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(req, clone)).catch(() => {});
+    }
+    return response;
+  };
+
+  // 1) Offline: cache straight away.
+  if (self.navigator && self.navigator.onLine === false) {
+    event.respondWith(fromCache());
+    return;
+  }
+
+  // 2) Static files: cache first, refresh in the background.
+  if (req.mode !== "navigate" && STATIC_RE.test(url)) {
+    event.respondWith(
+      caches.match(req, { ignoreSearch: true }).then((hit) => {
+        const refresh = fetch(req, { cache: "no-store" }).then(store).catch(() => null);
+        if (hit) { event.waitUntil(refresh); return hit; }
+        return refresh.then((r) => r || Response.error());
+      })
+    );
+    return;
+  }
+
+  // 3) Pages and the rest: network first, fall back to the cache quickly.
   event.respondWith(
     new Promise((resolve) => {
       let settled = false;
@@ -111,10 +143,7 @@ self.addEventListener("fetch", (event) => {
       fetch(req, { cache: "no-store" })
         .then((response) => {
           clearTimeout(timer);
-          if (response && (response.status === 200 || response.type === "opaque")) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone)).catch(() => {});
-          }
+          store(response);
           if (!settled) { settled = true; resolve(response); }
         })
         .catch(() => {

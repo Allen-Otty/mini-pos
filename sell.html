@@ -162,9 +162,10 @@
           <div class="dogo-hide-mobile" id="prodCountBadge" style="font-size:12.5px;font-weight:700;color:var(--dogo-text-muted);">0 products</div>
           <button class="dogo-btn dogo-btn--outline" id="scanBtn" type="button" style="display:inline-flex;align-items:center;gap:6px;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
-            Scan
+            <span class="pos-scan-label">Scan</span>
           </button>
         </div>
+        <div class="pos-cats" id="cats"></div>
         <div id="scannerPanel" style="display:none;margin-bottom:14px;">
           <div id="scanReader" style="border-radius:12px;overflow:hidden;max-width:420px;"></div>
           <div id="scanMsg" style="font-size:12.5px;color:var(--dogo-text-muted);margin-top:6px;">Point the camera at a barcode.</div>
@@ -175,10 +176,15 @@
       <!-- Cart & Checkout Sidebar -->
       <aside class="dogo-card dogo-pos__cart">
         <div class="dogo-card__header">
-          <div class="dogo-card__title" style="display:flex;align-items:center;gap:8px;">
-            <span>Current Sale</span>
+          <div class="pos-co-head">
+            <span class="pos-co-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg></span>
+            <div><div class="dogo-card__title">Current Order</div><div class="pos-co-sub" id="coSub">0 items · 0 lines</div></div>
           </div>
-          <span class="dogo-badge" id="cnt" style="background:var(--dogo-gold-light);color:var(--dogo-gold-dark);font-weight:800;">0 items</span>
+          <div class="pos-co-actions">
+            <button type="button" class="dogo-btn dogo-btn--sm" id="btnHold">Hold</button>
+            <button type="button" class="dogo-btn dogo-btn--sm pos-danger" id="btnClear">Clear</button>
+          </div>
+          <span id="cnt" style="display:none">0 items</span>
         </div>
 
         <div id="cart">
@@ -194,7 +200,8 @@
 
         <div class="dogo-field">
           <label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--dogo-text-muted);">Payment Method</label>
-          <select class="dogo-select" id="payMethod">
+          <div class="pos-pay-tiles" id="payTiles"></div>
+          <select class="dogo-select" id="payMethod" style="display:none">
             <option value="cash">Cash (Direct Register)</option>
             <option value="mpesa">M-Pesa Mobile Money</option>
             <option value="card">Card / Bank Terminal</option>
@@ -202,6 +209,12 @@
           </select>
         </div>
         <div id="payFields"></div>
+        <div id="cashBox" class="dogo-field" style="display:none">
+          <label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--dogo-text-muted);">Amount Received</label>
+          <input class="dogo-input" id="amtRecv" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+          <div class="pos-quick" id="quickCash"></div>
+          <div class="pos-change" id="changeLine" style="display:none"></div>
+        </div>
 
         <div class="dogo-total-row" style="margin-top:14px;border-top:2px solid var(--dogo-gold);padding-top:14px;">
           <span style="font-weight:800;font-size:16px;">Total Amount</span>
@@ -382,6 +395,8 @@
       return o < c ? (now >= o && now < c) : (now >= o || now < c);
     }
     function hoursMsg() { const b = ctx.business || {}; return 'Sales are closed. Trading hours are ' + b.opening_time + ' to ' + b.closing_time + '.'; }
+    let catSel = '', lastTotal = 0;
+    const TINTS = [['#dff6e7','#15803d'],['#dfe9ff','#3b5bdb'],['#efe3ff','#7c3aed'],['#ffeed8','#d97706'],['#ffe0e6','#db2777'],['#d9f5f7','#0e7490'],['#fff4c9','#a16207']];
     let busy = false, pollTimer = null, tickTimer = null;
 
     const OFF = window.DogoData.Offline, uid = ctx.profile.id;
@@ -389,11 +404,13 @@
     // Load initial data (falls back to what this device saved last time when there is no connection)
     let pRes, cRes, shRes;
     try {
-      [pRes, cRes, shRes] = await Promise.all([
+      // No connection: go straight to the copy saved on this device. Weak signal: give up after 4s and use it.
+      if (!OFF.isOnline() && OFF.cacheGet('sell_products', uid)) throw new Error('offline');
+      [pRes, cRes, shRes] = await window.DogoData.withTimeout(Promise.all([
         sb.from('products').select('*').order('name'),
         sb.from('customers').select('id,name').order('name'),
         sb.from('shift_sessions').select('*').eq('business_id', ctx.businessId).order('created_at', { ascending: false }).limit(20)
-      ]);
+      ]), OFF.cacheGet('sell_products', uid) ? 4000 : 20000);
       const netErr = [pRes, cRes, shRes].find(r => r.error && OFF.isNetworkErr(r.error));
       if (netErr) throw netErr.error;
       OFF.cacheSet('sell_products', uid, pRes.data || []);
@@ -798,16 +815,28 @@
       $('q').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
     });
 
+    function tint(cat) { let h = 0; String(cat || 'x').split('').forEach(c => h = (h * 31 + c.charCodeAt(0)) >>> 0); const t = TINTS[h % TINTS.length]; return 'background:linear-gradient(145deg,' + t[0] + ',#fff);color:' + t[1]; }
+    const pillSvg = () => '<svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 20.5 3.5 13.5a4.95 4.95 0 0 1 7-7l7 7a4.95 4.95 0 0 1-7 7z"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/></svg>';
+    function drawCats() {
+      const cats = [...new Set(products.map(x => x.category || 'Other'))].sort();
+      $('cats').style.display = cats.length > 1 ? '' : 'none';
+      $('cats').innerHTML = ['All'].concat(cats).map(c => `<button type="button" class="pos-cat ${(c === 'All' ? '' : c) === catSel ? 'is-on' : ''}" data-cat="${c === 'All' ? '' : esc(c)}">${esc(c)}</button>`).join('');
+    }
+    $('cats').onclick = e => { const b = e.target.closest('[data-cat]'); if (!b) return; catSel = b.dataset.cat; drawGrid(); };
+
     function drawGrid() {
       const q = $('q').value.trim().toLowerCase();
-      const list = products.filter(x => !q || (x.name || '').toLowerCase().includes(q) || (x.code || '').toLowerCase().includes(q));
+      drawCats();
+      const list = products.filter(x => (!catSel || (x.category || 'Other') === catSel) && (!q || (x.name || '').toLowerCase().includes(q) || (x.code || '').toLowerCase().includes(q)));
       $('prodCountBadge').textContent = list.length + (list.length === 1 ? ' product' : ' products');
 
       $('grid').innerHTML = list.length ? list.map(x => `
         <button class="dogo-prod" data-id="${esc(x.id)}" ${Number(x.stock) <= 0 ? 'disabled' : ''}>
+          <span class="dogo-prod__img" style="${tint(x.category)}">${pillSvg()}${Number(x.stock) > 0 && Number(x.stock) <= Number(x.reorder_level || x.min_stock || 5) ? '<i class="dogo-prod__low">Low</i>' : ''}</span>
           <span class="dogo-prod__name">${esc(x.name)}</span>
+          <span class="dogo-prod__cat">${esc([x.unit, x.category].filter(Boolean).join(' · '))}</span>
           <span class="dogo-prod__price">${kes(x.price)}</span>${(x.price_breaks || []).length ? '<span class="dogo-badge dogo-badge--ok">' + x.price_breaks.map(b => b.qty + ' for ' + b.price).join(' · ') + '</span>' : ''}
-          <span class="dogo-muted" style="font-size:12px;">${Number(x.stock) <= 0 ? 'Out of stock' : x.stock + ' in stock'}${isRestaurant && x.category ? ' · ' + esc(String(x.category).toUpperCase()) : ''}</span>
+          <span class="dogo-prod__left">${Number(x.stock) <= 0 ? 'Out of stock' : x.stock + ' left'}</span>
         </button>
       `).join('') : '<div class="dogo-card__empty" style="grid-column:1/-1;">No products found matching query.</div>';
     }
@@ -817,13 +846,18 @@
       const lineTotal = l => window.DogoData.bundleTotal(l.qty, l.p.price, l.p.price_breaks);
       const total = cart.reduce((a, l) => a + lineTotal(l), 0);
       $('cnt').textContent = items + (items === 1 ? ' item' : ' items');
+      $('coSub').textContent = items + (items === 1 ? ' item' : ' items') + ' · ' + cart.length + (cart.length === 1 ? ' line' : ' lines');
+      lastTotal = total; drawCash();
       $('total').textContent = kes(total);
 
       $('cart').innerHTML = cart.length ? cart.map((l, i) => `
         <div class="dogo-cart-line">
-          <div>
+          <div class="dogo-cart-line__main">
+            <span class="dogo-cart-line__ico" style="${tint(l.p.category)}">${pillSvg()}</span>
+            <div>
             <strong>${esc(l.p.name)}</strong>
             <div class="dogo-muted" style="font-size:12.5px;">${kes(l.p.price)} each${lineTotal(l) < l.qty * Number(l.p.price) - 0.001 ? ' · <span style="color:#15803d;font-weight:700;">offer saves ' + kes(l.qty * Number(l.p.price) - lineTotal(l)) + '</span>' : ''}</div>
+            </div>
           </div>
           <div style="text-align:right;"><strong>${kes(lineTotal(l))}</strong></div>
           <div class="dogo-qty">
@@ -906,7 +940,36 @@
       $('payFields').innerHTML = m ? `<div class="dogo-field"><label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--dogo-text-muted);">${esc(m.label)}</label><input class="dogo-input" id="payContact" placeholder="${esc(m.ph)}" inputmode="${$('payMethod').value === 'paystack' ? 'email' : 'tel'}"></div>` : '';
       $('payBtn').textContent = m ? 'Send ' + m.name + ' request' : 'Complete Sale';
     }
-    $('payMethod').onchange = () => { if (!busy) drawPayFields(); };
+    const TILE = { cash: 'Cash', mpesa: 'M-Pesa', card: 'Card', credit: 'Credit', pochi: 'Pochi', kcb: 'KCB', paystack: 'Paystack', airtel: 'Airtel' };
+    function drawTiles() {
+      $('payTiles').innerHTML = [...$('payMethod').options].map(o => `<button type="button" class="pos-pay ${o.value === $('payMethod').value ? 'is-on' : ''}" data-m="${esc(o.value)}"><b>${esc(TILE[o.value] || o.text)}</b><small>${esc(o.text)}</small></button>`).join('');
+    }
+    function drawCash() {
+      const cash = $('payMethod').value === 'cash';
+      $('cashBox').style.display = cash && cart.length ? '' : 'none';
+      if (!cash || !cart.length) return;
+      const t = Math.ceil(lastTotal), r = [lastTotal, t, Math.ceil(t / 100) * 100, Math.ceil(t / 500) * 500, Math.ceil(t / 1000) * 1000].filter((v, i, a) => v > 0 && a.indexOf(v) === i).slice(0, 4);
+      $('quickCash').innerHTML = r.map((v, i) => `<button type="button" data-amt="${v}">${i === 0 ? 'Exact' : kes(v)}</button>`).join('');
+      const got = parseFloat($('amtRecv').value);
+      const cl = $('changeLine');
+      if (got > 0) { cl.style.display = ''; cl.className = 'pos-change ' + (got >= lastTotal - 0.001 ? 'ok' : 'short'); cl.textContent = got >= lastTotal - 0.001 ? 'Change: ' + kes(got - lastTotal) : 'Short by ' + kes(lastTotal - got); } else cl.style.display = 'none';
+    }
+    $('quickCash').onclick = e => { const b = e.target.closest('[data-amt]'); if (!b) return; $('amtRecv').value = b.dataset.amt; drawCash(); };
+    $('amtRecv').oninput = drawCash;
+    $('payTiles').onclick = e => { const b = e.target.closest('[data-m]'); if (!b || busy) return; $('payMethod').value = b.dataset.m; $('payMethod').onchange(); };
+    $('payMethod').onchange = () => { if (!busy) { drawPayFields(); drawTiles(); drawCash(); } };
+    const HOLD_KEY = 'dogo_held_cart_v1_' + ctx.profile.id;
+    function holdUi() { let h = null; try { h = JSON.parse(localStorage.getItem(HOLD_KEY) || 'null'); } catch (e) {} $('btnHold').textContent = h && !cart.length ? 'Recall' : 'Hold'; $('btnHold').classList.toggle('pos-recall', !!(h && !cart.length)); return h; }
+    $('btnHold').onclick = () => {
+      if (busy) return;
+      const h = holdUi();
+      if (!cart.length && h) { cart = h.map(l => ({ p: products.find(x => String(x.id) === String(l.id)), qty: l.qty })).filter(l => l.p); try { localStorage.removeItem(HOLD_KEY); } catch (e) {} drawCart(); holdUi(); toast('Held order restored'); return; }
+      if (!cart.length) return toast('Add items first');
+      try { localStorage.setItem(HOLD_KEY, JSON.stringify(cart.map(l => ({ id: l.p.id, qty: l.qty })))); } catch (e) { return toast('Could not hold this order'); }
+      cart = []; drawCart(); holdUi(); toast('Order held for later');
+    };
+    $('btnClear').onclick = () => { if (busy || !cart.length) return; cart = []; drawCart(); holdUi(); };
+    drawTiles(); holdUi();
 
     const totalOf = list => list.reduce((a, l) => a + window.DogoData.bundleTotal(l.qty, l.p.price, l.p.price_breaks), 0);
     const snapOf = list => list.map(l => ({ product_id: l.p.id, code: l.p.code, name: l.p.name, qty: l.qty, price: Number(l.p.price), vat_rate: Number(l.p.vat_rate || 0), unit: l.p.unit || 'piece', breaks: l.p.price_breaks || null }));
@@ -1089,7 +1152,7 @@
       if (r.error && /duplicate|already exists|unique/i.test(r.error.message || '')) { toast('That payment was already recorded.'); cart = []; endBusy(); return afterSale(); }
       if (r.error) { setWaiting(`<div class="dogo-card" style="background:var(--dogo-amber-bg);box-shadow:none;"><strong style="color:var(--dogo-amber);">Paid, but the sale was not recorded</strong><p style="font-size:13.5px;margin:6px 0 12px;">${esc(r.error.message)}<br>Payment reference: <strong>${esc(ref)}</strong></p><button class="dogo-btn dogo-btn--primary dogo-btn--block" id="retryRec">Retry recording</button></div>`);
         $('retryRec').onclick = () => finalize(pd, st); return; }
-      cart = []; $('cust').value = ''; endBusy(); showReceipt(r, pd.method, ref); afterSale();
+      cart = []; $('cust').value = ''; $('amtRecv').value = ''; endBusy(); showReceipt(r, pd.method, ref); afterSale();
     }
     function startPolling(pd) {
       const left = () => Math.max(0, TIMEOUT_S - Math.floor((Date.now() - pd.startedAt) / 1000));
@@ -1156,7 +1219,7 @@
         if (sv.error) toast('Sale saved, but the serial numbers could not be recorded: ' + sv.error.message + '. Mark them sold in Inventory > Lots & Expiry.');
         else r.serials = serialPicks;
       }
-      cart = []; $('cust').value = ''; if ($('pochiCode')) $('pochiCode').value = ''; showReceipt(r, method, pochiRef || undefined); afterSale();
+      cart = []; $('cust').value = ''; $('amtRecv').value = ''; if ($('pochiCode')) $('pochiCode').value = ''; showReceipt(r, method, pochiRef || undefined); afterSale();
     };
 
     renderShiftBar();

@@ -550,6 +550,9 @@
       if (tab === 'suppliers') renderSuppliersTab();
     }
 
+    const hashTab = () => { const h = location.hash.replace('#', ''); return ['orders', 'receipts', 'payments', 'suppliers'].includes(h) ? h : null; };
+    window.addEventListener('hashchange', () => { const t = hashTab(); if (t) setTab(t); });
+    setTimeout(() => { const t = hashTab(); if (t) setTab(t); }, 0);
     $('tabBtnOrders').onclick = () => setTab('orders');
     $('tabBtnReceipts').onclick = () => setTab('receipts');
     $('tabBtnPayments').onclick = () => setTab('payments');
@@ -749,7 +752,7 @@
 
     function renderSuppliersTab() {
       const box = $('supplierBoard'); if (!box) return;
-      if (!dbMode) { box.innerHTML = '<div class="dogo-card" style="padding:22px;color:var(--dogo-text-muted);">Supplier balances and payments need the database update 20261018_purchasing_inventory_control.sql. Ask your admin to run it in Supabase, then reload.</div>'; return; }
+      if (!dbMode) { box.innerHTML = '<div class="dogo-card" style="padding:22px;color:var(--dogo-text-muted);">Not available yet.</div>'; return; }
       const by = {};
       purchaseOrders.forEach(p => { const g = by[p.supplier] = by[p.supplier] || { name: p.supplier, pos: [], billed: 0, paid: 0 }; g.pos.push(p); g.billed += p.total_amount; g.paid += p.paid_amount; });
       const groups = Object.keys(by).map(k => by[k]).sort((a, b) => (b.billed - b.paid) - (a.billed - a.paid));

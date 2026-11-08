@@ -21,7 +21,8 @@
     return h.replace(/\n/g, '<br>');
   }
 
-  var css = '#dgh-fab{position:fixed;right:16px;bottom:16px;z-index:99990;width:54px;height:54px;border-radius:50%;border:0;cursor:pointer;background:#16a34a;color:#fff;font-size:22px;box-shadow:0 6px 20px rgba(0,0,0,.28)}' +
+  var css = 'body:has(.dogo-modal.open) #dgh-fab,body:has(.modal-overlay.open) #dgh-fab,body:has(.modal-overlay.active) #dgh-fab,body.dogo-nav-open #dgh-fab,body.dogo-modal-open #dgh-fab{display:none!important}' +
+    '#dgh-fab{position:fixed;right:16px;bottom:16px;z-index:99990;width:54px;height:54px;border-radius:50%;border:0;cursor:pointer;background:#16a34a;color:#fff;font-size:22px;box-shadow:0 6px 20px rgba(0,0,0,.28)}' +
     '#dgh-fab:hover{background:#15803d}' +
     '#dgh{position:fixed;right:16px;bottom:80px;z-index:99991;width:360px;max-width:calc(100vw - 24px);height:520px;max-height:calc(100vh - 100px);background:#fff;color:#0f172a;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);display:none;flex-direction:column;overflow:hidden;font:14px/1.45 "Instrument Sans",system-ui,sans-serif}' +
     '#dgh.on{display:flex}' +

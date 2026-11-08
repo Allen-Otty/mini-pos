@@ -76,6 +76,14 @@
         <div style="text-align:center;margin-top:8px;"><a class="dogo-link" id="rightLink" href="catalog.html#inventory">Manage products &amp; inventory</a></div>
       </section>
     </div>
+    <section class="dogo-card" id="expiryCard" style="margin-top:16px;display:none;">
+      <div class="dogo-card__header">
+        <div class="dogo-card__title">Expiry alerts</div>
+        <span class="dogo-badge dogo-badge--danger" id="expiryBadge">0 batches</span>
+      </div>
+      <div id="expiryList"></div>
+      <div style="text-align:center;margin-top:8px;"><a class="dogo-link" href="inventory.html">Open inventory</a></div>
+    </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -95,7 +103,7 @@
     const isRest = rawType.includes('hotel') || rawType.includes('restaurant');
     if (business && business.name) {
       document.getElementById('bizName').textContent = business.name;
-      DogoShell.render({ active: 'dashboard', businessName: business.name, onLogout: logout, showTables: isRest });
+      DogoShell.render({ active: 'dashboard', businessName: business.name, onLogout: logout, showTables: isRest, businessType: business.business_type, userName: (profile && (profile.full_name || profile.name)) || business.name, roleLabel: (profile && profile.role === 'admin') ? 'Owner / Admin' : ((profile && profile.role) || 'Staff') });
     }
     const isAdmin = profile && profile.role === 'admin';
 
@@ -177,6 +185,22 @@
           `<div class="dogo-list-row"><span>${esc(p.name)}</span><span class="dogo-badge ${Number(p.stock) <= 0 ? 'dogo-badge--danger' : 'dogo-badge--warn'}">${Number(p.stock) <= 0 ? 'Out' : p.stock + ' left'}</span></div>`).join('');
       }
     }
+
+    // Expiry alerts (batches expired or expiring within 60 days). Hidden when nothing is tracked.
+    try {
+      const ex = await sb.rpc('expiry_alerts', { p_days: 60 });
+      const rows = (ex && ex.data) || [];
+      if (rows.length) {
+        document.getElementById('expiryCard').style.display = '';
+        const expired = rows.filter(r => r.status === 'expired').length;
+        const b = document.getElementById('expiryBadge');
+        b.textContent = expired ? expired + ' expired · ' + (rows.length - expired) + ' expiring' : rows.length + ' expiring soon';
+        b.className = 'dogo-badge ' + (expired ? 'dogo-badge--danger' : 'dogo-badge--warn');
+        document.getElementById('expiryList').innerHTML = rows.slice(0, 8).map(r =>
+          `<div class="dogo-list-row"><span>${esc(r.name)}${r.generic_name ? ' <small class="dogo-muted">(' + esc(r.generic_name) + ')</small>' : ''}<br><small class="dogo-muted">Batch ${esc(r.lot_no || '-')} · ${esc(String(r.expiry_date))} · ${Number(r.qty_remaining)} left</small></span>` +
+          `<span class="dogo-badge ${r.status === 'expired' ? 'dogo-badge--danger' : 'dogo-badge--warn'}">${r.status === 'expired' ? 'Expired' : r.days_left + ' days'}</span></div>`).join('');
+      }
+    } catch (e) { /* function not installed on this database yet: leave the card hidden */ }
   })();
   </script>
   <script src="assets/js/dogo-helper.js" defer></script>

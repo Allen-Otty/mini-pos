@@ -5,7 +5,7 @@
    plain "run the migration" notice and the rest of the page keeps working. */
 (function () {
   'use strict';
-  var MISSING = 'This needs the database update 20261018_purchasing_inventory_control.sql. Ask your admin to run it in Supabase, then reload.';
+  var MISSING = 'Not available yet.';
   var TYPE_LABEL = { opening: 'Opening stock', purchase: 'Purchase', sale: 'Sale', adjustment: 'Adjustment', count: 'Stock count', return: 'Return' };
   var TYPE_COLOR = { opening: '#475569', purchase: '#047857', sale: '#1d4ed8', adjustment: '#b45309', count: '#7c3aed', return: '#0f766e' };
   var sb, ctx, esc, ksh, toast, getProducts, canManage = false;
@@ -326,7 +326,7 @@
       '<div id="xfBody"><div class="dogo-card" style="padding:22px;color:var(--dogo-text-muted);">Loading…</div></div>';
     var b = await sb.from('branches').select('id,name').eq('active', true).order('name');
     var a = await sb.from('branch_stock').select('branch_id,product_id,qty');
-    if (a.error) { notice($('xfBody'), missing(a.error) ? 'This needs the database update 20261023_stock_transfers_serials_reorder.sql. Ask your admin to run it in Supabase, then reload.' : 'Could not load: ' + a.error.message); return; }
+    if (a.error) { notice($('xfBody'), missing(a.error) ? 'Not available yet.' : 'Could not load: ' + a.error.message); return; }
     xf.branches = b.data || []; xf.alloc = {}; xf.lines = [];
     (a.data || []).forEach(function (r) { (xf.alloc[r.product_id] = xf.alloc[r.product_id] || {})[r.branch_id] = Number(r.qty); });
     if (!xf.branches.length) { notice($('xfBody'), 'Add a branch first (Team > Branches) to start moving stock.'); return; }
@@ -399,7 +399,7 @@
   async function loadReorder() {
     var body = $('roBody'); body.textContent = 'Loading…';
     var r = await sb.rpc('reorder_suggestions', { p_days: Number($('roDays').value), p_cover_days: Number($('roCover').value) });
-    if (r.error) { body.textContent = missing(r.error) ? 'This needs the database update 20261023_stock_transfers_serials_reorder.sql. Ask your admin to run it in Supabase, then reload.' : 'Could not load: ' + r.error.message; return; }
+    if (r.error) { body.textContent = missing(r.error) ? 'Not available yet.' : 'Could not load: ' + r.error.message; return; }
     var rows = window.__reorderRows = r.data || [], est = 0;
     body.innerHTML = rows.length ? '<div class="dogo-table-wrap"><table class="dogo-table"><thead><tr><th>Product</th><th style="text-align:right;">In stock</th><th style="text-align:right;">Sold</th><th style="text-align:right;">Per day</th><th style="text-align:right;">Days left</th><th style="text-align:right;">Order</th><th style="text-align:right;">Est. cost</th></tr></thead><tbody>' + rows.map(function (x) {
       var c = x.last_cost === null || x.last_cost === undefined ? null : Number(x.suggested_qty) * Number(x.last_cost); if (c) est += c;

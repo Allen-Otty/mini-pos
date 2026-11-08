@@ -182,13 +182,13 @@
     }
     function showBillReceipt(r, pay, ref) {
       $('billModal').classList.remove('open');
-      $('receiptBox').innerHTML = `<h2>Bill settled</h2><div class="dogo-muted" style="margin-bottom:10px;">${esc(r.receipt)} · ${esc(r.tableName)} · ${esc(new Date().toLocaleString())}</div>
+      $('receiptBox').innerHTML = `<h2>Sale complete</h2><div class="dogo-muted" style="margin-bottom:10px;">${esc(r.receipt)} · ${esc(r.tableName)} · ${esc(new Date().toLocaleString())}</div>
         ${r.items.map(i => `<div class="dogo-list-row"><span>${esc(i.name)} × ${i.qty}</span><span>${kes(i.line_total)}</span></div>`).join('')}
         <div class="dogo-list-row"><span class="dogo-muted">VAT included</span><span>${kes(r.vat)}</span></div>
         <div class="dogo-total-row"><span>Total</span><span>${kes(r.grand)}</span></div>
         <div class="dogo-list-row"><span class="dogo-muted">Paid by</span><strong>${esc(NAMES[pay])}</strong></div>
         ${ref && pay !== 'cash' ? `<div class="dogo-list-row"><span class="dogo-muted">Reference</span><strong>${esc(ref)}</strong></div>` : ''}
-        <div class="dogo-btn-row" style="justify-content:flex-end;margin-top:16px;"><button class="dogo-btn dogo-btn--outline" onclick="window.print()">Print</button><button class="dogo-btn dogo-btn--primary" id="rcClose">Done</button></div>`;
+        <div class="dogo-btn-row" style="justify-content:flex-end;margin-top:16px;"><button class="dogo-btn dogo-btn--outline" onclick="window.print()">Print receipt</button><button class="dogo-btn dogo-btn--primary" id="rcClose">Done</button></div>`;
       $('receiptModal').classList.add('open');
       $('rcClose').onclick = () => { $('receiptModal').classList.remove('open'); showList(); };
     }

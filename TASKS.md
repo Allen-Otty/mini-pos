@@ -2,11 +2,15 @@
 
 > **Rule:** this file is updated after every change made to the system (frontend, backend, or docs). Checked = verified done. Unchecked = still open. Each entry notes how/where it was verified, not just claimed.
 
-Last updated: 2026-10-20
+Last updated: 2026-11-07
 
 ---
 
 ## ✅ Completed (verified)
+
+- [x] (dev-env) Faster offline / weak-signal loading: service worker answers straight from cache when offline, serves scripts/styles/icons/CDN libraries cache-first with a quiet background refresh, and pages give up on the network after 1.5s (was 4s, cache v44); sign-in context opens from the saved copy when offline or when the server takes over 2.5s; till and catalogue use saved products at once when offline and after 4s on a weak signal - service worker timing tested offline in headless Chromium (2-5 ms per file); **session/till fallbacks not yet tested on a real device in airplane mode or with a weak signal**
+- [x] (dev-env) Pharmacy is now a real business type: signup, settings, admin filter and legacy app dropdowns; pharmacy categories (with SKU prefixes), units (tablet, strip, vial...), expense list and wording ("Medicines", "Add Medicine") in `biz-profiles.js` - profile logic checked in Node; **needs a real signup/settings test on the dev app**
+- [x] (dev-env) New app shell: teal sidebar with grouped sections + light top bar (breadcrumb, jump-to-page search, business chip), collapsible on desktop, slide-in drawer on phone/APK; menu and wording change per business type (pharmacy: Dispense, Patients, Medicines, Stock & Expiry, Suppliers; restaurant: Take Orders, Kitchen Board, Menu & Tables, Settle Bills, no Sales till; kiosk: no Loans/Equity/Fixed Assets) - rendered and checked in a browser harness at desktop and phone width; **not yet tested on a device build**
 
 - [x] Match-iPos work: hardware (ESC/POS, drawer, scanners), full invoicing (quotes, credit notes, eTIMS queue, share link), branch transfers, serials at till, reorder suggestions - tested with mocks/scratch Postgres; **none of the new SQL is run on live yet**
 - [ ] Run on live, in order: 20261018_purchasing_inventory_control.sql, 20261021_customer_invoices.sql, 20261022_invoicing_full.sql, 20261023_stock_transfers_serials_reorder.sql
