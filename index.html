@@ -5619,7 +5619,7 @@
     --shadow-sm:6px 6px 14px rgba(30,60,55,.10),-4px -4px 10px rgba(255,255,255,.95);
     --shadow-md:8px 8px 18px rgba(30,60,55,.12),-6px -6px 14px rgba(255,255,255,.95);
     --shadow-float:10px 10px 24px rgba(30,60,55,.14),-8px -8px 18px rgba(255,255,255,.95);
-    min-height:100vh; padding-top:70px; color:var(--text);
+    min-height:100vh; padding-top:calc(70px + env(safe-area-inset-top, 0px)); color:var(--text);
     font-family:'Plus Jakarta Sans','Instrument Sans',system-ui,sans-serif;
     background:
       radial-gradient(520px 520px at 6% 4%, rgba(201,241,90,.60), transparent 70%),
@@ -5635,7 +5635,7 @@
   #authScreen[data-view="signin"] [data-v~="signin"] { display:block; }
 
   /* slim 52px nav */
-  #authScreen .dogo-nav { top:8px; }
+  #authScreen .dogo-nav { top:calc(10px + env(safe-area-inset-top, 0px)); }
   #authScreen .dogo-nav-inner { height:52px; padding:0 8px 0 14px; border:0; border-radius:26px; background:#f7f9f8; box-shadow:var(--shadow-md); }
   #authScreen .dogo-links { margin-left:auto; margin-right:12px; }
   #authScreen .dogo-links a { font-weight:700; border-radius:14px; }
@@ -5681,7 +5681,7 @@
   #authScreen .section-eyebrow { color:#2f6b45; }
   #authScreen .auth-tab.active { background:linear-gradient(145deg,#dcf79a,#c9f15a); color:#0d2b2c; }
   #authScreen .landing-footer { background:transparent; border-top:1px solid rgba(13,43,44,.08); padding-bottom:40px; }
-  #authScreen .dogo-mobile-menu { top:64px; }
+  #authScreen .dogo-mobile-menu { top:calc(68px + env(safe-area-inset-top, 0px)); }
 
   #authScreen .demo-biz-pill-btn.active, #authScreen .demo-subscribe-top-cta, #authScreen .demo-subscribe-cart-btn, #authScreen .demo-checkout-btn:not(:disabled) {
     background:linear-gradient(145deg,#dcf79a,#c9f15a) !important; color:#0d2b2c !important; border-color:transparent !important;
