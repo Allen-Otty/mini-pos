@@ -5604,6 +5604,102 @@
   }
 }
 
+
+  /* =====================================================================
+     SITE v2: Clay Light landing. Three views only: Landing, About us, Sign in / Sign up.
+     Scoped to #authScreen so the signed-in app is untouched.
+  ===================================================================== */
+  #authScreen {
+    --bg:#eef1f0; --bg-alt:#e6ebe9; --surface:#f7f9f8; --surface-alt:#f7f9f8; --surface-text:#0d2b2c;
+    --text:#0d2b2c; --text-secondary:#3f5754; --text-muted:#5d7571;
+    --accent:#c9f15a; --accent-hover:#d6f77e; --accent-text:#0d2b2c; --accent-minus:rgba(201,241,90,.25);
+    --accent-pill:rgba(201,241,90,.35); --accent-glow:rgba(150,190,40,.30);
+    --border:rgba(13,43,44,.10); --border-strong:rgba(13,43,44,.18);
+    --input-bg:#eef1f0; --input-border:rgba(13,43,44,.10); --nav-bg:#f7f9f8; --tab-inactive-bg:#eef1f0;
+    --shadow-sm:6px 6px 14px rgba(30,60,55,.10),-4px -4px 10px rgba(255,255,255,.95);
+    --shadow-md:8px 8px 18px rgba(30,60,55,.12),-6px -6px 14px rgba(255,255,255,.95);
+    --shadow-float:10px 10px 24px rgba(30,60,55,.14),-8px -8px 18px rgba(255,255,255,.95);
+    min-height:100vh; padding-top:70px; color:var(--text);
+    font-family:'Plus Jakarta Sans','Instrument Sans',system-ui,sans-serif;
+    background:
+      radial-gradient(520px 520px at 6% 4%, rgba(201,241,90,.60), transparent 70%),
+      radial-gradient(640px 640px at 98% 16%, rgba(120,200,180,.42), transparent 70%),
+      radial-gradient(560px 560px at 28% 100%, rgba(201,241,90,.38), transparent 70%),
+      #eef1f0;
+    background-attachment: fixed;
+  }
+  /* view switching */
+  #authScreen [data-v] { display:none; }
+  #authScreen[data-view="home"] [data-v~="home"],
+  #authScreen[data-view="about"] [data-v~="about"],
+  #authScreen[data-view="signin"] [data-v~="signin"] { display:block; }
+
+  /* slim 52px nav */
+  #authScreen .dogo-nav { top:8px; }
+  #authScreen .dogo-nav-inner { height:52px; padding:0 8px 0 14px; border:0; border-radius:26px; background:#f7f9f8; box-shadow:var(--shadow-md); }
+  #authScreen .dogo-links { margin-left:auto; margin-right:12px; }
+  #authScreen .dogo-links a { font-weight:700; border-radius:14px; }
+  #authScreen .dogo-links a.on { background:#eef1f0; box-shadow:inset 3px 3px 6px rgba(30,60,55,.10), inset -3px -3px 6px rgba(255,255,255,.9); }
+  #authScreen .nav-btn-signin { border:0; background:transparent; font-weight:700; }
+  #authScreen .nav-btn-start, #authScreen .hx-btn-primary, #authScreen .auth-btn {
+    background:linear-gradient(145deg,#dcf79a,#c9f15a); color:#0d2b2c; border:0;
+    box-shadow:6px 6px 14px rgba(30,60,55,.15), -4px -4px 10px rgba(255,255,255,.95);
+  }
+  #authScreen .nav-btn-start { height:38px; padding:0 18px; }
+  #authScreen .hx-btn-primary:hover { box-shadow:8px 8px 18px rgba(30,60,55,.18), -4px -4px 10px rgba(255,255,255,.95); }
+
+  /* hero: light, no dark stage */
+  #authScreen .dogo-hero { padding-top:18px; }
+  #authScreen .hx-stage { background:transparent; color:var(--text); box-shadow:none; padding-top:20px; }
+  #authScreen .hx-stage::before { display:none; }
+  #authScreen .hx-logo { display:none; }
+  #authScreen .hx-pill { background:#f7f9f8; border:0; color:#3f5754; box-shadow:inset 3px 3px 6px rgba(30,60,55,.10), inset -3px -3px 6px rgba(255,255,255,.9); }
+  #authScreen .hx-pill .ping-dot { background:#7cb518; }
+  #authScreen .hx-title { color:var(--text); }
+  #authScreen .hx-accent { color:var(--text); background:#c9f15a; padding:0 12px; border-radius:14px; box-decoration-break:clone; -webkit-box-decoration-break:clone; }
+  #authScreen .hx-sub { color:var(--text-secondary); }
+  #authScreen .hx-link { color:var(--text); border-color:rgba(13,43,44,.35); }
+  #authScreen .hx-link:hover { color:#2f6b45; border-color:#2f6b45; }
+  #authScreen .hx-perks { color:var(--text-secondary); }
+  #authScreen .hx-perks i { color:#2f6b45; }
+  #authScreen .hx-get { color:var(--text-secondary); }
+  #authScreen .hx-get a { color:var(--text); background:#f7f9f8; border:0; box-shadow:var(--shadow-sm); }
+  #authScreen .hx-get a:hover { color:#2f6b45; }
+  #authScreen .hx-scene { filter:drop-shadow(0 14px 22px rgba(30,60,55,.22)); }
+  #authScreen .hx-float { box-shadow:var(--shadow-md); border:0; }
+  #authScreen .hx-types button { border:0; box-shadow:var(--shadow-sm); }
+  #authScreen .hx-types button:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+  #authScreen .hx-types button i { color:#2f6b45; }
+
+  /* cards get clay shadows instead of hairlines */
+  #authScreen .demo-widget-container, #authScreen .cap-card, #authScreen .sector-card,
+  #authScreen .pricing-card, #authScreen .faq-accordion-item, #authScreen .auth-card, #authScreen .site-card {
+    border:0; box-shadow:var(--shadow-md); background:#f7f9f8;
+  }
+  #authScreen .auth-card { box-shadow:var(--shadow-float); }
+  #authScreen .integrations-card-forest { background:#0d2b2c; }
+  #authScreen .section-eyebrow { color:#2f6b45; }
+  #authScreen .auth-tab.active { background:linear-gradient(145deg,#dcf79a,#c9f15a); color:#0d2b2c; }
+  #authScreen .landing-footer { background:transparent; border-top:1px solid rgba(13,43,44,.08); padding-bottom:40px; }
+  #authScreen .dogo-mobile-menu { top:64px; }
+
+  #authScreen .demo-biz-pill-btn.active, #authScreen .demo-subscribe-top-cta, #authScreen .demo-subscribe-cart-btn, #authScreen .demo-checkout-btn:not(:disabled) {
+    background:linear-gradient(145deg,#dcf79a,#c9f15a) !important; color:#0d2b2c !important; border-color:transparent !important;
+  }
+  /* About + closing call to action */
+  .site-about-hero { text-align:center; padding-top:30px; }
+  .site-about-hero h1 { font-size:clamp(2.2rem,6vw,3.6rem); line-height:1.05; font-weight:800; letter-spacing:-.02em; margin:14px auto; max-width:760px; }
+  .site-about-hero p { max-width:640px; margin:0 auto; font-size:18px; line-height:1.6; color:var(--text-secondary); }
+  .site-about-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:22px; margin-top:34px; text-align:left; }
+  .site-card { padding:26px; border-radius:26px; }
+  .site-card h3 { margin:0 0 8px; font-size:20px; font-weight:800; }
+  .site-card p { margin:0; line-height:1.6; color:var(--text-secondary); font-size:15px; }
+  .site-cta-card { text-align:center; padding:44px 24px; border-radius:32px; background:linear-gradient(145deg,#dcf79a,#c9f15a); box-shadow:var(--shadow-float); }
+  .site-cta-card h2 { margin:0 0 8px; font-size:clamp(1.6rem,4vw,2.2rem); font-weight:800; }
+  .site-cta-card p { margin:0 0 20px; font-weight:600; color:#254a2e; }
+  .site-cta-card .hx-btn-primary { background:#0d2b2c !important; color:#c9f15a !important; }
+  .site-brand-logo { width:30px; height:30px; border-radius:9px; object-fit:cover; display:block; }
+  @media (max-width: 860px) { #authScreen .dogo-links { display:none; } }
 </style>
 </head>
 <body>
@@ -5625,123 +5721,38 @@
 ================================================================= -->
 <div id="authScreen">
 
-  <!-- Floating Pill Navbar -->
+  <!-- Slim top bar: Home, About us, Sign in -->
   <header class="dogo-nav" id="dogoNav">
     <div class="dogo-nav-inner">
-      <a href="#hero" class="dogo-brand" style="display:flex; align-items:center; gap:10px; text-decoration:none;">
-        <img src="images/dogo-mark-sm.png" alt="" width="44" height="37" style="height:37px; width:auto; display:block; filter:drop-shadow(0 3px 6px rgba(20,83,45,.35));">
-        <span style="font-size:20px; font-weight:800; letter-spacing:-0.03em; color:var(--text); white-space:nowrap;"><span style="color:#16a34a;">Dogo</span> POS</span>
-        <span class="dogo-brand-badge" style="background:#facc15; color:#0f172a; font-weight:800; padding:2px 8px; border-radius:999px; font-size:11px;">Global</span>
+      <a href="#home" class="dogo-brand" onclick="return siteGo('home')" style="display:flex; align-items:center; gap:10px; text-decoration:none;">
+        <img class="site-brand-logo" src="icons/icon-192.png" alt="" width="30" height="30">
+        <span style="font-size:18px; font-weight:800; letter-spacing:-0.02em; color:var(--text); white-space:nowrap;">Dogo POS</span>
       </a>
-
       <ul class="dogo-links">
-        <li><a href="#demo">Live Demo</a></li>
-        <li class="dogo-nav-dropdown">
-          <button type="button" class="dogo-dropdown-toggle">
-            <span>Business Types</span> <i class="fa-solid fa-chevron-down" style="font-size:10px; transition:transform 0.2s;"></i>
-          </button>
-          <div class="dogo-dropdown-menu">
-            <a class="dogo-dd-item" href="#demo" onclick="selectTopBarBizType('Retail')">
-              <div class="dogo-dd-icon" style="color:#2563eb;"><i class="fa-solid fa-bag-shopping"></i></div>
-              <div>
-                <div class="dogo-dd-title">Retail Shop</div>
-                <div class="dogo-dd-sub">Apparel, shoes, accessories &amp; variants</div>
-              </div>
-            </a>
-            <a class="dogo-dd-item" href="#demo" onclick="selectTopBarBizType('Wholesale')">
-              <div class="dogo-dd-icon" style="color:#16a34a;"><i class="fa-solid fa-boxes-packing"></i></div>
-              <div>
-                <div class="dogo-dd-title">Wholesale</div>
-                <div class="dogo-dd-sub">Bulk bales, sacks, cartons &amp; trade credit</div>
-              </div>
-            </a>
-            <a class="dogo-dd-item" href="#demo" onclick="selectTopBarBizType('Supermarket')">
-              <div class="dogo-dd-icon" style="color:#eab308;"><i class="fa-solid fa-barcode"></i></div>
-              <div>
-                <div class="dogo-dd-title">Supermarket</div>
-                <div class="dogo-dd-sub">High-speed barcode lanes &amp; FMCG aisles</div>
-              </div>
-            </a>
-            <a class="dogo-dd-item" href="#demo" onclick="selectTopBarBizType('SME')">
-              <div class="dogo-dd-icon" style="color:#8b5cf6;"><i class="fa-solid fa-briefcase"></i></div>
-              <div>
-                <div class="dogo-dd-title">SME / General Business</div>
-                <div class="dogo-dd-sub">Invoicing, consulting &amp; services billing</div>
-              </div>
-            </a>
-            <a class="dogo-dd-item" href="#demo" onclick="selectTopBarBizType('Hotel')">
-              <div class="dogo-dd-icon" style="color:#ef4444;"><i class="fa-solid fa-utensils"></i></div>
-              <div>
-                <div class="dogo-dd-title">Hotel / Restaurant</div>
-                <div class="dogo-dd-sub">Tables, KOT, kitchen board &amp; food orders</div>
-              </div>
-            </a>
-            <a class="dogo-dd-item" href="#demo" onclick="selectTopBarBizType('Hardware')">
-              <div class="dogo-dd-icon" style="color:#f97316;"><i class="fa-solid fa-screwdriver-wrench"></i></div>
-              <div>
-                <div class="dogo-dd-title">Hardware Store</div>
-                <div class="dogo-dd-sub">Cement, iron sheets, timber, paint &amp; tools</div>
-              </div>
-            </a>
-            <a class="dogo-dd-item" href="#demo" onclick="selectTopBarBizType('Kiosk')">
-              <div class="dogo-dd-icon" style="color:#06b6d4;"><i class="fa-solid fa-shop"></i></div>
-              <div>
-                <div class="dogo-dd-title">Kiosk / Kibanda</div>
-                <div class="dogo-dd-sub">Fast touch till for milk, bread, airtime &amp; cash</div>
-              </div>
-            </a>
-          </div>
-        </li>
-        <li><a href="#capabilities">Features</a></li>
-        <li><a href="#industries">Industries</a></li>
-        <li><a href="#pricing">Pricing</a></li>
-         <li class="js-web-only"><a href="download.html" style="font-weight:700;">Download App</a></li>
-        <li><a href="#faqs">FAQs</a></li>
+        <li><a href="#home" data-go="home" onclick="return siteGo('home')">Home</a></li>
+        <li><a href="#about" data-go="about" onclick="return siteGo('about')">About us</a></li>
+        <li class="js-web-only"><a href="download.html">Download app</a></li>
       </ul>
-
       <div class="dogo-nav-actions">
-        <button class="nav-theme-btn" id="navThemeToggle" onclick="toggleTheme()" aria-label="Toggle theme" title="Toggle Light / Dark">
-          <i class="fa-solid fa-moon"></i>
-        </button>
-        <button class="nav-btn-signin" onclick="openAuthModal('login')">Sign In</button>
-        <button class="nav-btn-start" onclick="openAuthModal('signup')">
-          <span>Start Free</span> <i class="fa-solid fa-arrow-right"></i>
-        </button>
-        <button class="nav-menu-toggle" onclick="toggleMobileNav()" aria-label="Menu">
-          <i class="fa-solid fa-bars" id="navMenuIcon"></i>
-        </button>
+        <button class="nav-btn-signin" onclick="openAuthModal('login')">Sign in</button>
+        <button class="nav-btn-start" onclick="openAuthModal('signup')"><span>Sign up free</span></button>
+        <button class="nav-menu-toggle" onclick="toggleMobileNav()" aria-label="Menu"><i class="fa-solid fa-bars" id="navMenuIcon"></i></button>
       </div>
     </div>
   </header>
 
-  <!-- Mobile Dropdown Menu -->
   <div class="dogo-mobile-menu" id="dogoMobileMenu">
-    <a href="#demo" onclick="toggleMobileNav()">Live Demo</a>
-    <a href="#capabilities" onclick="toggleMobileNav()">Features</a>
-    <a href="#industries" onclick="toggleMobileNav()">Industries</a>
-    <a href="#pricing" onclick="toggleMobileNav()">Pricing</a>
-    <a href="#faqs" onclick="toggleMobileNav()">FAQs</a>
-
-    <div style="padding:10px 14px 4px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-secondary);">
-      Business Types &amp; POS Demos
-    </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:0 12px 10px;">
-      <a href="#demo" onclick="toggleMobileNav(); selectTopBarBizType('Retail');" style="padding:8px 10px; font-size:12px; border-radius:8px; background:var(--surface);"><i class="fa-solid fa-bag-shopping" style="color:#2563eb;"></i> Retail Shop</a>
-      <a href="#demo" onclick="toggleMobileNav(); selectTopBarBizType('Wholesale');" style="padding:8px 10px; font-size:12px; border-radius:8px; background:var(--surface);"><i class="fa-solid fa-boxes-packing" style="color:#16a34a;"></i> Wholesale</a>
-      <a href="#demo" onclick="toggleMobileNav(); selectTopBarBizType('Supermarket');" style="padding:8px 10px; font-size:12px; border-radius:8px; background:var(--surface);"><i class="fa-solid fa-barcode" style="color:#eab308;"></i> Supermarket</a>
-      <a href="#demo" onclick="toggleMobileNav(); selectTopBarBizType('SME');" style="padding:8px 10px; font-size:12px; border-radius:8px; background:var(--surface);"><i class="fa-solid fa-briefcase" style="color:#8b5cf6;"></i> SME / General</a>
-      <a href="#demo" onclick="toggleMobileNav(); selectTopBarBizType('Hotel');" style="padding:8px 10px; font-size:12px; border-radius:8px; background:var(--surface);"><i class="fa-solid fa-utensils" style="color:#ef4444;"></i> Restaurant</a>
-      <a href="#demo" onclick="toggleMobileNav(); selectTopBarBizType('Hardware');" style="padding:8px 10px; font-size:12px; border-radius:8px; background:var(--surface);"><i class="fa-solid fa-screwdriver-wrench" style="color:#f97316;"></i> Hardware</a>
-      <a href="#demo" onclick="toggleMobileNav(); selectTopBarBizType('Kiosk');" style="padding:8px 10px; font-size:12px; border-radius:8px; background:var(--surface); grid-column:1/-1;"><i class="fa-solid fa-shop" style="color:#06b6d4;"></i> Kiosk / Kibanda</a>
-    </div>
+    <a href="#home" onclick="toggleMobileNav(); return siteGo('home')">Home</a>
+    <a href="#about" onclick="toggleMobileNav(); return siteGo('about')">About us</a>
+    <a href="download.html" class="js-web-only">Download app</a>
     <div class="m-actions">
-      <button class="nav-btn-signin" style="width:100%; text-align:center;" onclick="toggleMobileNav(); openAuthModal('login');">Sign In</button>
-      <button class="nav-btn-start" style="width:100%; justify-content:center;" onclick="toggleMobileNav(); openAuthModal('signup');">Start Free</button>
+      <button class="nav-btn-signin" style="width:100%; text-align:center;" onclick="toggleMobileNav(); openAuthModal('login');">Sign in</button>
+      <button class="nav-btn-start" style="width:100%; justify-content:center;" onclick="toggleMobileNav(); openAuthModal('signup');">Sign up free</button>
     </div>
   </div>
 
   <!-- Hero Section -->
-  <section class="dogo-hero" id="hero">
+  <section class="dogo-hero" id="hero" data-v="home">
     <div class="hx-stage">
       <div class="hx-copy">
         <img class="hx-logo" src="images/dogo-logo.png" alt="Dogo POS" width="96" height="114">
@@ -5926,8 +5937,22 @@
     </div>
   </section>
 
+  <!-- About us -->
+  <section class="dogo-section" id="about" data-v="about">
+    <div class="site-about-hero">
+      <div class="section-eyebrow" style="display:inline-block;">About us</div>
+      <h1>Built for the shop that never closes early.</h1>
+      <p>Dogo POS is a point of sale made for Kenyan businesses: simple at the till, honest in the reports, and still working when the internet is not.</p>
+    </div>
+    <div class="site-about-grid">
+      <div class="site-card"><h3>Our mission</h3><p>Give every shop owner, from a kibanda to a supermarket, the same tools the big chains use, at a price that makes sense.</p></div>
+      <div class="site-card"><h3>What we build</h3><p>Sales, stock, M-Pesa payments, expenses and reports, with KRA eTIMS support, for retail, kiosk, supermarket, wholesale, restaurant, pharmacy and hardware.</p></div>
+      <div class="site-card"><h3>How we work</h3><p>Offline first. Your sales are saved on the device and sync when you are back online. Free forever plan, no card required.</p></div>
+    </div>
+  </section>
+
   <!-- Integrations Section (Dogo POS Green Card) -->
-  <section class="dogo-section" id="integrations">
+  <section class="dogo-section" id="integrations" data-v="about">
     <div class="integrations-card-forest">
       <div class="integrations-header">
         <div>
@@ -5989,7 +6014,7 @@
   </section>
 
   <!-- Capabilities / Features Grid -->
-  <section class="dogo-section" id="capabilities">
+  <section class="dogo-section" id="capabilities" data-v="home">
     <div class="section-eyebrow">Point of sale for growing businesses</div>
     <h2 class="section-title">From the first sale to the daily report.</h2>
     <p class="section-sub">The tools to sell faster, track real stock, manage tellers, and keep profits clear.</p>
@@ -6109,7 +6134,7 @@
   </section>
 
   <!-- Industries & Sectors -->
-  <section class="dogo-section" id="industries">
+  <section class="dogo-section" id="industries" data-v="home">
     <div class="section-eyebrow">Built for your business</div>
     <h2 class="section-title">Different businesses. One simple POS.</h2>
     <p class="section-sub">Tailored to the exact workflows of retail, wholesale, food service, and trade.</p>
@@ -6183,7 +6208,7 @@
   </section>
 
   <!-- Pricing Section -->
-  <section class="dogo-section" id="pricing">
+  <section class="dogo-section" id="pricing" data-v="about">
     <div style="text-align:center;">
       <div class="section-eyebrow" style="display:inline-block;">Transparent pricing</div>
       <h2 class="section-title">Simple plans that grow with your shop.</h2>
@@ -6336,7 +6361,7 @@
   </section>
 
   <!-- FAQs Accordion -->
-  <section class="dogo-section" id="faqs">
+  <section class="dogo-section" id="faqs" data-v="about">
     <div style="text-align:center;">
       <div class="section-eyebrow" style="display:inline-block;">Common Questions</div>
       <h2 class="section-title">Frequently Asked Questions</h2>
@@ -6417,12 +6442,10 @@
   </section>
 
   <!-- Embedded Auth Section -->
-  <section class="auth-section-wrap" id="authSection">
+  <section class="auth-section-wrap" id="authSection" data-v="signin">
     <div class="auth-card" id="authCardAnchor">
       <div style="text-align:center; margin-bottom:18px;">
-        <div class="dogo-brand-icon" style="margin:0 auto 10px; width:44px; height:44px; font-size:20px;">
-          <i class="fa-solid fa-receipt"></i>
-        </div>
+        <img src="icons/icon-192.png" alt="" width="48" height="48" style="display:block; margin:0 auto 10px; width:48px; height:48px; border-radius:14px; box-shadow:var(--shadow-sm);">
         <div style="font-weight:900; font-size:22px; letter-spacing:-0.03em;">Dogo POS</div>
         <div style="font-size:12.5px; color:var(--text-secondary); margin-top:2px;">Modern point of sale &amp; restaurant platform</div>
       </div>
@@ -6599,6 +6622,15 @@
     </div>
   </section>
 
+  <!-- Closing call to action (Landing) -->
+  <section class="dogo-section" id="homeCta" data-v="home" style="padding-top:20px;">
+    <div class="site-cta-card">
+      <h2>Open your shop on Dogo POS</h2>
+      <p>Free forever plan. No card required.</p>
+      <button class="hx-btn-primary" onclick="openAuthModal('signup')"><span>Sign up free</span> <i class="fa-solid fa-arrow-right"></i></button>
+    </div>
+  </section>
+
   <!-- Landing Footer -->
   <footer class="landing-footer">
     <div class="landing-footer-inner">
@@ -6609,10 +6641,9 @@
       </div>
 
       <div style="display:flex; gap:18px; font-size:13px; font-weight:600; color:var(--text-secondary);">
-        <a href="#hero" style="color:inherit; text-decoration:none;">Home</a>
-        <a href="#demo" style="color:inherit; text-decoration:none;">Demo</a>
-        <a href="#capabilities" style="color:inherit; text-decoration:none;">Features</a>
-        <a href="#pricing" style="color:inherit; text-decoration:none;">Pricing</a>
+        <a href="#home" onclick="return siteGo('home')" style="color:inherit; text-decoration:none;">Home</a>
+        <a href="#about" onclick="return siteGo('about')" style="color:inherit; text-decoration:none;">About us</a>
+        <a href="#signin" onclick="return siteGo('signin')" style="color:inherit; text-decoration:none;">Sign in</a>
         <a href="download.html" class="js-web-only" style="color:inherit; text-decoration:none;">Download App</a>
       </div>
 
@@ -17002,6 +17033,58 @@ async function saveNewProductFromPage() {
     </div>
   </div>
   <script src="assets/js/dogo-helper.js" defer></script>
+<script>
+/* Site v2 router: three views (home, about, signin). Hash links such as #pricing or #demo map to a view. */
+(function () {
+  var MAP = { home:'home', hero:'home', demo:'home', capabilities:'home', industries:'home', homecta:'home',
+              about:'about', integrations:'about', pricing:'about', faqs:'about',
+              signin:'signin', login:'signin', signup:'signin', authsection:'signin' };
+  function screen() { return document.getElementById('authScreen'); }
+  function setView(v) {
+    var s = screen(); if (!s) return;
+    if (v !== 'home' && v !== 'about' && v !== 'signin') v = 'home';
+    s.setAttribute('data-view', v);
+    var links = document.querySelectorAll('#dogoNav [data-go]');
+    for (var i = 0; i < links.length; i++) links[i].classList.toggle('on', links[i].getAttribute('data-go') === v);
+  }
+  function route(scroll) {
+    var h = (location.hash || '').replace('#', '');
+    var v = 'home', anchor = null;
+    if (/(^|&)(type=recovery|access_token|error_description)/.test(h)) v = 'signin';
+    else if (/(^|[?&])signin=1/.test(location.search) && !h) v = 'signin';
+    else if (MAP[h.toLowerCase()]) { v = MAP[h.toLowerCase()]; anchor = document.getElementById(h); }
+    setView(v);
+    if (scroll) {
+      var a = anchor && anchor.offsetParent !== null && !/^(home|about|signin|authSection|hero)$/i.test(anchor.id) ? anchor : null;
+      if (a) a.scrollIntoView({ behavior: 'smooth', block: 'start' }); else window.scrollTo(0, 0);
+    }
+  }
+  window.siteGo = function (v) {
+    setView(v);
+    try { history.replaceState(null, '', '#' + v); } catch (e) { location.hash = v; }
+    window.scrollTo(0, 0);
+    return false;
+  };
+  window.openAuthModal = function (tab) {
+    if (typeof showAuthTab === 'function') showAuthTab(tab || 'login');
+    window.siteGo('signin');
+  };
+  var _sap = window.selectPlanAndSignup;
+  window.selectPlanAndSignup = function (plan) {
+    if (typeof setSignupPlan === 'function') setSignupPlan(plan);
+    window.openAuthModal('signup');
+  };
+  var _sat = window.showAuthTab;
+  if (typeof _sat === 'function') window.showAuthTab = function (name) {
+    if (name === 'reset' || name === 'verify' || name === 'forgot') setView('signin');
+    return _sat.apply(this, arguments);
+  };
+  window.addEventListener('hashchange', function () { route(true); });
+  /* Landing is light only: keep the clay palette even if a dark theme was saved earlier (not stored). */
+  try { document.documentElement.setAttribute('data-theme', 'light'); } catch (e) {}
+  route(false);
+})();
+</script>
 </body>
 </html>
 
