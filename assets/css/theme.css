@@ -1191,3 +1191,26 @@ body.dogo-sidebar-collapsed .dogo-switch { display: none; }
 }
 .dogo-header__logo { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; }
 .dogo-header__logo img, .dogo-sidebar__logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 11px; display: block; }
+
+/* ===== One theme colour: the lime green (follows the chosen theme preset) =====
+   Old gold/yellow and bright "neon" accents now use the lime family across every page. */
+body.dogo-shell-v3 {
+  --dogo-gold: #b6e03c;  --dogo-gold-bright: #c9f15a;  --dogo-gold-dark: #5d7d0e;
+  --dogo-gold-glow: rgba(182,224,60,.32);  --dogo-gold-light: #f3fbd8;
+  --dogo-neon: #b6e03c;  --dogo-neon-bright: #c9f15a;  --dogo-neon-dark: #6f9412;
+  --dogo-neon-glow: rgba(182,224,60,.32);  --dogo-neon-light: #f3fbd8;
+}
+@supports (color: color-mix(in srgb, red, blue)) {
+  body.dogo-shell-v3 {
+    --dogo-gold: var(--dogo-lime-2);  --dogo-gold-bright: var(--dogo-lime);
+    --dogo-gold-dark: color-mix(in srgb, var(--dogo-lime) 45%, #000);
+    --dogo-gold-glow: color-mix(in srgb, var(--dogo-lime) 32%, transparent);
+    --dogo-gold-light: color-mix(in srgb, var(--dogo-lime) 16%, #fff);
+    --dogo-neon: var(--dogo-lime-2);  --dogo-neon-bright: var(--dogo-lime);
+    --dogo-neon-dark: color-mix(in srgb, var(--dogo-lime) 62%, #000);
+    --dogo-neon-glow: color-mix(in srgb, var(--dogo-lime) 32%, transparent);
+    --dogo-neon-light: color-mix(in srgb, var(--dogo-lime) 16%, #fff);
+  }
+}
+/* text that sat on the old neon/gold fills stays dark so it is readable on lime */
+.dogo-shell-v3 .dogo-btn--primary, .dogo-shell-v3 .dogo-btn--gold { color: #0a2a1f; }

@@ -1134,7 +1134,7 @@
       $('pfpBtn').disabled = true; $('pfpBtn').textContent = 'Uploading…';
       try {
         const path = uid + '/avatar-' + Date.now() + '.' + (f.type === 'image/png' ? 'png' : f.type === 'image/webp' ? 'webp' : 'jpg');
-        const up = await sb.storage.from('avatars').upload(path, f, { contentType: f.type, upsert: true });
+        const up = await sb.storage.from('avatars').upload(path, f, { contentType: f.type, upsert: false });
         if (up.error) throw up.error;
         const url = sb.storage.from('avatars').getPublicUrl(path).data.publicUrl;
         const r = await sb.from('profiles').update({ avatar_url: url }).eq('id', uid);
