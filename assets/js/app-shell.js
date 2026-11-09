@@ -323,7 +323,7 @@
       <nav class="dogo-nav-panel dogo-sidebar" id="dogoNavPanel" aria-label="Main menu">
         <div class="dogo-sidebar__brand">
           <span class="dogo-sidebar__logo"><img src="${esc(opts.logoUrl || 'icons/icon-192.png')}" alt="" onerror="this.onerror=null;this.src='icons/icon-192.png'"></span>
-          <span class="dogo-sidebar__brand-text"><b>${esc(opts.logoUrl && opts.businessName ? opts.businessName : 'Dogo POS')}</b><small>${esc(opts.logoUrl ? 'Dogo POS · ' + opts.typeLabel : (opts.businessName && opts.businessName !== 'Dogo POS' ? opts.businessName : opts.typeLabel))}</small></span>
+          <span class="dogo-sidebar__brand-text"><b>${esc(opts.businessName || 'Dogo POS')}</b><small>${esc(opts.typeLabel || '')}</small></span>
           <button class="dogo-sidebar__collapse" id="dogoCollapseBtn" aria-label="Collapse menu">${ICONS.collapse}</button>
           <button class="dogo-sidebar__close" id="dogoCloseBtn" aria-label="Close menu">&times;</button>
         </div>
