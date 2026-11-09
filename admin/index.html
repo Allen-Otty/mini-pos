@@ -2040,7 +2040,7 @@ async function adminSetNewPassword() {
   const { error } = await sb.auth.updateUser({ password: a });
   if (error) { el.textContent = /expired|session/i.test(error.message) ? 'That link expired — request a new one.' : error.message; return; }
   window.__adminRecovery = false;
-  await sb.auth.signOut();
+  await sb.auth.signOut({ scope: 'local' });
   try { history.replaceState(null, '', location.pathname); } catch (e) {}
   document.getElementById('adminResetBox').style.display = 'none';
   ok.textContent = 'Password updated. Sign in with your new password.';
@@ -2065,7 +2065,7 @@ async function platformLogin() {
   const resp = await callPlatformFn('stats', {});
   if (resp.error) {
     errEl.textContent = 'Access denied — this account is not a Super Admin.';
-    await sb.auth.signOut();
+    await sb.auth.signOut({ scope: 'local' });
     return;
   }
 
@@ -2075,7 +2075,7 @@ async function platformLogin() {
 }
 
 async function platformLogout() {
-  await sb.auth.signOut();
+  await sb.auth.signOut({ scope: 'local' });
   document.getElementById('dashboardWrap').style.display = 'none';
   document.getElementById('loginBox').style.display = 'block';
 }

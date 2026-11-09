@@ -91,14 +91,14 @@
   // No valid session: clear the "use new UI" flag (prevents a redirect loop) and show the sign-in screen.
   async function toSignIn() {
     if (!isOnline()) { location.replace('index.html?signin=1'); return; } // offline: keep the cached sign-in intact
-    try { localStorage.removeItem('dogo_new_ui_ok'); await sb.auth.signOut(); } catch (e) {}
+    try { localStorage.removeItem('dogo_new_ui_ok'); await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
     location.replace('index.html?signin=1');
   }
   async function logout() {
     try {
       localStorage.setItem('dogo_locked', '1');                // password required again, even offline
       localStorage.removeItem('dogo_new_ui_ok'); sessionStorage.removeItem('dogo_legacy');
-      if (isOnline()) await sb.auth.signOut();                 // offline: keep the session so unsynced sales can sync after the next sign-in
+      if (isOnline()) await sb.auth.signOut({ scope: 'local' });                 // offline: keep the session so unsynced sales can sync after the next sign-in
     } catch (e) {}
     location.replace('index.html?signin=1');
   }

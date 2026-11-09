@@ -141,7 +141,7 @@
     document.getElementById('dsg-recheck').onclick = function () { location.reload(); };
     document.getElementById('dsg-out').onclick = function () {
       if (typeof opts.onLogout === 'function') opts.onLogout();
-      else { try { opts.sb.auth.signOut().then(function () { location.href = 'index.html'; }); } catch (e) { location.href = 'index.html'; } }
+      else { try { opts.sb.auth.signOut({ scope: 'local' }).then(function () { location.href = 'index.html'; }); } catch (e) { location.href = 'index.html'; } }
     };
   }
 

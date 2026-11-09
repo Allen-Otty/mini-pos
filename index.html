@@ -10835,7 +10835,7 @@ async function handleResetPassword() {
     return;
   }
   window.__dogoRecovery = false;
-  try { await sb.auth.signOut(); } catch (e) {}
+  try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
   try { history.replaceState(null, '', location.pathname); } catch (e) {}
   document.getElementById('rpPassword').value = ''; document.getElementById('rpConfirm').value = '';
   showAuthTab('login');
@@ -10885,7 +10885,7 @@ async function handleLogin() {
 async function handleLogout() {
   try { localStorage.setItem('dogo_locked', '1'); localStorage.removeItem('dogo_new_ui_ok'); sessionStorage.removeItem('dogo_legacy'); } catch (e) {}
   // offline: keep the session so unsynced sales can still sync after the next sign-in; the lock flag blocks re-entry without the password
-  try { if (navigator.onLine) await sb.auth.signOut(); } catch (e) {}
+  try { if (navigator.onLine) await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
   stopScanner();
   session = null; profile = null; business = null;
   document.getElementById('appShell').style.display = 'none'; document.getElementById('appShell').classList.remove('portal-shell-active');
@@ -11055,7 +11055,7 @@ async function afterLogin() {
 
   if (prof && prof.active === false) {
     showAuthMsg('loginError', "This account has been deactivated. Contact your business admin.");
-    await sb.auth.signOut();
+    await sb.auth.signOut({ scope: 'local' });
     return;
   }
 
