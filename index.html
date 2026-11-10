@@ -11126,7 +11126,7 @@ async function afterLogin() {
     const legacyTab = sessionStorage.getItem('dogo_legacy') === '1' || location.search.includes('legacy=1');
     const realProfile = !!(prof && profile && profile.business_id && !String(profile.business_id).startsWith('biz-'));
     const switched = isPlatformAdmin && profile.business_id && activeBusinessId !== profile.business_id;
-    if (!legacyTab && realProfile && !switched) {
+    if (!legacyTab && realProfile) {
       localStorage.setItem('dogo_new_ui_ok', '1');
       location.replace('dashboard.html');
       return;

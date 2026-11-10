@@ -1228,3 +1228,9 @@ body.dogo-shell-v3 {
 .dogo-notif__dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; background: #f59e0b; }
 .dogo-notif__row--danger .dogo-notif__dot { background: #ef4444; }
 .dogo-notif__empty { padding: 18px 10px; text-align: center; color: #5d7571; font-size: 14px; }
+
+/* App update bar */
+.dogo-updbar { position: fixed; left: 12px; right: 12px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 90; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 18px; background: #0d2b2c; color: #fff; font-size: 14px; font-weight: 600; box-shadow: 0 12px 30px rgba(0,0,0,.28); max-width: 520px; margin: 0 auto; }
+.dogo-updbar span { flex: 1; }
+.dogo-updbar__go { border: 0; border-radius: 12px; padding: 9px 16px; font-weight: 800; cursor: pointer; background: linear-gradient(145deg,#dcf79a,#c9f15a); color: #0d2b2c; }
+.dogo-updbar__x { border: 0; background: transparent; color: #b7d6c3; font-size: 22px; cursor: pointer; }

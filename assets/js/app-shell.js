@@ -209,6 +209,31 @@
       ? list.map(n => `<a class="dogo-notif__row dogo-notif__row--${n.tone}" href="${esc(n.href)}"><span class="dogo-notif__dot"></span><span><b>${esc(n.title)}</b><small>${esc(n.sub)}</small></span></a>`).join('')
       : '<div class="dogo-notif__empty">You are all caught up. No alerts right now.</div>';
   }
+
+  /* ---- One-tap app update (installed Android / Windows apps only) ---- */
+  async function checkAppUpdate() {
+    try {
+      const U = window.DOGO_UPDATE, cur = Number(window.DOGO_BUILD || 0);
+      if (!U || !cur || !navigator.onLine) return;
+      const native = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) || /electron/i.test(navigator.userAgent);
+      if (!native || sessionStorage.getItem('dogo_upd_later') === '1') return;
+      const last = Number(localStorage.getItem('dogo_upd_checked') || 0);
+      if (Date.now() - last < 6 * 3600 * 1000 && localStorage.getItem('dogo_upd_new') !== '1') return;
+      localStorage.setItem('dogo_upd_checked', String(Date.now()));
+      const txt = await (await fetch(U.base + 'assets/js/app-version.js?t=' + Date.now(), { cache: 'no-store' })).text();
+      const m = txt.match(/DOGO_BUILD\s*=\s*(\d+)/);
+      if (!m || Number(m[1]) <= cur) { localStorage.removeItem('dogo_upd_new'); return; }
+      localStorage.setItem('dogo_upd_new', '1');
+      if (document.getElementById('dogoUpdBar')) return;
+      const bar = document.createElement('div'); bar.id = 'dogoUpdBar'; bar.className = 'dogo-updbar';
+      bar.innerHTML = '<span>A new version of Dogo POS is ready.</span><button type="button" class="dogo-updbar__go">Update</button><button type="button" class="dogo-updbar__x" aria-label="Later">&times;</button>';
+      document.body.appendChild(bar);
+      bar.querySelector('.dogo-updbar__go').onclick = () => { location.href = /electron/i.test(navigator.userAgent) ? U.exe : U.apk; };
+      bar.querySelector('.dogo-updbar__x').onclick = () => { try { sessionStorage.setItem('dogo_upd_later', '1'); } catch (e) {} bar.remove(); };
+    } catch (e) {}
+  }
+  if (typeof window !== 'undefined') setTimeout(checkAppUpdate, 5000);
+
   const COLLAPSE_KEY = 'dogo_sidebar_collapsed';
   const isCollapsed = () => { try { return localStorage.getItem(COLLAPSE_KEY) === '1'; } catch (e) { return false; } };
   function applyCollapsed(on) {
