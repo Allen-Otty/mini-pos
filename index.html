@@ -5686,6 +5686,9 @@
   #authScreen .demo-biz-pill-btn.active, #authScreen .demo-subscribe-top-cta, #authScreen .demo-subscribe-cart-btn, #authScreen .demo-checkout-btn:not(:disabled) {
     background:linear-gradient(145deg,#dcf79a,#c9f15a) !important; color:#0d2b2c !important; border-color:transparent !important;
   }
+  /* Only three pages: Home, About us, Sign in / Sign up. Demo and extra sections are not shown. */
+  #authScreen .hx-types, #authScreen .demo-widget-container, #authScreen .hx-link { display:none !important; }
+
   /* About + closing call to action */
   .site-about-hero { text-align:center; padding-top:30px; }
   .site-about-hero h1 { font-size:clamp(2.2rem,6vw,3.6rem); line-height:1.05; font-weight:800; letter-spacing:-.02em; margin:14px auto; max-width:760px; }
@@ -5700,6 +5703,8 @@
   .site-cta-card .hx-btn-primary { background:#0d2b2c !important; color:#c9f15a !important; }
   .site-brand-logo { width:30px; height:30px; border-radius:9px; object-fit:cover; display:block; }
   @media (max-width: 860px) { #authScreen .dogo-links { display:none; } }
+  #authScreen .nav-btn-signin, #authScreen .nav-btn-start { white-space:nowrap; }
+  @media (max-width: 480px) { #authScreen .nav-btn-signin { padding:0 8px; font-size:14px; } #authScreen .nav-btn-start { padding:0 12px; font-size:14px; } #authScreen .dogo-brand span { font-size:16px !important; } }
 </style>
 </head>
 <body>
@@ -5731,7 +5736,6 @@
       <ul class="dogo-links">
         <li><a href="#home" data-go="home" onclick="return siteGo('home')">Home</a></li>
         <li><a href="#about" data-go="about" onclick="return siteGo('about')">About us</a></li>
-        <li class="js-web-only"><a href="download.html">Download app</a></li>
       </ul>
       <div class="dogo-nav-actions">
         <button class="nav-btn-signin" onclick="openAuthModal('login')">Sign in</button>
@@ -5744,7 +5748,6 @@
   <div class="dogo-mobile-menu" id="dogoMobileMenu">
     <a href="#home" onclick="toggleMobileNav(); return siteGo('home')">Home</a>
     <a href="#about" onclick="toggleMobileNav(); return siteGo('about')">About us</a>
-    <a href="download.html" class="js-web-only">Download app</a>
     <div class="m-actions">
       <button class="nav-btn-signin" style="width:100%; text-align:center;" onclick="toggleMobileNav(); openAuthModal('login');">Sign in</button>
       <button class="nav-btn-start" style="width:100%; justify-content:center;" onclick="toggleMobileNav(); openAuthModal('signup');">Sign up free</button>
@@ -5952,7 +5955,7 @@
   </section>
 
   <!-- Integrations Section (Dogo POS Green Card) -->
-  <section class="dogo-section" id="integrations" data-v="about">
+  <section class="dogo-section" id="integrations" data-v="off">
     <div class="integrations-card-forest">
       <div class="integrations-header">
         <div>
@@ -6014,7 +6017,7 @@
   </section>
 
   <!-- Capabilities / Features Grid -->
-  <section class="dogo-section" id="capabilities" data-v="home">
+  <section class="dogo-section" id="capabilities" data-v="off">
     <div class="section-eyebrow">Point of sale for growing businesses</div>
     <h2 class="section-title">From the first sale to the daily report.</h2>
     <p class="section-sub">The tools to sell faster, track real stock, manage tellers, and keep profits clear.</p>
@@ -6134,7 +6137,7 @@
   </section>
 
   <!-- Industries & Sectors -->
-  <section class="dogo-section" id="industries" data-v="home">
+  <section class="dogo-section" id="industries" data-v="off">
     <div class="section-eyebrow">Built for your business</div>
     <h2 class="section-title">Different businesses. One simple POS.</h2>
     <p class="section-sub">Tailored to the exact workflows of retail, wholesale, food service, and trade.</p>
@@ -6208,7 +6211,7 @@
   </section>
 
   <!-- Pricing Section -->
-  <section class="dogo-section" id="pricing" data-v="about">
+  <section class="dogo-section" id="pricing" data-v="off">
     <div style="text-align:center;">
       <div class="section-eyebrow" style="display:inline-block;">Transparent pricing</div>
       <h2 class="section-title">Simple plans that grow with your shop.</h2>
@@ -6361,7 +6364,7 @@
   </section>
 
   <!-- FAQs Accordion -->
-  <section class="dogo-section" id="faqs" data-v="about">
+  <section class="dogo-section" id="faqs" data-v="off">
     <div style="text-align:center;">
       <div class="section-eyebrow" style="display:inline-block;">Common Questions</div>
       <h2 class="section-title">Frequently Asked Questions</h2>
