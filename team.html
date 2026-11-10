@@ -39,7 +39,7 @@
         <div class="dogo-form-row dogo-form-row--2">
           <div class="dogo-field"><label>Full name</label><input class="dogo-input" id="tName"></div>
           <div class="dogo-field"><label>Email</label><input class="dogo-input" id="tEmail" type="email"></div>
-          <div class="dogo-field"><label>Temporary password</label><input class="dogo-input" id="tPass" type="password" placeholder="Min. 8 characters"></div>
+          <div class="dogo-field"><label>Temporary password <span class="dogo-muted">(optional)</span></label><input class="dogo-input" id="tPass" type="password" placeholder="Leave blank to email a set-password link" autocomplete="new-password"></div>
           <div class="dogo-field"><label>Role</label><select class="dogo-select" id="tRole"><option value="teller">Teller</option><option value="manager">Manager</option></select></div>
           <div class="dogo-field" style="grid-column:1/-1;"><label>Branch</label><select class="dogo-select" id="tBranch"><option value="">Not assigned</option></select></div>
         </div>
@@ -123,23 +123,24 @@
     $('addTellerBtn').onclick = async () => {
       const full_name = $('tName').value.trim(), email = $('tEmail').value.trim(), password = $('tPass').value;
       const role = $('tRole').value, branch_id = $('tBranch').value || null;
-      if (!full_name || !email || !password) return toast('Fill in name, email and password');
-      if (password.length < 8) return toast('Password must be at least 8 characters');
+      if (!full_name || !email) return toast('Fill in name and email');
+      if (password && password.length < 8) return toast('Password must be at least 8 characters, or leave it blank to email a set-password link');
       const lim = window.DogoData.planLimitsFor(ctx.business);
       if (team.length >= lim.maxUsers) return toast(`Your ${lim.name} plan supports up to ${lim.maxUsers} team member${lim.maxUsers === 1 ? '' : 's'}. Upgrade in Settings to add more.`);
       $('addTellerBtn').disabled = true; $('addTellerBtn').textContent = 'Creating…';
-      const resp = await sb.functions.invoke('create-teller', { body: { email, password, full_name } });
+      const resp = await sb.functions.invoke('create-teller', { body: { email, password: password || undefined, full_name, redirect_to: /^https?:/.test(location.href) ? new URL('index.html', location.href).href : undefined } });
       const data = resp.error ? null : resp.data;
       $('addTellerBtn').disabled = false; $('addTellerBtn').textContent = 'Create account';
       if (resp.error || (data && data.error)) {
         const msg = resp.error ? resp.error.message : data.error;
         return toast(/team size limit/i.test(msg) ? msg : 'Could not create account: ' + msg);
       }
-      toast('Account created for ' + full_name);
+      if (!password) toast(data && data.email_sent ? 'Account created. A link to set their password was emailed to ' + email : 'Account created, but the email could not be sent' + (data && data.email_error ? ' (' + data.email_error + ')' : '') + '. Ask them to use Forgot password on the sign-in page.');
+      else toast('Account created for ' + full_name);
       $('tName').value = ''; $('tEmail').value = ''; $('tPass').value = '';
       // create-teller only sets up the login + a default 'teller' row — apply the chosen role/branch as a follow-up.
       if (role !== 'teller' || branch_id) {
-        const newId = data && (data.user_id || data.id || data.profile_id);
+        const newId = data && (data.user_id || data.teller_id || data.id || data.profile_id);
         let target = newId;
         if (!target) { await new Promise(r => setTimeout(r, 1200)); const { data: match } = await sb.from('profiles').select('id').eq('business_id', ctx.businessId).eq('email', email).maybeSingle(); target = match && match.id; }
         if (target) { const { error } = await sb.from('profiles').update({ role, branch_id }).eq('id', target); if (error) toast('Account created, but could not set role/branch: ' + error.message + '. Set it below in Team.'); }
