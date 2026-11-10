@@ -10,26 +10,28 @@
 <title>Dogo POS — Super Admin Console & AI Co-Pilot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   * { box-sizing: border-box; }
   :root {
-    --bg: #070d1e;
-    --panel: #0d1730;
-    --card: #111e3f;
-    --card-hover: #172750;
-    --border: rgba(255, 255, 255, 0.09);
-    --gold: #facc15;
-    --gold-light: #fef08a;
-    --text: #f8fafc;
-    --text-muted: #94a3b8;
-    --green: #22c55e;
-    --red: #ef4444;
-    --blue: #38bdf8;
-    --purple: #a855f7;
+    --bg: #eef1f0;
+    --panel: #f7f9f8;
+    --card: #f7f9f8;
+    --card-hover: #f0f4f2;
+    --border: rgba(13, 43, 44, 0.10);
+    --gold: #c9f15a;
+    --gold-light: #dcf79a;
+    --text: #0d2b2c;
+    --text-muted: #5d7571;
+    --green: #15803d;
+    --red: #dc2626;
+    --blue: #0369a1;
+    --purple: #7c3aed;
+    --clay-out: 8px 8px 18px rgba(30,60,55,.12), -6px -6px 14px rgba(255,255,255,.95);
+    --clay-in: inset 3px 3px 7px rgba(30,60,55,.10), inset -3px -3px 7px rgba(255,255,255,.95);
   }
   body {
     margin: 0;
@@ -40,7 +42,7 @@
     min-height: 100vh;
   }
   header {
-    background: #091227;
+    background: rgba(247,249,248,.92); backdrop-filter: blur(10px); box-shadow: 0 6px 16px rgba(30,60,55,.10);
     padding: 12px 28px;
     display: flex;
     justify-content: space-between;
@@ -87,7 +89,7 @@
     gap: 6px;
     background: rgba(34, 197, 94, 0.12);
     border: 1px solid rgba(34, 197, 94, 0.3);
-    color: #4ade80;
+    color: #15803d;
     cursor: pointer;
     transition: all .15s;
   }
@@ -104,9 +106,9 @@
   }
   .admin-indicator {
     font-size: 11.5px;
-    color: var(--gold);
-    background: rgba(250, 204, 21, 0.1);
-    border: 1px solid rgba(250, 204, 21, 0.25);
+    color:#3f6b10;
+    background: rgba(150,200,30,0.1);
+    border: 1px solid rgba(150,200,30,0.25);
     padding: 4px 11px;
     border-radius: 999px;
     font-weight: 700;
@@ -116,7 +118,7 @@
   }
   .btn-logout {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(13,43,44,0.06);
     color: var(--text-muted);
     border-radius: 999px;
     padding: 5px 12px;
@@ -130,7 +132,7 @@
   }
   .btn-logout:hover {
     border-color: var(--red);
-    color: #f87171;
+    color: #dc2626;
     background: rgba(239, 68, 68, 0.1);
   }
 
@@ -153,8 +155,8 @@
     border-radius: 999px;
   }
   .admin-nav-btn {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(13,43,44,0.06);
+    border: 1px solid rgba(13,43,44,0.06);
     color: var(--text-muted);
     padding: 6px 13px;
     font-size: 12px;
@@ -170,17 +172,17 @@
     line-height: 1.2;
   }
   .admin-nav-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(13,43,44,0.06);
     color: var(--text);
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: rgba(13,43,44,0.06);
     transform: translateY(-1px);
   }
   .admin-nav-btn.active {
     color: #0b1329;
     background: var(--gold);
-    border-color: var(--gold);
+    border-color:#3f6b10;
     font-weight: 800;
-    box-shadow: 0 2px 10px rgba(250, 204, 21, 0.28);
+    box-shadow: 0 2px 10px rgba(150,200,30,0.28);
   }
   .admin-nav-btn.active i {
     color: #0b1329;
@@ -199,20 +201,20 @@
   }
   /* Specially styled, stylish Growth nav pill */
   .admin-nav-btn.nav-growth {
-    border-color: rgba(250, 204, 21, 0.25);
-    background: rgba(250, 204, 21, 0.05);
+    border-color: rgba(150,200,30,0.25);
+    background: rgba(150,200,30,0.05);
     color: #fef08a;
   }
   .admin-nav-btn.nav-growth:hover {
-    background: rgba(250, 204, 21, 0.14);
-    border-color: rgba(250, 204, 21, 0.45);
+    background: rgba(150,200,30,0.14);
+    border-color: rgba(150,200,30,0.45);
     color: #fff;
   }
   .admin-nav-btn.nav-growth.active {
     color: #0b1329;
     background: var(--gold);
-    border-color: var(--gold);
-    box-shadow: 0 2px 12px rgba(250, 204, 21, 0.35);
+    border-color:#3f6b10;
+    box-shadow: 0 2px 12px rgba(150,200,30,0.35);
   }
 
   main {
@@ -229,7 +231,7 @@
     border: 1px solid var(--border);
     border-radius: 20px;
     padding: 36px 30px;
-    box-shadow: 0 24px 60px -15px rgba(0,0,0,0.8);
+    box-shadow: 0 24px 60px -15px rgba(13,43,44,0.35);
   }
   #loginBox h2 { margin-top: 0; text-align: center; font-weight: 800; font-size: 22px; }
   #loginBox input {
@@ -238,12 +240,12 @@
     margin: 8px 0;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(13,43,44,0.06);
     color: var(--text);
     font-size: 14px;
     outline: none;
   }
-  #loginBox input:focus { border-color: var(--gold); }
+  #loginBox input:focus { border-color:#3f6b10; }
   #loginBox button {
     width: 100%;
     padding: 14px;
@@ -281,13 +283,13 @@
     overflow: hidden;
   }
   .stat-card.featured {
-    border-color: rgba(250, 204, 21, 0.35);
+    border-color: rgba(150,200,30,0.35);
     background: linear-gradient(145deg, #0e1a38 0%, #172a56 100%);
   }
   .stat-card .num {
     font-size: 24px;
     font-weight: 900;
-    color: var(--gold);
+    color:#3f6b10;
     letter-spacing: -0.03em;
   }
   .stat-card .label {
@@ -324,7 +326,7 @@
     align-items: center;
     gap: 10px;
   }
-  .card-title i { color: var(--gold); }
+  .card-title i { color:#3f6b10; }
   .card-sub {
     font-size: 12.5px;
     color: var(--text-muted);
@@ -362,7 +364,7 @@
     transition: border-color .15s;
     font-family: inherit;
   }
-  .form-control:focus { border-color: var(--gold); }
+  .form-control:focus { border-color:#3f6b10; }
   .form-hint { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
   /* Tables */
@@ -384,14 +386,14 @@
     white-space: nowrap;
   }
   th {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(13,43,44,0.06);
     font-weight: 800;
-    color: var(--gold);
+    color:#3f6b10;
     font-size: 11.5px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
-  tr:hover { background: rgba(255, 255, 255, 0.02); }
+  tr:hover { background: rgba(13,43,44,0.06); }
 
   /* Badges & Tags */
   .tag {
@@ -403,12 +405,12 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
-  .tag-active { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
-  .tag-suspended { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-  .tag-plan-free { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
-  .tag-plan-core { background: rgba(250, 204, 21, 0.15); color: var(--gold); border: 1px solid rgba(250, 204, 21, 0.3); }
+  .tag-active { background: rgba(34, 197, 94, 0.15); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.3); }
+  .tag-suspended { background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3); }
+  .tag-plan-free { background: rgba(148, 163, 184, 0.15); color: #3f5754; border: 1px solid rgba(148, 163, 184, 0.4); }
+  .tag-plan-core { background: rgba(150,200,30,0.15); color:#3f6b10; border: 1px solid rgba(150,200,30,0.3); }
   .tag-plan-control { background: rgba(56, 189, 248, 0.15); color: var(--blue); border: 1px solid rgba(56, 189, 248, 0.3); }
-  .tag-churn { background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+  .tag-churn { background: rgba(239, 68, 68, 0.18); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.4); }
 
   /* Buttons - Balanced, Sleek & Modern */
   .btn-primary {
@@ -425,15 +427,15 @@
     align-items: center;
     gap: 6px;
     line-height: 1.2;
-    box-shadow: 0 2px 8px rgba(250, 204, 21, 0.2);
+    box-shadow: 0 2px 8px rgba(150,200,30,0.2);
   }
   .btn-primary:hover {
     background: var(--gold-light);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(250, 204, 21, 0.3);
+    box-shadow: 0 4px 12px rgba(150,200,30,0.3);
   }
   .btn-secondary {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(13,43,44,0.06);
     color: var(--text);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 999px;
@@ -449,7 +451,7 @@
   }
   .btn-secondary:hover {
     border-color: rgba(255, 255, 255, 0.28);
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(13,43,44,0.06);
     transform: translateY(-1px);
   }
   .actions button {
@@ -467,13 +469,13 @@
     line-height: 1.2;
   }
   .actions button:hover { transform: translateY(-1px); }
-  .btn-view { background: var(--card); color: var(--gold); border: 1px solid rgba(250, 204, 21, 0.3) !important; }
+  .btn-view { background: var(--card); color:#3f6b10; border: 1px solid rgba(150,200,30,0.3) !important; }
   .btn-plan { background: rgba(56, 189, 248, 0.2); color: var(--blue); border: 1px solid rgba(56, 189, 248, 0.4) !important; }
-  .btn-support { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4) !important; }
-  .btn-invoice { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4) !important; }
+  .btn-support { background: rgba(168, 85, 247, 0.2); color: #7c3aed; border: 1px solid rgba(168, 85, 247, 0.4) !important; }
+  .btn-invoice { background: rgba(34, 197, 94, 0.2); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.4) !important; }
   .btn-suspend { background: #dc2626; color: #fff; }
   .btn-reactivate { background: #16a34a; color: #fff; }
-  .btn-delete { background: rgba(220, 38, 38, 0.2); color: #f87171; border: 1px solid #dc2626 !important; }
+  .btn-delete { background: rgba(220, 38, 38, 0.2); color: #dc2626; border: 1px solid #dc2626 !important; }
 
   /* AI Assistant Styles */
   .ai-layout {
@@ -500,7 +502,7 @@
     gap: 8px;
   }
   .ai-prompt-chip {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(13,43,44,0.06);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 7px 11px;
@@ -515,9 +517,9 @@
     gap: 8px;
   }
   .ai-prompt-chip:hover {
-    background: rgba(250, 204, 21, 0.1);
-    border-color: rgba(250, 204, 21, 0.3);
-    color: var(--gold);
+    background: rgba(150,200,30,0.1);
+    border-color: rgba(150,200,30,0.3);
+    color:#3f6b10;
     transform: translateX(2px);
   }
   .ai-chat-window {
@@ -529,7 +531,7 @@
     overflow: hidden;
   }
   .ai-chat-header {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(13,43,44,0.06);
     border-bottom: 1px solid var(--border);
     padding: 12px 18px;
     display: flex;
@@ -552,7 +554,7 @@
     line-height: 1.5;
   }
   .ai-bubble.user {
-    background: #1e3a8a;
+    background: #0d2b2c;
     color: #fff;
     align-self: flex-end;
     border-bottom-right-radius: 4px;
@@ -564,12 +566,12 @@
     align-self: flex-start;
     border-bottom-left-radius: 4px;
   }
-  .ai-bubble.bot strong { color: var(--gold); }
+  .ai-bubble.bot strong { color:#3f6b10; }
   .ai-bubble.bot code { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; color: var(--blue); }
   .ai-input-bar {
     padding: 12px 16px;
     border-top: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.01);
+    background: rgba(13,43,44,0.06);
     display: flex;
     gap: 10px;
   }
@@ -583,7 +585,7 @@
     font-size: 13.5px;
     outline: none;
   }
-  .ai-input-bar input:focus { border-color: var(--gold); }
+  .ai-input-bar input:focus { border-color:#3f6b10; }
 
   /* Graphs Grid - Responsive, Compact & Fit to Screen */
   .graphs-grid {
@@ -613,7 +615,7 @@
     margin: 0 0 10px;
     font-size: 13px;
     font-weight: 700;
-    color: var(--gold);
+    color:#3f6b10;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -659,9 +661,9 @@
     border-radius: 999px;
     text-transform: uppercase;
   }
-  .diag-pass { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
-  .diag-warn { background: rgba(250, 204, 21, 0.15); color: var(--gold); border: 1px solid rgba(250, 204, 21, 0.3); }
-  .diag-fail { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+  .diag-pass { background: rgba(34, 197, 94, 0.15); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.3); }
+  .diag-warn { background: rgba(150,200,30,0.15); color:#3f6b10; border: 1px solid rgba(150,200,30,0.3); }
+  .diag-fail { background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3); }
 
   /* Modals */
   .modal-overlay {
@@ -685,9 +687,9 @@
     width: 100%;
     max-height: 85vh;
     overflow-y: auto;
-    box-shadow: 0 25px 60px -15px rgba(0,0,0,0.8);
+    box-shadow: 0 25px 60px -15px rgba(13,43,44,0.35);
   }
-  .modal-box h3 { margin-top: 0; font-weight: 800; color: var(--gold); font-size: 18px; }
+  .modal-box h3 { margin-top: 0; font-weight: 800; color:#3f6b10; font-size: 18px; }
 
   /* Toast Notification */
   .toast {
@@ -696,8 +698,8 @@
     left: 50%;
     transform: translateX(-50%);
     background: #0f1e40;
-    border: 1px solid rgba(250, 204, 21, 0.4);
-    color: var(--gold);
+    border: 1px solid rgba(150,200,30,0.4);
+    color:#3f6b10;
     padding: 12px 26px;
     border-radius: 999px;
     font-size: 13px;
@@ -715,6 +717,35 @@
     #printableInvoiceArea, #printableInvoiceArea * { visibility: visible; }
     #printableInvoiceArea { position: absolute; left: 0; top: 0; width: 100%; background: #fff !important; color: #000 !important; }
   }
+
+  /* ===== Clay Light theme (matches the main site) ===== */
+  body {
+    background:
+      radial-gradient(520px 520px at 4% 2%, rgba(201,241,90,.50), transparent 70%),
+      radial-gradient(640px 640px at 98% 14%, rgba(120,200,180,.36), transparent 70%),
+      radial-gradient(560px 560px at 30% 100%, rgba(201,241,90,.30), transparent 70%),
+      #eef1f0;
+    background-attachment: fixed;
+    font-family: 'Plus Jakarta Sans', 'Instrument Sans', -apple-system, sans-serif;
+  }
+  .stat-card, .admin-card, .chart-box, .diag-item, .ai-sidebar, .ai-chat-window, .modal-box, .table-responsive {
+    background: var(--card) !important; border: 0 !important; box-shadow: var(--clay-out) !important; border-radius: 22px;
+  }
+  .stat-card.featured { background: linear-gradient(145deg,#dcf79a,#c9f15a) !important; color: #0d2b2c; }
+  .stat-card.featured .label, .stat-card.featured .num { color: #0d2b2c !important; }
+  .form-control, .ai-input-bar input, select, input[type="text"], input[type="email"], input[type="number"], input[type="password"], textarea {
+    background: #eef1f0 !important; color: var(--text) !important; border: 0 !important; box-shadow: var(--clay-in) !important; border-radius: 14px;
+  }
+  .btn-primary { background: linear-gradient(145deg,#dcf79a,#c9f15a) !important; color: #0d2b2c !important; border: 0 !important; box-shadow: 6px 6px 14px rgba(30,60,55,.15), -4px -4px 10px rgba(255,255,255,.95); border-radius: 14px; }
+  .btn-secondary, .actions button { background: #f7f9f8 !important; color: var(--text) !important; border: 0 !important; box-shadow: 4px 4px 10px rgba(30,60,55,.10), -3px -3px 8px rgba(255,255,255,.95); border-radius: 12px; }
+  .admin-nav { background: transparent !important; border: 0 !important; }
+  .admin-nav-btn { background: #f7f9f8 !important; color: var(--text) !important; border: 0 !important; box-shadow: 4px 4px 10px rgba(30,60,55,.10), -3px -3px 8px rgba(255,255,255,.95); border-radius: 14px; }
+  .admin-nav-btn.active { background: linear-gradient(145deg,#dcf79a,#c9f15a) !important; color: #0d2b2c !important; box-shadow: var(--clay-in) !important; }
+  .admin-nav-btn.active i { color: #0d2b2c !important; }
+  th { color: var(--text-muted) !important; }
+  .btn-suspend, .btn-reactivate { color: #fff !important; }
+  .toast { background: #0d2b2c !important; color: #fff !important; }
+  .modal-overlay { background: rgba(13,43,44,.45) !important; }
 </style>
 </head>
 <body>
@@ -731,9 +762,9 @@
   <input type="text" id="pcEmail" placeholder="admin@dogopos.com">
   <input type="password" id="pcPassword" placeholder="Password">
   <button onclick="platformLogin()">Sign In to Console</button>
-  <div style="text-align:center; margin-top:10px;"><a href="#" onclick="adminForgot(); return false;" style="font-size:13px; color:var(--gold);">Forgot password?</a></div>
+  <div style="text-align:center; margin-top:10px;"><a href="#" onclick="adminForgot(); return false;" style="font-size:13px; color:#3f6b10;">Forgot password?</a></div>
   <div id="loginError"></div>
-  <div id="loginInfoMsg" style="color:#4ade80; font-size:13px; font-weight:600; margin-top:10px; text-align:center;"></div>
+  <div id="loginInfoMsg" style="color:#15803d; font-size:13px; font-weight:600; margin-top:10px; text-align:center;"></div>
   <div id="adminResetBox" style="display:none; margin-top:14px; border-top:1px solid var(--border); padding-top:14px;">
     <div style="font-weight:800; margin-bottom:6px;">Choose a new password</div>
     <input type="password" id="adminNewPw" placeholder="New password (8+ chars, Aa1)">
@@ -841,16 +872,16 @@
             <i class="fa-solid fa-robot"></i> AI Copilot
           </button>
           <button class="btn-secondary" onclick="switchAdminTab('graphs')">
-            <i class="fa-solid fa-arrow-trend-up" style="color:var(--gold);"></i> Growth Trends
+            <i class="fa-solid fa-arrow-trend-up" style="color:#3f6b10;"></i> Growth Trends
           </button>
           <button class="btn-secondary" onclick="switchAdminTab('health')">
-            <i class="fa-solid fa-shield-virus" style="color:#4ade80;"></i> Diagnostics
+            <i class="fa-solid fa-shield-virus" style="color:#15803d;"></i> Diagnostics
           </button>
           <button class="btn-secondary" onclick="switchAdminTab('payouts')">
             <i class="fa-solid fa-wallet" style="color:var(--blue);"></i> Payouts
           </button>
           <button class="btn-secondary" onclick="switchAdminTab('backup')">
-            <i class="fa-solid fa-file-export" style="color:#c084fc;"></i> Export Data
+            <i class="fa-solid fa-file-export" style="color:#7c3aed;"></i> Export Data
           </button>
         </div>
       </div>
@@ -918,17 +949,17 @@
           <!-- AI Context & Shortcut Prompts -->
           <div class="ai-sidebar">
             <div>
-              <span style="font-size:11px; font-weight:800; color:var(--gold); text-transform:uppercase; letter-spacing:0.05em;">Live Knowledge Engine</span>
+              <span style="font-size:11px; font-weight:800; color:#3f6b10; text-transform:uppercase; letter-spacing:0.05em;">Live Knowledge Engine</span>
               <p style="font-size:12px; color:var(--text-muted); margin:4px 0 0;">Every question is answered by a real AI using a fresh read of your live platform data (stores, sales, subscriptions, security signals). It is read-only.</p>
             </div>
 
             <div class="ai-chip-list">
               <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Quick Analytical Prompts</span>
               <button class="ai-prompt-chip" onclick="sendAiPrompt('Who signed up recently and needs a follow-up call or WhatsApp today? Give me a prioritised list.')">
-                <i class="fa-solid fa-address-book" style="color:var(--gold);"></i> Who should I contact today?
+                <i class="fa-solid fa-address-book" style="color:#3f6b10;"></i> Who should I contact today?
               </button>
               <button class="ai-prompt-chip" onclick="sendAiPrompt('Analyze our platform growth, MRR, and subscription health.')">
-                <i class="fa-solid fa-chart-pie" style="color:var(--gold);"></i> Platform Growth &amp; MRR
+                <i class="fa-solid fa-chart-pie" style="color:#3f6b10;"></i> Platform Growth &amp; MRR
               </button>
               <button class="ai-prompt-chip" onclick="sendAiPrompt('Detect which stores are inactive or at risk of churn.')">
                 <i class="fa-solid fa-triangle-exclamation" style="color:var(--red);"></i> Detect At-Risk Stores
@@ -1045,7 +1076,7 @@
         <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px 22px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
           <div>
             <div style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Overall System Health</div>
-            <div style="font-size:24px; font-weight:900; color:#4ade80;" id="diagOverallScore">99% Operational</div>
+            <div style="font-size:24px; font-weight:900; color:#15803d;" id="diagOverallScore">99% Operational</div>
             <div style="font-size:12.5px; color:var(--text-muted);" id="diagLastChecked">Last checked: Just now</div>
           </div>
           <div style="display:flex; gap:10px;">
@@ -1055,7 +1086,7 @@
         </div>
 
         <!-- Diagnostics Grid -->
-        <h4 style="color:var(--gold); font-size:14px; margin:0 0 12px;"><i class="fa-solid fa-heart-pulse"></i> Infrastructure Health</h4>
+        <h4 style="color:#3f6b10; font-size:14px; margin:0 0 12px;"><i class="fa-solid fa-heart-pulse"></i> Infrastructure Health</h4>
         <div class="diagnostics-grid">
           <div class="diag-item">
             <div class="diag-info">
@@ -1154,7 +1185,7 @@
             <button class="btn-secondary" onclick="loadDashboard()"><i class="fa-solid fa-rotate"></i> Refresh</button>
           </div>
         </div>
-        <div id="clientsBanner" style="display:none; font-size:12.5px; margin:0 0 10px; padding:8px 12px; border-radius:10px; background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.35);"></div>
+        <div id="clientsBanner" style="display:none; font-size:12.5px; margin:0 0 10px; padding:8px 12px; border-radius:10px; background:rgba(217,119,6,.12); border:1px solid rgba(217,119,6,.35);"></div>
         <div id="clientStats" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;"></div>
         <div class="search-filter-bar">
           <input type="text" id="clientSearch" class="form-control" placeholder="Search name, owner, phone, email, location…" oninput="renderClients()">
@@ -1207,7 +1238,7 @@
             <button class="btn-secondary" onclick="loadDashboard()"><i class="fa-solid fa-rotate"></i> Refresh</button>
           </div>
         </div>
-        <div id="contactsBanner" style="display:none; font-size:12.5px; margin:0 0 10px; padding:8px 12px; border-radius:10px; background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.35);"></div>
+        <div id="contactsBanner" style="display:none; font-size:12.5px; margin:0 0 10px; padding:8px 12px; border-radius:10px; background:rgba(217,119,6,.12); border:1px solid rgba(217,119,6,.35);"></div>
 
         <div class="search-filter-bar">
           <input type="text" id="bizSearchInput" class="form-control" placeholder="Search by business name or ID..." oninput="filterBusinesses()">
@@ -1281,7 +1312,7 @@
           </div>
         </div>
 
-        <h4 style="color:var(--gold); margin:20px 0 10px; font-size:14px; font-weight:800;">
+        <h4 style="color:#3f6b10; margin:20px 0 10px; font-size:14px; font-weight:800;">
           <i class="fa-solid fa-hourglass-half"></i> Pending M-Pesa Verifications
         </h4>
         <div class="table-responsive" style="margin-bottom:24px;">
@@ -1346,7 +1377,7 @@
         </div>
 
         <!-- M-Pesa Settings -->
-        <h4 style="color:var(--gold); font-size:14px; font-weight:800; margin:16px 0 10px;">
+        <h4 style="color:#3f6b10; font-size:14px; font-weight:800; margin:16px 0 10px;">
           <i class="fa-solid fa-mobile-screen"></i> Safaricom M-Pesa Receiving Options
         </h4>
         <div class="form-grid">
@@ -1403,7 +1434,7 @@
         </div>
 
         <!-- Bank Account -->
-        <h4 style="color:var(--gold); font-size:14px; font-weight:800; margin:22px 0 10px;">
+        <h4 style="color:#3f6b10; font-size:14px; font-weight:800; margin:22px 0 10px;">
           <i class="fa-solid fa-building-columns"></i> Bank Account Payout Details
         </h4>
         <div class="form-grid">
@@ -1422,7 +1453,7 @@
         </div>
 
         <!-- Paystack Kenya -->
-        <h4 style="color:var(--gold); font-size:14px; font-weight:800; margin:22px 0 10px;">
+        <h4 style="color:#3f6b10; font-size:14px; font-weight:800; margin:22px 0 10px;">
           <i class="fa-solid fa-credit-card"></i> Paystack Kenya (Cards &amp; Bank Settlements)
         </h4>
         <div class="form-grid">
@@ -1437,8 +1468,8 @@
         </div>
 
         <!-- Telegram & WhatsApp Live Alerts Engine -->
-        <h4 style="color:var(--gold); font-size:14px; font-weight:800; margin:22px 0 10px; display:flex; align-items:center; gap:8px;">
-          <i class="fa-brands fa-telegram" style="color:#38bdf8;"></i> Telegram &amp; WhatsApp Live Alerts &amp; Remote Control
+        <h4 style="color:#3f6b10; font-size:14px; font-weight:800; margin:22px 0 10px; display:flex; align-items:center; gap:8px;">
+          <i class="fa-brands fa-telegram" style="color:#0369a1;"></i> Telegram &amp; WhatsApp Live Alerts &amp; Remote Control
         </h4>
         <div style="background:rgba(56, 189, 248, 0.05); border:1px solid rgba(56, 189, 248, 0.2); border-radius:14px; padding:16px; margin-bottom:16px;">
           <div class="form-grid">
@@ -1455,7 +1486,7 @@
                   <i class="fa-solid fa-radar"></i> Auto-Detect
                 </button>
               </div>
-              <span class="form-hint">Tip: Message <strong>/start</strong> to <a href="https://t.me/DogoPOSbot" target="_blank" style="color:var(--gold); font-weight:700;">@DogoPOSbot</a> on Telegram, then tap <em>Auto-Detect</em>!</span>
+              <span class="form-hint">Tip: Message <strong>/start</strong> to <a href="https://t.me/DogoPOSbot" target="_blank" style="color:#3f6b10; font-weight:700;">@DogoPOSbot</a> on Telegram, then tap <em>Auto-Detect</em>!</span>
             </div>
             <div class="form-group">
               <label><i class="fa-brands fa-whatsapp"></i> Admin WhatsApp Number</label>
@@ -1469,13 +1500,13 @@
               <i class="fa-brands fa-telegram"></i> Send Test Notification to Telegram
             </button>
             <button type="button" class="btn-secondary" onclick="toggleTelegramBotListener()">
-              <i class="fa-solid fa-satellite-dish" id="tgListenerIcon" style="color:#4ade80;"></i> <span id="tgListenerStatusText">Bot Remote Control: Active</span>
+              <i class="fa-solid fa-satellite-dish" id="tgListenerIcon" style="color:#15803d;"></i> <span id="tgListenerStatusText">Bot Remote Control: Active</span>
             </button>
           </div>
 
           <!-- Telegram Bot Command Cheatsheet -->
-          <div style="margin-top:14px; padding-top:12px; border-top:1px dashed rgba(255,255,255,0.08); font-size:12px; color:var(--text-muted); display:flex; flex-wrap:wrap; gap:14px;">
-            <span><strong style="color:var(--gold);">Available Bot Commands on Telegram:</strong></span>
+          <div style="margin-top:14px; padding-top:12px; border-top:1px dashed rgba(13,43,44,0.06); font-size:12px; color:var(--text-muted); display:flex; flex-wrap:wrap; gap:14px;">
+            <span><strong style="color:#3f6b10;">Available Bot Commands on Telegram:</strong></span>
             <span><code>/stats</code> Live stores, paid subs, MRR</span>
             <span><code>/mrr</code> Recurring revenue breakdown</span>
             <span><code>/stores</code> Recent merchant list</span>
@@ -1485,7 +1516,7 @@
         </div>
 
         <!-- Plans & Pricing (plan_definitions table) -->
-        <h4 style="color:var(--gold); font-size:14px; font-weight:800; margin:22px 0 4px;">
+        <h4 style="color:#3f6b10; font-size:14px; font-weight:800; margin:22px 0 4px;">
           <i class="fa-solid fa-tags"></i> Plans, Pricing &amp; Features
         </h4>
         <p class="card-sub" style="margin:0 0 12px;">Changes appear on the public pricing page, signup, upgrade screen and plan limits. Leave a limit blank for unlimited. Tellers are staff on top of the owner.</p>
@@ -1595,7 +1626,7 @@
         <div id="landingCmsInfo" class="card-sub" style="margin-bottom:12px;">Loading…</div>
         <iframe id="landingEditorFrame" title="Landing page editor" style="width:100%; height:calc(100vh - 300px); min-height:520px; border:1px solid rgba(148,163,184,.35); border-radius:14px; background:#fff;"></iframe>
         <div style="margin-top:14px;">
-          <button class="btn-secondary" onclick="resetLandingCms()" style="color:#f87171;"><i class="fa-solid fa-rotate-left"></i> Reset landing page to original</button>
+          <button class="btn-secondary" onclick="resetLandingCms()" style="color:#dc2626;"><i class="fa-solid fa-rotate-left"></i> Reset landing page to original</button>
         </div>
         <p class="card-sub" style="margin-top:14px;">Prices, plan names and plan bullet points are edited under Settings → Plans, Pricing &amp; Features.</p>
       </div>
@@ -1640,7 +1671,7 @@
         </div>
 
         <h4 style="color:var(--text); font-size:13px; margin:16px 0 8px; font-weight:800;">Live Preview:</h4>
-        <div id="broadcastPreviewBox" style="padding:12px 16px; border-radius:12px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); color:#38bdf8;">
+        <div id="broadcastPreviewBox" style="padding:12px 16px; border-radius:12px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); color:#0369a1;">
           <strong id="previewTitle">Headline</strong>: <span id="previewMsg">Message preview...</span>
         </div>
       </div>
@@ -1671,7 +1702,7 @@
           </table>
         </div>
         <div style="margin-top:18px;">
-          <h4 style="font-size:13.5px; margin:0 0 8px; color:var(--gold);">Promote New Super Admin</h4>
+          <h4 style="font-size:13.5px; margin:0 0 8px; color:#3f6b10;">Promote New Super Admin</h4>
           <div style="display:flex; gap:8px; max-width:460px;">
             <input type="text" id="newAdminEmail" class="form-control" placeholder="User email">
             <button class="btn-primary" onclick="promoteAdmin()">Promote</button>
@@ -1847,7 +1878,7 @@
           <p style="margin:2px 0 0; font-size:12px; color:#475569;">PIN: <strong>P051892301A</strong> (eTIMS Registered)</p>
         </div>
         <div style="text-align:right;">
-          <span style="font-size:11px; font-weight:800; background:#facc15; padding:3px 10px; border-radius:999px; text-transform:uppercase;">Official Receipt</span>
+          <span style="font-size:11px; font-weight:800; background:#4d7c0f; padding:3px 10px; border-radius:999px; text-transform:uppercase;">Official Receipt</span>
           <div style="font-size:13px; font-weight:800; margin-top:6px;" id="invNumber">INV-84920</div>
           <div style="font-size:12px; color:#64748b;" id="invDate">Date: 2026-09-23</div>
         </div>
@@ -2048,8 +2079,8 @@ async function adminSetNewPassword() {
 async function saveVerifyToggle(on) {
   const msg = document.getElementById('reqVerifyMsg');
   const { error } = await sb.from('platform_settings').update({ require_email_verification: !!on }).eq('id', true);
-  if (error) { msg.style.color = '#f87171'; msg.textContent = 'Could not save: ' + error.message; document.getElementById('reqVerifyToggle').checked = !on; return; }
-  msg.style.color = '#4ade80'; msg.textContent = on ? 'ON — new signups must verify their email.' : 'OFF — new signups are active immediately.';
+  if (error) { msg.style.color = '#dc2626'; msg.textContent = 'Could not save: ' + error.message; document.getElementById('reqVerifyToggle').checked = !on; return; }
+  msg.style.color = '#15803d'; msg.textContent = on ? 'ON — new signups must verify their email.' : 'OFF — new signups are active immediately.';
 }
 
 async function platformLogin() {
@@ -2123,11 +2154,11 @@ async function loadDashboard() {
         <div class="label">Total Businesses</div>
       </div>
       <div class="stat-card">
-        <div class="num" style="color:#4ade80;">${stats.active_businesses}</div>
+        <div class="num" style="color:#15803d;">${stats.active_businesses}</div>
         <div class="label">Active Stores</div>
       </div>
       <div class="stat-card">
-        <div class="num" style="color:#f87171;">${stats.suspended_businesses}</div>
+        <div class="num" style="color:#dc2626;">${stats.suspended_businesses}</div>
         <div class="label">Suspended</div>
       </div>
       <div class="stat-card">
@@ -2174,14 +2205,14 @@ async function loadDashboard() {
       return `
       <tr>
         <td><strong>${escapeHtml(a.email)}</strong></td>
-        <td>${a.is_primary_owner ? '<span style="color:var(--gold); font-weight:800;">⭐ Primary Owner</span>' : 'Admin'}</td>
+        <td>${a.is_primary_owner ? '<span style="color:#3f6b10; font-weight:800;">⭐ Primary Owner</span>' : 'Admin'}</td>
         <td class="actions">
           ${a.is_primary_owner
-            ? '<span style="color:#888; font-size:12px;">Protected</span>'
+            ? '<span style="color:#6b7f7b; font-size:12px;">Protected</span>'
             : `<button class="btn-delete" onclick="demoteAdmin('${a.user_id}')"><i class="fa-solid fa-trash"></i> Remove</button>`}
         </td>
       </tr>`;
-    }).join('') || '<tr><td colspan="3" style="text-align:center; color:#888;">No super admins found.</td></tr>';
+    }).join('') || '<tr><td colspan="3" style="text-align:center; color:#6b7f7b;">No super admins found.</td></tr>';
   }
 
   // 4. Audit Log
@@ -2192,9 +2223,9 @@ async function loadDashboard() {
         <td>${new Date(a.created_at).toLocaleString()}</td>
         <td>${a.business_id ? `<span style="font-family:monospace; font-size:12px;">${a.business_id.substring(0,8)}...</span>` : '—'}</td>
         <td><strong>${escapeHtml(a.action)}</strong></td>
-        <td><span class="tag" style="background:rgba(255,255,255,0.06);">${escapeHtml(a.actor_role || 'system')}</span></td>
+        <td><span class="tag" style="background:rgba(13,43,44,0.06);">${escapeHtml(a.actor_role || 'system')}</span></td>
       </tr>
-    `).join('') || '<tr><td colspan="4" style="text-align:center; color:#888;">No activity logged yet.</td></tr>';
+    `).join('') || '<tr><td colspan="4" style="text-align:center; color:#6b7f7b;">No activity logged yet.</td></tr>';
   }
 
   // Start Telegram bot listener for live admin commands & auto-detect
@@ -2215,7 +2246,7 @@ function renderBusinessesTable(list) {
   if (!tbody) return;
 
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#888; padding:32px;">No businesses match filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#6b7f7b; padding:32px;">No businesses match filters.</td></tr>';
     return;
   }
 
@@ -2230,10 +2261,10 @@ function renderBusinessesTable(list) {
       <tr>
         <td><strong>${escapeHtml(b.name)}</strong>${isNewBiz(b) ? ' <span class="tag tag-active" style="font-size:10px;">NEW</span>' : ''}</td>
         <td>${contactCell(b.id)}</td>
-        <td><span class="tag" style="background:rgba(255,255,255,0.07); color:#e2e8f0;">${escapeHtml(b.business_type || 'Retail')}</span></td>
+        <td><span class="tag" style="background:rgba(13,43,44,0.07); color:#3f5754;">${escapeHtml(b.business_type || 'Retail')}</span></td>
         <td><span class="tag ${b.active ? 'tag-active' : 'tag-suspended'}">${b.active ? 'Active' : 'Suspended'}</span></td>
         <td><span class="tag ${planTagClass}">${escapeHtml(planInfo.plan)}</span></td>
-        <td>${seenLine(b.id)}${isAtRisk ? '<span class="tag tag-churn"><i class="fa-solid fa-triangle-exclamation"></i> At Risk</span>' : '<span style="color:#4ade80; font-size:12px;"><i class="fa-solid fa-circle-check"></i> Healthy</span>'}</td>
+        <td>${seenLine(b.id)}${isAtRisk ? '<span class="tag tag-churn"><i class="fa-solid fa-triangle-exclamation"></i> At Risk</span>' : '<span style="color:#15803d; font-size:12px;"><i class="fa-solid fa-circle-check"></i> Healthy</span>'}</td>
         <td>${b.profiles?.[0]?.count ?? '—'}</td>
         <td class="actions">
           <button class="btn-support" onclick="supportImpersonateBiz('${b.id}', '${escapeHtml(b.name).replace(/'/g,"")}')"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Till</button>
@@ -2332,7 +2363,7 @@ async function renderSubscriptionsViews(businesses) {
   const pBody = document.getElementById('pendingSubsBody');
   if (pBody) {
     pBody.innerHTML = pendingList.length === 0
-      ? '<tr><td colspan="7" style="text-align:center; color:#888; padding:20px;">No pending payment verifications.</td></tr>'
+      ? '<tr><td colspan="7" style="text-align:center; color:#6b7f7b; padding:20px;">No pending payment verifications.</td></tr>'
       : pendingList.map(item => `
         <tr>
           <td>${new Date(item.created_at).toLocaleDateString()}</td>
@@ -2340,7 +2371,7 @@ async function renderSubscriptionsViews(businesses) {
           <td><span class="tag tag-plan-${item.plan.toLowerCase().replace(/\s+/g,'-')}">${escapeHtml(item.plan)}</span></td>
           <td>${contactCell(item.business_id, item.phone)}</td>
           <td><strong>KES ${Number(item.amount || 0).toLocaleString()}</strong></td>
-          <td><span style="font-family:monospace; background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:6px; color:var(--gold);">${escapeHtml(item.mpesa_code)}</span></td>
+          <td><span style="font-family:monospace; background:rgba(13,43,44,0.06); padding:2px 8px; border-radius:6px; color:#3f6b10;">${escapeHtml(item.mpesa_code)}</span></td>
           <td class="actions">
             <button class="btn-reactivate" onclick="approveSubscriptionPayment('${item.id}')"><i class="fa-solid fa-check"></i> Approve</button>
             <button class="btn-delete" onclick="rejectSubscriptionPayment('${item.id}')"><i class="fa-solid fa-xmark"></i></button>
@@ -3020,12 +3051,12 @@ function toggleTelegramBotListener() {
   const iconEl = document.getElementById('tgListenerIcon');
   if (isTelegramPollingActive) {
     if (textEl) textEl.textContent = 'Bot Remote Control: Active';
-    if (iconEl) iconEl.style.color = '#4ade80';
+    if (iconEl) iconEl.style.color = '#15803d';
     showToast('Telegram Bot live polling activated');
     startTelegramBotListener();
   } else {
     if (textEl) textEl.textContent = 'Bot Remote Control: Paused';
-    if (iconEl) iconEl.style.color = '#f87171';
+    if (iconEl) iconEl.style.color = '#dc2626';
     showToast('Telegram Bot live polling paused');
   }
 }
@@ -3107,8 +3138,8 @@ function submitAiMessage() {
       const notSet = res && (res.code === 'ai_not_configured' || res.code === 'ai_disabled');
       const offline = generateAiSystemResponse(text);
       botDiv.innerHTML = (notSet
-        ? '<div style="font-size:12px; color:var(--gold); margin-bottom:8px;"><i class="fa-solid fa-circle-info"></i> No AI is connected yet, so this is the built-in offline fallback (fixed answers). Open <strong>AI settings</strong> above, paste a free key and switch AI on for real conversations.</div>'
-        : '<div style="font-size:12px; color:#f87171; margin-bottom:8px;"><i class="fa-solid fa-triangle-exclamation"></i> The AI could not answer: ' + escapeHtml((res && res.error) || 'unknown error') + '. Showing the built-in offline fallback.</div>') + offline;
+        ? '<div style="font-size:12px; color:#3f6b10; margin-bottom:8px;"><i class="fa-solid fa-circle-info"></i> No AI is connected yet, so this is the built-in offline fallback (fixed answers). Open <strong>AI settings</strong> above, paste a free key and switch AI on for real conversations.</div>'
+        : '<div style="font-size:12px; color:#dc2626; margin-bottom:8px;"><i class="fa-solid fa-triangle-exclamation"></i> The AI could not answer: ' + escapeHtml((res && res.error) || 'unknown error') + '. Showing the built-in offline fallback.</div>') + offline;
     }
     body.scrollTop = body.scrollHeight;
   });
@@ -3177,8 +3208,8 @@ async function testAiConnection() {
   if (msg) msg.textContent = 'Testing…';
   const r = await aiCall([{ role: 'user', content: 'Reply with one short sentence confirming you are connected, and state how many businesses are on the platform.' }], 'manager');
   if (msg) msg.innerHTML = r.reply
-    ? '<span style="color:#4ade80;">✔ Working ('+ escapeHtml(r.provider + ' / ' + r.model) +'):</span> ' + escapeHtml(r.reply)
-    : '<span style="color:#f87171;">✖ ' + escapeHtml(r.error || 'failed') + '</span>' + (r.code === 'ai_not_configured' ? ' — tick "AI switched on" and paste a key.' : '');
+    ? '<span style="color:#15803d;">✔ Working ('+ escapeHtml(r.provider + ' / ' + r.model) +'):</span> ' + escapeHtml(r.reply)
+    : '<span style="color:#dc2626;">✖ ' + escapeHtml(r.error || 'failed') + '</span>' + (r.code === 'ai_not_configured' ? ' — tick "AI switched on" and paste a key.' : '');
 }
 
 async function clearAiKey() {
@@ -3212,7 +3243,7 @@ function seenLine(id) {
   const r = seenById[id];
   if (!r || !r.last_seen_at) return '<div style="font-size:11.5px; color:var(--text-muted);"><i class="fa-solid fa-circle" style="font-size:7px; color:#64748b;"></i> never opened since tracking began</div>';
   const days = (Date.now() - new Date(r.last_seen_at).getTime()) / 864e5;
-  const col = days < 1 ? '#4ade80' : (days < 7 ? '#facc15' : '#f87171');
+  const col = days < 1 ? '#15803d' : (days < 7 ? '#4d7c0f' : '#dc2626');
   const where = r.last_seen_platform === 'android' ? 'Android app' : r.last_seen_platform === 'windows' ? 'Windows app' : r.last_seen_platform === 'ios' ? 'iOS app' : 'Web';
   return `<div style="font-size:12px;" title="${escapeHtml(new Date(r.last_seen_at).toLocaleString())}"><i class="fa-solid fa-circle" style="font-size:7px; color:${col};"></i> <strong>Last used ${ago(r.last_seen_at)}</strong></div>
     <div style="font-size:11.5px; color:var(--text-muted);">${escapeHtml(r.last_user || '')}${r.last_user ? ' · ' : ''}${where} · ${r.users_active_7d}/${r.users_total} users this week</div>`;
@@ -3249,7 +3280,7 @@ function contactCell(bizId, fallbackPhone) {
   const name = c.owner_name ? `<div style="font-size:12px; font-weight:700;">${escapeHtml(c.owner_name)}</div>` : '';
   const phoneHtml = phone
     ? `<div style="font-size:12px;"><i class="fa-solid fa-phone" style="opacity:.6"></i> ${escapeHtml(phone)}</div>`
-    : `<div style="font-size:11.5px; color:var(--gold);">no phone yet</div>`;
+    : `<div style="font-size:11.5px; color:#3f6b10;">no phone yet</div>`;
   const emailHtml = email ? `<div style="font-size:11.5px; color:var(--text-muted); word-break:break-all;">${escapeHtml(email)}</div>` : '';
   const btns = `
     <div style="display:flex; gap:4px; margin-top:4px;">
@@ -3376,8 +3407,8 @@ function renderClients() {
     st.innerHTML =
       chip(rows.length, 'clients') +
       chip(rows.filter(r => r.joined && now - new Date(r.joined) < week).length, 'new this week', 'rgba(34,197,94,.18)') +
-      chip(rows.filter(r => r.plan !== 'Free').length, 'paying', 'rgba(250,204,21,.18)') +
-      chip(rows.filter(r => !r.phone).length, 'missing phone', 'rgba(245,158,11,.2)') +
+      chip(rows.filter(r => r.plan !== 'Free').length, 'paying', 'rgba(150,200,30,.18)') +
+      chip(rows.filter(r => !r.phone).length, 'missing phone', 'rgba(217,119,6,.2)') +
       chip(rows.filter(r => !r.contacted).length, 'never contacted', 'rgba(59,130,246,.18)');
   }
   const ncEl = document.getElementById('navClientCount'); if (ncEl) ncEl.textContent = rows.length;
@@ -3402,7 +3433,7 @@ function renderClients() {
     sort === 'contacted' ? (a.contacted ? new Date(a.contacted) : 0) - (b.contacted ? new Date(b.contacted) : 0) :
     new Date(b.joined || 0) - new Date(a.joined || 0));
 
-  if (!list.length) { body.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#888; padding:28px;">No clients match.</td></tr>'; return; }
+  if (!list.length) { body.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#6b7f7b; padding:28px;">No clients match.</td></tr>'; return; }
   const d = v => v ? new Date(v).toLocaleDateString() : '—';
   body.innerHTML = list.map(r => {
     const wa = waNumber(r.phone);
@@ -3417,13 +3448,13 @@ function renderClients() {
       <td><strong>${escapeHtml(r.name)}</strong>${isNew ? ' <span class="tag tag-active" style="font-size:10px;">NEW</span>' : ''}${r.active ? '' : ' <span class="tag tag-suspended" style="font-size:10px;">SUSPENDED</span>'}
         <div style="font-size:11.5px; color:var(--text-muted);">${escapeHtml(r.type)}${r.location ? ' · ' + escapeHtml(r.location) : ''}</div></td>
       <td>${r.owner ? `<div style="font-weight:700; font-size:12.5px;">${escapeHtml(r.owner)}</div>` : ''}
-        ${r.phone ? `<div style="font-size:12.5px;"><i class="fa-solid fa-phone" style="opacity:.6"></i> ${escapeHtml(r.phone)}</div>` : '<div style="font-size:12px; color:var(--gold);">no phone yet</div>'}
+        ${r.phone ? `<div style="font-size:12.5px;"><i class="fa-solid fa-phone" style="opacity:.6"></i> ${escapeHtml(r.phone)}</div>` : '<div style="font-size:12px; color:#3f6b10;">no phone yet</div>'}
         ${r.email ? `<div style="font-size:11.5px; color:var(--text-muted); word-break:break-all;">${escapeHtml(r.email)}</div>` : ''}</td>
       <td><span class="tag ${planTag}">${escapeHtml(r.plan)}</span>
         ${r.renews && r.plan !== 'Free' ? `<div style="font-size:11px; color:var(--text-muted);">renews ${d(r.renews)}</div>` : ''}</td>
       <td style="font-size:12.5px;">${d(r.joined)}</td>
       <td>${activity}</td>
-      <td style="font-size:12px;">${r.contacted ? d(r.contacted) : '<span style="color:var(--gold);">never</span>'}${r.notes ? `<div style="font-size:11px; color:var(--text-muted); max-width:160px;">${escapeHtml(r.notes)}</div>` : ''}</td>
+      <td style="font-size:12px;">${r.contacted ? d(r.contacted) : '<span style="color:#3f6b10;">never</span>'}${r.notes ? `<div style="font-size:11px; color:var(--text-muted); max-width:160px;">${escapeHtml(r.notes)}</div>` : ''}</td>
       <td class="actions"><div style="display:flex; gap:4px; flex-wrap:wrap;">
         ${wa ? `<a href="https://wa.me/${wa}" target="_blank" rel="noopener" class="btn-reactivate" style="padding:4px 9px; text-decoration:none;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
         <a href="tel:+${wa}" class="btn-view" style="padding:4px 9px; text-decoration:none;" title="Call"><i class="fa-solid fa-phone"></i></a>` : ''}
@@ -3608,8 +3639,8 @@ function renderMrrChart() {
 
   // Smooth gold gradient fill
   const gradient = ctx.createLinearGradient(0, 0, 0, 220);
-  gradient.addColorStop(0, 'rgba(250, 204, 21, 0.28)');
-  gradient.addColorStop(1, 'rgba(250, 204, 21, 0.00)');
+  gradient.addColorStop(0, 'rgba(150,200,30,0.28)');
+  gradient.addColorStop(1, 'rgba(150,200,30,0.00)');
 
   chartInstances.mrr = new Chart(ctx, {
     type: 'line',
@@ -3618,12 +3649,12 @@ function renderMrrChart() {
       datasets: [{
         label: 'MRR (KES)',
         data: [0, 999, 1998, 3996, 5994, Math.max(7990, currentMrr)],
-        borderColor: '#facc15',
+        borderColor: '#4d7c0f',
         backgroundColor: gradient,
         borderWidth: 2.5,
         fill: true,
         tension: 0.35,
-        pointBackgroundColor: '#facc15',
+        pointBackgroundColor: '#4d7c0f',
         pointRadius: 4,
         pointHoverRadius: 6
       }]
@@ -3635,9 +3666,9 @@ function renderMrrChart() {
         legend: { display: false },
         tooltip: {
           backgroundColor: '#0f172a',
-          titleColor: '#facc15',
+          titleColor: '#4d7c0f',
           bodyColor: '#f8fafc',
-          borderColor: 'rgba(250, 204, 21, 0.3)',
+          borderColor: 'rgba(150,200,30,0.3)',
           borderWidth: 1,
           padding: 10,
           callbacks: {
@@ -3647,11 +3678,11 @@ function renderMrrChart() {
       },
       scales: {
         x: {
-          grid: { color: 'rgba(255,255,255,0.04)' },
+          grid: { color: 'rgba(13,43,44,0.06)' },
           ticks: { color: '#94a3b8', font: { size: 11 } }
         },
         y: {
-          grid: { color: 'rgba(255,255,255,0.04)' },
+          grid: { color: 'rgba(13,43,44,0.06)' },
           ticks: {
             color: '#94a3b8',
             font: { size: 10.5 },
@@ -3681,9 +3712,9 @@ function renderIndustriesChart() {
       labels: Object.keys(indCounts),
       datasets: [{
         data: Object.values(indCounts).map(v => Math.max(1, v)),
-        backgroundColor: ['#facc15', '#38bdf8', '#22c55e', '#f97316', '#a855f7', '#ec4899', '#94a3b8'],
+        backgroundColor: ['#4d7c0f', '#0369a1', '#22c55e', '#f97316', '#a855f7', '#ec4899', '#94a3b8'],
         borderWidth: 2,
-        borderColor: '#0b1329'
+        borderColor: '#f7f9f8'
       }]
     },
     options: {
@@ -3694,7 +3725,7 @@ function renderIndustriesChart() {
         legend: {
           position: 'right',
           labels: {
-            color: '#cbd5e1',
+            color: '#3f5754',
             boxWidth: 10,
             boxHeight: 10,
             padding: 7,
@@ -3703,7 +3734,7 @@ function renderIndustriesChart() {
         },
         tooltip: {
           backgroundColor: '#0f172a',
-          borderColor: 'rgba(255,255,255,0.1)',
+          borderColor: 'rgba(13,43,44,0.06)',
           borderWidth: 1,
           padding: 8
         }
@@ -3724,7 +3755,7 @@ function renderGmvChart() {
       datasets: [{
         label: 'GMV (KES)',
         data: [18500, 34200, 68900, 114000],
-        backgroundColor: '#38bdf8',
+        backgroundColor: '#0369a1',
         hoverBackgroundColor: '#7dd3fc',
         borderRadius: 6
       }]
@@ -3736,7 +3767,7 @@ function renderGmvChart() {
         legend: { display: false },
         tooltip: {
           backgroundColor: '#0f172a',
-          titleColor: '#38bdf8',
+          titleColor: '#0369a1',
           bodyColor: '#f8fafc',
           borderColor: 'rgba(56, 189, 248, 0.3)',
           borderWidth: 1,
@@ -3749,7 +3780,7 @@ function renderGmvChart() {
       scales: {
         x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } },
         y: {
-          grid: { color: 'rgba(255,255,255,0.04)' },
+          grid: { color: 'rgba(13,43,44,0.06)' },
           ticks: {
             color: '#94a3b8',
             font: { size: 10.5 },
@@ -3774,7 +3805,7 @@ function renderFunnelChart() {
       datasets: [{
         axis: 'y',
         data: [total, Math.round(total * 0.8), Math.round(total * 0.35), Math.round(total * 0.15)],
-        backgroundColor: ['#64748b', '#38bdf8', '#facc15', '#22c55e'],
+        backgroundColor: ['#64748b', '#0369a1', '#4d7c0f', '#22c55e'],
         borderRadius: 6
       }]
     },
@@ -3786,14 +3817,14 @@ function renderFunnelChart() {
         legend: { display: false },
         tooltip: {
           backgroundColor: '#0f172a',
-          borderColor: 'rgba(255,255,255,0.1)',
+          borderColor: 'rgba(13,43,44,0.06)',
           borderWidth: 1,
           padding: 8
         }
       },
       scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#94a3b8', font: { size: 11 } } },
-        y: { grid: { display: false }, ticks: { color: '#f8fafc', font: { size: 11, weight: 600 } } }
+        x: { grid: { color: 'rgba(13,43,44,0.06)' }, ticks: { color: '#94a3b8', font: { size: 11 } } },
+        y: { grid: { display: false }, ticks: { color: '#0d2b2c', font: { size: 11, weight: 600 } } }
       }
     }
   });
@@ -3928,12 +3959,12 @@ function renderThreatFindings(flushToast) {
       '<div style="font-size:11px; text-transform:uppercase; color:var(--text-muted);">' + l + '</div></div>').join('') +
       '<div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 20px;">' +
       '<div style="font-size:13px; color:var(--text-muted);">Verdict</div>' +
-      '<div style="font-weight:800; color:' + (counts.critical ? '#ef4444' : counts.high ? '#f97316' : '#4ade80') + ';">' +
+      '<div style="font-weight:800; color:' + (counts.critical ? '#ef4444' : counts.high ? '#f97316' : '#15803d') + ';">' +
       (counts.critical ? 'Action required' : counts.high ? 'Review advised' : 'No active threats detected') + '</div></div>';
   }
   if (!box) return;
   if (!_threatFindings.length) {
-    box.innerHTML = '<div style="padding:24px; text-align:center; color:#4ade80;"><i class="fa-solid fa-circle-check"></i> Nothing to report.</div>';
+    box.innerHTML = '<div style="padding:24px; text-align:center; color:#15803d;"><i class="fa-solid fa-circle-check"></i> Nothing to report.</div>';
     return;
   }
   box.innerHTML = _threatFindings.map(f =>
@@ -3993,8 +4024,8 @@ function renderExpressGateways(gateways, base) {
   wrap.innerHTML = gateways.map(g =>
     '<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:10px;">' +
     '<div><strong style="text-transform:uppercase;">' + _tEsc(g.gateway) + '</strong>' +
-    '<span class="tag" style="margin-left:8px; background:' + (g.enabled ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)') + '; color:' + (g.enabled ? '#4ade80' : '#ef4444') + ';">' + (g.enabled ? 'Enabled' : 'Disabled') + '</span>' +
-    '<span class="tag" style="margin-left:6px; background:' + (g.is_production ? 'rgba(250,204,21,.12)' : 'rgba(56,189,248,.12)') + '; color:' + (g.is_production ? '#facc15' : '#38bdf8') + ';">' + (g.is_production ? 'PRODUCTION' : 'Sandbox') + '</span>' +
+    '<span class="tag" style="margin-left:8px; background:' + (g.enabled ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)') + '; color:' + (g.enabled ? '#15803d' : '#ef4444') + ';">' + (g.enabled ? 'Enabled' : 'Disabled') + '</span>' +
+    '<span class="tag" style="margin-left:6px; background:' + (g.is_production ? 'rgba(150,200,30,.12)' : 'rgba(56,189,248,.12)') + '; color:' + (g.is_production ? '#4d7c0f' : '#0369a1') + ';">' + (g.is_production ? 'PRODUCTION' : 'Sandbox') + '</span>' +
     '<div style="font-size:12px; color:var(--text-muted); margin-top:4px;">key configured: ' + (g.has_key ? 'yes' : 'no') + ' · secret configured: ' + (g.has_secret ? 'yes' : 'no') + '</div></div>' +
     '<div style="display:flex; gap:8px; align-items:center;">' +
     '<select id="gwMode_' + _tEsc(g.gateway) + '" class="form-control" style="width:auto; padding:6px 10px;" onchange="setGatewayMode(\'' + _tEsc(g.gateway) + '\', this.value)">' +
@@ -4143,17 +4174,17 @@ function previewBroadcastBanner() {
 
   if (box) {
     if (typ === 'promo') {
-      box.style.background = 'rgba(250, 204, 21, 0.12)';
-      box.style.border = '1px solid rgba(250, 204, 21, 0.4)';
+      box.style.background = 'rgba(150,200,30,0.12)';
+      box.style.border = '1px solid rgba(150,200,30,0.4)';
       box.style.color = '#fde047';
     } else if (typ === 'urgent') {
       box.style.background = 'rgba(239, 68, 68, 0.12)';
       box.style.border = '1px solid rgba(239, 68, 68, 0.4)';
-      box.style.color = '#f87171';
+      box.style.color = '#dc2626';
     } else {
       box.style.background = 'rgba(56, 189, 248, 0.12)';
       box.style.border = '1px solid rgba(56, 189, 248, 0.4)';
-      box.style.color = '#38bdf8';
+      box.style.color = '#0369a1';
     }
   }
 }
@@ -4199,8 +4230,8 @@ async function viewBusiness(id) {
   document.getElementById('detailTitle').textContent = resp.business.name;
   document.getElementById('detailContent').innerHTML = `
     <div style="background:var(--card); padding:16px; border-radius:12px; margin-bottom:14px;">
-      <p style="margin:0 0 6px;"><b>Business ID:</b> <code style="color:var(--gold);">${resp.business.id}</code></p>
-      <p style="margin:0 0 6px;"><b>Type:</b> ${escapeHtml(resp.business.business_type)} &middot; <b>Status:</b> ${resp.business.active ? '<span style="color:#4ade80;">Active</span>' : '<span style="color:#f87171;">Suspended</span>'}</p>
+      <p style="margin:0 0 6px;"><b>Business ID:</b> <code style="color:#3f6b10;">${resp.business.id}</code></p>
+      <p style="margin:0 0 6px;"><b>Type:</b> ${escapeHtml(resp.business.business_type)} &middot; <b>Status:</b> ${resp.business.active ? '<span style="color:#15803d;">Active</span>' : '<span style="color:#dc2626;">Suspended</span>'}</p>
       <p style="margin:0;"><b>Created At:</b> ${new Date(resp.business.created_at).toLocaleString()}</p>
     </div>
     <p><b>Staff Members:</b> ${resp.profiles.length} (${resp.profiles.filter(p=>p.role==='admin').length} admin, ${resp.profiles.filter(p=>p.role==='teller').length} teller)</p>
