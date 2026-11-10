@@ -145,6 +145,68 @@
     };
   }
 
+
+  // ---- Pay-to-open lock: a paid plan was chosen at signup and has not been paid yet ----
+  function showPayLock(s, opts) {
+    removeEl('dsg-bar'); removeEl('dsg-lock'); ensureStyles();
+    var isAdmin = opts.isAdmin !== false;
+    var sb = opts.sb, plan = s.pending_plan, billing = s.pending_billing || 'monthly';
+    var el = document.createElement('div');
+    el.id = 'dsg-lock'; el.className = 'dsg-lock'; el.setAttribute('role', 'alertdialog');
+    el.innerHTML =
+      '<div class="dsg-card"><div class="dsg-ico">&#128241;</div>' +
+      '<h2>Pay to open your account</h2>' +
+      '<p>You chose the <strong>' + esc(plan) + '</strong> plan. Pay with M-Pesa and your account opens straight away.</p>' +
+      (isAdmin
+        ? '<input id="dsg-phone" type="tel" inputmode="numeric" placeholder="M-Pesa number e.g. 0712345678" style="width:100%;box-sizing:border-box;padding:13px;border:1px solid #cbd5e1;border-radius:12px;font-size:16px;margin:0 0 10px;text-align:center">' +
+          '<div id="dsg-msg2" class="dsg-note" style="display:none"></div>' +
+          '<div class="dsg-row"><button class="dsg-btn dsg-big" type="button" id="dsg-pay">Pay with M-Pesa</button></div>' +
+          '<div class="dsg-row"><button class="dsg-btn dsg-ghost" type="button" id="dsg-free" style="font-size:12.5px;padding:8px 14px">Use the Free plan instead</button></div>'
+        : '<p><strong>Please ask your business Admin to complete the payment.</strong></p>') +
+      '<div class="dsg-row" style="margin-top:8px"><button class="dsg-x" type="button" id="dsg-out" style="font-size:13px;text-decoration:underline">Sign out</button></div></div>';
+    document.body.appendChild(el);
+    try { document.documentElement.style.overflow = 'hidden'; } catch (e) {}
+    var msg = function (t, bad) { var m = document.getElementById('dsg-msg2'); if (!m) return; m.style.display = t ? 'block' : 'none'; m.textContent = t || ''; m.style.background = bad ? '#fee2e2' : '#ecfdf5'; m.style.color = bad ? '#7f1d1d' : '#065f46'; m.style.borderColor = bad ? '#fca5a5' : '#a7f3d0'; };
+    var out = document.getElementById('dsg-out');
+    out.onclick = function () { try { sb.auth.signOut({ scope: 'local' }).then(function () { location.href = 'index.html'; }); } catch (e) { location.href = 'index.html'; } };
+    var pay = document.getElementById('dsg-pay');
+    if (!pay) return;
+    var polling = false;
+    pay.onclick = async function () {
+      var phone = (document.getElementById('dsg-phone').value || '').trim();
+      if (!phone) { msg('Enter the M-Pesa number to charge.', true); return; }
+      pay.disabled = true; pay.textContent = 'Sending prompt...'; msg('');
+      try {
+        var r = await sb.functions.invoke('sub-stk-push', { body: { plan: plan, billing: billing, phone: phone } });
+        var d = r.data || {};
+        if (r.error && !d.payment_id) {
+          var em = d.error; try { if (!em && r.error.context && r.error.context.json) { var j = await r.error.context.json(); em = j.error; if (j.payment_id) d = j; } } catch (e) {}
+          if (!d.payment_id) { msg(em || 'Could not start the payment. Try again.', true); pay.disabled = false; pay.textContent = 'Pay with M-Pesa'; return; }
+        }
+        if (d.error && !d.payment_id) { msg(d.error, true); pay.disabled = false; pay.textContent = 'Pay with M-Pesa'; return; }
+        msg('Check your phone and enter your M-Pesa PIN. Amount: KES ' + (d.amount || '') + '.');
+        pay.textContent = 'Waiting for payment...';
+        var tries = 0;
+        var t = setInterval(async function () {
+          if (polling) return; polling = true; tries++;
+          try {
+            var q = await sb.functions.invoke('sub-stk-status', { body: { payment_id: d.payment_id } });
+            var st = q.data && q.data.status;
+            if (st === 'paid') { clearInterval(t); msg('Payment received. Opening your account...'); setTimeout(function () { location.reload(); }, 900); }
+            else if (st && st !== 'pending') { clearInterval(t); msg((q.data.message || 'The payment did not go through') + '. Try again.', true); pay.disabled = false; pay.textContent = 'Pay with M-Pesa'; }
+          } catch (e) {}
+          polling = false;
+          if (tries > 80) { clearInterval(t); pay.disabled = false; pay.textContent = 'Pay with M-Pesa'; msg('We did not get a confirmation. If you paid, wait a minute and reload.', true); }
+        }, 3000);
+      } catch (e) { msg('Network problem. Try again.', true); pay.disabled = false; pay.textContent = 'Pay with M-Pesa'; }
+    };
+    var fr = document.getElementById('dsg-free');
+    if (fr) fr.onclick = async function () {
+      if (!confirm('Switch to the Free plan (up to 5 products, 1 branch)?')) return;
+      try { var r = await sb.rpc('cancel_pending_plan'); if (r.error) throw r.error; location.reload(); } catch (e) { msg('Could not switch: ' + (e.message || e), true); }
+    };
+  }
+
   function unlock() {
     removeEl('dsg-lock');
     try { document.documentElement.style.overflow = ''; } catch (e) {}
@@ -183,6 +245,8 @@
     if (!got) return null;
     var s = got.state;
     if (s.bypass) { unlock(); removeEl('dsg-bar'); return s; }   // platform admin: never locked
+
+    if (s.pending_plan && !s.expired) { showPayLock(s, opts); return s; }
 
     if (s.expired) {
       var p = got.online ? await pendingClaim(sb) : null;

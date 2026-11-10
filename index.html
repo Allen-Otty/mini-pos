@@ -6520,11 +6520,14 @@
 
       <!-- CHECK YOUR EMAIL PANEL -->
       <div class="auth-panel" id="authPanelVerify">
-        <h2>Check your email ✉️</h2>
-        <div class="sub" id="verifySub">We sent a verification link to your email. Click it to activate your account, then sign in.</div>
+        <h2>Enter your 6-digit code ✉️</h2>
+        <div class="sub" id="verifySub">We emailed a 6-digit code to your email. Type it below to open your account.</div>
+        <input type="text" id="verifyCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" style="text-align:center;letter-spacing:.5em;font-size:24px;font-weight:800;" oninput="this.value=this.value.replace(/\D/g,'').slice(0,6); if(this.value.length===6) handleVerifyCode();">
+        <div class="auth-error" id="verifyError"></div>
         <div class="auth-info" id="verifyInfo" style="display:none;"></div>
-        <button class="auth-btn" onclick="resendVerification(window.__verifyEmail, 'verifyInfo')">Resend email</button>
-        <div style="font-size:12px; color:#64748b; margin:8px 0;">Can't see it? Check spam / promotions. The link works for 24 hours.</div>
+        <button class="auth-btn" id="verifyBtn" onclick="handleVerifyCode()">Verify &amp; continue</button>
+        <button class="auth-btn" style="background:transparent;color:#15803d;box-shadow:none;margin-top:6px" onclick="resendVerification(window.__verifyEmail, 'verifyInfo')">Resend code</button>
+        <div style="font-size:12px; color:#64748b; margin:8px 0;">Can't see it? Check spam / promotions. The code works for 1 hour.</div>
         <div class="auth-link"><a href="#" onclick="showAuthTab('login'); return false;" style="color:#15803d; font-weight:700;">Back to Sign In</a></div>
       </div>
 
@@ -6540,7 +6543,7 @@
             <div class="su-plan-sub">KES 0/mo · Up to 5 products, 1 branch</div>
           </div>
           <div class="su-plan-option" id="suPlanOptCore" onclick="setSignupPlan('Core')">
-            <div class="su-plan-badge">7-Day Trial</div>
+            <div class="su-plan-badge">Pay via M-Pesa</div>
             <div class="su-plan-title">Core POS</div>
             <div class="su-plan-sub">KES 999/mo · Unlimited, M-Pesa &amp; KOT</div>
           </div>
@@ -6550,7 +6553,7 @@
             <div class="su-plan-sub">KES 1,999/mo · eTIMS &amp; Multi-Branch</div>
           </div>
           <div class="su-plan-option" id="suPlanOptCoreGroup" onclick="setSignupPlan('Core Group')">
-            <div class="su-plan-badge">7-Day Trial</div>
+            <div class="su-plan-badge">Pay via M-Pesa</div>
             <div class="su-plan-title">Core Group</div>
             <div class="su-plan-sub">KES 3,999/mo · Core POS, up to 5 branches</div>
           </div>
@@ -8845,8 +8848,8 @@
 /* =====================================================================
    CONFIG
 ===================================================================== */
-const SUPABASE_URL = "https://uzwomzkzqrpiumtnniik.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D";
+const SUPABASE_URL = "https://amlibzcdpfryofszfccr.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_wlxn5ax6a2HgfDxK7Aczug_VCMhA5Ah";
 // Password-recovery / email-link detection must run before supabase-js clears the URL hash.
 window.__dogoRecovery = /[#&]type=recovery/.test(location.hash);
 window.__dogoLinkError = (location.hash.match(/error_description=([^&]+)/) || [])[1] || '';
@@ -10711,7 +10714,7 @@ async function handleSignup() {
 
   // Creates the auth user (pre-confirmed, no email OTP step), the business,
   // and the admin profile all in one server-side call.
-  const resp = await callEdgeFunction('create-business', { business_name, business_type, full_name, email, password, phone: contactPhone, redirect_to: SITE_URL });
+  const resp = await callEdgeFunction('create-business', { business_name, business_type, full_name, email, password, phone: contactPhone, redirect_to: SITE_URL, plan: document.getElementById('suSelectedPlan')?.value || 'Free', billing: 'monthly' });
 
   if (resp.error) {
     if (btn) { btn.disabled = false; btn.textContent = 'Create Business Account'; }
@@ -10732,11 +10735,12 @@ async function handleSignup() {
   if (resp.verification_required) {
     if (btn) { btn.disabled = false; btn.textContent = 'Create Business Account'; }
     try { localStorage.setItem('dogo_pending_signup_plan', selectedPlan); } catch (e) {}
-    window.__verifyEmail = email;
+    window.__verifyEmail = email; window.__verifyPassword = password;
     showAuthTab('verify');
     const sub = document.getElementById('verifySub');
-    if (sub) sub.textContent = 'We sent a verification link to ' + email + '. Click it to activate your account, then sign in.';
-    if (resp.verification_email_error) showAuthMsg('verifyInfo', 'We could not send the email automatically (' + resp.verification_email_error + '). Tap "Resend email" in a minute.');
+    if (sub) sub.textContent = 'We emailed a 6-digit code to ' + email + '. Type it below to open your account.';
+    setTimeout(() => { const vc = document.getElementById('verifyCode'); if (vc) vc.focus(); }, 100);
+    if (resp.verification_email_error) showAuthMsg('verifyInfo', 'We could not send the email automatically (' + resp.verification_email_error + '). Tap "Resend code" in a minute.');
     return;
   }
 
@@ -10757,9 +10761,9 @@ async function handleSignup() {
     const plans = rawPlans ? JSON.parse(rawPlans) : {};
     const planEntry = {
       plan: selectedPlan,
-      status: selectedPlan === 'Free' ? 'Free Plan' : 'Trial (7 Days)',
-      renews: selectedPlan === 'Free' ? 'Lifetime Free' : 'In 7 days',
-      trialEnds: selectedPlan === 'Free' ? null : new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+      status: selectedPlan === 'Free' ? 'Free Plan' : 'Awaiting payment',
+      renews: selectedPlan === 'Free' ? 'Lifetime Free' : 'After payment',
+      trialEnds: null,
       grantedAt: new Date().toISOString()
     };
     plans[email] = planEntry;
@@ -10767,7 +10771,7 @@ async function handleSignup() {
     localStorage.setItem('dogo_pending_signup_plan', selectedPlan);
   } catch(e) {}
 
-  showToast(`Business created on ${selectedPlan} POS! Welcome to Dogo POS.`);
+  showToast(selectedPlan === 'Free' ? 'Business created! Welcome to Dogo POS.' : 'Business created. Pay with M-Pesa to open your ' + selectedPlan + ' plan.');
   await afterLogin();
 }
 
@@ -10887,8 +10891,31 @@ async function resendVerification(email, infoId) {
   if (!email) { showAuthMsg(infoId || 'loginInfo', 'Enter your email above first.'); return; }
   const { error } = await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: SITE_URL } });
   showAuthMsg(infoId || 'loginInfo', error
-    ? (/rate|too many|seconds/i.test(error.message) ? 'Please wait a minute before asking for another email.' : 'Could not send: ' + error.message)
-    : 'Verification email sent to ' + email + '. Check your inbox and spam folder.');
+    ? (/rate|too many|seconds/i.test(error.message) ? 'Please wait a minute before asking for another code.' : 'Could not send: ' + error.message)
+    : 'New code sent to ' + email + '. Check your inbox and spam folder.');
+}
+
+async function handleVerifyCode() {
+  const email = window.__verifyEmail;
+  const code = (document.getElementById('verifyCode').value || '').replace(/\D/g, '');
+  const btn = document.getElementById('verifyBtn');
+  showAuthMsg('verifyError', '');
+  if (!email) { showAuthTab('login'); return; }
+  if (code.length !== 6) { showAuthMsg('verifyError', 'Enter the 6-digit code from your email.'); return; }
+  if (window.__verifying) return; window.__verifying = true;
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking...'; }
+  const { error } = await sb.auth.verifyOtp({ email, token: code, type: 'signup' });
+  window.__verifying = false;
+  if (btn) { btn.disabled = false; btn.textContent = 'Verify & continue'; }
+  if (error) { showAuthMsg('verifyError', /expired|invalid/i.test(error.message) ? 'That code is wrong or has expired. Check it or tap Resend code.' : error.message); return; }
+  const pw = window.__verifyPassword; window.__verifyPassword = null;
+  if (pw) {
+    const r = await performLogin(email, pw);
+    if (!r.error) { await afterLogin(); return; }
+  }
+  showAuthTab('login');
+  document.getElementById('loginIdentifier').value = email;
+  showAuthMsg('loginInfo', 'Email confirmed ✔ Sign in to continue.');
 }
 
 async function handleLogin() {
@@ -10909,8 +10936,11 @@ async function handleLogin() {
   const result = await performLogin(identifier, password);
   if (result.error && /failed to fetch|network|load failed/i.test(result.error)) return goOffline();   // online flag lied / connection died
   if (result.error && (/EMAIL_NOT_VERIFIED|not confirmed/i.test(result.error))) {
-    showAuthMsg('loginError', 'Please verify your email first — we sent you a link. Check your inbox and spam folder.');
-    const rw = document.getElementById('resendVerifyWrap'); if (rw) rw.style.display = 'block';
+    window.__verifyEmail = identifier; window.__verifyPassword = password;
+    await resendVerification(identifier, 'verifyInfo');
+    showAuthTab('verify');
+    const sub = document.getElementById('verifySub');
+    if (sub) sub.textContent = 'Confirm your email first. We sent a 6-digit code to ' + identifier + '.';
     return;
   }
   if (result.error) { showAuthMsg('loginError', result.error); return; }
@@ -11033,10 +11063,6 @@ async function afterLogin() {
   try { localStorage.removeItem('dogo_locked'); } catch (e) {}
   const { data: { user } } = await sb.auth.getUser();
   if (!user) { handleLogout(); return; }
-
-  // Last-seen heartbeat for the platform admin console (fire and forget)
-  const __beat = () => { if (document.visibilityState !== 'hidden' && navigator.onLine !== false) sb.rpc('touch_last_seen', { p_platform: (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'android' : (/electron/i.test(navigator.userAgent) ? 'windows' : 'web') }).then(() => {}, () => {}); };
-  __beat(); if (!window.__dogoBeatTimer) window.__dogoBeatTimer = setInterval(__beat, 5 * 60 * 1000);
 
   // 1. Check if user is a Platform Admin (e.g. Allen Otiende)
   await checkPlatformAdminStatus();

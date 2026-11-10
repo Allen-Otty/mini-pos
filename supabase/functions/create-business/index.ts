@@ -15,7 +15,7 @@ Deno.serve(async (req: Request) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceKey);
 
-    const { business_name, business_type, full_name, email, password, phone, redirect_to } = await req.json();
+    const { business_name, business_type, full_name, email, password, phone, redirect_to, plan, billing } = await req.json();
     if (!business_name || !full_name || !email || !password) {
       return new Response(JSON.stringify({ error: "Business name, your name, email, and password are all required" }), { status: 400, headers: J });
     }
@@ -73,6 +73,19 @@ Deno.serve(async (req: Request) => {
       .update({ owner_email: String(email).toLowerCase(), owner_phone: cleanPhone })
       .eq("id", biz.id);
 
+    // Paid plan chosen at signup: the account stays locked until the M-Pesa payment is confirmed
+    // (the payment functions clear pending_plan). Price/validity come from plan_definitions, never the browser.
+    let pendingPlan: string | null = null;
+    if (plan && plan !== "Free") {
+      const { data: pd } = await adminClient.from("plan_definitions").select("plan, active").eq("plan", String(plan)).maybeSingle();
+      if (pd && pd.active) {
+        pendingPlan = pd.plan;
+        await adminClient.from("businesses")
+          .update({ pending_plan: pendingPlan, pending_billing: billing === "yearly" ? "yearly" : "monthly" })
+          .eq("id", biz.id);
+      }
+    }
+
     let verificationEmailError: string | null = null;
     if (needVerify) {
       // Only send links that return to our own site
@@ -86,6 +99,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({
       success: true, business_id: biz.id,
       verification_required: needVerify,
+      pending_plan: pendingPlan,
       verification_email_error: verificationEmailError,
     }), { headers: J });
   } catch (e) {
