@@ -103,7 +103,7 @@
     const isRest = rawType.includes('hotel') || rawType.includes('restaurant');
     if (business && business.name) {
       document.getElementById('bizName').textContent = business.name;
-      DogoShell.render({ active: 'dashboard', businessName: business.name, onLogout: logout, showTables: isRest, businessType: business.business_type, userName: (profile && (profile.full_name || profile.name)) || business.name, roleLabel: (profile && profile.role === 'admin') ? 'Owner / Admin' : ((profile && profile.role) || 'Staff') });
+      DogoShell.render({ active: 'dashboard', businessName: business.name, onLogout: logout, showTables: isRest, businessType: business.business_type, userName: (profile && (profile.full_name || profile.name)) || business.name, roleLabel: (profile && profile.role === 'admin') ? 'Owner / Admin' : ((profile && profile.role) || 'Staff'), isAdmin: profile && profile.role === 'admin', themeColor: business.theme_color, logoUrl: business.logo_url, platform: ctx.platform, onSwitch: window.DogoData.platformSwitch, avatarUrl: profile && profile.avatar_url });
     }
     const isAdmin = profile && profile.role === 'admin';
 

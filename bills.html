@@ -59,6 +59,7 @@
   <script src="assets/js/dogo-data.js"></script>
   <script src="assets/js/subscription-guard.js"></script>
   <script src="assets/js/app-shell.js"></script>
+  <script src="assets/js/receipt-format.js"></script>
   <script src="assets/js/kitchen-store.js"></script>
   <script>
   (async function () {
@@ -182,10 +183,15 @@
     }
     function showBillReceipt(r, pay, ref) {
       $('billModal').classList.remove('open');
+      let rcHtml = '';
+      try { if (window.DogoReceipt) rcHtml = window.DogoReceipt.build({ business: ctx.business, profile: ctx.profile, receiptNo: r.receipt, grand: r.grand, mpesaReceipt: (ref && pay !== 'cash') ? ref : '', gatewayName: NAMES[pay] || pay, orderLine: r.tableName,
+        items: r.items.map(i => ({ name: i.name, qty: i.qty, price: i.qty ? i.line_total / i.qty : i.price, vat: i.vat_rate, unit: i.unit })) }); } catch (e) { rcHtml = ''; }
       $('receiptBox').innerHTML = `<h2>Sale complete</h2><div class="dogo-muted" style="margin-bottom:10px;">${esc(r.receipt)} · ${esc(r.tableName)} · ${esc(new Date().toLocaleString())}</div>
+        ${rcHtml ? rcHtml : `
         ${r.items.map(i => `<div class="dogo-list-row"><span>${esc(i.name)} × ${i.qty}</span><span>${kes(i.line_total)}</span></div>`).join('')}
         <div class="dogo-list-row"><span class="dogo-muted">VAT included</span><span>${kes(r.vat)}</span></div>
         <div class="dogo-total-row"><span>Total</span><span>${kes(r.grand)}</span></div>
+        `}
         <div class="dogo-list-row"><span class="dogo-muted">Paid by</span><strong>${esc(NAMES[pay])}</strong></div>
         ${ref && pay !== 'cash' ? `<div class="dogo-list-row"><span class="dogo-muted">Reference</span><strong>${esc(ref)}</strong></div>` : ''}
         <div class="dogo-btn-row" style="justify-content:flex-end;margin-top:16px;"><button class="dogo-btn dogo-btn--outline" onclick="window.print()">Print receipt</button><button class="dogo-btn dogo-btn--primary" id="rcClose">Done</button></div>`;

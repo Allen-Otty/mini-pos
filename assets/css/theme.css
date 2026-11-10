@@ -1214,3 +1214,17 @@ body.dogo-shell-v3 {
 }
 /* text that sat on the old neon/gold fills stays dark so it is readable on lime */
 .dogo-shell-v3 .dogo-btn--primary, .dogo-shell-v3 .dogo-btn--gold { color: #0a2a1f; }
+
+/* Notifications panel (bell) */
+.dogo-topbar__bell { border: 0; cursor: pointer; }
+.dogo-notif { position: fixed; top: calc(70px + env(safe-area-inset-top, 0px)); right: 12px; width: min(360px, calc(100vw - 24px)); max-height: 70vh; overflow: auto; z-index: 70; display: none; padding: 12px; border-radius: 22px; background: var(--clay-surface, #f7f9f8); box-shadow: 10px 10px 24px rgba(30,60,55,.18), -8px -8px 18px rgba(255,255,255,.9); }
+.dogo-notif.open { display: block; }
+.dogo-notif__hd { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px; }
+.dogo-notif__hd button { border: 0; background: transparent; font-size: 22px; line-height: 1; cursor: pointer; color: #3f5754; }
+.dogo-notif__row { display: flex; gap: 10px; align-items: flex-start; padding: 11px 10px; border-radius: 14px; text-decoration: none; color: inherit; }
+.dogo-notif__row:hover { background: rgba(13,43,44,.05); }
+.dogo-notif__row b { display: block; font-size: 14px; }
+.dogo-notif__row small { display: block; font-size: 12.5px; color: #5d7571; margin-top: 2px; }
+.dogo-notif__dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; background: #f59e0b; }
+.dogo-notif__row--danger .dogo-notif__dot { background: #ef4444; }
+.dogo-notif__empty { padding: 18px 10px; text-align: center; color: #5d7571; font-size: 14px; }

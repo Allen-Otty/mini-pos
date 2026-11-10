@@ -1088,11 +1088,16 @@
       if (d.rejected) toast(d.rejected + ' offline sale(s) were rejected by the server (e.g. stock ran out). Check with your Admin.');
     });
     function showReceipt(r, pay, ref) {
+      let rcHtml = '';
+      try { if (window.DogoReceipt) rcHtml = window.DogoReceipt.build({ business: ctx.business, profile: ctx.profile, receiptNo: r.receipt, grand: r.grand, mpesaReceipt: ref || '', gatewayName: NAMES[pay] || pay,
+        items: r.items.map(i => ({ name: i.name, qty: i.qty, price: i.qty ? i.line_total / i.qty : i.price, vat: i.vat_rate, unit: i.unit })) }); } catch (e) { rcHtml = ''; }
       $('receiptBox').innerHTML = `<h2>Sale complete</h2><div class="dogo-muted" style="font-size:13px;margin-bottom:10px;">${esc(r.receipt)} · ${esc(new Date().toLocaleString())}</div>
         ${r.offline ? '<div style="background:#fef3c7;color:#92400e;border-radius:8px;padding:8px 10px;font-size:12.5px;margin-bottom:10px;">Saved on this device. It will sync automatically when you are back online, and gets its official receipt number then.</div>' : ''}
+        ${rcHtml ? rcHtml : `
         ${r.items.map(i => `<div class="dogo-list-row"><span>${esc(i.name)} × ${esc(i.qty)}</span><span>${kes(i.line_total)}</span></div>`).join('')}
         <div class="dogo-list-row"><span class="dogo-muted">VAT included</span><span>${kes(r.vat)}</span></div>
         <div class="dogo-total-row"><span>Total</span><span>${kes(r.grand)}</span></div>
+        `}
         <div class="dogo-list-row"><span class="dogo-muted">Paid by</span><strong>${esc(NAMES[pay] || pay)}</strong></div>
         ${ref ? `<div class="dogo-list-row"><span class="dogo-muted">Reference</span><strong>${esc(ref)}</strong></div>` : ''}
         <div class="dogo-btn-row" style="justify-content:flex-end;margin-top:16px;"><button class="dogo-btn dogo-btn--outline" id="rcPrintBtn" onclick="window.print()">Print</button><button class="dogo-btn dogo-btn--primary" id="rcClose">Done</button></div>`;

@@ -173,6 +173,42 @@
   const NAV_ITEMS = flat(menuFor('', false));
 
   const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /* ---- Notifications: stock alerts and expiring batches, read live from the business data ---- */
+  async function buildNotifications() {
+    const D = window.DogoData; if (!D || !D.sb) return [];
+    const out = [];
+    try {
+      const r = await D.sb.from('products').select('name,stock,reorder_level,archived').limit(1000);
+      const rows = (r.data || []).filter(p => !p.archived);
+      const none = rows.filter(p => Number(p.stock) <= 0);
+      const low = rows.filter(p => Number(p.stock) > 0 && Number(p.stock) <= Number(p.reorder_level || 0));
+      none.slice(0, 5).forEach(p => out.push({ id: 'o:' + p.name, tone: 'danger', title: p.name + ' is out of stock', sub: 'Restock to keep selling', href: 'inventory.html' }));
+      if (none.length > 5) out.push({ id: 'o+', tone: 'danger', title: (none.length - 5) + ' more items out of stock', sub: 'See Stock Levels', href: 'inventory.html' });
+      low.slice(0, 5).forEach(p => out.push({ id: 'l:' + p.name + ':' + p.stock, tone: 'warn', title: p.name + ' is running low', sub: p.stock + ' left (reorder at ' + (p.reorder_level || 0) + ')', href: 'inventory.html' }));
+      if (low.length > 5) out.push({ id: 'l+', tone: 'warn', title: (low.length - 5) + ' more items running low', sub: 'See Stock Levels', href: 'inventory.html' });
+    } catch (e) {}
+    try {
+      const ex = await D.sb.rpc('expiry_alerts', { p_days: 60 });
+      const rows = (ex && ex.data) || [];
+      const expired = rows.filter(r => r.status === 'expired').length;
+      if (expired) out.push({ id: 'x:' + expired, tone: 'danger', title: expired + ' batch' + (expired === 1 ? '' : 'es') + ' expired', sub: 'Remove from sale', href: 'dashboard.html' });
+      if (rows.length - expired > 0) out.push({ id: 'e:' + (rows.length - expired), tone: 'warn', title: (rows.length - expired) + ' batch' + (rows.length - expired === 1 ? '' : 'es') + ' expiring within 60 days', sub: 'Check expiry list', href: 'dashboard.html' });
+    } catch (e) {}
+    return out;
+  }
+  async function loadNotifications(opening) {
+    const body = document.getElementById('dogoNotifBody'), dot = document.getElementById('dogoBellDot');
+    if (!body) return;
+    const list = await buildNotifications();
+    const sig = list.map(n => n.id).join('|');
+    let seen = ''; try { seen = localStorage.getItem('dogo_notif_seen') || ''; } catch (e) {}
+    if (opening) { try { localStorage.setItem('dogo_notif_seen', sig); } catch (e) {} seen = sig; }
+    if (dot) dot.style.display = (list.length && sig !== seen) ? '' : 'none';
+    body.innerHTML = list.length
+      ? list.map(n => `<a class="dogo-notif__row dogo-notif__row--${n.tone}" href="${esc(n.href)}"><span class="dogo-notif__dot"></span><span><b>${esc(n.title)}</b><small>${esc(n.sub)}</small></span></a>`).join('')
+      : '<div class="dogo-notif__empty">You are all caught up. No alerts right now.</div>';
+  }
   const COLLAPSE_KEY = 'dogo_sidebar_collapsed';
   const isCollapsed = () => { try { return localStorage.getItem(COLLAPSE_KEY) === '1'; } catch (e) { return false; } };
   function applyCollapsed(on) {
@@ -200,14 +236,8 @@
           <span>${esc(opts.businessName || 'Dogo POS')}</span>
         </a>
         <div class="dogo-topbar__crumb">${crumb}</div>
-        <label class="dogo-topbar__search">
-          ${ICONS.search}
-          <input type="search" id="dogoJump" list="dogoJumpList" placeholder="Search pages..." autocomplete="off" aria-label="Search pages">
-          <datalist id="dogoJumpList">${all.map(i => `<option value="${esc(i.label)}"></option>`).join('')}</datalist>
-        </label>
         <div class="dogo-header__actions">
-          <button type="button" class="dogo-header__icon-btn dogo-topbar__searchbtn" id="dogoSearchBtn" aria-label="Search pages">${ICONS.search}</button>
-          <a class="dogo-topbar__bell" href="dashboard.html" aria-label="Alerts">${ICONS.bell}<i></i></a>
+          <button type="button" class="dogo-topbar__bell" id="dogoBell" aria-label="Notifications">${ICONS.bell}<i id="dogoBellDot" style="display:none"></i></button>
           <div class="dogo-topbar__user">
             <span class="dogo-avatar">${opts.avatarUrl ? `<img src="${esc(opts.avatarUrl)}" alt="" onerror="this.remove()">` : ""}<span>${esc(initials(who))}</span></span>
             <span class="dogo-topbar__who"><b>${esc(who)}</b><small>${esc(opts.roleLabel || opts.typeLabel || '')}</small></span>
@@ -215,13 +245,20 @@
           <button class="dogo-header__icon-btn dogo-topbar__logout" id="dogoLogoutBtn" aria-label="Log out">${ICONS.logout}</button>
         </div>
       </header>
+      <div class="dogo-notif" id="dogoNotif" role="dialog" aria-label="Notifications"><div class="dogo-notif__hd"><b>Notifications</b><button type="button" id="dogoNotifX" aria-label="Close">&times;</button></div><div id="dogoNotifBody"><div class="dogo-notif__empty">Loading...</div></div></div>
     `;
     const toggle = root.querySelector('#dogoNavToggle');
     const logout = root.querySelector('#dogoLogoutBtn');
     const backB = root.querySelector('#dogoBackBtn'); if (backB) backB.addEventListener('click', () => { if (history.length > 1) history.back(); else location.href = 'dashboard.html'; });
     const jump = root.querySelector('#dogoJump');
-    const sbtn = root.querySelector('#dogoSearchBtn');
-    if (sbtn) sbtn.addEventListener('click', () => { document.body.classList.toggle('dogo-search-open'); if (jump) jump.focus(); });
+    const bell = root.querySelector('#dogoBell'), panel = root.querySelector('#dogoNotif');
+    if (bell && panel) {
+      bell.addEventListener('click', (e) => { e.stopPropagation(); const open = !panel.classList.contains('open'); panel.classList.toggle('open', open); if (open) loadNotifications(true); });
+      root.querySelector('#dogoNotifX').addEventListener('click', () => panel.classList.remove('open'));
+      document.addEventListener('click', (e) => { if (panel.classList.contains('open') && !panel.contains(e.target)) panel.classList.remove('open'); });
+      setTimeout(() => loadNotifications(false), 1200);
+      if (!window.__dogoNotifTimer) window.__dogoNotifTimer = setInterval(() => loadNotifications(false), 300000);
+    }
     if (toggle) toggle.addEventListener('click', () => document.body.classList.toggle('dogo-nav-open'));
     if (logout && typeof opts.onLogout === 'function') logout.addEventListener('click', opts.onLogout);
     if (jump) {
