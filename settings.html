@@ -1169,5 +1169,23 @@
   })();
   </script>
   <script src="assets/js/dogo-helper.js" defer></script>
+<script>
+/* Show / hide toggle on the change-password fields */
+(function(){
+  function add(){
+    ['pwOld','pwNew','pwNew2'].forEach(function(id){
+      var el=document.getElementById(id); if(!el||el.dataset.eye) return; el.dataset.eye='1';
+      var w=document.createElement('div'); w.style.cssText='position:relative';
+      el.parentNode.insertBefore(w,el); w.appendChild(el); el.style.paddingRight='46px';
+      var b=document.createElement('button'); b.type='button'; b.setAttribute('aria-label','Show password');
+      b.style.cssText='position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;font-size:12px;font-weight:800;color:#15803d;padding:8px;cursor:pointer';
+      b.textContent='Show';
+      b.onclick=function(){ var on=el.type==='password'; el.type=on?'text':'password'; b.textContent=on?'Hide':'Show'; b.setAttribute('aria-label',on?'Hide password':'Show password'); };
+      w.appendChild(b);
+    });
+  }
+  if(document.readyState!=='loading') add(); else document.addEventListener('DOMContentLoaded',add);
+})();
+</script>
 </body>
 </html>
