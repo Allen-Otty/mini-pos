@@ -5706,6 +5706,13 @@
   .site-card { padding:26px; border-radius:26px; }
   .site-card h3 { margin:0 0 8px; font-size:20px; font-weight:800; }
   .site-card p { margin:0; line-height:1.6; color:var(--text-secondary); font-size:15px; }
+  .site-app-card { text-align:center; padding:34px 22px; border-radius:32px; background:#f7f9f8; box-shadow:var(--shadow-float); margin-bottom:16px; }
+  .site-app-card h2 { margin:0 0 8px; font-size:clamp(1.4rem,4vw,2rem); font-weight:800; color:#0d2b2c; }
+  .site-app-card p { margin:0 0 18px; font-weight:600; color:#3f5754; }
+  .site-app-btns { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; }
+  .site-app-btn { display:flex; align-items:center; gap:12px; padding:14px 22px; border-radius:18px; background:#0d2b2c; color:#c9f15a; font-weight:800; text-decoration:none; text-align:left; font-size:16px; }
+  .site-app-btn i { font-size:26px; } .site-app-btn small { display:block; font-weight:600; font-size:11.5px; opacity:.8; }
+  .site-app-note { margin-top:12px; font-size:12.5px; color:#3f5754; }
   .site-cta-card { text-align:center; padding:44px 24px; border-radius:32px; background:linear-gradient(145deg,#dcf79a,#c9f15a); box-shadow:var(--shadow-float); }
   .site-cta-card h2 { margin:0 0 8px; font-size:clamp(1.6rem,4vw,2.2rem); font-weight:800; }
   .site-cta-card p { margin:0 0 20px; font-weight:600; color:#254a2e; }
@@ -5757,6 +5764,7 @@
   <div class="dogo-mobile-menu" id="dogoMobileMenu">
     <a href="#home" onclick="toggleMobileNav(); return siteGo('home')">Home</a>
     <a href="#about" onclick="toggleMobileNav(); return siteGo('about')">About us</a>
+    <a href="#getApp" class="js-getapp" onclick="toggleMobileNav(); return goGetApp()">Download the app</a>
     <div class="m-actions">
       <button class="nav-btn-signin" style="width:100%; text-align:center;" onclick="toggleMobileNav(); openAuthModal('login');">Sign in</button>
       <button class="nav-btn-start" style="width:100%; justify-content:center;" onclick="toggleMobileNav(); openAuthModal('signup');">Sign up free</button>
@@ -6637,6 +6645,24 @@
     </div>
   </section>
 
+  <!-- Get the app (Landing) -->
+  <section class="dogo-section" id="getApp" data-v="home" style="padding-top:20px;">
+    <div class="site-app-card" id="getAppCard">
+      <h2>Get the Dogo POS app</h2>
+      <p>Install it on your phone or computer. It keeps selling when the internet is down, and updates in one tap.</p>
+      <div class="site-app-btns">
+        <a class="site-app-btn" id="dlApk" href="https://github.com/Allen-Otty/mini-pos/releases/download/latest/Dogo-POS.apk"><i class="fa-brands fa-android"></i><span><small>Android phone / tablet</small>Download APK</span></a>
+        <a class="site-app-btn" id="dlExe" href="https://github.com/Allen-Otty/mini-pos/releases/download/latest/Dogo-POS-Setup.exe"><i class="fa-brands fa-windows"></i><span><small>Windows computer</small>Download for Windows</span></a>
+      </div>
+      <div class="site-app-note">Android: open the downloaded file and allow "Install unknown apps" when asked.</div>
+    </div>
+    <div class="site-app-card" id="appUpdateCard" style="display:none;">
+      <h2>A new version is ready</h2>
+      <p>Update Dogo POS to get the latest features and fixes.</p>
+      <div class="site-app-btns"><a class="site-app-btn" id="updGo" href="#"><i class="fa-solid fa-arrow-down"></i><span><small>Takes under a minute</small>Update now</span></a></div>
+    </div>
+  </section>
+
   <!-- Closing call to action (Landing) -->
   <section class="dogo-section" id="homeCta" data-v="home" style="padding-top:20px;">
     <div class="site-cta-card">
@@ -6657,6 +6683,7 @@
         <a href="#home" onclick="return siteGo('home')">Home</a>
         <a href="#about" onclick="return siteGo('about')">About us</a>
         <a href="#signin" onclick="return siteGo('signin')">Sign in</a>
+        <a href="#getApp" class="js-getapp" onclick="return goGetApp()">Download app</a>
       </div>
       <div class="site-foot__contact">
         <a href="tel:+254101833843"><i class="fa-solid fa-phone"></i> 0101 833 843</a>
@@ -17119,6 +17146,36 @@ async function saveNewProductFromPage() {
   /* Landing is light only: keep the clay palette even if a dark theme was saved earlier (not stored). */
   try { document.documentElement.setAttribute('data-theme', 'light'); } catch (e) {}
   route(false);
+})();
+</script>
+<script src="assets/js/app-version.js"></script>
+<script>
+(function(){
+  var U = window.DOGO_UPDATE || {}, cur = Number(window.DOGO_BUILD || 0);
+  var isEl = /electron/i.test(navigator.userAgent);
+  var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) || isEl;
+  window.goGetApp = function(){ if (window.siteGo) siteGo('home'); setTimeout(function(){ var e=document.getElementById('getApp'); if(e) e.scrollIntoView({behavior:'smooth',block:'start'}); },60); return false; };
+  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded',fn); }
+  ready(function(){
+    var card=document.getElementById('getAppCard');
+    if (isNative) {
+      if (card) card.style.display='none';
+      document.querySelectorAll('.js-getapp').forEach(function(a){ a.style.display='none'; });
+      if (U.base && cur && navigator.onLine) {
+        fetch(U.base+'assets/js/app-version.js?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
+          var m=t.match(/DOGO_BUILD\s*=\s*(\d+)/);
+          if (m && Number(m[1])>cur) {
+            var c=document.getElementById('appUpdateCard'), g=document.getElementById('updGo');
+            if (c && g) { g.href = isEl ? U.exe : U.apk; c.style.display=''; }
+          }
+        }).catch(function(){});
+      }
+    } else {
+      var ua=navigator.userAgent, android=/android/i.test(ua), win=/windows/i.test(ua);
+      var apk=document.getElementById('dlApk'), exe=document.getElementById('dlExe');
+      if (apk && exe) { if (android) exe.style.display='none'; else if (win) apk.style.display='none'; }
+    }
+  });
 })();
 </script>
 </body>
