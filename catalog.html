@@ -60,6 +60,17 @@
         </div>
 
         <div style="margin-top:14px;">
+          <div id="photoWrap" style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+            <label for="fPhoto" id="photoBox" style="width:84px;height:84px;border-radius:18px;border:2px dashed #cbd5e1;background:#f8fafc center/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--dogo-text-muted);flex:none;text-align:center;">
+              <span id="photoIco" style="font-size:24px;line-height:1;">&#128247;</span><span id="photoTxt" style="font-size:10.5px;font-weight:700;">Add photo</span>
+            </label>
+            <div style="min-width:0;">
+              <div style="font-size:13px;font-weight:700;color:var(--dogo-ink);">Product photo <span class="dogo-muted" style="font-weight:500;">(optional)</span></div>
+              <div class="dogo-muted" style="font-size:12px;margin:2px 0 6px;">Shows on the till and in your catalogue. Take a picture or choose one.</div>
+              <button type="button" id="photoRemove" class="dogo-btn dogo-btn--outline dogo-btn--sm" style="display:none;">Remove photo</button>
+            </div>
+            <input type="file" id="fPhoto" accept="image/*" style="display:none;">
+          </div>
           <div class="dogo-form-row dogo-form-row--2" style="gap:12px;margin-bottom:10px;">
             <div class="dogo-field" style="margin:0;">
               <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">NAME</label>
@@ -140,6 +151,17 @@
             <div class="dogo-field" style="margin:0;">
               <label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">REORDER THRESHOLD</label>
               <input class="dogo-input" id="fReorder" type="number" step="1" min="0" value="0" style="background:#f8fafc;">
+            </div>
+          </div>
+
+          <div class="dogo-field" id="lotWrap" style="margin:0 0 16px;display:none;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;"><input type="checkbox" id="lotOn"> TRACK BATCH NO. &amp; EXPIRY DATE</label>
+            <div id="lotBox" style="display:none;margin-top:8px;">
+              <div class="dogo-muted" id="lotHint" style="font-size:12px;margin-bottom:8px;">Each delivery is kept as its own batch. The one expiring first is sold first, and you get expiry alerts.</div>
+              <div class="dogo-form-row dogo-form-row--2" id="lotFields" style="gap:12px;">
+                <div class="dogo-field" style="margin:0;"><label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">BATCH / LOT NO.</label><input class="dogo-input" id="fLot" placeholder="e.g. B2411-07" style="background:#f8fafc;"></div>
+                <div class="dogo-field" style="margin:0;"><label style="font-size:11px;font-weight:800;color:var(--dogo-text-muted);letter-spacing:0.5px;text-transform:uppercase;">EXPIRY DATE</label><input class="dogo-input" id="fExpiry" type="date" style="background:#f8fafc;"></div>
+              </div>
             </div>
           </div>
 
@@ -243,6 +265,40 @@
       if (!r.error) { hasBarcodeCol = true; OFF.lsSet('dogo_has_barcode', true); }
       else if (!OFF.isNetworkErr(r.error)) { hasBarcodeCol = false; OFF.lsSet('dogo_has_barcode', false); }
     });
+
+    // ---- Photo + batch/expiry (columns/bucket exist on the live database) ----
+    let hasLotsCol = OFF.lsGet('dogo_has_lots', true), hasPhotoCol = OFF.lsGet('dogo_has_photo', true), hasExtraCols = OFF.lsGet('dogo_has_extra', true);
+    sb.from('products').select('track_lots').limit(1).then(r => {
+      if (!r.error) { hasLotsCol = true; OFF.lsSet('dogo_has_lots', true); $('lotWrap').style.display = ''; }
+      else if (!OFF.isNetworkErr(r.error)) { hasLotsCol = false; OFF.lsSet('dogo_has_lots', false); $('lotWrap').style.display = 'none'; }
+    });
+    sb.from('products').select('photo_url').limit(1).then(r => {
+      if (!r.error) { hasPhotoCol = true; OFF.lsSet('dogo_has_photo', true); } else if (!OFF.isNetworkErr(r.error)) { hasPhotoCol = false; OFF.lsSet('dogo_has_photo', false); }
+      $('photoWrap').style.display = hasPhotoCol ? 'flex' : 'none';
+    });
+    sb.from('products').select('item_type,description').limit(1).then(r => {
+      if (!r.error) { hasExtraCols = true; OFF.lsSet('dogo_has_extra', true); } else if (!OFF.isNetworkErr(r.error)) { hasExtraCols = false; OFF.lsSet('dogo_has_extra', false); }
+    });
+    $('lotWrap').style.display = hasLotsCol ? '' : 'none';
+    $('photoWrap').style.display = hasPhotoCol ? 'flex' : 'none';
+    let photoFile = null, photoRemoved = false, photoUrl = null;
+    const showPhoto = url => {
+      const b = $('photoBox'); b.style.backgroundImage = url ? 'url("' + url + '")' : '';
+      b.style.borderStyle = url ? 'solid' : 'dashed'; $('photoIco').style.display = url ? 'none' : ''; $('photoTxt').textContent = url ? 'Change' : 'Add photo';
+      $('photoTxt').style.cssText = url ? 'font-size:10.5px;font-weight:700;background:rgba(255,255,255,.85);padding:1px 6px;border-radius:8px;margin-top:56px;' : 'font-size:10.5px;font-weight:700;';
+      $('photoRemove').style.display = url ? '' : 'none';
+    };
+    // shrink to ~700px JPEG so uploads are small on mobile data
+    const shrink = file => new Promise((res, rej) => {
+      const img = new Image(), u = URL.createObjectURL(file);
+      img.onload = () => { const k = Math.min(1, 700 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(u); c.toBlob(b => b ? res(b) : rej(new Error('Could not read that image')), 'image/jpeg', 0.82); };
+      img.onerror = () => { URL.revokeObjectURL(u); rej(new Error('Could not read that image')); }; img.src = u;
+    });
+    $('fPhoto').onchange = e => { const f = e.target.files && e.target.files[0]; if (!f) return; photoFile = f; photoRemoved = false; showPhoto(URL.createObjectURL(f)); };
+    $('photoRemove').onclick = () => { photoFile = null; photoRemoved = true; $('fPhoto').value = ''; showPhoto(null); };
+    $('lotOn').onchange = () => { $('lotBox').style.display = $('lotOn').checked ? '' : 'none'; };
 
     // Wording, categories and item types follow the business type (supermarket, hardware, restaurant...).
     const biz = DogoBiz.profileFor(ctx.business && ctx.business.business_type);
@@ -360,7 +416,7 @@
       const slice = list.slice((page - 1) * PER, page * PER);
       $('rows').innerHTML = slice.length ? slice.map(p => {
         const st = Number(p.stock), low = st <= Number(p.reorder_level || 0);
-        return `<tr><td>${esc(p.code)}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.category || '—')}</td><td>${kes(p.price)}${p.cost != null ? `<br><small class="dogo-muted">cost ${kes(p.cost)}</small>` : ''}</td><td>${Math.round(Number(p.vat_rate || 0) * 100)}%</td>
+        return `<tr><td>${esc(p.code)}</td><td style="display:flex;align-items:center;gap:10px;">${p.photo_url ? `<img src="${esc(p.photo_url)}" alt="" loading="lazy" style="width:38px;height:38px;border-radius:10px;object-fit:cover;flex:none;">` : ''}<strong>${esc(p.name)}</strong>${p.track_lots ? ' <span class="dogo-badge" title="Batch &amp; expiry tracked">Lots</span>' : ''}</td><td>${esc(p.category || '—')}</td><td>${kes(p.price)}${p.cost != null ? `<br><small class="dogo-muted">cost ${kes(p.cost)}</small>` : ''}</td><td>${Math.round(Number(p.vat_rate || 0) * 100)}%</td>
           <td><span class="dogo-badge ${st <= 0 ? 'dogo-badge--danger' : low ? 'dogo-badge--warn' : 'dogo-badge--ok'}">${st}</span>${p.portion_size > 0 && p.bulk_size > 0 ? `<br><small class="dogo-muted">${(() => { const t = st * p.portion_size, g = p.portion_unit === 'g'; return (t >= 1000 ? Math.round(t / 10) / 100 + (g ? ' kg' : ' L') : Math.round(t * 10) / 10 + ' ' + (p.portion_unit || 'ml')) + ' left'; })()}</small>` : ''}</td><td>${esc(p.reorder_level ?? 0)}</td>
           <td style="white-space:nowrap;"><button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-log="${esc(p.id)}">Sales</button>${isAdmin && p.archived ? ` <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-restore="${esc(p.id)}">Restore</button>` : ''}${isAdmin && !p.archived ? ` <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-edit="${esc(p.id)}">Edit</button> <button class="dogo-btn dogo-btn--outline dogo-btn--sm" data-del="${esc(p.id)}" style="color:#dc2626;border-color:#fca5a5;">Delete</button>` : ''}</td></tr>`;
       }).join('') : '<tr><td colspan="8" class="dogo-card__empty">No products found</td></tr>';
@@ -405,6 +461,13 @@
       $('fReorder').value = p ? (p.reorder_level || 0) : 0;
       fillBreaks(p && p.price_breaks);
       fillPortion(p);
+      photoFile = null; photoRemoved = false; photoUrl = p && p.photo_url || null; $('fPhoto').value = ''; showPhoto(photoUrl);
+      $('lotOn').checked = !!(p && p.track_lots); $('lotBox').style.display = $('lotOn').checked ? '' : 'none';
+      $('fLot').value = ''; $('fExpiry').value = '';
+      // batch + expiry fields apply to the opening stock of a NEW item; for later deliveries use Purchases (or Inventory > Lots & Expiry)
+      $('lotFields').style.display = p ? 'none' : '';
+      $('lotHint').textContent = p ? 'Switch on to track batches and expiry dates. Add new batches when you receive stock in Purchases.' : 'Each delivery is kept as its own batch. The one expiring first is sold first, and you get expiry alerts. Enter the batch and expiry of your opening stock below.';
+      if (p && p.item_type) $('fType').value = p.item_type;
       $('modal').classList.add('open');
       $('fName').focus();
     }
@@ -540,6 +603,11 @@
         reorder_level: parseFloat($('fReorder').value) || 0
       };
       if (hasBarcodeCol) rec.barcode = typedBarcode || null;
+      if (hasExtraCols) { rec.item_type = $('fType').value || 'Product'; rec.description = ($('fDesc').value || '').trim() || null; }
+      const wantLots = hasLotsCol && $('lotOn').checked;
+      if (hasLotsCol) rec.track_lots = wantLots;
+      const lotNo = ($('fLot').value || '').trim(), lotExp = $('fExpiry').value || '';
+      if (wantLots && !editing && rec.stock > 0 && !lotExp && !confirm('No expiry date entered for this stock. Save without one?')) return;
       if (hasCostCol) { const cv = ($('fCost').value || '').trim(); rec.cost = cv === '' ? null : parseFloat(cv); if (cv !== '' && !(rec.cost >= 0)) return toast('Please enter a valid buying price'); }
       if (hasPortionCol) {
         if ($('porOn').checked) {
@@ -582,6 +650,27 @@
       } catch (e) { res = { error: e }; }
       if (res.error && OFF.isNetworkErr(res.error)) return saveOffline();
       if (res.error) return toast('Could not save: ' + res.error.message);
+      const pid = editing ? editing.id : newId;
+      // opening stock as a proper batch (stock + lot + movement are written by receive_stock)
+      if (!editing && wantLots && rec.stock > 0) {
+        const r2 = await sb.from('products').update({ stock: 0 }).eq('id', pid);
+        const r3 = r2.error ? r2 : await sb.rpc('receive_stock', { p_business_id: businessId, p_items: [{ product_id: pid, qty: rec.stock, unit_cost: rec.cost || null, lot_no: lotNo, expiry: lotExp }] });
+        if (r3.error) { await sb.from('products').update({ stock: rec.stock }).eq('id', pid); toast('Item saved, but the batch could not be recorded: ' + r3.error.message); }
+      }
+      // photo
+      if (hasPhotoCol && (photoFile || photoRemoved)) {
+        try {
+          let url = null;
+          if (photoFile) {
+            const blob = await shrink(photoFile), path = businessId + '/' + pid + '-' + Date.now() + '.jpg';
+            const up = await sb.storage.from('product-photos').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+            if (up.error) throw up.error;
+            url = sb.storage.from('product-photos').getPublicUrl(path).data.publicUrl;
+          }
+          const ph = await sb.from('products').update({ photo_url: url }).eq('id', pid);
+          if (ph.error) throw ph.error;
+        } catch (e) { toast('Item saved, but the photo could not be uploaded: ' + (e.message || e)); }
+      }
       closeModal(); toast('Item saved to catalogue'); window.DogoData.notifyProductsChanged(); load();
     };
     load();

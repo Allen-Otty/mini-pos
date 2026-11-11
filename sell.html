@@ -833,7 +833,7 @@
 
       $('grid').innerHTML = list.length ? list.map(x => `
         <button class="dogo-prod" data-id="${esc(x.id)}" ${Number(x.stock) <= 0 ? 'disabled' : ''}>
-          <span class="dogo-prod__img" style="${tint(x.category)}">${pillSvg()}${Number(x.stock) > 0 && Number(x.stock) <= Number(x.reorder_level || x.min_stock || 5) ? '<i class="dogo-prod__low">Low</i>' : ''}</span>
+          <span class="dogo-prod__img" style="${tint(x.category)}">${x.photo_url ? `<img src="${esc(x.photo_url)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">` : pillSvg()}${Number(x.stock) > 0 && Number(x.stock) <= Number(x.reorder_level || x.min_stock || 5) ? '<i class="dogo-prod__low">Low</i>' : ''}</span>
           <span class="dogo-prod__name">${esc(x.name)}</span>
           <span class="dogo-prod__cat">${esc([x.unit, x.category].filter(Boolean).join(' · '))}</span>
           <span class="dogo-prod__price">${kes(x.price)}</span>${(x.price_breaks || []).length ? '<span class="dogo-badge dogo-badge--ok">' + x.price_breaks.map(b => b.qty + ' for ' + b.price).join(' · ') + '</span>' : ''}
