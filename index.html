@@ -8880,7 +8880,8 @@ const SUPABASE_ANON_KEY = "sb_publishable_wlxn5ax6a2HgfDxK7Aczug_VCMhA5Ah";
 // Password-recovery / email-link detection must run before supabase-js clears the URL hash.
 window.__dogoRecovery = /[#&]type=recovery/.test(location.hash);
 window.__dogoLinkError = (location.hash.match(/error_description=([^&]+)/) || [])[1] || '';
-const SITE_URL = /^https?:$/.test(location.protocol) ? location.origin + '/' : 'https://dogopos.allenotiende.workers.dev/';
+// Email links (reset / confirm) must open the public website, never the app's internal address (dogo-pos.app, app://dogo, localhost)
+const SITE_URL = (/^https?:$/.test(location.protocol) && !/^(localhost|127\.0\.0\.1|dogo-pos\.app)$/i.test(location.hostname)) ? location.origin + location.pathname.replace(/[^\/]*$/, '') : 'https://allen-otty.github.io/mini-pos/';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true }
 });
