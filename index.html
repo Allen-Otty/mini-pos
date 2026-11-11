@@ -8875,8 +8875,8 @@
 /* =====================================================================
    CONFIG
 ===================================================================== */
-const SUPABASE_URL = "https://amlibzcdpfryofszfccr.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_wlxn5ax6a2HgfDxK7Aczug_VCMhA5Ah";
+const SUPABASE_URL = "https://uzwomzkzqrpiumtnniik.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_wt1aY_uj1ZR4z5RqIgDZQw_qYNoCl7D";
 // Password-recovery / email-link detection must run before supabase-js clears the URL hash.
 window.__dogoRecovery = /[#&]type=recovery/.test(location.hash);
 window.__dogoLinkError = (location.hash.match(/error_description=([^&]+)/) || [])[1] || '';
@@ -11091,6 +11091,10 @@ async function afterLogin() {
   try { localStorage.removeItem('dogo_locked'); } catch (e) {}
   const { data: { user } } = await sb.auth.getUser();
   if (!user) { handleLogout(); return; }
+
+  // Last-seen heartbeat for the platform admin console (fire and forget)
+  const __beat = () => { if (document.visibilityState !== 'hidden' && navigator.onLine !== false) sb.rpc('touch_last_seen', { p_platform: (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'android' : (/electron/i.test(navigator.userAgent) ? 'windows' : 'web') }).then(() => {}, () => {}); };
+  __beat(); if (!window.__dogoBeatTimer) window.__dogoBeatTimer = setInterval(__beat, 5 * 60 * 1000);
 
   // 1. Check if user is a Platform Admin (e.g. Allen Otiende)
   await checkPlatformAdminStatus();
