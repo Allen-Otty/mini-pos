@@ -1160,7 +1160,7 @@
       try {
         const chk = await sb.auth.signInWithPassword({ email, password: o });
         if (chk.error) throw new Error('Current password is wrong.');
-        const u = await sb.auth.updateUser({ password: n });
+        const u = await sb.auth.updateUser({ password: n, current_password: o });
         if (u.error) throw u.error;
         $('pwOld').value = $('pwNew').value = $('pwNew2').value = ''; toast('Password updated.');
       } catch (err) { toast(err.message || 'Could not update the password.'); }
