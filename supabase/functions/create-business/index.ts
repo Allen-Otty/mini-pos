@@ -89,12 +89,26 @@ Deno.serve(async (req: Request) => {
     let verificationEmailError: string | null = null;
     if (needVerify) {
       // Only send links that return to our own site
-      const safeRedirect = typeof redirect_to === "string" && /^https:\/\/(dogopos\.allenotiende\.workers\.dev|dogo-pos-app\.netlify\.app)\//i.test(redirect_to)
-        ? redirect_to : "https://dogopos.allenotiende.workers.dev/";
+      const safeRedirect = typeof redirect_to === "string" && /^https:\/\/(dogopos\.allenotiende\.workers\.dev|dogo-pos-app\.netlify\.app|allen-otty\.github\.io\/mini-pos)\//i.test(redirect_to)
+        ? redirect_to : "https://allen-otty.github.io/mini-pos/";
       const anon = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
       const { error: mailErr } = await anon.auth.resend({ type: "signup", email, options: { emailRedirectTo: safeRedirect } });
       if (mailErr) verificationEmailError = mailErr.message;
     }
+
+    // Tell the super admin on Telegram (best effort, never blocks the signup)
+    try {
+      const tgToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
+      if (tgToken) {
+        const { data: links } = await adminClient.from("admin_bot_links").select("chat_id");
+        const esc = (x: unknown) => String(x ?? "").replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]!));
+        const text = `\u{1F195} <b>New signup</b>\n${esc(business_name)} (${esc(business_type || "Retail")})\n${esc(full_name)} \u00b7 ${esc(email)}${cleanPhone ? " \u00b7 " + esc(cleanPhone) : ""}\nPlan: ${esc(pendingPlan ? pendingPlan + " (awaiting payment)" : "Free")}`;
+        await Promise.all((links ?? []).map((l: any) => fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: l.chat_id, text, parse_mode: "HTML" }),
+        }).catch(() => {})));
+      }
+    } catch (_) { /* ignore */ }
 
     return new Response(JSON.stringify({
       success: true, business_id: biz.id,

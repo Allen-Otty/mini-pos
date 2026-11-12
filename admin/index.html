@@ -1680,6 +1680,18 @@
     <!-- TAB 11: SUPER ADMINS -->
     <div class="tab-view" id="tab-admins">
       <div class="admin-card" style="margin-bottom:16px;">
+        <h3 class="card-title"><i class="fa-brands fa-telegram"></i> Telegram control</h3>
+        <p class="card-sub">Control the platform from Telegram. Only chats you link here are answered; everyone else is ignored.</p>
+        <div id="tgLinks" style="margin:10px 0;font-size:13.5px;"></div>
+        <button class="btn-primary" onclick="tgNewCode()">Connect Telegram</button>
+        <div id="tgCodeBox" style="display:none;margin-top:12px;padding:12px 14px;border-radius:14px;background:#f1f8e4;">
+          <div style="font-size:13px;">Open your bot in Telegram and send:</div>
+          <div style="font-size:26px;font-weight:800;letter-spacing:.08em;margin:6px 0;">/link <span id="tgCode"></span></div>
+          <div style="font-size:12px;color:var(--text-muted);">The code works once and expires in 5 minutes.</div>
+        </div>
+        <p id="tgMsg" style="font-size:12px;margin:8px 0 0;"></p>
+      </div>
+      <div class="admin-card" style="margin-bottom:16px;">
         <h3 class="card-title"><i class="fa-solid fa-envelope-circle-check"></i> Email verification for new signups</h3>
         <p class="card-sub">When ON, a new shop owner must click a link we email before they can sign in. When OFF (default), accounts are active immediately.</p>
         <label style="display:flex; gap:8px; align-items:center; margin:10px 0; font-size:13.5px; font-weight:700;">
@@ -2026,6 +2038,29 @@ function reloadLandingEditor() {
   landingDirty = false; const b = document.getElementById('landingDirtyBadge'); if (b) b.style.display = 'none';
   loadLandingEditor(true);
 }
+
+async function tgLoadLinks() {
+  const box = document.getElementById('tgLinks'); if (!box) return;
+  const { data, error } = await sb.rpc('list_my_bot_links');
+  if (error) { box.textContent = 'Could not load linked chats.'; return; }
+  box.innerHTML = (data && data.length) ? data.map(l => '<div style="display:flex;gap:10px;align-items:center;margin:4px 0;"><span>✅ ' + (l.tg_username ? '@' + String(l.tg_username).replace(/[<>&]/g,'') : 'Telegram chat') + ' <span style="color:var(--text-muted)">linked ' + new Date(l.created_at).toLocaleDateString() + '</span></span><button class="btn-secondary" style="padding:4px 10px;" onclick="tgRemove(\'' + l.id + '\')">Remove</button></div>').join('') : '<span style="color:var(--text-muted)">No chats linked yet.</span>';
+}
+async function tgNewCode() {
+  const { data, error } = await sb.rpc('create_bot_link_code');
+  const msg = document.getElementById('tgMsg');
+  if (error) { msg.style.color = '#b91c1c'; msg.textContent = error.message; return; }
+  msg.textContent = '';
+  document.getElementById('tgCode').textContent = data;
+  document.getElementById('tgCodeBox').style.display = 'block';
+  clearTimeout(window.__tgPoll); let n = 0;
+  (function poll() { tgLoadLinks(); if (++n < 40) window.__tgPoll = setTimeout(poll, 8000); })();
+}
+async function tgRemove(id) {
+  if (!confirm('Remove this Telegram chat? It will stop being answered.')) return;
+  await sb.rpc('remove_bot_link', { p_id: id }); tgLoadLinks();
+}
+document.addEventListener('DOMContentLoaded', () => setTimeout(tgLoadLinks, 2500));
+
 function switchAdminTab(tabId, btn) {
   if (landingDirty && tabId !== 'landing' && !confirm('You have unsaved landing page changes. Leave this tab and lose them?')) return;
   document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
