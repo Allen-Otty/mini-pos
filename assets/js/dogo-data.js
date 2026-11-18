@@ -57,8 +57,26 @@
     // Same user as the remembered sign-in: show the page from the saved copy if the server is slow (2.5s),
     // and let the refresh finish quietly so the saved copy stays current.
     const load = (async () => {
-      const { data: profile, error: pErr } = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+      let { data: profile, error: pErr } = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
       if (pErr) throw pErr;
+      // Same fallback the sign-in page uses: some accounts have their profile row keyed by email, not by id.
+      if (!profile && session.user.email) {
+        const r2 = await sb.from('profiles').select('*').eq('email', session.user.email).maybeSingle();
+        if (!r2.error && r2.data) profile = r2.data;
+      }
+      let adminList = null;
+      // Platform admins (the Dogo owner) may have no tenant profile row at all: the sign-in page lets them in,
+      // so the dashboard must too instead of signing them straight back out (that was the login <-> dashboard loop).
+      if (!profile) {
+        try {
+          const r = await withTimeout(sb.functions.invoke('platform-switch-business', { body: { action: 'list' } }), 4000);
+          if (r && r.data && !r.error && Array.isArray(r.data.businesses) && r.data.businesses.length) {
+            adminList = r.data;
+            const bid = r.data.active_business_id || r.data.businesses[0].id;
+            profile = { id: session.user.id, email: session.user.email || '', business_id: bid, role: 'admin', full_name: (session.user.user_metadata && session.user.user_metadata.full_name) || 'Admin', active: true };
+          }
+        } catch (e) { if (isNetworkErr(e)) throw e; }
+      }
       if (!profile) return { none: true };
       // Platform admins (the Dogo owner) can test any business: the server remembers which one is active.
       let platform = null, prof = profile, bizId = profile.business_id;
@@ -90,6 +108,14 @@
 
   // No valid session: clear the "use new UI" flag (prevents a redirect loop) and show the sign-in screen.
   async function toSignIn() {
+    // Loop guard: if we were already sent to sign-in moments ago and are back again, stop auto-redirecting.
+    try {
+      const n = JSON.parse(sessionStorage.getItem('dogo_bounce') || '{"n":0,"t":0}');
+      const fresh = Date.now() - n.t < 60000;
+      const cnt = fresh ? n.n + 1 : 1;
+      sessionStorage.setItem('dogo_bounce', JSON.stringify({ n: cnt, t: Date.now() }));
+      if (cnt > 2) { try { console.warn('[Dogo] sign-in loop stopped: no profile/business found for this account'); } catch (e) {} }
+    } catch (e) {}
     if (!isOnline()) { location.replace('index.html?signin=1'); return; } // offline: keep the cached sign-in intact
     try { localStorage.removeItem('dogo_new_ui_ok'); await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
     location.replace('index.html?signin=1');
