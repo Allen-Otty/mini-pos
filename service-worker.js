@@ -1,4 +1,4 @@
-const CACHE_NAME = "dogo-pos-cache-v71";
+const CACHE_NAME = "dogo-pos-cache-v72";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
@@ -120,8 +120,9 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 2) Static files: cache first, refresh in the background.
-  if (req.mode !== "navigate" && STATIC_RE.test(url)) {
+  // 2) Static files: cache first, refresh in the background. (The app's own scripts/styles are excluded so fixes arrive on the very next load.)
+  const OWN_CODE = /\/assets\/.*\.(js|css)(\?|$)/i.test(url) && url.indexOf(self.location.origin) === 0;
+  if (req.mode !== "navigate" && !OWN_CODE && STATIC_RE.test(url)) {
     event.respondWith(
       caches.match(req, { ignoreSearch: true }).then((hit) => {
         const refresh = fetch(req, { cache: "no-store" }).then(store).catch(() => null);

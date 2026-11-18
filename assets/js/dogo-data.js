@@ -44,7 +44,7 @@
   // With no connection it falls back to the cached sign-in (result.offline === true).
   async function requireSession() {
     // After any logout the device stays "locked" until the password is entered again (online or offline).
-    if (localStorage.getItem('dogo_locked') === '1') { await toSignIn(); return null; }
+    if (localStorage.getItem('dogo_locked') === '1') { await toSignIn('locked'); return null; }
     const cached = lsGet(CTX_KEY, null);
     // Offline with a remembered sign-in: open straight away, no waiting on the network.
     if (cached && !isOnline()) return cachedResult(cached);
@@ -52,7 +52,7 @@
     try { const r = await withTimeout(sb.auth.getSession(), cached ? 2500 : 15000); session = r.data && r.data.session; sessErr = r.error; } catch (e) { sessErr = e; }
     if (!session) {
       if (cached && (!isOnline() || isNetworkErr(sessErr))) return cachedResult(cached);
-      await toSignIn(); return null;
+      await toSignIn('no_session', { err: sessErr && (sessErr.message || sessErr) }); return null;
     }
     // Same user as the remembered sign-in: show the page from the saved copy if the server is slow (2.5s),
     // and let the refresh finish quietly so the saved copy stays current.
@@ -97,7 +97,7 @@
     })();
     try {
       const out = (cached && cached.userId === session.user.id) ? await withTimeout(load, 2500) : await load;
-      if (out.none) { await toSignIn(); return null; }
+      if (out.none) { await toSignIn('no_profile', { email: session.user && session.user.email }); return null; }
       return out;
     } catch (e) {
       load.catch(() => {});   // the slow refresh may still land later; ignore its failure
@@ -107,15 +107,32 @@
   }
 
   // No valid session: clear the "use new UI" flag (prevents a redirect loop) and show the sign-in screen.
-  async function toSignIn() {
-    // Loop guard: if we were already sent to sign-in moments ago and are back again, stop auto-redirecting.
+  function showAuthProblem(reason, detail) {
+    try {
+      const msg = {
+        no_profile: 'You are signed in, but no staff profile / business was found for this account (' + ((detail && detail.email) || 'unknown email') + '). The dashboard cannot open without one.',
+        no_session: 'The sign-in did not stick: the dashboard could not find a saved session after you signed in.'
+      }[reason] || 'Sign-in could not be completed.';
+      const keys = []; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (/^sb-|^dogo_(locked|new_ui_ok)/.test(k)) keys.push(k); } } catch (e) {}
+      const info = [reason, detail && detail.err ? String(detail.err) : '', 'online=' + navigator.onLine, 'keys=' + keys.join(',')].filter(Boolean).join(' | ');
+      const d = document.createElement('div');
+      d.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.92);display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif';
+      d.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:420px;padding:22px;color:#0f172a"><h3 style="margin:0 0 8px">Cannot open dashboard</h3><p style="margin:0 0 10px;font-size:14px;line-height:1.5"></p><code style="display:block;font-size:11px;background:#f1f5f9;padding:8px;border-radius:8px;word-break:break-all;margin-bottom:14px"></code><button style="width:100%;padding:12px;border:0;border-radius:10px;background:#16a34a;color:#fff;font-weight:700">Back to sign in</button></div>';
+      d.querySelector('p').textContent = msg; d.querySelector('code').textContent = info;
+      d.querySelector('button').onclick = async () => { try { sessionStorage.removeItem('dogo_bounce'); localStorage.removeItem('dogo_new_ui_ok'); await sb.auth.signOut({ scope: 'local' }); } catch (e) {} location.replace('index.html?signin=1'); };
+      document.body.appendChild(d);
+    } catch (e) { location.replace('index.html?signin=1'); }
+  }
+  async function toSignIn(reason, detail) {
+    // Loop guard: 2+ bounces to sign-in within 60s means something is wrong that signing in again cannot fix.
+    // Show WHY on screen instead of redirecting forever.
+    let cnt = 1;
     try {
       const n = JSON.parse(sessionStorage.getItem('dogo_bounce') || '{"n":0,"t":0}');
-      const fresh = Date.now() - n.t < 60000;
-      const cnt = fresh ? n.n + 1 : 1;
+      cnt = (Date.now() - n.t < 60000) ? n.n + 1 : 1;
       sessionStorage.setItem('dogo_bounce', JSON.stringify({ n: cnt, t: Date.now() }));
-      if (cnt > 2) { try { console.warn('[Dogo] sign-in loop stopped: no profile/business found for this account'); } catch (e) {} }
     } catch (e) {}
+    if (reason !== 'locked' && (cnt >= 2 || reason === 'no_profile')) { showAuthProblem(reason || 'no_session', detail); return; }
     if (!isOnline()) { location.replace('index.html?signin=1'); return; } // offline: keep the cached sign-in intact
     try { localStorage.removeItem('dogo_new_ui_ok'); await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
     location.replace('index.html?signin=1');
